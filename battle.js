@@ -55,62 +55,28 @@ const Battle = {
         if (d.debuff_reset || d.CureAilments || d.HPRegen || d.MPRegen) return true;
         return false;
     },
-	
+
     init: () => {
         Battle.active = true;
         Battle.phase = 'init';
         Battle.commandQueue = [];
         Battle.currentActorIndex = 0;
         Battle.auto = false;
-		Battle.runAttemptCount = 0; // ★追加: カウントリセット
-		Battle.skillScrollPositions = {};
+        Battle.runAttemptCount = 0; 
+        Battle.skillScrollPositions = {};
         Battle.updateAutoButton();
         
         const logEl = Battle.getEl('battle-log');
         if(logEl) logEl.innerHTML = '';
 
-		// ★修正: 背景画像の出し分けロジック
+        // 背景管理
         const enemyArea = document.getElementById('enemy-container');
         if (enemyArea) {
-            // デフォルトは草原(フィールド)
-            let bgKey = 'battle_bg_field';
+            const bgKey = Field.getBattleBg();
+            const g = (typeof GRAPHICS !== 'undefined' && GRAPHICS.images) ? GRAPHICS.images : {};
 
-            // ■ ダンジョン内にいる場合
-            // ★追加: エスターク戦専用背景
-            if (App.data.battle && App.data.battle.isEstark) {
-                bgKey = 'battle_bg_lastboss';
-            } else if (typeof Field !== 'undefined' && Field.currentMapData && Field.currentMapData.isDungeon) {
-                const floor = App.data.progress.floor;
-                const type = App.data.dungeon.genType; 
-
-                if (floor % 10 === 0) {
-                    bgKey = 'battle_bg_boss';
-                } else if (type === 2) {
-                    bgKey = 'battle_bg_maze';
-                } else {
-                    bgKey = 'battle_bg_dungeon';
-                }
-            } 
-            // ■ 通常フィールドにいる場合 (MAP_DATAを参照)
-            else if (typeof Field !== 'undefined' && typeof MAP_DATA !== 'undefined') {
-                // 現在の座標からタイル文字を取得（マップのループも考慮）
-                const mapW = MAP_DATA[0].length;
-                const mapH = MAP_DATA.length;
-                const tx = ((Field.x % mapW) + mapW) % mapW;
-                const ty = ((Field.y % mapH) + mapH) % mapH;
-                const tile = MAP_DATA[ty][tx];
-
-                // タイル文字に応じて背景を変更
-                if (tile === 'F') {
-                    bgKey = 'battle_bg_forest';   // 森
-                } else if (tile === 'L') {
-                    bgKey = 'battle_bg_mountain'; // 山 (L)
-                } 
-            }
-
-            // 画像データの存在チェックと適用
-            if (typeof GRAPHICS !== 'undefined' && GRAPHICS.images && GRAPHICS.images[bgKey]) {
-                enemyArea.style.backgroundImage = `url('${GRAPHICS.images[bgKey].src}')`;
+            if (g[bgKey]) {
+                enemyArea.style.backgroundImage = `url('${g[bgKey].src}')`;
                 enemyArea.style.backgroundSize = 'cover';
                 enemyArea.style.backgroundPosition = 'center bottom';
                 enemyArea.style.backgroundRepeat = 'no-repeat';
@@ -119,9 +85,8 @@ const Battle = {
                 enemyArea.style.backgroundImage = 'none';
             }
         }
-		
-		
-        // --- パーティ生成 ---
+        
+        // パーティ生成
         Battle.party = [];
         if (App.data && App.data.party) {
             Battle.party = App.data.party.map(uid => {
@@ -129,162 +94,93 @@ const Battle = {
                 const charData = App.getChar(uid);
                 if(!charData) return null;
                 const player = new Player(charData);
-                
                 const stats = App.calcStats(charData);
                 player.hp = Math.min(player.hp, stats.maxHp);
                 player.mp = Math.min(player.mp, stats.maxMp);
-                player.baseMaxHp = stats.maxHp;
-                player.baseMaxMp = stats.maxMp;
-
-                player.atk = stats.atk;
-                player.def = stats.def;
-                player.spd = stats.spd;
-                player.mag = stats.mag;
-                player.elmAtk = stats.elmAtk || {};
-                player.elmRes = stats.elmRes || {};
-                player.finDmg = stats.finDmg || 0;
-                player.finRed = stats.finRed || 0;
-                
-				// パッシブ・シナジー取得
+                player.baseMaxHp = stats.maxHp; player.baseMaxMp = stats.maxMp;
+                player.atk = stats.atk; player.def = stats.def; player.spd = stats.spd; player.mag = stats.mag;
+                player.elmAtk = stats.elmAtk || {}; player.elmRes = stats.elmRes || {};
+                player.finDmg = stats.finDmg || 0; player.finRed = stats.finRed || 0;
                 player.passive = Battle.getPassives(player);
-				
-				// ★追加: 「スキル習得」シナジー (混沌の刃/壁)
-                // 複数のシナジーが配列で入っていることを考慮してループ処理する
+                
+                // シナジー付与スキル習得
                 if (player.equips) {
-					Object.values(player.equips).forEach(eq => {
-						if (eq && eq.isSynergy && eq.effects && eq.effects.includes('grantSkill')) {
-							// 複数のシナジーの中から 'grantSkill' を持っているものを探す
-                            const grantSyn = eq.synergies.find(s => s.effect === 'grantSkill');
-							if (grantSyn && grantSyn.value) {
-								if (!player.skills.find(s => s.id === grantSyn.value)) {
-									const newSkill = DB.SKILLS.find(s => s.id === grantSyn.value);
-									if (newSkill) player.skills.push(newSkill);
-								}
-							}
-						}
-					});
-				}
-				
-				// 保存された状態があれば復元、なければ初期化
-                if (charData.battleStatus) {
-                    player.battleStatus = JSON.parse(JSON.stringify(charData.battleStatus));
-                } else {
-                    Battle.initBattleStatus(player);
+                    Object.values(player.equips).forEach(eq => {
+                        if (eq && eq.isSynergy && eq.effects) {
+                            const grantSyn = eq.synergies?.find(s => s.effect === 'grantSkill');
+                            if (grantSyn && grantSyn.value) {
+                                if (!player.skills.find(s => s.id === grantSyn.value)) {
+                                    const newSkill = DB.SKILLS.find(s => s.id === grantSyn.value);
+                                    if (newSkill) player.skills.push(newSkill);
+                                }
+                            }
+                        }
+                    });
                 }
-				
-				// 「軍神」シナジー (開幕バフ)
-                if (player.passive.warGod) {
-                    player.battleStatus.buffs['atk'] = { val: 1.5, turns: null };
-                    player.battleStatus.buffs['mag'] = { val: 1.5, turns: null };
-                }
-				
-                if (player.passive.atkDouble) {
-                    player.battleStatus.buffs['atk'] = { val: 2.0, turns: null };
-                }
-				
-                if (player.passive.magDouble) {
-                    player.battleStatus.buffs['mag'] = { val: 2.0, turns: null };
-                }
-				
+                if (charData.battleStatus) player.battleStatus = JSON.parse(JSON.stringify(charData.battleStatus));
+                else Battle.initBattleStatus(player);
+
+                if (player.passive.warGod) { player.battleStatus.buffs['atk'] = { val: 1.5, turns: null }; player.battleStatus.buffs['mag'] = { val: 1.5, turns: null }; }
+                if (player.passive.atkDouble) player.battleStatus.buffs['atk'] = { val: 2.0, turns: null };
+                if (player.passive.magDouble) player.battleStatus.buffs['mag'] = { val: 2.0, turns: null };
                 return player;
             }).filter(p => p !== null);
         }
 
         if (Battle.party.length === 0 || Battle.party.every(p => p.isDead)) {
             App.log("戦えるメンバーがいません！");
-            Battle.endBattle(true);
-            return;
+            Battle.endBattle(true); return;
         }
 
-        // --- 敵生成・復帰 ---
-        if (App.data.battle && App.data.battle.active && Array.isArray(App.data.battle.enemies) && App.data.battle.enemies.length > 0) {
-            const isBoss = App.data.battle.isBossBattle || false;
-            const isEstark = App.data.battle.isEstark || false;
+        // 敵の生成フラグ取得
+        const isBoss = (App.data.battle && App.data.battle.isBossBattle) || false;
+        const isEstark = (App.data.battle && App.data.battle.isEstark) || false;
+        const fixedId = (App.data.battle && App.data.battle.fixedBossId) ? App.data.battle.fixedBossId : null;
+        // ★追加: StoryManager由来のeventIdを保持
+        const eventId = (App.data.battle && App.data.battle.eventId) ? App.data.battle.eventId : null;
 
+        if (App.data.battle && App.data.battle.active && App.data.battle.enemies?.length > 0) {
             Battle.log("戦闘に復帰した！");
             Battle.enemies = App.data.battle.enemies.map(e => {
                 let base = DB.MONSTERS.find(m => m.id === e.baseId);
-                if (!base && window.generateEnemy) {
-                    base = { name: e.name, hp: e.maxHp, atk: 10, def: 10, spd: 10, mag: 10, exp: 0, gold: 0 };
-                }
                 if (!base) return null;
                 const m = new Monster(base, 1.0);
-                m.hp = e.hp; m.baseMaxHp = e.maxHp; m.name = e.name; m.id = e.baseId; 
-                m.isDead = m.hp <= 0;
-                m.isFled = false;
-                if(base.actCount) m.actCount = base.actCount;
-                if(base.acts) m.acts = base.acts; 
-
-                m.atk = m.baseStats.atk;
-                m.def = m.baseStats.def;
-                m.spd = m.baseStats.spd;
-                m.mag = m.baseStats.mag;
-                m.elmAtk = JSON.parse(JSON.stringify(base.elmAtk || {}));
-                m.elmRes = JSON.parse(JSON.stringify(base.elmRes || {}));
-                m.finDmg = 0; m.finRed = 0;
+                m.hp = e.hp; m.baseMaxHp = e.maxHp; m.name = e.name; m.id = e.baseId; m.isDead = m.hp <= 0;
+                // ステータス適用の安全策
+                m.atk = m.baseStats?.atk || base.atk; m.def = m.baseStats?.def || base.def; 
+                m.spd = m.baseStats?.spd || base.spd; m.mag = m.baseStats?.mag || base.mag;
+                m.elmAtk = JSON.parse(JSON.stringify(base.elmAtk || {})); m.elmRes = JSON.parse(JSON.stringify(base.elmRes || {}));
                 m.passive = base.passive || {};
-                
-                if (e.battleStatus) {
-                    m.battleStatus = e.battleStatus;
-                } else {
-                    Battle.initBattleStatus(m);
-                }
+                m.battleStatus = e.battleStatus || { buffs:{}, debuffs:{}, ailments:{} };
                 return m;
             }).filter(enemy => enemy !== null);
-
-            App.data.battle.isBossBattle = isBoss;
-            App.data.battle.isEstark = isEstark;
-
         } else {
-            const isBoss = (App.data.battle && App.data.battle.isBossBattle) || false;
-            const isEstark = (App.data.battle && App.data.battle.isEstark) || false;
-
+            // 新規エンカウント
             if (isEstark) {
                 const base = DB.MONSTERS.find(m => m.id === 2000);
-                if (base) {
-                    const killCount = App.data.estarkKillCount || 0;
-                    const scale = 1.0 + (killCount * 0.05);
-                    const m = new Monster(base, scale);
-                    m.id = 2000;
-					m.isEstark = true; 
-                    m.actCount = base.actCount || 3;
-                    Battle.enemies = [m];
-                    Battle.enemies.forEach(enemy => Battle.initBattleStatus(enemy));
-                }
+                const scale = 1.0 + ((App.data.estarkKillCount || 0) * 0.05);
+                const m = new Monster(base, scale); m.id = 2000; m.isEstark = true;
+                Battle.enemies = [m];
             } else {
-                Battle.enemies = Battle.generateNewEnemies(isBoss);
-                Battle.enemies.forEach(enemy => {
-                    Battle.initBattleStatus(enemy);
-                    const base = DB.MONSTERS.find(m => m.id === enemy.id);
-                    enemy.passive = base ? (base.passive || {}) : {};
-                });
+                Battle.enemies = Battle.generateNewEnemies(isBoss, fixedId);
             }
-
-            App.data.battle = {
+            Battle.enemies.forEach(e => Battle.initBattleStatus(e));
+            
+            // ★修正: 生成された敵データと共に eventId も保存する
+            App.data.battle = { 
                 active: true, 
-                isBossBattle: isBoss,
-                isEstark: isEstark,
-                enemies: Battle.enemies.map(enemy => ({ 
-                    baseId: enemy.id, 
-                    hp: enemy.hp, 
-                    maxHp: enemy.baseMaxHp, 
-                    name: enemy.name,
-                    battleStatus: enemy.battleStatus 
-                }))
+                isBossBattle: isBoss, 
+                isEstark: isEstark, 
+                fixedBossId: fixedId, 
+                eventId: eventId, 
+                enemies: Battle.enemies.map(e => ({ baseId: e.id, hp: e.hp, maxHp: e.baseMaxHp, name: e.name, battleStatus: e.battleStatus })) 
             };
             App.save();
         }
 
-        Battle.renderEnemies();
-        Battle.renderPartyStatus();
-
+        Battle.renderEnemies(); Battle.renderPartyStatus();
         const scene = document.getElementById('battle-scene');
-        if(scene) {
-            scene.onclick = (e) => {
-                if (Battle.phase === 'result') Battle.endBattle(false);
-            };
-        }
-
+        if(scene) scene.onclick = () => { if (Battle.phase === 'result') Battle.endBattle(false); };
         Battle.startInputPhase();
     },
 	
@@ -362,105 +258,117 @@ const Battle = {
         return val;
     },
 	
-/**
+	/**
      * 新規モンスターの生成 (出現数増加・レア複数・深層スケーリング修正版)
-     */
-    generateNewEnemies: (isBoss) => {
+     **/
+    /* battle.js 内の generateNewEnemies 関数 全文（省略なし） */
+
+    generateNewEnemies: (isBoss, fixedBossId = null) => {
         const newEnemies = [];
         const floor = App.data.progress.floor || 1; 
-        
-        // ★修正: 出現数(1～4)を関数冒頭で定義し、全てのブロックで参照可能にする ※ボスなら3体まで
         const count = isBoss ? (1 + Math.floor(Math.random() * 3)) : (1 + Math.floor(Math.random() * 4));
 
-        // --- 201階以降: 自動スケーリング・エンカウントシステム ---
-        if (floor >= 201) {
-            if (isBoss) {
-                Battle.log(`<span style="color:#ff0000; font-size:1em; font-weight:bold;">深淵の守護者が現れた！！</span>`);
-                // ボス候補: ID 1000～1200 (1160, 1162は除外)
-                const candidates = DB.MONSTERS.filter(m => 
-                    m.id >= 1000 && m.id <= 1200 && m.id !== 1160 && m.id !== 1162
-                );
-                
-                for(let i=0; i<count; i++) {
-                    const base = candidates[Math.floor(Math.random() * candidates.length)];
-                    if(!base) continue;
-                    const m = Battle.createDeepFloorMonster(base, floor, true);
-                    if (count > 1) m.name += String.fromCharCode(65+i);
-                    newEnemies.push(m);
-                }
-            } else {
-                Battle.log("強力な魔物の気配がする…！");
-                // 雑魚候補: ID 101～999
-                const candidates = DB.MONSTERS.filter(m => m.id >= 101 && m.id <= 999);
-                
-                for(let i=0; i<count; i++) {
-                    const base = candidates[Math.floor(Math.random() * candidates.length)];
-                    if(!base) continue;
-                    const m = Battle.createDeepFloorMonster(base, floor, false);
-                    if (count > 1) m.name += String.fromCharCode(65+i);
-                    newEnemies.push(m);
-                }
-            }
-            return newEnemies;
-        }
+        const setupEnemyStats = (m, base) => {
+            m.atk = m.baseStats?.atk || base.atk || m.atk;
+            m.def = m.baseStats?.def || base.def || m.def;
+            m.spd = m.baseStats?.spd || base.spd || m.spd;
+            m.mag = m.baseStats?.mag || base.mag || m.mag;
+            m.elmAtk = JSON.parse(JSON.stringify(base.elmAtk || {}));
+            m.elmRes = JSON.parse(JSON.stringify(base.elmRes || {}));
+            m.finDmg = 0; m.finRed = 0;
+            return m;
+        };
 
-        // --- 200階まで: 既存ロジックを1～4体・レア複数対応へ拡張 ---
-        const setupEnemyStats = (m) => {
-			m.atk = m.baseStats.atk;
-			m.def = m.baseStats.def;
-			m.spd = m.baseStats.spd;
-			m.mag = m.baseStats.mag;
-			
-			// ★修正: モンスターが元々持っている耐性データを尊重し、空オブジェクトで上書きしない
-			m.elmAtk = JSON.parse(JSON.stringify(m.data.elmAtk || {}));
-			m.elmRes = JSON.parse(JSON.stringify(m.data.elmRes || {}));
-			
-			m.finDmg = 0; m.finRed = 0;
-			return m;
-		};
-
+        // --- A. ボス戦のロジック ---
         if (isBoss) {
             Battle.log("強大な魔物が現れた！");
+            
+            // StoryManagerでセットされた固定ボスIDがあれば最優先
+            const targetId = fixedBossId || (App.data.battle ? App.data.battle.fixedBossId : null);
+
+            if (targetId) {
+                const base = DB.MONSTERS.find(m => m.id === targetId);
+                if (base) {
+                    const m = new Monster(base, 1.0);
+                    m.name = base.name; m.id = base.id; m.actCount = base.actCount || 1;
+                    newEnemies.push(setupEnemyStats(m, base));
+                    return newEnemies; 
+                }
+            }
+
+            // ランダムボス（アビス等の階層指定）
             const bosses = DB.MONSTERS.filter(m => m.minF === floor && m.id >= 1000);
             if (bosses.length > 0) {
                 bosses.forEach(base => {
                     const m = new Monster(base, 1.0);
                     m.name = base.name; m.id = base.id; m.actCount = base.actCount || 1;
-                    newEnemies.push(setupEnemyStats(m));
+                    newEnemies.push(setupEnemyStats(m, base));
                 });
             } else {
                 const base = DB.MONSTERS.find(m => m.id === 1000);
-                if (base) newEnemies.push(setupEnemyStats(new Monster(base, 1.0)));
+                if (base) newEnemies.push(setupEnemyStats(new Monster(base, 1.0), base));
             }
-        } else {
-            Battle.log("魔物が現れた！");
-            // ★修正: 枠(1～4)ごとに個別にレア抽選を行うことで、レアの複数出現を可能に
+            return newEnemies;
+        }
+
+        // --- B. 201階以降の特殊スケーリング ---
+        if (floor >= 201) {
+            Battle.log("強力な魔物の気配がする…！");
+            const candidates = DB.MONSTERS.filter(m => m.id >= 101 && m.id <= 999);
             for(let i=0; i<count; i++) {
-                let monsterData = null;
-                
-                // レア抽選 
-                if (Math.random() < 0.05) { 
-                    const rares = DB.MONSTERS.filter(m => m.isRare && m.minF <= floor && floor <= (m.rank * 2));
-                    if (rares.length > 0) {
-                        monsterData = rares[Math.floor(Math.random() * rares.length)];
+                const base = candidates[Math.floor(Math.random() * candidates.length)];
+                if(!base) continue;
+                const m = Battle.createDeepFloorMonster(base, floor, false);
+                if (count > 1) m.name += String.fromCharCode(65+i);
+                newEnemies.push(m);
+            }
+            return newEnemies;
+        }
+
+        // --- C. 通常エンカウントのロジック ---
+        Battle.log("魔物が現れた！");
+        for(let i=0; i<count; i++) {
+            let monsterData = null;
+            
+            // 1. レアモンスター抽選 (既存)
+            if (Math.random() < 0.05) { 
+                const rares = DB.MONSTERS.filter(m => m.isRare && m.minF <= floor && floor <= (m.rank * 2));
+                if (rares.length > 0) monsterData = rares[Math.floor(Math.random() * rares.length)];
+            }
+
+            if (!monsterData) {
+                // 2. ★修正: 固定マップ（固定ダンジョン含む）の指定モンスター ID
+                if (Field.currentMapData && Field.currentMapData.isFixed && Field.currentMapData.monsters) {
+                    const ids = Field.currentMapData.monsters;
+                    const mid = ids[Math.floor(Math.random() * ids.length)];
+                    monsterData = DB.MONSTERS.find(m => m.id === mid);
+                }
+                // 3. ★修正: フィールド（ワールドマップ）のストーリー進行度連動ランク
+                else if (!Field.currentMapData) {
+                    const step = App.data.progress.storyStep || 0;
+                    // 例: step 0(ランク1-5), step 1(ランク3-8), step 2(ランク5-11)...
+                    const minRank = Math.max(1, step * 2 + 1);
+                    const maxRank = step * 3 + 5;
+                    const candidates = DB.MONSTERS.filter(m => m.id < 1000 && !m.isRare && m.rank >= minRank && m.rank <= maxRank);
+                    if (candidates.length > 0) {
+                        monsterData = candidates[Math.floor(Math.random() * candidates.length)];
                     }
                 }
-                
-                // レア抽選に漏れた場合は通常の敵生成
-                if (!monsterData && window.generateEnemy) {
+                // 4. その他（ランダムダンジョン等）は階層から生成
+                else if (window.generateEnemy) {
                     monsterData = window.generateEnemy(floor);
                 }
+            }
 
-                if (monsterData) {
-                    const m = new Monster(monsterData, 1.0);
-                    if (count > 1) m.name += String.fromCharCode(65+i);
-                    newEnemies.push(setupEnemyStats(m));
-                }
+            // モンスターのインスタンス化
+            if (monsterData) {
+                const m = new Monster(monsterData, 1.0);
+                if (count > 1) m.name += String.fromCharCode(65+i);
+                newEnemies.push(setupEnemyStats(m, monsterData));
             }
         }
         return newEnemies;
     },
-	
 	
 /**
      * 深層モンスターの個別生成・スケーリング
@@ -1936,26 +1844,29 @@ findNextActor: () => {
         if (alive.length === 0) return null;
         return alive[Math.floor(Math.random() * alive.length)];
     },
-	saveBattleState: () => {
-        // 現在のフラグを退避
-        const isBoss = App.data.battle.isBossBattle;
-        const isEstark = App.data.battle.isEstark;
-
+	
+	saveBattleState: () => { 
+        const isB = App.data.battle.isBossBattle; 
+        const isE = App.data.battle.isEstark; 
+        const fId = App.data.battle.fixedBossId; 
+        const eId = App.data.battle.eventId; // ★eventIdを退避
+        
         App.data.battle.enemies = Battle.enemies.filter(e => !e.isFled).map(e => ({ 
             baseId: e.id, hp: e.hp, maxHp: e.baseMaxHp, name: e.name, battleStatus: e.battleStatus 
-        }));
-
-        // フラグを再セット
-        App.data.battle.isBossBattle = isBoss;
-        App.data.battle.isEstark = isEstark;
-
-        Battle.party.forEach(p => {
-            const d = App.getChar(p.uid);
-            if(d) { d.currentHp = p.hp; d.currentMp = p.mp; d.battleStatus = p.battleStatus; }
-        });
-        App.save();
+        })); 
+        
+        App.data.battle.isBossBattle = isB; 
+        App.data.battle.isEstark = isE; 
+        App.data.battle.fixedBossId = fId; 
+        App.data.battle.eventId = eId; // ★eventIdを復元
+        
+        Battle.party.forEach(p => { 
+            const d = App.getChar(p.uid); 
+            if(d) { d.currentHp = p.hp; d.currentMp = p.mp; d.battleStatus = p.battleStatus; } 
+        }); 
+        App.save(); 
     },
-
+	
 	renderEnemies: () => {
 		const container = Battle.getEl('enemy-container');
 		if(!container) return;
@@ -2565,7 +2476,21 @@ findNextActor: () => {
         
         App.save(); 
         Battle.log("\n▼ 画面タップで終了 ▼");
-        if (isBossBattle && !isEstark && typeof Dungeon !== 'undefined') Dungeon.onBossDefeated();
+
+        // ★追加・修正：ストーリー後処理の呼び出し
+        //if (isBossBattle && !isEstark) {
+            // 1. ダンジョン側の後処理 (階段出現等)
+        //    if (typeof Dungeon !== 'undefined' && typeof Dungeon.onBossDefeated === 'function') {
+        //        Dungeon.onBossDefeated();
+        //    }
+            
+            // 2. ストーリーイベント由来のバトルの場合、StoryManagerに通知
+            // App.data.battle.eventId にイベントIDが保存されていることが前提
+        //    const eventId = (App.data.battle && App.data.battle.eventId) ? App.data.battle.eventId : null;
+        //    if (eventId && typeof StoryManager !== 'undefined' && typeof StoryManager.onBattleWin === 'function') {
+        //        await StoryManager.onBattleWin(eventId);
+        //    }
+        //}
     },
 
     lose: () => { 
@@ -2579,6 +2504,11 @@ findNextActor: () => {
     endBattle: (isGameOver = false) => {
         const isDungeon = (typeof Dungeon !== 'undefined' && Field.currentMapData && Field.currentMapData.isDungeon);
         
+		// ★追加：戦闘データを消去する前に、必要な情報を退避
+        const isBossBattle = App.data.battle?.isBossBattle || false;
+        const isEstark = App.data.battle?.isEstark || false;
+        const eventId = App.data.battle?.eventId || null;
+		
         // 戦闘データの初期化
         App.data.battle = { active: false };
 
@@ -2612,8 +2542,22 @@ findNextActor: () => {
                 }
             }, 2000);
         } else {
-            // 通常の勝利・逃走
-            setTimeout(() => App.changeScene('field'), 500);
+            // ★修正：setTimeoutをasync化し、画面切り替え後にストーリーを実行
+            setTimeout(async () => {
+                App.changeScene('field');
+                
+                // ★追加：フィールドに戻った後に後処理を実行
+                if (isBossBattle && !isEstark) {
+                    // 1. ダンジョンの後処理（階段出現など）
+                    if (typeof Dungeon !== 'undefined' && typeof Dungeon.onBossDefeated === 'function') {
+                        Dungeon.onBossDefeated();
+                    }
+                    // 2. ストーリーイベントの実行
+                    if (eventId && typeof StoryManager !== 'undefined' && typeof StoryManager.onBattleWin === 'function') {
+                        await StoryManager.onBattleWin(eventId);
+                    }
+                }
+            }, 500);
         }
     },
     toggleAuto: () => { Battle.auto = !Battle.auto; Battle.updateAutoButton(); if(Battle.phase === 'input') Battle.findNextActor(); },
