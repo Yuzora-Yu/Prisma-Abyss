@@ -1209,7 +1209,7 @@ const App = {
                 charData.mp += incMp;
                 charData.atk += incAtk;
                 charData.def += incDef;
-                charData.mdef = (charData.mdef || 0) + incMdef;
+                charData.mdef += incMdef;
                 charData.spd += incSpd;
                 charData.mag += incMag;
                 
