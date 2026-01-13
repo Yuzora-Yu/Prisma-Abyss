@@ -1685,15 +1685,31 @@ findNextActor: () => {
             Battle.renderPartyStatus();
         }
 
-        // 特性 8: ニ刀流
+        // 特性 8: ニ刀流 (全ての攻撃スキルに対応)
         let totalActionLoops = 1;
-        // キーを _mult に変更することで (スキル*2 + 50) の合計値を取得
-		if (isPhysical && typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue(actor, 'dual_dmg_mult') > 0) {
-			totalActionLoops = 2;
-		}
+        // 攻撃スキル（物理・通常・魔法・ブレス）であるかを判定
+        const isAttackAction = isPhysical || effectType === '魔法' || effectType === 'ブレス';
+        if (isAttackAction && typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue(actor, 'dual_dmg_mult') > 0) {
+            totalActionLoops = 2;
+        }
 
         for (let loop = 0; loop < totalActionLoops; loop++) {
             if (loop === 1) {
+                // ★修正: 追撃前に有効なターゲット（生存者）がいるかチェック
+                let hasValidTarget = false;
+                // 全体・ランダム攻撃・範囲指定文字の場合
+                if (cmd.targetScope === '全体' || cmd.targetScope === 'ランダム' || ['all_enemy', 'all_ally'].includes(cmd.target)) {
+                    const pool = cmd.isEnemy ? Battle.party.filter(p => p && !p.isDead) : Battle.enemies.filter(e => !e.isDead && !e.isFled);
+                    if (pool.length > 0) hasValidTarget = true;
+                } 
+                // 単体攻撃の場合
+                else if (cmd.target && !cmd.target.isDead && !cmd.target.isFled) {
+                    hasValidTarget = true;
+                }
+
+                // ターゲットが全滅、または指定ターゲットが死亡している場合はループを終了（追撃しない）
+                if (!hasValidTarget) break;
+
 				Battle.log(`【${actor.name}】の 追撃！`);
 				const dualBonus = PassiveSkill.getSumValue(actor, 'dual_dmg_mult');
 				skillRate = (dualBonus / 100);
@@ -1971,21 +1987,27 @@ findNextActor: () => {
                     }
 
                     // 1. dataが未定義（通常攻撃等）でもエラーが出ないよう data?.isPerfect を使用
-					if (!data || !data.isPerfect) {
-						let hitBonus = PassiveSkill.getSumValue(actor, 'hit_pct');
-						if (loop === 1) hitBonus += PassiveSkill.getSumValue(actor, 'dual_hit_base');
+                    if (!data || !data.isPerfect) {
+                        let baseHit;
 
-						// 2. dataが未定義、またはhitRateが未定義の場合は 100(%) 扱いとする
-						const baseHitRate = (data && data.hitRate !== undefined) ? data.hitRate : 100;
-						const baseHit = baseHitRate + hitBonus;
+                        if (loop === 1) {
+                            // ★修正: 2回目の命中率は特性「二刀流」の計算式 (スキル×2)+50% を直接使用する
+                            // PassiveSkill.jsの汎用ロジックにより dual_hit_mult を呼べば base(50) も加算されます
+                            baseHit = PassiveSkill.getSumValue(actor, 'dual_hit_mult');
+                        } else {
+                            // 2. 1回目：dataが未定義、またはhitRateが未定義の場合は 100(%) 扱いとする
+                            const baseHitRate = (data && data.hitRate !== undefined) ? data.hitRate : 100;
+                            const hitBonus = PassiveSkill.getSumValue(actor, 'hit_pct');
+                            baseHit = baseHitRate + hitBonus;
+                        }
 
-						// 3. targetToHit（モンスター等）の回避率が未定義の場合は 0(%) 扱いとする
-						const targetEvaBase = (targetToHit.eva !== undefined) ? targetToHit.eva : 0;
-						const targetEva = targetEvaBase + PassiveSkill.getSumValue(targetToHit, 'eva_pct');
-						
-						const finalHitChance = (baseHit * ((actor.hit || 100) / 100)) - targetEva;
-						
-						if (Math.random() * 100 > finalHitChance) {
+                        // 3. targetToHit（モンスター等）の回避率が未定義の場合は 0(%) 扱いとする
+                        const targetEvaBase = (targetToHit.eva !== undefined) ? targetToHit.eva : 0;
+                        const targetEva = targetEvaBase + PassiveSkill.getSumValue(targetToHit, 'eva_pct');
+                        
+                        const finalHitChance = (baseHit * ((actor.hit || 100) / 100)) - targetEva;
+                        
+                        if (Math.random() * 100 > finalHitChance) {
                             Battle.log(`ミス！ 【${targetToHit.name}】に攻撃が当たらない！`);
                             await Battle.wait(200); continue; 
                         }
@@ -2681,7 +2703,7 @@ findNextActor: () => {
         // [2] 資源獲得・レベルアップ・特性（事後回復）処理
         App.data.gold += totalGold;
         Battle.log(` ${totalGold} Goldを獲得！`);
-        Battle.log(` ${totalExp}ポイントの経験値を 獲得した！`);
+        Battle.log(` ${totalExp} ポイントの経験値を 獲得した！`);
 
         const surviveMembers = Battle.party.filter(p => !p.isDead);
         
@@ -2701,6 +2723,12 @@ findNextActor: () => {
             if (charData) {
                 const oldLv = charData.level; // レベルアップ判定用
                 App.gainExp(charData, totalExp).forEach(msg => Battle.log(msg));
+				
+				// --- ★追加: 戦闘終了時の特性レベルアップ（成長）判定 ---
+                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.checkTraitGrowth) {
+                    const growthLog = PassiveSkill.checkTraitGrowth(charData);
+                    if (growthLog) Battle.log(growthLog);
+                }
                 
                 // レベルアップした場合、最大ステータスを更新して全快
                 if (charData.level > oldLv) {

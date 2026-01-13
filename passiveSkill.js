@@ -37,7 +37,7 @@ const PassiveSkill = {
         26: { id: 26, name: '雷の扱い', type: '戦闘', params: { thunder_pierce_pct: 2 }, effect: '攻撃時の雷属性耐性無視', desc: '攻撃時、敵の雷属性耐性をスキル×2%無視してダメージを与える' },
         27: { id: 27, name: '光の扱い', type: '戦闘', params: { light_pierce_pct: 2 }, effect: '攻撃時の光属性耐性無視', desc: '攻撃時、敵の光属性耐性をスキル×2%無視してダメージを与える' },
         28: { id: 28, name: '闇の扱い', type: '戦闘', params: { dark_pierce_pct: 2 }, effect: '攻撃時の闇属性耐性無視', desc: '攻撃時、敵の闇属性耐性をスキル×2%無視してダメージを与える' },
-        29: { id: 29, name: '混沌の扱い', type: '戦闘', params: { chaos_pierce_pct: 2 }, effect: '攻撃時の混沌属性耐性無視', desc: '攻撃時、敵の混沌属性耐性をスキル×2%無視してダメージを与える' },
+        29: { id: 29, name: '混沌の扱い', type: '戦闘', params: { chaos_pierce_pct: 3 }, effect: '攻撃時の混沌属性耐性無視', desc: '攻撃時、敵の混沌属性耐性をスキル×3%無視してダメージを与える' },
         30: { id: 30, name: '解析', type: '戦闘', params: { all_elm_pierce_pct: 2 }, effect: '攻撃時の全属性耐性無視', desc: '攻撃時、敵の全属性耐性をスキル×2%無視してダメージを与える' },
 		31: { id: 31, name: '呪い体質', type: '戦闘', params: { proc_curse_add: 1, proc_curse_base: 10 }, effect: '怯え、封印、即死の成功率が上昇する', desc: '怯え、封印、即死の成功率をスキル+10%上昇' },
 		32: { id: 32, name: '人体知識', type: '戦闘', params: { proc_body_add: 1, proc_body_base: 10 }, effect: '毒、猛毒、感電、弱体の成功率が上昇する', desc: '毒、猛毒、感電、弱体の成功率をスキル+10%上昇' },
@@ -131,13 +131,29 @@ PassiveSkill.applyLevelUpTraits = function(char) {
 
             if (newTraitId) {
                 char.traits.push({ id: newTraitId, level: 1 });
-                learnedSomething = true;
-                if (window.App) App.log(`<span style="color:#00ffff;">${char.name}は 新たな特性【${PassiveSkill.MASTER[newTraitId].name}】を習得した！</span>`);
+                // ログを文字列で返す
+                return `<span style="color:#00ffff;">特性【${PassiveSkill.MASTER[newTraitId].name}】を習得した！</span>`;
             }
         }
     }
 
-    return learnedSomething;
+    return null;
+};
+
+// --- 新規追加: checkTraitGrowth (戦闘終了時のレベルアップ判定) ---
+PassiveSkill.checkTraitGrowth = function(char) {
+    if (!char.traits || char.traits.length === 0 || char.isDead) return null;
+    
+    // 成長判定（例：1%の確率でいずれかの特性がレベルアップ。上限Lv10）
+    if (Math.random() < 0.01) {
+        const targetTrait = char.traits[Math.floor(Math.random() * char.traits.length)];
+        if (targetTrait.level < 10) {
+            targetTrait.level++;
+            const m = PassiveSkill.MASTER[targetTrait.id];
+            return `<span style="color:#ffd700;">${char.name}の特性【${m.name}】がLv${targetTrait.level}に上がった！</span>`;
+        }
+    }
+    return null;
 };
 
 /**

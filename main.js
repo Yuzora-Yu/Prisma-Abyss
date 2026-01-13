@@ -815,278 +815,316 @@ const App = {
     ========================================================================== */
 
     calcStats: (char) => {
-        // DBのマスタデータを取得 (基礎ステータス参照用)
-        const base = (window.CHARACTERS_DATA || []).find(c => c.id === char.charId) || char;
-        
-        // ★修正: リミットブレイク回数の計算
-        // 主人公(ID 301)の場合のみ、storyStep を加算して実効値を算出する
-        let lb = char.limitBreak || 0;
-        if (char.charId === 301 && App.data && App.data.progress) {
-            lb += (App.data.progress.storyStep || 0);
-        }
-        
-        // レアリティ別加算率の設定
-        const LB_RATES = { 
-            'N': 0.40, 'R': 0.30, 'SR': 0.28, 'SSR': 0.25, 'UR': 0.20, 'EX': 0.10 
-        };
-        const lbRate = LB_RATES[base.rarity] !== undefined ? LB_RATES[base.rarity] : 0.10;
+    // DBのマスタデータを取得 (基礎ステータス参照用)
+    const base = (window.CHARACTERS_DATA || []).find(c => c.id === char.charId) || char;
 
-        // ステータス初期化 (魔法防御・命中・回避・会心を追加)
-        let s = {
-            maxHp: char.hp + Math.floor((base.hp || 100) * lbRate * lb * 1.5),
-            maxMp: char.mp + Math.floor((base.mp || 50) * lbRate * lb),
-            atk: char.atk + Math.floor((base.atk || 10) * lbRate * lb),
-            def: char.def + Math.floor((base.def || 10) * lbRate * lb),
-            mdef: (base.mdef || 0) + Math.floor((base.mdef || 10) * lbRate * lb), 
-            spd: char.spd + Math.floor((base.spd || 10) * lbRate * lb),
-            mag: char.mag + Math.floor((base.mag || 10) * lbRate * lb),
-            
-            // 命中・回避・会心はベースをそのまま使用（装備や特性で後乗せ）
-            hit: char.hit || base.hit || 100,
-            eva: char.eva || base.eva || 0,
-            cri: char.cri || base.cri || 0,
-            
-            elmAtk: {}, elmRes: {}, magDmg: 0, sklDmg: 0, finDmg: 0, finRed: 0, mpRed: 0, mpCostRate: 1.0,
-            
-            // 状態異常耐性の初期化
-            resists: {
-                Poison: 0, ToxicPoison: 0, Shock: 0, Fear: 0, 
-                Debuff: 0, InstantDeath: 0,
-                SkillSeal: 0, SpellSeal: 0, HealSeal: 0
+    // equips キー揺れ吸収用ヘルパ
+    const getEquip = (part) => {
+        if (!char.equips) return null;
+
+        // まずはそのまま
+        if (char.equips[part]) return char.equips[part];
+
+        // 武器スロットの揺れだけ特別扱い（他スロットに武器を流用しない）
+        const isWeaponSlot =
+            part === '武器' || part === 'Weapon' || part === 'weapon';
+
+        if (isWeaponSlot) {
+            return char.equips['武器'] || char.equips.Weapon || char.equips.weapon || null;
+        }
+
+        return null;
+    };
+
+    // 武器種の判定 (特性およびスキルツリー判定用)
+    const weaponEq = getEquip('武器') || getEquip('Weapon') || getEquip('weapon');
+    if (weaponEq) {
+        // ★ baseName は装備直下 / data内 どちらにも対応
+        const bn = weaponEq.baseName || (weaponEq.data && weaponEq.data.baseName);
+        char.weaponType = bn || '素手';
+    } else {
+        char.weaponType = '素手';
+    }
+
+    // リミットブレイク回数の計算（主人公 ID301 は storyStep を加算）
+    let lb = char.limitBreak || 0;
+    if (char.charId === 301 && App.data && App.data.progress) {
+        lb += (App.data.progress.storyStep || 0);
+    }
+
+    // レアリティ別加算率
+    const LB_RATES = { 'N': 0.40, 'R': 0.30, 'SR': 0.28, 'SSR': 0.25, 'UR': 0.20, 'EX': 0.10 };
+    const lbRate = (LB_RATES[base.rarity] !== undefined) ? LB_RATES[base.rarity] : 0.10;
+
+    // ステータス初期化
+    let s = {
+        maxHp: char.hp + Math.floor((base.hp || 100) * lbRate * lb * 1.5),
+        maxMp: char.mp + Math.floor((base.mp || 50) * lbRate * lb),
+        atk:   char.atk + Math.floor((base.atk || 10) * lbRate * lb),
+        def:   char.def + Math.floor((base.def || 10) * lbRate * lb),
+        mdef:  (base.mdef || 0) + Math.floor((base.mdef || 10) * lbRate * lb),
+        spd:   char.spd + Math.floor((base.spd || 10) * lbRate * lb),
+        mag:   char.mag + Math.floor((base.mag || 10) * lbRate * lb),
+
+        // 命中・回避・会心（最終は加算方針）
+        hit: char.hit || base.hit || 100,
+        eva: char.eva || base.eva || 0,
+        cri: char.cri || base.cri || 0,
+
+        elmAtk: {}, elmRes: {},
+        magDmg: 0, sklDmg: 0,
+        finDmg: 0, finRed: 0,
+        mpRed: 0,
+        mpCostRate: 1.0,
+
+        // 状態異常耐性
+        resists: {
+            Poison: 0, ToxicPoison: 0, Shock: 0, Fear: 0,
+            Debuff: 0, InstantDeath: 0,
+            SkillSeal: 0, SpellSeal: 0, HealSeal: 0
+        }
+    };
+
+    // 属性初期化
+    CONST.ELEMENTS.forEach(e => { s.elmAtk[e] = 0; s.elmRes[e] = 0; });
+
+    // DB(マスタ)側の耐性を適用
+    if (base.resists) {
+        for (let key in base.resists) {
+            s.resists[key] = (s.resists[key] || 0) + base.resists[key];
+        }
+    }
+
+    // 1. ユーザー配分ポイント (主人公のみ)
+    if (char.uid === 'p1' && char.alloc) {
+        for (let key in char.alloc) {
+            if (key.includes('_')) {
+                const [type, elm] = key.split('_');
+                if (type === 'elmAtk') s.elmAtk[elm] = (s.elmAtk[elm] || 0) + char.alloc[key];
+                if (type === 'elmRes') s.elmRes[elm] = (s.elmRes[elm] || 0) + char.alloc[key];
+            } else {
+                if (key === 'hp') s.maxHp += char.alloc[key] * 10;
+                else if (key === 'mp') s.maxMp += char.alloc[key] * 2;
+                else if (s[key] !== undefined) s[key] += char.alloc[key];
             }
-        };
-        
-        CONST.ELEMENTS.forEach(e => { s.elmAtk[e]=0; s.elmRes[e]=0; });
-
-        // DB(マスタ)に耐性設定があれば適用
-        if(base.resists) {
-            for(let key in base.resists) s.resists[key] = (s.resists[key] || 0) + base.resists[key];
         }
+    }
 
-        // 1. ユーザー配分ポイント (主人公のみ)
-        if(char.uid === 'p1' && char.alloc) {
-            for(let key in char.alloc) {
-                if (key.includes('_')) {
-                    const [type, elm] = key.split('_');
-                    if(type === 'elmAtk') s.elmAtk[elm] = (s.elmAtk[elm] || 0) + char.alloc[key];
-                    if(type === 'elmRes') s.elmRes[elm] = (s.elmRes[elm] || 0) + char.alloc[key];
-                } else {
-                    if (key === 'hp') s.maxHp += char.alloc[key] * 10; 
-                    else if (key === 'mp') s.maxMp += char.alloc[key] * 2;
-                    else if (s[key] !== undefined) s[key] += char.alloc[key];
-                }
+    // 2. 装備補正（%乗算用。ただし hit/eva/cri は最終加算）
+    let pctMods = { maxHp: 0, maxMp: 0, atk: 0, def: 0, mdef: 0, spd: 0, mag: 0, hit: 0, eva: 0, cri: 0 };
+
+    CONST.PARTS.forEach(part => {
+        const eq = getEquip(part);
+        if (!eq || !eq.data) return;
+
+        // 固定値・マスタ定義の加算
+        if (eq.data.atk)  s.atk  += eq.data.atk;
+        if (eq.data.def)  s.def  += eq.data.def;
+        if (eq.data.mdef) s.mdef += eq.data.mdef;
+        if (eq.data.spd)  s.spd  += eq.data.spd;
+        if (eq.data.mag)  s.mag  += eq.data.mag;
+        if (eq.data.hit)  s.hit  += eq.data.hit;
+        if (eq.data.eva)  s.eva  += eq.data.eva;
+        if (eq.data.cri)  s.cri  += eq.data.cri;
+
+        // 装備マスタの耐性・追加効果
+        for (let key in eq.data) {
+            if (key.startsWith('resists_')) {
+                const resKey = key.replace('resists_', '');
+                s.resists[resKey] = (s.resists[resKey] || 0) + eq.data[key];
+            } else if (key.startsWith('attack_')) {
+                s[key] = (s[key] || 0) + eq.data[key];
             }
         }
 
-        // 2. 装備補正
-        let pctMods = { maxHp:0, maxMp:0, atk:0, def:0, mdef:0, spd:0, mag:0, hit:0, eva:0, cri:0 }; 
+        if (eq.data.finDmg) s.finDmg += eq.data.finDmg;
+        if (eq.data.finRed) s.finRed += eq.data.finRed;
+        if (eq.data.elmAtk) for (let e in eq.data.elmAtk) s.elmAtk[e] += eq.data.elmAtk[e];
+        if (eq.data.elmRes) for (let e in eq.data.elmRes) s.elmRes[e] += eq.data.elmRes[e];
 
-        CONST.PARTS.forEach(part => {
-            const eq = char.equips ? char.equips[part] : null;
-            if(eq) {
-                // 固定値・マスタ定義の加算
-                if(eq.data.atk) s.atk += eq.data.atk;
-                if(eq.data.def) s.def += eq.data.def;
-                if(eq.data.mdef) s.mdef += eq.data.mdef;
-                if(eq.data.spd) s.spd += eq.data.spd;
-                if(eq.data.mag) s.mag += eq.data.mag;
-                if(eq.data.hit) s.hit += eq.data.hit;
-                if(eq.data.eva) s.eva += eq.data.eva;
-                if(eq.data.cri) s.cri += eq.data.cri;
-                
-                // 装備マスタの基礎効果を合算
-                for (let key in eq.data) {
-                    if (key.startsWith('resists_')) {
-                        const resKey = key.replace('resists_', '');
-                        s.resists[resKey] = (s.resists[resKey] || 0) + eq.data[key];
-                    } else if (key.startsWith('attack_')) {
-                        s[key] = (s[key] || 0) + eq.data[key];
-                    }
+        // オプション補正（% / val）
+        if (eq.opts) eq.opts.forEach(o => {
+            if (!o || !o.key) return;
+
+            if (o.unit === '%') {
+                if (o.key === 'hp') pctMods.maxHp += o.val;
+                else if (o.key === 'mp') pctMods.maxMp += o.val;
+
+                else if (pctMods[o.key] !== undefined) pctMods[o.key] += o.val;
+
+                else if (o.key === 'elmAtk') s.elmAtk[o.elm] = (s.elmAtk[o.elm] || 0) + o.val;
+                else if (o.key === 'elmRes') s.elmRes[o.elm] = (s.elmRes[o.elm] || 0) + o.val;
+
+                else if (o.key.startsWith('resists_')) {
+                    const resKey = o.key.replace('resists_', '');
+                    s.resists[resKey] = (s.resists[resKey] || 0) + o.val;
+                } else if (o.key.startsWith('attack_')) {
+                    s[o.key] = (s[o.key] || 0) + o.val;
                 }
 
-                if(eq.data.finDmg) s.finDmg += eq.data.finDmg;
-                if(eq.data.finRed) s.finRed += eq.data.finRed;
-                if(eq.data.elmAtk) for(let e in eq.data.elmAtk) s.elmAtk[e] += eq.data.elmAtk[e];
-                if(eq.data.elmRes) for(let e in eq.data.elmRes) s.elmRes[e] += eq.data.elmRes[e];
+                else if (s[o.key] !== undefined) s[o.key] += o.val;
 
-                // オプション補正 (%)
-                if(eq.opts) eq.opts.forEach(o => {
-                    if(o.unit === '%') {
-                        if(o.key === 'hp') pctMods.maxHp += o.val;
-                        else if(o.key === 'mp') pctMods.maxMp += o.val;
-                        else if(o.key === 'atk') pctMods.atk += o.val;
-                        else if(o.key === 'def') pctMods.def += o.val;
-                        else if(o.key === 'mdef') pctMods.mdef += o.val;
-                        else if(o.key === 'spd') pctMods.spd += o.val;
-                        else if(o.key === 'mag') pctMods.mag += o.val;
-                        else if(o.key === 'hit') pctMods.hit += o.val;
-                        else if(o.key === 'eva') pctMods.eva += o.val;
-                        else if(o.key === 'cri') pctMods.cri += o.val;
-                        else if(o.key === 'elmAtk') s.elmAtk[o.elm] = (s.elmAtk[o.elm]||0) + o.val;
-                        else if(o.key === 'elmRes') s.elmRes[o.elm] = (s.elmRes[o.elm]||0) + o.val;
-                        else if(o.key.startsWith('resists_')) {
-                            const resKey = o.key.replace('resists_', '');
-                            s.resists[resKey] = (s.resists[resKey] || 0) + o.val;
-                        }
-                        else if(o.key.startsWith('attack_')) {
-                            s[o.key] = (s[o.key] || 0) + o.val;
-                        }
-                        else if(s[o.key] !== undefined) s[o.key] += o.val; 
-                    } else if(o.unit === 'val') {
-                        if(o.key === 'hp') s.maxHp += o.val;
-                        else if(o.key === 'mp') s.maxMp += o.val;
-                        else if(o.key === 'elmAtk') s.elmAtk[o.elm] = (s.elmAtk[o.elm]||0) + o.val;
-                        else if(o.key === 'elmRes') s.elmRes[o.elm] = (s.elmRes[o.elm]||0) + o.val;
-                        else if(s[o.key] !== undefined) s[o.key] += o.val;
-                    } 
-                });
-                
-                // シナジー効果
-                if (eq.isSynergy && eq.effects) {
-                    eq.effects.forEach(effect => {
-                        if (effect === 'might') s.finDmg += 30;
-                        if (effect === 'ironWall') s.finRed += 10;
-                        if (effect === 'guardian') pctMods.def += 100;
-                        if (effect === 'divineProtection') {
-                            for (let k in s.resists) s.resists[k] = (s.resists[k] || 0) + 20;
-                        }
-                        if (effect === 'hpBoost100') pctMods.maxHp += 100;
-                        if (effect === 'spdBoost100') pctMods.spd += 100;
-                        if (effect === 'debuffImmune') s.resists.Debuff = 100;
-                        if (effect === 'sealGuard50') {
-                            s.resists.SkillSeal = (s.resists.SkillSeal || 0) + 50;
-                            s.resists.SpellSeal = (s.resists.SpellSeal || 0) + 50;
-                            s.resists.HealSeal = (s.resists.HealSeal || 0) + 50;
-                        }
-                        if (effect === 'elmAtk25') {
-                            const elmOpt = eq.opts.find(o => o.key === 'elmAtk');
-                            if (elmOpt) s.elmAtk[elmOpt.elm] = (s.elmAtk[elmOpt.elm] || 0) + 25;
-                        }
-                    });
+            } else if (o.unit === 'val') {
+                if (o.key === 'hp') s.maxHp += o.val;
+                else if (o.key === 'mp') s.maxMp += o.val;
+
+                else if (o.key === 'elmAtk') s.elmAtk[o.elm] = (s.elmAtk[o.elm] || 0) + o.val;
+                else if (o.key === 'elmRes') s.elmRes[o.elm] = (s.elmRes[o.elm] || 0) + o.val;
+
+                else if (o.key.startsWith('resists_')) {
+                    const resKey = o.key.replace('resists_', '');
+                    s.resists[resKey] = (s.resists[resKey] || 0) + o.val;
+                } else if (o.key.startsWith('attack_')) {
+                    s[o.key] = (s[o.key] || 0) + o.val;
                 }
+
+                else if (s[o.key] !== undefined) s[o.key] += o.val;
             }
         });
 
-        // 3. スキルツリー補正
-        const trees = char.unlockedTrees || char.tree;
-        if (trees) {
-            for (let treeKey in trees) {
-                const stepCount = trees[treeKey]; 
-                const treeDef = CONST.SKILL_TREES[treeKey];
-                if (!treeDef) continue;
-                for (let i = 0; i < stepCount; i++) {
-                    const step = treeDef.steps[i];
-                    if (!step) continue;
-                    if (step.stats) {
-                        if (step.stats.hpMult) pctMods.maxHp += step.stats.hpMult * 100;
-                        if (step.stats.mpMult) pctMods.maxMp += step.stats.mpMult * 100;
-                        if (step.stats.atkMult) pctMods.atk += step.stats.atkMult * 100;
-                        if (step.stats.defMult) pctMods.def += step.stats.defMult * 100;
-                        if (step.stats.spdMult) pctMods.spd += step.stats.spdMult * 100;
-                        if (step.stats.magMult) pctMods.mag += step.stats.magMult * 100;
-                        if (step.stats.dmgMult) s.finDmg += step.stats.dmgMult * 100;
-                        if (step.stats.allElmMult) {
-                            CONST.ELEMENTS.forEach(e => { s.elmAtk[e] = (s.elmAtk[e] || 0) + step.stats.allElmMult * 100; });
-                        }
-                    }
-                    if (step.passive) {
-                        if (step.passive === 'finRed10') s.finRed += 10;
-                        else if (step.passive === 'hpRegen') s.hpRegen = true;
-                        else if (step.passive === 'atkIgnoreDef') s.atkIgnoreDef = true;
-                        else if (step.passive === 'magCrit') s.magCrit = true;
-                        else if (step.passive === 'fastestAction') s.fastestAction = true;
-                        else if (step.passive === 'doubleAction') s.doubleAction = true;
-                    }
-                }
-                if (!treeDef.steps[0].stats) {
-                    if (treeKey === 'ATK') pctMods.atk += stepCount * 5;
-                    if (treeKey === 'MAG') pctMods.mag += stepCount * 5;
-                    if (treeKey === 'SPD') pctMods.spd += stepCount * 5;
-                    if (treeKey === 'HP')  pctMods.maxHp += stepCount * 5;
-                    if (treeKey === 'MP') {
-                        pctMods.def += stepCount * 5;
-                        pctMods.maxMp += stepCount * 5;
-                        if (stepCount >= 5) s.finRed += 10;
-                    }
-                }
-            }
-        }
+        // シナジー効果
+        if (eq.isSynergy && eq.effects) {
+            eq.effects.forEach(effect => {
+                if (effect === 'might') s.finDmg += 30;
+                if (effect === 'ironWall') s.finRed += 10;
+                if (effect === 'guardian') pctMods.def += 100;
 
-        // 4. 自己特性補正 (PassiveSkill.js を使用)
-        if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
-            pctMods.maxHp += PassiveSkill.getSumValue(char, 'hp_pct');
-            pctMods.maxMp += PassiveSkill.getSumValue(char, 'mp_pct');
-            pctMods.atk   += PassiveSkill.getSumValue(char, 'atk_pct');
-            pctMods.def   += PassiveSkill.getSumValue(char, 'def_pct');
-            pctMods.mdef  += PassiveSkill.getSumValue(char, 'mdef_pct');
-            pctMods.spd   += PassiveSkill.getSumValue(char, 'spd_pct');
-            pctMods.mag   += PassiveSkill.getSumValue(char, 'mag_pct');
-            pctMods.hit   += PassiveSkill.getSumValue(char, 'hit_pct');
-            pctMods.eva   += PassiveSkill.getSumValue(char, 'eva_pct');
-            pctMods.cri   += PassiveSkill.getSumValue(char, 'cri_pct');
-            
-			// ★修正: ここで s.finDmg や s.finRed にタイプ別特性を足さない。
-			// これらはバトル中のダメージ計算の最終フェーズで個別に計算するため。
-            // s.finDmg += PassiveSkill.getSumValue(char, 'physical_dmg_pct');
-            // s.finDmg += PassiveSkill.getSumValue(char, 'magic_dmg_pct');
-            // s.finDmg += PassiveSkill.getSumValue(char, 'breath_dmg_pct');
-            // s.finRed += PassiveSkill.getSumValue(char, 'physical_reduce_pct');
-            // s.finRed += PassiveSkill.getSumValue(char, 'magic_reduce_pct');
-            // s.finRed += PassiveSkill.getSumValue(char, 'breath_reduce_pct');
-        }
+                if (effect === 'divineProtection') {
+                    for (let k in s.resists) s.resists[k] = (s.resists[k] || 0) + 20;
+                }
 
-        // 集計対象を全所持キャラではなく、パーティメンバー(App.data.party)のみに限定
-        // ★修正: 5. オーラ系特性補正 (他者および自分から受ける影響)
-        if (App.data && App.data.party && typeof PassiveSkill !== 'undefined') {
-            const myPos = char.formation || 'front';
-            
-            App.data.party.forEach(uid => {
-                const other = App.data.characters.find(c => c.uid === uid);
-                if (!other) return; 
-                
-                // 自分自身も対象に含めるため other.uid === char.uid の除外を削除
-                const otherPos = other.formation || 'front';
-                
-                // --- 隊列と特性IDの不整合を防ぐ厳密判定 ---
-                
-                // 37 護衛: 提供者が【前列】かつ、自分が【後列】のときのみ有効
-                if (otherPos === 'front' && myPos === 'back') {
-                    pctMods.def += PassiveSkill.getSumValue(other, 'aura_back_def_pct', 37);
+                if (effect === 'hpBoost100') pctMods.maxHp += 100;
+                if (effect === 'spdBoost100') pctMods.spd += 100;
+
+                if (effect === 'debuffImmune') s.resists.Debuff = 100;
+
+                if (effect === 'sealGuard50') {
+                    s.resists.SkillSeal = (s.resists.SkillSeal || 0) + 50;
+                    s.resists.SpellSeal = (s.resists.SpellSeal || 0) + 50;
+                    s.resists.HealSeal  = (s.resists.HealSeal  || 0) + 50;
                 }
-                
-                // 38 勇猛: 提供者が【前列】かつ、自分が【前列】のときのみ有効
-                if (otherPos === 'front' && myPos === 'front') {
-                    pctMods.atk += PassiveSkill.getSumValue(other, 'aura_front_atk_pct', 38);
-                }
-                
-                // 39 応援: 提供者が【後列】かつ、自分が【前列】のときのみ有効
-                if (otherPos === 'back' && myPos === 'front') {
-                    pctMods.atk += PassiveSkill.getSumValue(other, 'aura_front_atk_pct', 39);
-                }
-                
-                // 40 司令塔: 提供者が【後列】かつ、自分が【前列】のときのみ有効
-                if (otherPos === 'back' && myPos === 'front') {
-                    pctMods.hit += PassiveSkill.getSumValue(other, 'aura_front_hit_pct', 40);
-                    pctMods.eva += PassiveSkill.getSumValue(other, 'aura_front_eva_pct', 40);
+
+                if (effect === 'elmAtk25') {
+                    const elmOpt = eq.opts && eq.opts.find(x => x.key === 'elmAtk');
+                    if (elmOpt) s.elmAtk[elmOpt.elm] = (s.elmAtk[elmOpt.elm] || 0) + 25;
                 }
             });
         }
+    });
 
-        // 最終計算
-        s.maxHp = Math.floor(s.maxHp * (1 + pctMods.maxHp / 100));
-        s.maxMp = Math.floor(s.maxMp * (1 + pctMods.maxMp / 100));
-        s.atk   = Math.floor(s.atk   * (1 + pctMods.atk   / 100));
-        s.def   = Math.floor(s.def   * (1 + pctMods.def   / 100));
-        s.mdef  = Math.floor(s.mdef  * (1 + pctMods.mdef  / 100));
-        s.spd   = Math.floor(s.spd   * (1 + pctMods.spd   / 100));
-        s.mag   = Math.floor(s.mag   * (1 + pctMods.mag   / 100));
-        s.hit   = Math.floor(s.hit   * (1 + pctMods.hit   / 100));
-        s.eva   = Math.floor(s.eva   * (1 + pctMods.eva   / 100));
-        s.cri   = Math.floor(s.cri   * (1 + pctMods.cri   / 100));
+    // 3. スキルツリー補正
+    const trees = char.unlockedTrees || char.tree;
+    if (trees && CONST.SKILL_TREES) {
+        for (let treeKey in trees) {
+            const stepCount = trees[treeKey];
+            const treeDef = CONST.SKILL_TREES[treeKey];
+            if (!treeDef || !treeDef.steps) continue;
 
-        return s;
-    },
-	
+            for (let i = 0; i < stepCount; i++) {
+                const step = treeDef.steps[i];
+                if (!step) continue;
+
+                if (step.stats) {
+                    if (step.stats.hpMult)  pctMods.maxHp += step.stats.hpMult * 100;
+                    if (step.stats.mpMult)  pctMods.maxMp += step.stats.mpMult * 100;
+                    if (step.stats.atkMult) pctMods.atk   += step.stats.atkMult * 100;
+                    if (step.stats.defMult) pctMods.def   += step.stats.defMult * 100;
+                    if (step.stats.spdMult) pctMods.spd   += step.stats.spdMult * 100;
+                    if (step.stats.magMult) pctMods.mag   += step.stats.magMult * 100;
+
+                    if (step.stats.dmgMult) s.finDmg += step.stats.dmgMult * 100;
+
+                    if (step.stats.allElmMult) {
+                        CONST.ELEMENTS.forEach(e => {
+                            s.elmAtk[e] = (s.elmAtk[e] || 0) + step.stats.allElmMult * 100;
+                        });
+                    }
+                }
+
+                if (step.passive) {
+                    if (step.passive === 'finRed10') s.finRed += 10;
+                    else if (step.passive === 'hpRegen') s.hpRegen = true;
+                    else if (step.passive === 'atkIgnoreDef') s.atkIgnoreDef = true;
+                    else if (step.passive === 'magCrit') s.magCrit = true;
+                    else if (step.passive === 'fastestAction') s.fastestAction = true;
+                    else if (step.passive === 'doubleAction') s.doubleAction = true;
+                }
+            }
+
+            // 旧形式ツリー救済（steps[0].stats が無いタイプ）
+            if (treeDef.steps[0] && !treeDef.steps[0].stats) {
+                if (treeKey === 'ATK') pctMods.atk += stepCount * 5;
+                if (treeKey === 'MAG') pctMods.mag += stepCount * 5;
+                if (treeKey === 'SPD') pctMods.spd += stepCount * 5;
+                if (treeKey === 'HP')  pctMods.maxHp += stepCount * 5;
+                if (treeKey === 'MP') {
+                    pctMods.def += stepCount * 5;
+                    pctMods.maxMp += stepCount * 5;
+                    if (stepCount >= 5) s.finRed += 10;
+                }
+            }
+        }
+    }
+
+    // 4. 自己特性補正 (PassiveSkill.js)
+    if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
+        pctMods.maxHp += PassiveSkill.getSumValue(char, 'hp_pct');
+        pctMods.maxMp += PassiveSkill.getSumValue(char, 'mp_pct');
+        pctMods.atk   += PassiveSkill.getSumValue(char, 'atk_pct');
+        pctMods.def   += PassiveSkill.getSumValue(char, 'def_pct');
+        pctMods.mdef  += PassiveSkill.getSumValue(char, 'mdef_pct');
+        pctMods.spd   += PassiveSkill.getSumValue(char, 'spd_pct');
+        pctMods.mag   += PassiveSkill.getSumValue(char, 'mag_pct');
+
+        // hit/eva/cri は加算方針（％という名前でも“加算値”として運用）
+        pctMods.hit   += PassiveSkill.getSumValue(char, 'hit_pct');
+        pctMods.eva   += PassiveSkill.getSumValue(char, 'eva_pct');
+        pctMods.cri   += PassiveSkill.getSumValue(char, 'cri_pct');
+    }
+
+    // 5. オーラ系特性補正（パーティのみ・自分も対象に含める）
+    if (App.data && App.data.party && typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
+        const myPos = char.formation || 'front';
+
+        App.data.party.forEach(uid => {
+            const other = App.data.characters.find(c => c.uid === uid);
+            if (!other) return;
+
+            const otherPos = other.formation || 'front';
+
+            if (otherPos === 'front' && myPos === 'back') {
+                pctMods.def += PassiveSkill.getSumValue(other, 'aura_back_def_pct', 37);
+            }
+            if (otherPos === 'front' && myPos === 'front') {
+                pctMods.atk += PassiveSkill.getSumValue(other, 'aura_front_atk_pct', 38);
+            }
+            if (otherPos === 'back' && myPos === 'front') {
+                pctMods.atk += PassiveSkill.getSumValue(other, 'aura_front_atk_pct', 39);
+            }
+            if (otherPos === 'back' && myPos === 'front') {
+                pctMods.hit += PassiveSkill.getSumValue(other, 'aura_front_hit_pct', 40);
+                pctMods.eva += PassiveSkill.getSumValue(other, 'aura_front_eva_pct', 40);
+            }
+        });
+    }
+
+    // 最終計算（主要7ステは%乗算）
+    s.maxHp = Math.floor(s.maxHp * (1 + pctMods.maxHp / 100));
+    s.maxMp = Math.floor(s.maxMp * (1 + pctMods.maxMp / 100));
+    s.atk   = Math.floor(s.atk   * (1 + pctMods.atk   / 100));
+    s.def   = Math.floor(s.def   * (1 + pctMods.def   / 100));
+    s.mdef  = Math.floor(s.mdef  * (1 + pctMods.mdef  / 100));
+    s.spd   = Math.floor(s.spd   * (1 + pctMods.spd   / 100));
+    s.mag   = Math.floor(s.mag   * (1 + pctMods.mag   / 100));
+
+    // 命中・回避・会心は加算
+    s.hit += pctMods.hit;
+    s.eva += pctMods.eva;
+    s.cri += pctMods.cri;
+
+    return s;
+},
+
     /**
      * レベルアップ処理
      */
@@ -1105,6 +1143,12 @@ const App = {
             if (charData.exp >= nextExp) {
                 charData.exp -= nextExp;
                 charData.level++;
+				
+				// 特性習得チェックの呼び出し
+				if (typeof PassiveSkill !== 'undefined' && PassiveSkill.applyLevelUpTraits) {
+					const traitLog = PassiveSkill.applyLevelUpTraits(charData);
+					if (traitLog) logs.push(traitLog); // 特性習得ログをリザルトに追加
+				}
                 
                 // DBの基礎値を取得
                 const master = (window.CHARACTERS_DATA || []).find(c => c.id === charData.charId) || charData;
