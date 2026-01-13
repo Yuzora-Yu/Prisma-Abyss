@@ -113,7 +113,7 @@ const CONST = {
 				{ desc: '防御力 +25%', stats: { defMult: 0.25 } },
 				{ desc: '被ダメージ軽減 +10%', passive: 'finRed10' },
 				{ desc: 'ザオリク習得', skillId: 31 },
-				{ desc: 'ひかりのはどう・ベホマラー習得', skillIds: [56, 24] }
+				{ desc: 'ひかりのはどう習得', skillIds: 56 }
 			]
 		},
 		M_KNIGHT: {
@@ -140,14 +140,20 @@ const DB = {
     EQUIPS: window.EQUIP_MASTER || [],
 
     OPT_RULES: [
-        {key:'atk', name:'攻撃', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:5,UR:8,EX:12}, max:{N:2,R:3,SR:6,SSR:10,UR:15,EX:25}},
-        {key:'def', name:'防御', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:5,UR:8,EX:12}, max:{N:2,R:3,SR:6,SSR:10,UR:15,EX:25}},
-        {key:'mag', name:'魔力', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:5,UR:8,EX:12}, max:{N:2,R:3,SR:6,SSR:10,UR:15,EX:25}},
-        {key:'spd', name:'速さ', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:5,UR:8,EX:12}, max:{N:2,R:3,SR:6,SSR:10,UR:15,EX:25}},
-        {key:'hp', name:'HP', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:5,UR:8,EX:12}, max:{N:3,R:5,SR:8,SSR:12,UR:18,EX:30}},
-        {key:'mp', name:'MP', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:5,UR:8,EX:12}, max:{N:3,R:5,SR:8,SSR:12,UR:18,EX:30}},
+        {key:'atk', name:'攻撃', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:6,UR:10,EX:15}, max:{N:2,R:3,SR:6,SSR:10,UR:15,EX:25}},
+        {key:'def', name:'防御', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:6,UR:10,EX:15}, max:{N:2,R:3,SR:6,SSR:10,UR:15,EX:25}},
+        {key:'mag', name:'魔力', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:6,UR:10,EX:15}, max:{N:2,R:3,SR:6,SSR:10,UR:15,EX:25}},
+        {key:'spd', name:'速さ', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:6,UR:10,EX:15}, max:{N:2,R:3,SR:6,SSR:10,UR:15,EX:25}},
+		{key:'mdef', name:'魔防', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:6,UR:10,EX:15}, max:{N:2,R:3,SR:6,SSR:10,UR:15,EX:25}},
+
+        {key:'hit', name:'命中', unit:'%', allowed:['UR','EX'], min:{UR:3,EX:6}, max:{UR:6,EX:10}},
+        {key:'eva', name:'回避', unit:'%', allowed:['UR','EX'], min:{UR:3,EX:6}, max:{UR:6,EX:10}},
+        {key:'cri', name:'会心', unit:'%', allowed:['UR','EX'], min:{UR:3,EX:6}, max:{UR:6,EX:10}},
+
+        {key:'hp', name:'HP', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:6,UR:10,EX:15}, max:{N:3,R:5,SR:8,SSR:12,UR:18,EX:30}},
+        {key:'mp', name:'MP', unit:'%', allowed:['N','R','SR','SSR','UR','EX'], min:{N:1,R:2,SR:3,SSR:6,UR:10,EX:15}, max:{N:3,R:5,SR:8,SSR:12,UR:18,EX:30}},
         {key:'finDmg', name:'与ダメ', unit:'%', allowed:['UR','EX'], min:{UR:10,EX:20}, max:{UR:20,EX:30}},
-        {key:'finRed', name:'被ダメ', unit:'%', allowed:['UR','EX'], min:{UR:3,EX:5}, max:{UR:6,EX:10}},
+        {key:'finRed', name:'被ダメ', unit:'%', allowed:['UR','EX'], min:{UR:3,EX:6}, max:{UR:6,EX:10}},
         {key:'elmAtk', elm:'火', name:'火攻', unit:'%', allowed:['SSR','UR','EX'], min:{SSR:5,UR:10,EX:20}, max:{SSR:10,UR:20,EX:40}},
         {key:'elmAtk', elm:'水', name:'水攻', unit:'%', allowed:['SSR','UR','EX'], min:{SSR:5,UR:10,EX:20}, max:{SSR:10,UR:20,EX:40}},
         {key:'elmAtk', elm:'風', name:'風攻', unit:'%', allowed:['SSR','UR','EX'], min:{SSR:5,UR:10,EX:20}, max:{SSR:10,UR:20,EX:40}},
@@ -162,8 +168,8 @@ const DB = {
         {key:'elmRes', elm:'光', name:'光耐', unit:'%', allowed:['SSR','UR','EX'], min:{SSR:10,UR:20,EX:40}, max:{SSR:20,UR:40,EX:80}},
         {key:'elmRes', elm:'闇', name:'闇耐', unit:'%', allowed:['SSR','UR','EX'], min:{SSR:10,UR:20,EX:40}, max:{SSR:20,UR:40,EX:80}},
         {key:'elmRes', elm:'混沌', name:'混沌耐', unit:'%', allowed:['SSR','UR','EX'], min:{SSR:10,UR:20,EX:40}, max:{SSR:20,UR:40,EX:80}},
-        {key:'attack_Fear', name:'攻撃時怯え', unit:'%', allowed:['R','SR','SSR','UR','EX'], min:{R:1,SR:2,SSR:3,UR:4,EX:5}, max:{R:1,SR:2,SSR:3,UR:4,EX:5}},
-        {key:'attack_Poison', name:'攻撃時毒', unit:'%', allowed:['R','SR','SSR','UR','EX'], min:{R:1,SR:2,SSR:3,UR:4,EX:5}, max:{R:1,SR:2,SSR:3,UR:4,EX:5}},
+        {key:'attack_Fear', name:'攻撃時怯え', unit:'%', allowed:['R','SR','SSR','UR','EX'], min:{R:1,SR:2,SSR:3,UR:5,EX:10}, max:{R:1,SR:2,SSR:5,UR:10,EX:20}},
+        {key:'attack_Poison', name:'攻撃時毒', unit:'%', allowed:['R','SR','SSR','UR','EX'], min:{R:1,SR:2,SSR:3,UR:5,EX:10}, max:{R:1,SR:2,SSR:5,UR:10,EX:20}},
         {key:'resists_Debuff', name:'弱体ガード', unit:'%', allowed:['R','SR','SSR','UR','EX'], min:{R:5,SR:11,SSR:21,UR:31,EX:50}, max:{R:10,SR:20,SSR:30,UR:40,EX:50}},
         {key:'resists_Fear', name:'怯えガード', unit:'%', allowed:['R','SR','SSR','UR','EX'], min:{R:5,SR:11,SSR:21,UR:31,EX:50}, max:{R:10,SR:20,SSR:30,UR:40,EX:50}},
         {key:'resists_Poison', name:'毒ガード', unit:'%', allowed:['R','SR','SSR','UR','EX'], min:{R:5,SR:11,SSR:21,UR:31,EX:50}, max:{R:10,SR:20,SSR:30,UR:40,EX:50}},
@@ -197,7 +203,7 @@ const DB = {
             color:'#ffc',
             req: [ {key:'hp', count:2}, {key:'mp', count:2} ]
         },
-        { key: 'elmAtk', elm: '混沌', count: 4, name: '混沌の刃', effect: 'grantSkill', value: 923, desc: '魔奥義:カラミティエンド習得', color:'#d4d' },
+        { key: 'elmAtk', elm: '混沌', count: 4, name: '深淵の刃', effect: 'grantSkill', value: 923, desc: '魔奥義:カラミティエンド習得', color:'#d4d' },
         { key: 'elmRes', elm: '混沌', count: 4, name: '混沌の壁', effect: 'grantSkill', value: 924, desc: '魔奥義:カラミティウォール習得', color:'#d4d' },
 
 		{ key: 'hp', count: 4, name: '鉄人', effect: 'hpBoost100', desc: '最大HP +100%', color: '#f88' },
@@ -254,7 +260,7 @@ window.generateEnemy = function(floor) {
 
 // 初期データテンプレート
 const INITIAL_DATA_TEMPLATE = {
-    gold: 500, gems: 0,
+    gold: 5000, gems: 9000,
     items: { 1: 5 }, 
     inventory: [], 
     location: { 
@@ -271,10 +277,14 @@ const INITIAL_DATA_TEMPLATE = {
     characters: [
         {
             uid:'p1', isHero:true, charId:301, name:'アルス', job:'勇者', rarity:'N', 
-            level:1, hp:300, mp:50, atk:20, def:15, spd:15, mag:15, limitBreak:0, sp:0,
+            level:1, hp:700, mp:300, atk:150, def:120, spd:120, mag:130, 
+            mdef: 120, hit: 100, eva: 0, cri: 0, // ★新規ステータス追加 
+			limitBreak:0, sp:1,
             tree:{"ATK":0,"MAG":0,"SPD":0,"HP":0,"MP":0, "WARRIOR":0, "MAGE":0, "PRIEST":0, "M_KNIGHT":0}, 
-            equips:{}, alloc:{}, skills:[1]
-        }
+            equips:{}, alloc:{}, skills:[1],
+            traits: [ { id: 30, level: 1 } ], // ★初期特性の付与
+            disabledTraits: [], // 特性ON/OFF管理用
+        }		
     ],
     party: ['p1'],
     book: { monsters: [], killCounts: {} },

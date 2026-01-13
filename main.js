@@ -17,13 +17,22 @@ class Entity {
         this.baseMaxMp = data.mp || 0;
         this.hp = data.currentHp !== undefined ? data.currentHp : this.baseMaxHp;
         this.mp = data.currentMp !== undefined ? data.currentMp : this.baseMaxMp;
-        this.baseStats = { atk:data.atk||0, def:data.def||0, spd:data.spd||0, mag:data.mag||0 };
+        this.baseStats = { atk:data.atk||0, def:data.def||0, spd:data.spd||0, mag:data.mag||0, mdef: data.mdef || 0 };
         this.buffs = { atk:1, def:1, spd:1, mag:1 };
         this.status = {}; 
         this.isDead = this.hp <= 0;
         
         // ★追加: 耐性データの読み込み
         this.resists = data.resists || {};
+		
+		// ★追加: 特性データの保持
+        this.traits = data.traits || [];
+		
+		// 判定用のプロパティ（種族・隊列・フラグ等）
+        this.race = data.race || '不明';
+        this.formation = data.formation || 'front';
+        this.isBoss = data.isBoss || false;
+        this.isEstark = data.isEstark || false;
 
         this.job = data.job || '冒険者';
         this.rarity = data.rarity || 'N';
@@ -34,11 +43,10 @@ class Entity {
         // なければマスタデータ（characters.js）からIDを元に探す
         const master = DB.CHARACTERS.find(c => c.id === (data.charId || data.id));
         this.img = data.img || (master ? master.img : null);
-        //this.img = data.img || null;
 		
         this.limitBreak = data.limitBreak || 0;
-		// ★追加：データから転生回数を読み込む
         this.reincarnationCount = data.reincarnationCount || 0;
+		
         this.exp = data.exp || 0;
 		this.sp = data.sp || 0;
     }
@@ -169,8 +177,25 @@ class Player extends Entity {
                 }
             }
         }
-
-        this.synergy = App.checkSynergy(this.equips);
+		
+		// 4. シナジーの適用とスキル習得
+        // 既存の判定処理を活かしつつ、各部位の装備が既に持っているシナジー効果からスキルを習得する
+        this.synergy = []; 
+        Object.values(this.equips).forEach(eq => {
+            if (eq && eq.isSynergy && eq.synergies) {
+                eq.synergies.forEach(syn => {
+                    // インスタンスにシナジー情報を蓄積
+                    this.synergy.push(syn);
+                    
+                    // ★修正箇所: grantSkill があればその value (スキルID) を習得
+                    if (syn.effect === 'grantSkill' && syn.value) {
+                        this.learnSkill(syn.value);
+                    }
+                });
+            }
+        });
+		
+        //this.synergy = App.checkSynergy(this.equips);
     }
 
     learnSkill(sid) {
@@ -246,6 +271,11 @@ const App = {
             party: ['p1', null, null, null],
             gold: 500,
             gems: 0,
+			// ★追加：鍛冶データの初期値
+            blacksmith: { 
+                level: 1, 
+                exp: 0 
+            },
             dungeon: { 
                 maxFloor: 0, 
                 tryCount: 0, 
@@ -293,6 +323,11 @@ const App = {
             App.data.progress = JSON.parse(JSON.stringify(initial.progress));
         } else {
             if (App.data.progress.storyStep === undefined) App.data.progress.storyStep = 0;
+			// ★追加: subStep の初期化
+			if (App.data.progress.subStep === undefined) App.data.progress.subStep = 0;
+			// ★追加: マップタイルの変更履歴（永続化用）
+			if (!App.data.progress.mapChanges) App.data.progress.mapChanges = {};
+			
             if (!App.data.progress.flags) App.data.progress.flags = {};
             if (!App.data.progress.unlocked) App.data.progress.unlocked = { smith: false, gacha: false };
             if (!App.data.progress.clearedDungeons) App.data.progress.clearedDungeons = [];
@@ -319,8 +354,14 @@ const App = {
             App.data.characters.forEach(c => {
                 if (!c.config) c.config = { fullAuto: false, hiddenSkills: [] };
                 if (c.sp === undefined) c.sp = 0;
+				if (c.exp === undefined) c.exp = 0; // ★この行を追加
                 if (!c.tree) c.tree = {};
             });
+        }
+		
+		// ★追加: 7. blacksmith の補完
+        if (!App.data.blacksmith) {
+            App.data.blacksmith = { level: 1, exp: 0 };
         }
 
         // 修正結果を一度保存
@@ -392,6 +433,10 @@ const App = {
         // シナジー情報の更新
         if (App.data) {
             App.refreshAllSynergies();
+			// ★新規追加: ゲーム開始時に主人公のリミットブレイクを同期
+            if (typeof StoryManager !== 'undefined' && StoryManager.syncHeroLimitBreak) {
+                StoryManager.syncHeroLimitBreak();
+            }
         }
 		
 		// ★最重要修正: 戦闘復帰前にFieldを初期化してマップデータを復元する
@@ -553,22 +598,51 @@ const App = {
 
     /**
      * ストーリー上の仲間を加入させる
+     * ガチャ産キャラクターと同一のデータ構造で初期化する
      */
     addStoryAlly: (charId) => {
         const master = window.CHARACTERS_DATA.find(c => c.id === charId);
         if (!master) return;
         if (App.data.characters.some(c => c.charId === charId)) return;
 
-        const newAlly = JSON.parse(JSON.stringify(master));
-        newAlly.uid = 'u' + Date.now() + Math.floor(Math.random()*1000);
-        newAlly.sp = 0;
-        newAlly.tree = { ATK:0, MAG:0, SPD:0, HP:0, MP:0, WARRIOR:0, MAGE:0, PRIEST:0, M_KNIGHT:0 };
-        // 初期スキルセット (こうげき)
-        if (!newAlly.skills) newAlly.skills = [1];
-        
-        App.data.characters.push(newAlly);
+        // 1. 必要な情報だけを抽出した保存用オブジェクトを作成
+        const saveAlly = {
+            uid: 'u' + Date.now() + Math.floor(Math.random() * 1000),
+            charId: charId,
+            name: master.name, // 名前は表示用に保持
+            job: master.job,
+            rarity: master.rarity,
+            level: 1,
+            exp: 0,
+            sp: master.sp,
+            hp: master.hp,
+            mp: master.mp,
+            atk: master.atk,
+            def: master.def,
+            mag: master.mag,
+            spd: master.spd,
+			mdef: master.mdef,
+            equips: { '武器': null, '盾': null, '頭': null, '体': null, '足': null },
+			// ★1. 特性は一旦空で作成する
+            traits: [], 
+            disabledTraits: [],
+            tree: { ATK: 0, MAG: 0, SPD: 0, HP: 0, MP: 0, WARRIOR: 0, MAGE: 0, PRIEST: 0, M_KNIGHT: 0 },
+            config: { fullAuto: false, hiddenSkills: [] },
+            limitBreak: 0,
+            reincarnationCount: 0
+            // ★ img, archives, lbSkills, resists 等の静的データはここには含めない
+        };
+		
+		// ★2. レベルアップ習得ロジックを呼び出す
+        // newCharはLv1なので、conditions[0] ({lv:1, total:0}) を満たし、
+        // fixedTraits[0]（またはランダム）が1つだけ追加されます。
+        if (typeof PassiveSkill !== 'undefined' && PassiveSkill.applyLevelUpTraits) {
+            PassiveSkill.applyLevelUpTraits(saveAlly);
+        }
+
+        App.data.characters.push(saveAlly);
         App.save();
-        App.log(`【仲間加入】${newAlly.name}がパーティに加わった！`);
+        App.log(`【仲間加入】${saveAlly.name}がパーティに加わった！`);
     },
 	
     
@@ -603,6 +677,7 @@ const App = {
             });
         }
     },
+	
 	
     setAction: (label, callback) => {
         const btn = document.getElementById('action-indicator');
@@ -735,12 +810,20 @@ const App = {
 
     getChar: (uid) => App.data ? App.data.characters.find(c => c.uid === uid) : null,
 
+    /* ==========================================================================
+    main.js - App.calcStats (オーラ系特性反映版)
+    ========================================================================== */
+
     calcStats: (char) => {
         // DBのマスタデータを取得 (基礎ステータス参照用)
-        const base = DB.CHARACTERS.find(c => c.id === char.charId) || char;
+        const base = (window.CHARACTERS_DATA || []).find(c => c.id === char.charId) || char;
         
-        // リミットブレイク回数 (なければ0)
-        const lb = char.limitBreak || 0;
+        // ★修正: リミットブレイク回数の計算
+        // 主人公(ID 301)の場合のみ、storyStep を加算して実効値を算出する
+        let lb = char.limitBreak || 0;
+        if (char.charId === 301 && App.data && App.data.progress) {
+            lb += (App.data.progress.storyStep || 0);
+        }
         
         // レアリティ別加算率の設定
         const LB_RATES = { 
@@ -748,13 +831,20 @@ const App = {
         };
         const lbRate = LB_RATES[base.rarity] !== undefined ? LB_RATES[base.rarity] : 0.10;
 
+        // ステータス初期化 (魔法防御・命中・回避・会心を追加)
         let s = {
             maxHp: char.hp + Math.floor((base.hp || 100) * lbRate * lb * 1.5),
             maxMp: char.mp + Math.floor((base.mp || 50) * lbRate * lb),
             atk: char.atk + Math.floor((base.atk || 10) * lbRate * lb),
             def: char.def + Math.floor((base.def || 10) * lbRate * lb),
+            mdef: (base.mdef || 0) + Math.floor((base.mdef || 10) * lbRate * lb), 
             spd: char.spd + Math.floor((base.spd || 10) * lbRate * lb),
             mag: char.mag + Math.floor((base.mag || 10) * lbRate * lb),
+            
+            // 命中・回避・会心はベースをそのまま使用（装備や特性で後乗せ）
+            hit: char.hit || base.hit || 100,
+            eva: char.eva || base.eva || 0,
+            cri: char.cri || base.cri || 0,
             
             elmAtk: {}, elmRes: {}, magDmg: 0, sklDmg: 0, finDmg: 0, finRed: 0, mpRed: 0, mpCostRate: 1.0,
             
@@ -789,16 +879,20 @@ const App = {
         }
 
         // 2. 装備補正
-        let pctMods = { maxHp:0, maxMp:0, atk:0, def:0, spd:0, mag:0 }; 
+        let pctMods = { maxHp:0, maxMp:0, atk:0, def:0, mdef:0, spd:0, mag:0, hit:0, eva:0, cri:0 }; 
 
         CONST.PARTS.forEach(part => {
             const eq = char.equips ? char.equips[part] : null;
             if(eq) {
-                // 固定値加算
+                // 固定値・マスタ定義の加算
                 if(eq.data.atk) s.atk += eq.data.atk;
                 if(eq.data.def) s.def += eq.data.def;
+                if(eq.data.mdef) s.mdef += eq.data.mdef;
                 if(eq.data.spd) s.spd += eq.data.spd;
                 if(eq.data.mag) s.mag += eq.data.mag;
+                if(eq.data.hit) s.hit += eq.data.hit;
+                if(eq.data.eva) s.eva += eq.data.eva;
+                if(eq.data.cri) s.cri += eq.data.cri;
                 
                 // 装備マスタの基礎効果を合算
                 for (let key in eq.data) {
@@ -815,15 +909,19 @@ const App = {
                 if(eq.data.elmAtk) for(let e in eq.data.elmAtk) s.elmAtk[e] += eq.data.elmAtk[e];
                 if(eq.data.elmRes) for(let e in eq.data.elmRes) s.elmRes[e] += eq.data.elmRes[e];
 
-                // オプション補正
+                // オプション補正 (%)
                 if(eq.opts) eq.opts.forEach(o => {
                     if(o.unit === '%') {
                         if(o.key === 'hp') pctMods.maxHp += o.val;
                         else if(o.key === 'mp') pctMods.maxMp += o.val;
                         else if(o.key === 'atk') pctMods.atk += o.val;
                         else if(o.key === 'def') pctMods.def += o.val;
+                        else if(o.key === 'mdef') pctMods.mdef += o.val;
                         else if(o.key === 'spd') pctMods.spd += o.val;
                         else if(o.key === 'mag') pctMods.mag += o.val;
+                        else if(o.key === 'hit') pctMods.hit += o.val;
+                        else if(o.key === 'eva') pctMods.eva += o.val;
+                        else if(o.key === 'cri') pctMods.cri += o.val;
                         else if(o.key === 'elmAtk') s.elmAtk[o.elm] = (s.elmAtk[o.elm]||0) + o.val;
                         else if(o.key === 'elmRes') s.elmRes[o.elm] = (s.elmRes[o.elm]||0) + o.val;
                         else if(o.key.startsWith('resists_')) {
@@ -843,7 +941,7 @@ const App = {
                     } 
                 });
                 
-                // ★シナジー効果の反映：複数の効果をループで適用するように修正
+                // シナジー効果
                 if (eq.isSynergy && eq.effects) {
                     eq.effects.forEach(effect => {
                         if (effect === 'might') s.finDmg += 30;
@@ -869,18 +967,16 @@ const App = {
             }
         });
 
-        // 3. スキルツリー補正 (拡張版: unlockedTreesとCONST.SKILL_TREESを参照)
+        // 3. スキルツリー補正
         const trees = char.unlockedTrees || char.tree;
         if (trees) {
             for (let treeKey in trees) {
                 const stepCount = trees[treeKey]; 
                 const treeDef = CONST.SKILL_TREES[treeKey];
                 if (!treeDef) continue;
-
                 for (let i = 0; i < stepCount; i++) {
                     const step = treeDef.steps[i];
                     if (!step) continue;
-
                     if (step.stats) {
                         if (step.stats.hpMult) pctMods.maxHp += step.stats.hpMult * 100;
                         if (step.stats.mpMult) pctMods.maxMp += step.stats.mpMult * 100;
@@ -893,7 +989,6 @@ const App = {
                             CONST.ELEMENTS.forEach(e => { s.elmAtk[e] = (s.elmAtk[e] || 0) + step.stats.allElmMult * 100; });
                         }
                     }
-
                     if (step.passive) {
                         if (step.passive === 'finRed10') s.finRed += 10;
                         else if (step.passive === 'hpRegen') s.hpRegen = true;
@@ -903,7 +998,6 @@ const App = {
                         else if (step.passive === 'doubleAction') s.doubleAction = true;
                     }
                 }
-                
                 if (!treeDef.steps[0].stats) {
                     if (treeKey === 'ATK') pctMods.atk += stepCount * 5;
                     if (treeKey === 'MAG') pctMods.mag += stepCount * 5;
@@ -918,50 +1012,154 @@ const App = {
             }
         }
 
+        // 4. 自己特性補正 (PassiveSkill.js を使用)
+        if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
+            pctMods.maxHp += PassiveSkill.getSumValue(char, 'hp_pct');
+            pctMods.maxMp += PassiveSkill.getSumValue(char, 'mp_pct');
+            pctMods.atk   += PassiveSkill.getSumValue(char, 'atk_pct');
+            pctMods.def   += PassiveSkill.getSumValue(char, 'def_pct');
+            pctMods.mdef  += PassiveSkill.getSumValue(char, 'mdef_pct');
+            pctMods.spd   += PassiveSkill.getSumValue(char, 'spd_pct');
+            pctMods.mag   += PassiveSkill.getSumValue(char, 'mag_pct');
+            pctMods.hit   += PassiveSkill.getSumValue(char, 'hit_pct');
+            pctMods.eva   += PassiveSkill.getSumValue(char, 'eva_pct');
+            pctMods.cri   += PassiveSkill.getSumValue(char, 'cri_pct');
+            
+			// ★修正: ここで s.finDmg や s.finRed にタイプ別特性を足さない。
+			// これらはバトル中のダメージ計算の最終フェーズで個別に計算するため。
+            // s.finDmg += PassiveSkill.getSumValue(char, 'physical_dmg_pct');
+            // s.finDmg += PassiveSkill.getSumValue(char, 'magic_dmg_pct');
+            // s.finDmg += PassiveSkill.getSumValue(char, 'breath_dmg_pct');
+            // s.finRed += PassiveSkill.getSumValue(char, 'physical_reduce_pct');
+            // s.finRed += PassiveSkill.getSumValue(char, 'magic_reduce_pct');
+            // s.finRed += PassiveSkill.getSumValue(char, 'breath_reduce_pct');
+        }
+
+        // 集計対象を全所持キャラではなく、パーティメンバー(App.data.party)のみに限定
+        // ★修正: 5. オーラ系特性補正 (他者および自分から受ける影響)
+        if (App.data && App.data.party && typeof PassiveSkill !== 'undefined') {
+            const myPos = char.formation || 'front';
+            
+            App.data.party.forEach(uid => {
+                const other = App.data.characters.find(c => c.uid === uid);
+                if (!other) return; 
+                
+                // 自分自身も対象に含めるため other.uid === char.uid の除外を削除
+                const otherPos = other.formation || 'front';
+                
+                // --- 隊列と特性IDの不整合を防ぐ厳密判定 ---
+                
+                // 37 護衛: 提供者が【前列】かつ、自分が【後列】のときのみ有効
+                if (otherPos === 'front' && myPos === 'back') {
+                    pctMods.def += PassiveSkill.getSumValue(other, 'aura_back_def_pct', 37);
+                }
+                
+                // 38 勇猛: 提供者が【前列】かつ、自分が【前列】のときのみ有効
+                if (otherPos === 'front' && myPos === 'front') {
+                    pctMods.atk += PassiveSkill.getSumValue(other, 'aura_front_atk_pct', 38);
+                }
+                
+                // 39 応援: 提供者が【後列】かつ、自分が【前列】のときのみ有効
+                if (otherPos === 'back' && myPos === 'front') {
+                    pctMods.atk += PassiveSkill.getSumValue(other, 'aura_front_atk_pct', 39);
+                }
+                
+                // 40 司令塔: 提供者が【後列】かつ、自分が【前列】のときのみ有効
+                if (otherPos === 'back' && myPos === 'front') {
+                    pctMods.hit += PassiveSkill.getSumValue(other, 'aura_front_hit_pct', 40);
+                    pctMods.eva += PassiveSkill.getSumValue(other, 'aura_front_eva_pct', 40);
+                }
+            });
+        }
+
         // 最終計算
         s.maxHp = Math.floor(s.maxHp * (1 + pctMods.maxHp / 100));
         s.maxMp = Math.floor(s.maxMp * (1 + pctMods.maxMp / 100));
-        s.atk = Math.floor(s.atk * (1 + pctMods.atk / 100));
-        s.def = Math.floor(s.def * (1 + pctMods.def / 100));
-        s.spd = Math.floor(s.spd * (1 + pctMods.spd / 100));
-        s.mag = Math.floor(s.mag * (1 + pctMods.mag / 100));
+        s.atk   = Math.floor(s.atk   * (1 + pctMods.atk   / 100));
+        s.def   = Math.floor(s.def   * (1 + pctMods.def   / 100));
+        s.mdef  = Math.floor(s.mdef  * (1 + pctMods.mdef  / 100));
+        s.spd   = Math.floor(s.spd   * (1 + pctMods.spd   / 100));
+        s.mag   = Math.floor(s.mag   * (1 + pctMods.mag   / 100));
+        s.hit   = Math.floor(s.hit   * (1 + pctMods.hit   / 100));
+        s.eva   = Math.floor(s.eva   * (1 + pctMods.eva   / 100));
+        s.cri   = Math.floor(s.cri   * (1 + pctMods.cri   / 100));
 
         return s;
     },
-
-	/**
-     * レベルアップ処理 (ご提示のロジックを維持・経験値のみ修正)
+	
+    /**
+     * レベルアップ処理
      */
     gainExp: (charData, expGain) => {
         if (!charData.exp) charData.exp = 0;
         charData.exp += expGain;
         let logs = [];
         
+        // 転生回数による補正倍率の計算
+        const reincMult = 1 + (charData.reincarnationCount || 0);
+        
         // レベル上限100
         while (charData.level < 100) {
+            // App.getNextExp 内で「大器晩成」の exp_need_mult が計算されている前提
             const nextExp = App.getNextExp(charData);
             if (charData.exp >= nextExp) {
                 charData.exp -= nextExp;
                 charData.level++;
                 
                 // DBの基礎値を取得
-                const master = DB.CHARACTERS.find(c => c.id === charData.charId) || charData;
+                const master = (window.CHARACTERS_DATA || []).find(c => c.id === charData.charId) || charData;
 
-                // 成長率: 4% 〜 8% (既存ロジック維持)
+                // 成長率: 4% 〜 8%
                 const minRate = 0.04;
                 const maxRate = 0.08;
                 const r = () => minRate + Math.random() * (maxRate - minRate);
 
-                const incHp = Math.max(1, Math.floor((master.hp || 100) * r() * 2));
-                const incMp = Math.max(1, Math.floor((master.mp || 50) * r()));
-                const incAtk = Math.max(1, Math.floor((master.atk || 10) * r()));
-                const incDef = Math.max(1, Math.floor((master.def || 10) * r()));
-                const incSpd = Math.max(1, Math.floor((master.spd || 10) * r()));
-                const incMag = Math.max(1, Math.floor((master.mag || 10) * r()));
+                // --- 特性による成長補正値の取得 ---
+                let statBonus = 0; // 全ステータス用 (大器晩成)
+                let atkBonus = 0;  // 攻撃力用 (武の極み)
+                let defBonus = 0;  // 防御力用 (武の極み)
+                let magBonus = 0;  // 魔力用 (魔の極み)
+                let mdefBonus = 0; // 魔法防御用 (魔の極み)
 
-                charData.hp += incHp; charData.mp += incMp;
-                charData.atk += incAtk; charData.def += incDef;
-                charData.spd += incSpd; charData.mag += incMag;
+                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
+                    // ID 58 大器晩成: stat_bonus_mult は 0.1(10%) 単位
+                    statBonus = PassiveSkill.getSumValue(charData, 'stat_bonus_mult');
+                    
+                    // ID 59 武の極み: 1(1%) 単位
+                    atkBonus = PassiveSkill.getSumValue(charData, 'atk_growth_bonus') / 100;
+                    defBonus = PassiveSkill.getSumValue(charData, 'def_growth_bonus') / 100;
+                    
+                    // ID 60 魔の極み: 1(1%) 単位
+                    magBonus = PassiveSkill.getSumValue(charData, 'mag_growth_bonus') / 100;
+                    mdefBonus = PassiveSkill.getSumValue(charData, 'mdef_growth_bonus') / 100;
+                }
+
+                // 各倍率の決定 (1.0 + 全体ボーナス + 個別ボーナス)
+                const hpMult   = 1.0 + statBonus;
+                const mpMult   = 1.0 + statBonus;
+                const atkMult  = 1.0 + statBonus + atkBonus;
+                const defMult  = 1.0 + statBonus + defBonus;
+                const magMult  = 1.0 + statBonus + magBonus;
+                const mdefMult = 1.0 + statBonus + mdefBonus;
+                const spdMult  = 1.0 + statBonus;
+
+                // 各ステータス上昇量の計算
+                const incHp   = Math.max(1, Math.floor(((master.hp || 100) * reincMult) * r() * 2 * hpMult));
+                const incMp   = Math.max(1, Math.floor(((master.mp || 50)  * reincMult) * r() * mpMult));
+                const incAtk  = Math.max(1, Math.floor(((master.atk || 10) * reincMult) * r() * atkMult));
+                const incDef  = Math.max(1, Math.floor(((master.def || 10) * reincMult) * r() * defMult));
+                const incMdef = Math.max(1, Math.floor(((master.mdef || 10)* reincMult) * r() * mdefMult));
+                const incSpd  = Math.max(1, Math.floor(((master.spd || 10) * reincMult) * r() * spdMult));
+                const incMag  = Math.max(1, Math.floor(((master.mag || 10) * reincMult) * r() * magMult));
+
+                // ステータス加算
+                charData.hp += incHp;
+                charData.mp += incMp;
+                charData.atk += incAtk;
+                charData.def += incDef;
+                charData.mdef = (charData.mdef || 0) + incMdef;
+                charData.spd += incSpd;
+                charData.mag += incMag;
                 
                 // SP加算
                 if (charData.sp === undefined) charData.sp = 0;
@@ -972,8 +1170,13 @@ const App = {
                 charData.currentHp = stats.maxHp;
                 charData.currentMp = stats.maxMp;
 
-                let logMsg = `${charData.name}はLv${charData.level}になった！<br>HP+${incHp}, 攻+${incAtk}...`;
+                let logMsg = `${charData.name}はLv${charData.level}になった！<br>HP+${incHp}, 攻+${incAtk}, 魔防+${incMdef}...`;
                 
+                // 特性習得チェックの呼び出し
+                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.applyLevelUpTraits) {
+                    PassiveSkill.applyLevelUpTraits(charData);
+                }
+
                 // 既存のスキル習得チェック
                 const newSkill = App.checkNewSkill(charData);
                 if (newSkill) {
@@ -991,118 +1194,144 @@ const App = {
         return logs;
     },
 
-
-	// 装備生成ロジック
-    createEquipByFloor: (source, floor = null, fixedPlus = null) => {
-        const targetFloor = (floor !== null) ? floor : App.getVirtualFloor();
+	/* main.js: App.createEquipByFloor 関数 */
+	createEquipByFloor: (source, floor = null, fixedPlus = null) => {
+		const targetFloor = (floor !== null) ? floor : App.getVirtualFloor();
 		
-        // 1. 参照するRankを決定
-        const targetRank = Math.min(200, floor);
-        
-        // 2. 候補を抽出
-        let candidates = window.EQUIP_MASTER.filter(e => e.rank <= targetRank && e.rank >= Math.max(1, targetRank - 15));
-        if (candidates.length === 0) candidates = window.EQUIP_MASTER.filter(e => e.rank <= targetRank);
-        if (candidates.length === 0) candidates = [window.EQUIP_MASTER[0]];
+		// 1. 参照するRankを決定
+		const targetRank = Math.min(200, targetFloor);
+		
+		// 2. 候補を抽出
+		let candidates = window.EQUIP_MASTER.filter(e => e.rank <= targetRank && e.rank >= Math.max(1, targetRank - 15));
+		if (candidates.length === 0) candidates = window.EQUIP_MASTER.filter(e => e.rank <= targetRank);
+		if (candidates.length === 0) candidates = [window.EQUIP_MASTER[0]];
 
-        const base = candidates[Math.floor(Math.random() * candidates.length)];
-        
-        // 3. プラス値の決定
-        let plus = 0;
-        if (fixedPlus !== null) {
-            plus = fixedPlus;
-        } else {
-            const r = Math.random();
-            if (r < CONST.PLUS_RATES[3]) plus = 3;
-            else if (r < CONST.PLUS_RATES[3] + CONST.PLUS_RATES[2]) plus = 2;
-            else if (r < CONST.PLUS_RATES[3] + CONST.PLUS_RATES[2] + CONST.PLUS_RATES[1]) plus = 1;
-            if (source === 'init') plus = 0;
-        }
-        
-        // 4. ベース作成
-        const eq = { 
-            id: Date.now() + Math.random().toString(36).substring(2), 
-            rank: base.rank, 
-            name: base.name, 
-            type: base.type, 
-            baseName: base.baseName,
-            val: base.rank * 150 * (1 + plus * 0.5), 
-            data: JSON.parse(JSON.stringify(base.data)), 
-            opts: [], 
-            plus: plus,
-            possibleOpts: base.possibleOpts || []
-        };
+		const base = candidates[Math.floor(Math.random() * candidates.length)];
+		
+		// 3. プラス値の決定
+		let plus = 0;
+		if (fixedPlus !== null) {
+			plus = fixedPlus;
+		} else {
+			const r = Math.random();
+			if (r < CONST.PLUS_RATES[3]) plus = 3;
+			else if (r < CONST.PLUS_RATES[3] + CONST.PLUS_RATES[2]) plus = 2;
+			else if (r < CONST.PLUS_RATES[3] + CONST.PLUS_RATES[2] + CONST.PLUS_RATES[1]) plus = 1;
+			if (source === 'init') plus = 0;
+		}
+		
+		// 4. ベース作成
+		const eq = { 
+			id: Date.now() + Math.random().toString(36).substring(2), 
+			rank: base.rank, 
+			name: base.name, 
+			type: base.type, 
+			baseName: base.baseName,
+			val: base.rank * 150 * (1 + plus * 0.5), 
+			data: JSON.parse(JSON.stringify(base.data)), 
+			opts: [], 
+			plus: plus,
+			possibleOpts: base.possibleOpts || [],
+			traits: [] // 特性格納用
+		};
 
-        // 5. 201階以降の「真・装備」化
-        if (floor > 200) {
-            eq.name = "真・" + base.name;
-            const scale = (floor * 1.5) / base.rank;
-            
-            for (let key in eq.data) {
-                if (typeof eq.data[key] === 'number') {
-                    eq.data[key] = Math.floor(eq.data[key] * scale);
-                } else if (typeof eq.data[key] === 'object' && eq.data[key] !== null) {
-                    for (let subKey in eq.data[key]) {
-                        eq.data[key][subKey] = Math.floor(eq.data[key][subKey] * scale);
-                    }
-                }
-            }
-            eq.val = Math.floor(eq.val * scale);
-        }
+		// ★追加: 基礎ステータスの倍率適用 (+1:x1.1, +2:x1.3, +3:x1.5)
+		const plusMults = { 0: 1.0, 1: 1.1, 2: 1.3, 3: 1.5 };
+		const mult = plusMults[plus] || 1.0;
+		
+		if (mult > 1.0) {
+			for (let key in eq.data) {
+				if (typeof eq.data[key] === 'number') {
+					eq.data[key] = Math.floor(eq.data[key] * mult);
+				} else if (typeof eq.data[key] === 'object' && eq.data[key] !== null) {
+					// elmRes や elmAtk などのオブジェクト内数値も対象
+					for (let subKey in eq.data[key]) {
+						if (typeof eq.data[key][subKey] === 'number') {
+							eq.data[key][subKey] = Math.floor(eq.data[key][subKey] * mult);
+						}
+					}
+				}
+			}
+		}
 
-        // 6. オプション付与
-        if (plus > 0) {
-            const BASE_OPTS_MAP = {
-                '剣': ['atk', 'finDmg', 'elmAtk'],
-                '斧': ['atk', 'finDmg', 'elmAtk', 'attack_Fear'],
-                '短剣': ['atk', 'mag', 'finDmg', 'elmAtk', 'attack_Poison'],
-                '杖': ['mag', 'finDmg', 'elmAtk'],
-                '盾': ['def', 'finRed', 'elmRes', 'resists_Debuff', 'resists_InstantDeath'],
-                '腕輪': ['atk', 'mag', 'spd', 'def', 'finDmg', 'elmAtk', 'resists_Debuff', 'resists_InstantDeath'],
-                '兜': ['hp', 'mp', 'def', 'finRed', 'elmRes', 'resists_Fear', 'resists_SkillSeal'],
-                '帽子': ['hp', 'mp', 'mag', 'elmRes', 'resists_SpellSeal', 'resists_HealSeal'],
-                '鎧': ['hp', 'mp', 'def', 'finRed', 'elmRes', 'resists_Poison', 'resists_SkillSeal'],
-                'ローブ': ['hp', 'mp', 'def', 'mag', 'elmAtk', 'elmRes', 'resists_SpellSeal', 'resists_HealSeal'],
-                'ブーツ': ['spd', 'def', 'finRed', 'elmRes', 'resists_Shock'],
-                'くつ': ['spd', 'finDmg', 'elmAtk', 'resists_Shock']
-            };
-            let baseDefaults = BASE_OPTS_MAP[eq.baseName] || [];
-            let masterOpts = base.possibleOpts || [];
-            let allowedKeys = [...new Set([...baseDefaults, ...masterOpts])];
+		// 5. 201階以降の「真・装備」化
+		if (targetFloor > 200) {
+			eq.name = "真・" + base.name;
+			const scale = (targetFloor * 1.5) / base.rank;
+			
+			for (let key in eq.data) {
+				if (typeof eq.data[key] === 'number') {
+					eq.data[key] = Math.floor(eq.data[key] * scale);
+				} else if (typeof eq.data[key] === 'object' && eq.data[key] !== null) {
+					for (let subKey in eq.data[key]) {
+						eq.data[key][subKey] = Math.floor(eq.data[key][subKey] * scale);
+					}
+				}
+			}
+			eq.val = Math.floor(eq.val * scale);
+		}
 
-            for(let i=0; i<plus; i++) {
-                let optCandidates = DB.OPT_RULES.filter(rule => allowedKeys.includes(rule.key));
-                if (optCandidates.length === 0) optCandidates = DB.OPT_RULES;
-                const rule = optCandidates[Math.floor(Math.random() * optCandidates.length)];
-                let rarity = 'N';
-                const tierRatio = Math.min(1, floor / 200);
-                const rarRnd = Math.random() + (tierRatio * 0.15);
-                if(rarRnd > 0.98 && rule.allowed.includes('EX')) rarity='EX';
-                else if(rarRnd > 0.90 && rule.allowed.includes('UR')) rarity='UR';
-                else if(rarRnd > 0.75 && rule.allowed.includes('SSR')) rarity='SSR';
-                else if(rarRnd > 0.55 && rule.allowed.includes('SR')) rarity='SR';
-                else if(rarRnd > 0.30 && rule.allowed.includes('R')) rarity='R';
-                else rarity = rule.allowed[0];
-                const min = rule.min[rarity]||1, max = rule.max[rarity]||10;
-                eq.opts.push({
-                    key: rule.key, elm: rule.elm, label: rule.name, 
-                    val: Math.floor(Math.random()*(max-min+1))+min, unit: rule.unit, rarity: rarity
-                });
-            }
-            eq.name += `+${plus}`;
-        }
+		// 6. オプション付与
+		if (plus > 0) {
+			const BASE_OPTS_MAP = {
+				'剣': ['atk', 'hit', 'cri', 'finDmg', 'elmAtk'],
+				'斧': ['atk', 'finDmg', 'elmAtk', 'attack_Fear'],
+				'槍': ['atk', 'hit', 'finDmg'],
+				'短剣': ['atk', 'mag', 'eva', 'cri', 'finDmg', 'elmAtk', 'attack_Poison'],
+				'弓': ['atk', 'hit', 'cri', 'finDmg'],
+				'杖': ['mag', 'finDmg', 'elmAtk'],
+				'盾': ['def', 'mdef', 'eva', 'finRed', 'elmRes', 'resists_Debuff'],
+				'腕輪': ['atk', 'mag', 'spd', 'def', 'mdef', 'hit', 'eva', 'cri', 'finDmg'],
+				'兜': ['hp', 'mp', 'def', 'mdef', 'resists_Fear', 'resists_SkillSeal'],
+				'帽子': ['hp', 'mp', 'mag', 'mdef', 'elmRes', 'resists_SpellSeal'],
+				'鎧': ['hp', 'mp', 'def', 'mdef', 'finRed', 'resists_Poison'],
+				'ローブ': ['hp', 'mp', 'def', 'mdef', 'mag', 'elmAtk', 'elmRes', 'resists_SpellSeal'],
+				'ブーツ': ['spd', 'def', 'mdef', 'eva', 'resists_Shock'],
+				'くつ': ['spd', 'hit', 'eva', 'finDmg', 'resists_Shock']
+			};
+			let baseDefaults = BASE_OPTS_MAP[eq.baseName] || [];
+			let masterOpts = base.possibleOpts || [];
+			let allowedKeys = [...new Set([...baseDefaults, ...masterOpts])];
 
-        // 7. ★修正: +3以上（+4等も含む）をシナジー判定の対象にする
-        if (plus >= 3) {
-            const syns = App.checkSynergy(eq); // 配列を受け取る
-            if (syns && syns.length > 0) {
-                eq.isSynergy = true;
-                eq.effects = syns.map(s => s.effect); // 全ての効果IDを配列に格納
-                eq.synergies = syns; // シナジーオブジェクト自体も保持
-            }
-        }
-        return eq;
-    },
-	
+			for(let i=0; i<plus; i++) {
+				let optCandidates = DB.OPT_RULES.filter(rule => allowedKeys.includes(rule.key));
+				if (optCandidates.length === 0) optCandidates = DB.OPT_RULES;
+				const rule = optCandidates[Math.floor(Math.random() * optCandidates.length)];
+				let rarity = 'N';
+				const tierRatio = Math.min(1, targetFloor / 200);
+				const rarRnd = Math.random() + (tierRatio * 0.15);
+				if(rarRnd > 0.98 && rule.allowed.includes('EX')) rarity='EX';
+				else if(rarRnd > 0.90 && rule.allowed.includes('UR')) rarity='UR';
+				else if(rarRnd > 0.75 && rule.allowed.includes('SSR')) rarity='SSR';
+				else if(rarRnd > 0.55 && rule.allowed.includes('SR')) rarity='SR';
+				else if(rarRnd > 0.30 && rule.allowed.includes('R')) rarity='R';
+				else rarity = rule.allowed[0];
+				const min = rule.min[rarity]||1, max = rule.max[rarity]||10;
+				eq.opts.push({
+					key: rule.key, elm: rule.elm, label: rule.name, 
+					val: Math.floor(Math.random()*(max-min+1))+min, unit: rule.unit, rarity: rarity
+				});
+			}
+			eq.name += `+${plus}`;
+		}
+
+		// 7. 特性およびシナジーの判定
+		if (plus >= 3) {
+			// ★新規追加: +3装備に特性を付与 (0〜2個、Lv 1〜3)
+			if (typeof PassiveSkill !== 'undefined' && PassiveSkill.generateEquipmentTraits) {
+				eq.traits = PassiveSkill.generateEquipmentTraits();
+			}
+
+			const syns = App.checkSynergy(eq);
+			if (syns && syns.length > 0) {
+				eq.isSynergy = true;
+				eq.effects = syns.map(s => s.effect);
+				eq.synergies = syns;
+			}
+		}
+		return eq;
+	},
+
     // 互換性維持のためのラッパー（既存の他ファイルからの参照用）
     createRandomEquip: (source, rank = 1, fixedPlus = null) => {
         return App.createEquipByFloor(source, rank, fixedPlus);
@@ -1165,11 +1394,17 @@ const App = {
 		// ★追加：転生マークの生成
         const reincarnated = c.reincarnationCount ? `<span style="color:#00ff00; margin-left:4px;">★${c.reincarnationCount}</span>` : '';
 		
+		// ★修正: 主人公(ID 301)の場合のみ storyStep を加算して表示
+        let lbVal = c.limitBreak || 0;
+        if (c.charId === 301 && App.data && App.data.progress) {
+            lbVal += (App.data.progress.storyStep || 0);
+        }
+		
         return `
             <div class="char-row">
                 <div class="char-thumb">${imgTag}</div>
                 <div class="char-info">
-                    <div class="char-name">${c.name} <span class="rarity-${c.rarity}">[${c.rarity}]</span> +${c.limitBreak||0}</div>
+                    <div class="char-name">${c.name} <span class="rarity-${c.rarity}">[${c.rarity}]</span> +${lbVal}</div>
                     <div class="char-meta">${c.job} Lv.${c.level}</div>
                     <div class="char-stats">
                         <span style="color:#f88;">HP:${hp}/${s.maxHp}</span>
@@ -1180,29 +1415,156 @@ const App = {
             </div>`;
     },
 
-    //getNextExp: (char) => {
-    //    if (char.level >= CONST.MAX_LEVEL) return Infinity;
-    //    const base = CONST.EXP_BASE * Math.pow(CONST.EXP_GROWTH, char.level - 1);
-    //    const rarityMult = CONST.RARITY_EXP_MULT[char.rarity] || 1.0;
-    //    return Math.floor(base * rarityMult);
-    //},
-	
+	/**
+	 * 次のレベルまでに必要な経験値を返す
+	 *
+	 * 設計方針：
+	 * - Lv1〜10   ：超軽い（チュートリアル帯）
+	 * - Lv11〜49  ：ゆるやかに重くなる（50スキル前の育成）
+	 * - Lv50      ：壁（強スキル解放）
+	 * - Lv51〜99  ：じわじわ重い（転生前のやり込み）
+	 * - Lv100     ：大きな壁（転生条件）
+	 * - Lv101〜   ：転生帯（後で調整前提）
+	 *
+	 * ※ 転生時は「表示Lv1に戻る」が、
+	 *    内部的には effectiveLevel = level + 転生回数*100 で扱う
+	 */
 	getNextExp: (charData) => {
-        const rCount = charData.reincarnationCount || 0;
-        
-        // 指示1：実効レベル = 現在レベル + (転生回数 * 100)
-        const effectiveLevel = charData.level + (rCount * 100);
 
-        // 指示2：成長率をdatabase.jsから参照し、転生者(r>=1)は -0.03 する
-        let growth = CONST.EXP_GROWTH || 1.08;
-        if (rCount >= 1) growth -= 0.03; // 例：1.08 -> 1.05
+		/* =====================================================
+		 * 基本情報
+		 * ===================================================== */
 
-        const baseExp = CONST.EXP_BASE || 100;
-        const rarityMult = (CONST.RARITY_EXP_MULT && CONST.RARITY_EXP_MULT[charData.rarity]) || 1.0;
+		// 基本となる経験値（Lv1→2 が 100 になる）
+		const BASE_EXP = CONST.EXP_BASE || 100;
 
-        // 指数関数による計算 (実効レベルを使用)
-        return Math.floor(baseExp * Math.pow(growth, effectiveLevel - 1) * rarityMult);
-    },
+		// 現在レベル（表示レベル）
+		const level = charData.level || 1;
+
+		// 転生回数
+		const reincCount = charData.reincarnationCount || 0;
+
+		// 実質レベル（転生を考慮した内部レベル）
+		// 例：転生1回・表示Lv1 => eL=101
+		const eL = level + reincCount * 100;
+
+		// レアリティ倍率（N/R=1.0, SR=1.4, SSR=1.6, UR=2.0, EX=2.5）
+		// ※ CONST 側にマップが無い場合は 1.0 扱い
+		const rarityMult =
+			(CONST.RARITY_EXP_MULT && CONST.RARITY_EXP_MULT[charData.rarity]) || 1.0;
+
+
+		/* =====================================================
+		 * 調整用パラメータ（ここを触れば体感が変わる）
+		 * ===================================================== */
+
+		// --- 序盤（1〜10）：超軽い ---
+		// 小さいほど序盤がさらに軽くなる（1.00〜1.15くらいが調整しやすい）
+		const P_EARLY = 1.05;
+
+		// --- 11〜49：49直前をどう重くするか（ターゲット） ---
+		// eL=49 の必要経験値（49→50の直前）
+		const TARGET_49 = 35000;
+
+		// --- 壁の強さ（段差はキツくてOK方針） ---
+		// 49→50 の壁倍率（例：1.8なら 49の1.8倍）
+		const WALL_50 = 1.8;
+
+		// 99→100 の壁倍率（転生条件の壁）
+		const WALL_100 = 2.0;
+
+		// --- 50〜99：転生前の成長（ターゲット） ---
+		// eL=99 の必要経験値（99→100の直前）
+		const TARGET_99 = 200000;
+
+		// 50以降の成長指数（大きいほど99付近が重くなる）
+		const P_AFTER_50 = 1.3;
+
+		// --- 101+（転生帯）：仮置き（後で調整前提） ---
+		const P_REINC = 1.5;
+
+		// 101の増加分（100の何％を足し幅の基準にするか）
+		const REINC_STEP_RATE = 0.05; // 5%
+
+
+		/* =====================================================
+		 * 事前計算（境界の値を作る）
+		 * ===================================================== */
+
+		// --- eL=10 ---
+		const xp10 = BASE_EXP * Math.pow(10, P_EARLY);
+
+		// --- eL=11〜49 を2次関数で作る ---
+		// xp10 + B*(49-10)^2 = TARGET_49 となる B を逆算
+		const B = (TARGET_49 - xp10) / Math.pow(49 - 10, 2);
+
+		const xp49 = xp10 + B * Math.pow(49 - 10, 2); // ≒ TARGET_49
+
+		// --- eL=50 は壁 ---
+		const xp50 = xp49 * WALL_50;
+
+		// --- eL=51〜99 をべき乗カーブで作る ---
+		// xp50 + S*(99-50)^P_AFTER_50 = TARGET_99 となる S を逆算
+		const S = (TARGET_99 - xp50) / Math.pow(99 - 50, P_AFTER_50);
+
+		const xp99 = xp50 + S * Math.pow(99 - 50, P_AFTER_50); // ≒ TARGET_99
+
+		// --- eL=100 は壁 ---
+		const xp100 = xp99 * WALL_100;
+
+
+		/* =====================================================
+		 * 実際の必要経験値の計算
+		 * ===================================================== */
+
+		let needExp;
+
+		if (eL <= 10) {
+			// 1〜10：超軽い
+			needExp = BASE_EXP * Math.pow(eL, P_EARLY);
+
+		} else if (eL <= 49) {
+			// 11〜49：徐々に重く
+			needExp = xp10 + B * Math.pow(eL - 10, 2);
+
+		} else if (eL === 50) {
+			// 50：壁（強スキル）
+			needExp = xp50;
+
+		} else if (eL <= 99) {
+			// 51〜99：転生前のやり込み
+			needExp = xp50 + S * Math.pow(eL - 50, P_AFTER_50);
+
+		} else if (eL === 100) {
+			// 100：壁（転生条件）
+			needExp = xp100;
+
+		} else {
+			// 101+：転生帯（仮）
+			// 100を超えた後も伸びるが、指数ほど破綻しない想定
+			const step101 = xp100 * REINC_STEP_RATE;
+			needExp = xp100 + step101 * Math.pow(eL - 100, P_REINC);
+		}
+
+		/* =====================================================
+		 * 特性補正：「58 大器晩成」の反映
+		 * ===================================================== */
+		// 特性による必要経験値の増加率を取得（スキルLv * 10%）
+		if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
+			// 修正後のキー 'exp_need_mult' を指定して合計値を取得
+			const expAddPct = PassiveSkill.getSumValue(charData, 'exp_need_mult');
+			if (expAddPct > 0) {
+				// 例: スキルLv1(10%)なら、必要経験値を1.1倍にする
+				needExp = needExp * (1 + expAddPct / 100); 
+			}
+}
+
+		/* =====================================================
+		 * 最終出力
+		 * ===================================================== */
+		// レアリティ倍率を反映して切り上げ
+		return Math.ceil(needExp * rarityMult);
+	},
 
     checkNewSkill: (charData) => {
         const table = JOB_SKILLS[charData.job];
@@ -1395,10 +1757,16 @@ const Field = {
         Field.step = (Field.step === 1) ? 2 : 1;
         let nx = Field.x + dx, ny = Field.y + dy;
         App.clearAction();
+		
+		// ★修正点: エラー回避のため、現在のエリアキーを取得しておく
+        const areaKey = Field.getCurrentAreaKey();
 
         if (Field.currentMapData) {
             if (nx < 0 || nx >= Field.currentMapData.width || ny < 0 || ny >= Field.currentMapData.height) return;
-            let tile = Field.currentMapData.tiles[ny][nx].toUpperCase();
+            
+			//let tile = Field.currentMapData.tiles[ny][nx].toUpperCase();
+			// ★修正: 書き換えられたタイルがあればそれを優先、なければ元のタイルを参照
+			let tile = (App.data.progress.mapChanges?.[areaKey]?.[`${nx},${ny}`] || Field.currentMapData.tiles[ny][nx]).toUpperCase();
 
             // ★追加: 固定宝箱/ボスの判定を移動前に行う (撃破・取得済みなら通り抜け可能にする)
             if (Field.currentMapData.isFixed) {
@@ -1437,18 +1805,53 @@ const Field = {
                 else if (tile === 'K') { App.log("カジノの看板だ。"); App.setAction("カジノに入る", () => App.changeScene('casino')); }
                 else if (tile === 'E') { App.log("交換所のようだ。"); App.setAction("メダル交換", () => App.changeScene('medal')); }
                 else if (tile === 'D' && App.data.location.area === 'START_VILLAGE') {
-                    App.log("「試練の洞窟」の入口だ。");
+                    App.log("洞窟の入口だ");
                     App.setAction("洞窟に入る", () => Dungeon.startFixed('START_CAVE'));
-                } else if (tile === 'V' || tile === 'T' || tile === 'H') {
-                    if (typeof StoryManager !== 'undefined') {
-                        const trigger = StoryManager.triggers.find(t => t.area === App.data.location.area && t.x === nx && t.y === ny && t.step === App.data.progress.storyStep);
-                        if (trigger) App.setAction("話す", () => StoryManager.executeEvent(trigger.eventId));
-                        else App.log("誰かいるようだ。");
+				}
+            }
+			
+			
+			// ★修正点: 判定ロジックを1つに統合し、ReferenceErrorを防止
+            if (tile === 'V' || tile === 'H' || tile === 'B') {
+                if (typeof StoryManager !== 'undefined') {
+                    // 判定用の現在値を数値として取得
+                    const currentStep = Number(App.data.progress.storyStep);
+                    const currentSub = Number(App.data.progress.subStep || 0);
+
+                    // トリガーを検索 (stepMin/Max, subMin/Max に完全対応)
+                    const trigger = StoryManager.triggers.find(t => {
+                        const areaMatch = t.area === App.data.location.area;
+                        const posMatch = Number(t.x) === Number(nx) && Number(t.y) === Number(ny);
+                        
+                        // ★修正: (t.stepMax || 999) をやめて厳密に undefined チェックを行う
+                        const stepMatch = (t.step !== undefined) 
+                            ? (Number(t.step) === currentStep)
+                            : (currentStep >= (t.stepMin !== undefined ? t.stepMin : 0) && 
+                               currentStep <= (t.stepMax !== undefined ? t.stepMax : 999));
+                        
+                        const subMatch = (t.sub !== undefined)
+                            ? (Number(t.sub) === currentSub)
+                            : (currentSub >= (t.subMin !== undefined ? t.subMin : 0) && 
+                               currentSub <= (t.subMax !== undefined ? t.subMax : 999));
+
+                        return areaMatch && posMatch && stepMatch && subMatch;
+                    });
+
+                    if (trigger) {
+                        // 条件に合うイベントが見つかれば「話す」または「調べる」アクションをセット
+                        const actionLabel = (tile === 'B') ? "戦う" : "話す";
+                        App.setAction(actionLabel, () => StoryManager.executeEvent(trigger.eventId));
+                    } else {
+                        // 座標は合っているが、Step/Sub条件が満たされていない場合
+                        App.log("誰かいるようだ。");
                     }
                 }
             }
+
+			
             if (Field.currentMapData.isDungeon) Dungeon.handleMove(nx, ny);
             App.save(); Field.render();
+			
         } else {
             const mapW = MAP_DATA[0].length, mapH = MAP_DATA.length;
             nx = (nx + mapW) % mapW; ny = (ny + mapH) % mapH;
@@ -1477,9 +1880,60 @@ const Field = {
                 App.setAction("魔窟に入る", () => { App.data.location.area = 'ABYSS'; Dungeon.enter(); });
             }
             else {
+                // --- エンカウント判定ロジック ---
                 let rate = 0.03; if (App.data.walkCount > 15) rate = 0.06;
-                if(Math.random() < rate) { App.data.walkCount = 0; App.log("敵だ！"); setTimeout(()=>App.changeScene('battle'), 300); }
+                
+                let ambushPrevention = 0; // ID 41: 警戒 (敵の不意打ちを防ぐ)
+                let preemptiveBonus = 0;  // ID 42: 忍び足 (こちらの先制率を上げる)
+                
+                if (typeof PassiveSkill !== 'undefined') {
+                    // ★修正: 集計対象を編成メンバーのみに限定
+                    App.data.party.forEach(uid => {
+                        const c = App.data.characters.find(char => char.uid === uid);
+                        if (c) {
+                            // 習得済み特性(ON/OFF考慮)および装備品の特性を合算
+                            ambushPrevention += PassiveSkill.getSumValue(c, 'ambush_prevent_pct');
+                            preemptiveBonus += PassiveSkill.getSumValue(c, 'ambush_chance_pct');
+                        }
+                    });
+                }
+                
+                // ★修正: 「忍び足」がエンカウント率（rate）を下げていた処理を削除
+                // エンカウント率自体は 0.03 / 0.06 のまま進行します
+
+                if(Math.random() < rate) { 
+                    App.data.walkCount = 0; 
+                    App.log("敵だ！"); 
+                    
+                    let isAmbushed = (Math.random() < 0.10); // 基礎10%で敵の不意打ち
+                    let isPreemptive = (Math.random() < 0.10); // 基礎10%でこちらの先制攻撃
+
+                    // 1) 警戒特性 (ID 41) による不意打ち防止判定
+                    if (isAmbushed && Math.random() * 100 < ambushPrevention) {
+                        isAmbushed = false;
+                        App.log("<span style='color:#88f;'>「警戒」により不意打ちを防いだ！</span>");
+                    }
+
+                    // 2) 忍び足特性 (ID 42) による先制確率上昇判定
+                    // まだ先制になっていない場合、特性の合計値(%)の確率で先制に書き換える
+                    if (!isAmbushed && !isPreemptive && Math.random() * 100 < preemptiveBonus) {
+                        isPreemptive = true;
+                        App.log("<span style='color:#8f8;'>「忍び足」により先制攻撃のチャンス！</span>");
+                    }
+                    
+                    // 両方同時に起きないように最終調整
+                    if (isAmbushed) isPreemptive = false;
+
+                    // バトルデータにフラグをセット
+                    App.data.battle = { 
+                        isAmbushed: isAmbushed, 
+                        isPreemptive: isPreemptive 
+                    };
+                    
+                    setTimeout(() => App.changeScene('battle'), 500); 
+                }
             }
+			
             if(App.data.walkCount === undefined) App.data.walkCount = 0;
             App.data.walkCount++; App.save(); Field.render();
         }
@@ -1493,6 +1947,9 @@ const Field = {
         const mapW = Field.currentMapData ? Field.currentMapData.width : (typeof MAP_DATA !== 'undefined' ? MAP_DATA[0].length : 50);
         const mapH = Field.currentMapData ? Field.currentMapData.height : (typeof MAP_DATA !== 'undefined' ? MAP_DATA.length : 32);
         const g = (typeof GRAPHICS !== 'undefined' && GRAPHICS.images) ? GRAPHICS.images : {};
+		
+		// ★修正点: エラー回避のため、現在のエリアキーを取得しておく
+        const areaKey = Field.getCurrentAreaKey();
 
         for (let dy = -rangeY; dy <= rangeY; dy++) {
             for (let dx = -rangeX; dx <= rangeX; dx++) {
@@ -1500,7 +1957,12 @@ const Field = {
                 let tx = Field.x + dx, ty = Field.y + dy, tile = 'W';
                 if (Field.currentMapData) { 
                     if (tx >= 0 && tx < mapW && ty >= 0 && ty < mapH) {
-                        tile = Field.currentMapData.tiles[ty][tx];
+						// ★修正点: エラーが出た行。定義した areaKey を使用し、動的なマップ変更を反映
+                        const posKey = `${tx},${ty}`;
+                        const changedTile = App.data.progress.mapChanges?.[areaKey]?.[posKey];
+						
+                        // ★修正: mapChanges を参照
+						tile = App.data.progress.mapChanges?.[areaKey]?.[`${tx},${ty}`] || Field.currentMapData.tiles[ty][tx];
                         const ak = Field.getCurrentAreaKey(); const pk = `${tx},${ty}`;
                         if (Field.currentMapData.isFixed) {
                             if ((tile === 'C' || tile === 'R') && App.data.progress.openedChests?.[ak]?.includes(pk)) tile = 'G';
@@ -1540,9 +2002,14 @@ const Field = {
                 let mtx = Field.x + mdx; let mty = Field.y + mdy; let mtile = 'W';
                 if (Field.currentMapData) { 
                     if(mtx>=0 && mtx<mapW && mty>=0 && mty<mapH) {
-                        mtile = Field.currentMapData.tiles[mty][mtx]; 
-                        const ak = Field.getCurrentAreaKey(); const pk = `${mtx},${mty}`;
-                        if (App.data.progress.openedChests?.[ak]?.includes(pk)) mtile = 'G';
+                        //mtile = Field.currentMapData.tiles[mty][mtx]; 
+                        const ak = Field.getCurrentAreaKey(); 
+						const pk = `${mtx},${mty}`;
+                        
+						// ★修正: ミニマップでも書き換え後のタイル(mapChanges)を最優先で参照する
+                        mtile = App.data.progress.mapChanges?.[areaKey]?.[pk] || Field.currentMapData.tiles[mty][mtx];
+						
+						if (App.data.progress.openedChests?.[ak]?.includes(pk)) mtile = 'G';
                         if (App.data.progress.defeatedBosses?.[ak]?.includes(pk)) mtile = 'G';
                     }
                 } else { mtile = MAP_DATA[((mty%mapH)+mapH)%mapH][((mtx%mapW)+mapW)%mapW]; }

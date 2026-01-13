@@ -119,10 +119,35 @@ const Gacha = {
                 result.limitBreak = owned.limitBreak;
             } else {
                 const newChar = { 
-                    uid: 'c' + Date.now() + i, charId: result.id, name: result.name, job: result.job, 
-                    rarity: result.rarity, hp: result.hp, mp: result.mp, atk: result.atk, def: result.def, 
-                    spd: result.spd, mag: result.mag, level: 1, limitBreak: 0, equips: {}, sp: result.sp || 0, img: result.img || null
+                    uid: 'c' + Date.now() + i, 
+					charId: result.id, 
+					name: result.name, 
+					job: result.job, 
+                    rarity: result.rarity, 
+					hp: result.hp, 
+					mp: result.mp, 
+					atk: result.atk, 
+					def: result.def, 
+                    spd: result.spd, 
+					mag: result.mag, 
+					mdef: result.mdef,
+					level: 1, 
+					limitBreak: 0, 
+					equips: {}, 
+					// ★1. 特性は一旦空で作成する
+                    traits: [], 
+                    disabledTraits: [],
+					sp: result.sp || 1, 
+					//img: result.img || null
                 };
+				
+				// ★2. レベルアップ習得ロジックを呼び出す
+                // newCharはLv1なので、conditions[0] ({lv:1, total:0}) を満たし、
+                // fixedTraits[0]（またはランダム）が1つだけ追加されます。
+                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.applyLevelUpTraits) {
+                    PassiveSkill.applyLevelUpTraits(newChar);
+                }
+				
                 App.data.characters.push(newChar);
                 result.isNew = true; result.limitBreak = 0;
             }

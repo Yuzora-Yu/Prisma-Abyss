@@ -7,6 +7,8 @@ window.SKILLS_DATA = [
         "target": "単体",
         "mp": 0,
         "rate": 1,
+        "hitRate": 100,    // ★追加: 命中率
+        "critRate": 0,      // ★追加: スキル固有会心率
         "count": 1,
         "base": 0,
         "desc": "通常攻撃"
@@ -281,7 +283,7 @@ window.SKILLS_DATA = [
         "mp": 20,
         "rate": 0,
         "count": 1,
-        "base": 22,
+        "base": 1,
         "desc": "メタルに固定ダメージ",
         "fix": true
     },
@@ -2371,6 +2373,9 @@ window.SKILLS_DATA = [
         "target": "単体",
         "mp": 900,
         "rate": 4,
+        "hitRate": 200,    // ★追加: 命中率
+        "isPerfect": true, // ★追加: 必中フラグ
+        "critRate": 100,    // ★追加: 会心が出やすい
         "count": 1,
         "base": 500,
         "desc": "全てを断ち切る大魔王の右腕",

@@ -5,14 +5,14 @@ window.MONSTERS_DATA = [
         "rank": 1,
         "minF": 1,
         "name": "ドラキー Lv1",
-        "hp": 374,
-        "mp": 420,
+        "hp": 120,
+        "mp": 80,
         "atk": 125,
         "def": 84,
-        "spd": 182,
+        "spd": 132,
         "mag": 140,
         "gold": 21,
-        "exp": 16,
+        "exp": 18,
         "acts": [
             {
                 "id": 1,
@@ -21,11 +21,6 @@ window.MONSTERS_DATA = [
             },
             {
                 "id": 14,
-                "rate": 33,
-                "condition": 0
-            },
-            {
-                "id": 2,
                 "rate": 33,
                 "condition": 0
             }
@@ -40,12 +35,12 @@ window.MONSTERS_DATA = [
         "rank": 1,
         "minF": 1,
         "name": "スライム Lv1",
-        "hp": 449,
-        "mp": 280,
-        "atk": 112,
-        "def": 112,
+        "hp": 100,
+        "mp": 0,
+        "atk": 142,
+        "def": 70,
         "spd": 112,
-        "mag": 70,
+        "mag": 50,
         "gold": 14,
         "exp": 14,
         "acts": [
@@ -63,13 +58,13 @@ window.MONSTERS_DATA = [
         "rank": 1,
         "minF": 1,
         "name": "ホイミスライム Lv1",
-        "hp": 419,
-        "mp": 110,
-        "atk": 84,
+        "hp": 150,
+        "mp": 200,
+        "atk": 120,
         "def": 98,
-        "spd": 140,
+        "spd": 40,
         "mag": 168,
-        "gold": 28,
+        "gold": 34,
         "exp": 28,
         "acts": [
             1,
@@ -86,18 +81,17 @@ window.MONSTERS_DATA = [
         "rank": 2,
         "minF": 2,
         "name": "スライム Lv2",
-        "hp": 607,
-        "mp": 360,
-        "atk": 144,
-        "def": 144,
-        "spd": 144,
+        "hp": 207,
+        "mp": 60,
+        "atk": 174,
+        "def": 104,
+        "spd": 124,
         "mag": 90,
         "gold": 18,
-        "exp": 18,
+        "exp": 24,
         "acts": [
             1,
-            10,
-            2
+            10
         ],
         "actCount": 1,
         "drop": null
@@ -107,18 +101,17 @@ window.MONSTERS_DATA = [
         "rank": 2,
         "minF": 2,
         "name": "ドラキー Lv2",
-        "hp": 506,
-        "mp": 540,
+        "hp": 256,
+        "mp": 340,
         "atk": 162,
         "def": 108,
         "spd": 234,
-        "mag": 180,
+        "mag": 200,
         "gold": 27,
-        "exp": 21,
+        "exp": 29,
         "acts": [
             1,
-            14,
-            2
+            14
         ],
         "actCount": 1,
         "drop": null
@@ -128,18 +121,17 @@ window.MONSTERS_DATA = [
         "rank": 2,
         "minF": 2,
         "name": "ホイミスライム Lv2",
-        "hp": 566,
-        "mp": 120,
+        "hp": 266,
+        "mp": 320,
         "atk": 108,
         "def": 126,
         "spd": 180,
         "mag": 216,
         "gold": 36,
-        "exp": 36,
+        "exp": 46,
         "acts": [
             1,
-            20,
-            2
+            20
         ],
         "actCount": 1,
         "drop": null
@@ -149,8 +141,8 @@ window.MONSTERS_DATA = [
         "rank": 3,
         "minF": 3,
         "name": "ドラキー Lv3",
-        "hp": 643,
-        "mp": 660,
+        "hp": 343,
+        "mp": 560,
         "atk": 198,
         "def": 132,
         "spd": 286,
@@ -159,8 +151,7 @@ window.MONSTERS_DATA = [
         "exp": 26,
         "acts": [
             1,
-            14,
-            2
+            14
         ],
         "actCount": 1,
         "drop": null
@@ -170,18 +161,17 @@ window.MONSTERS_DATA = [
         "rank": 3,
         "minF": 3,
         "name": "スライム Lv3",
-        "hp": 772,
-        "mp": 440,
+        "hp": 372,
+        "mp": 140,
         "atk": 176,
         "def": 176,
         "spd": 176,
         "mag": 110,
         "gold": 22,
-        "exp": 22,
+        "exp": 32,
         "acts": [
             1,
-            10,
-            2
+            10
         ],
         "actCount": 1,
         "drop": null
@@ -191,18 +181,17 @@ window.MONSTERS_DATA = [
         "rank": 4,
         "minF": 4,
         "name": "ドラキー Lv4",
-        "hp": 786,
-        "mp": 780,
+        "hp": 486,
+        "mp": 580,
         "atk": 234,
         "def": 156,
         "spd": 338,
-        "mag": 260,
+        "mag": 280,
         "gold": 39,
-        "exp": 31,
+        "exp": 51,
         "acts": [
             1,
-            14,
-            2
+            14
         ],
         "actCount": 1,
         "drop": null
@@ -212,9 +201,9 @@ window.MONSTERS_DATA = [
         "rank": 4,
         "minF": 4,
         "name": "スライム Lv4",
-        "hp": 944,
-        "mp": 520,
-        "atk": 208,
+        "hp": 444,
+        "mp": 220,
+        "atk": 228,
         "def": 208,
         "spd": 208,
         "mag": 130,
@@ -222,8 +211,7 @@ window.MONSTERS_DATA = [
         "exp": 26,
         "acts": [
             1,
-            10,
-            2
+            10
         ],
         "actCount": 1,
         "drop": null
@@ -233,8 +221,8 @@ window.MONSTERS_DATA = [
         "rank": 4,
         "minF": 4,
         "name": "ホイミスライム Lv4",
-        "hp": 881,
-        "mp": 140,
+        "hp": 481,
+        "mp": 440,
         "atk": 156,
         "def": 182,
         "spd": 260,
@@ -243,8 +231,7 @@ window.MONSTERS_DATA = [
         "exp": 52,
         "acts": [
             1,
-            20,
-            2
+            20
         ],
         "actCount": 1,
         "drop": null
@@ -17917,6 +17904,64 @@ window.MONSTERS_DATA = [
         },
         "actCount": 2
     },
+	{
+        "id": 1000,
+        "rank": 10,
+        "minF": 1,
+        "name": "バトルレックス",
+        "hp": 2000,
+        "mp": 500,
+        "atk": 420,
+        "def": 250,
+        "spd": 130,
+        "mag": 100,
+		"mdef": 100,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "竜",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 1000,
+        "gold": 500,
+        "acts": [
+            {
+                "id": 1,
+                "rate": 17,
+                "condition": 0
+            },
+            {
+                "id": 40,
+                "rate": 17,
+                "condition": 0
+            },
+            {
+                "id": 44,
+                "rate": 17,
+                "condition": 0
+            },
+            {
+                "id": 601,
+                "rate": 17,
+                "condition": 0
+            },
+            {
+                "id": 41,
+                "rate": 16,
+                "condition": 0
+            }
+        ],
+        "actCount": 1,
+        "elmRes": {},
+        "resists": {
+            "InstantDeath": 99
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
+    },
     {
         "id": 1010,
         "rank": 10,
@@ -17928,6 +17973,13 @@ window.MONSTERS_DATA = [
         "def": 350,
         "spd": 150,
         "mag": 150,
+		"mdef": 150,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "竜",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 1000,
         "gold": 500,
         "acts": [
@@ -17966,7 +18018,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 99
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1020,
@@ -17979,6 +18036,13 @@ window.MONSTERS_DATA = [
         "def": 520,
         "spd": 580,
         "mag": 850,
+		"mdef": 800,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 2000,
         "gold": 1000,
         "acts": [
@@ -18022,7 +18086,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 99
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1030,
@@ -18035,6 +18104,13 @@ window.MONSTERS_DATA = [
         "def": 900,
         "spd": 850,
         "mag": 800,
+		"mdef": 700,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 4000,
         "gold": 2000,
         "acts": [
@@ -18083,7 +18159,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 99
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1040,
@@ -18096,6 +18177,13 @@ window.MONSTERS_DATA = [
         "def": 2550,
         "spd": 1050,
         "mag": 2300,
+		"mdef": 2000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "獣人",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 6000,
         "gold": 3000,
         "acts": [
@@ -18134,7 +18222,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 99
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1050,
@@ -18147,6 +18240,13 @@ window.MONSTERS_DATA = [
         "def": 4300,
         "spd": 1500,
         "mag": 3100,
+		"mdef": 3000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "獣人",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 10000,
         "gold": 5000,
         "acts": [
@@ -18190,7 +18290,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 99
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1060,
@@ -18203,6 +18308,13 @@ window.MONSTERS_DATA = [
         "def": 4750,
         "spd": 2740,
         "mag": 6500,
+		"mdef": 5000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 15000,
         "gold": 8000,
         "acts": [
@@ -18251,7 +18363,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 99
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1070,
@@ -18264,6 +18381,13 @@ window.MONSTERS_DATA = [
         "def": 5400,
         "spd": 2950,
         "mag": 7600,
+		"mdef": 7000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 20000,
         "gold": 10000,
         "acts": [
@@ -18302,7 +18426,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 99
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1080,
@@ -18315,6 +18444,13 @@ window.MONSTERS_DATA = [
         "def": 2000,
         "spd": 1150,
         "mag": 1450,
+		"mdef": 2000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 10000,
         "gold": 4500,
         "acts": [
@@ -18348,7 +18484,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 50
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1081,
@@ -18361,6 +18502,13 @@ window.MONSTERS_DATA = [
         "def": 5300,
         "spd": 3500,
         "mag": 6700,
+		"mdef": 6000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "獣人",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 10000,
         "gold": 4500,
         "acts": [
@@ -18404,7 +18552,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 90
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1082,
@@ -18417,6 +18570,13 @@ window.MONSTERS_DATA = [
         "def": 6000,
         "spd": 2450,
         "mag": 6500,
+		"mdef": 5000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 10000,
         "gold": 5000,
         "acts": [
@@ -18465,7 +18625,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 50
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1090,
@@ -18478,6 +18643,13 @@ window.MONSTERS_DATA = [
         "def": 6700,
         "spd": 3500,
         "mag": 8800,
+		"mdef": 7000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 41600,
         "gold": 20000,
         "acts": [
@@ -18526,7 +18698,12 @@ window.MONSTERS_DATA = [
         "elmRes": {},
         "resists": {
             "InstantDeath": 100
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1100,
@@ -18539,7 +18716,14 @@ window.MONSTERS_DATA = [
         "def": 9999,
         "spd": 3800,
         "mag": 9999,
-        "exp": 100000,
+		"mdef": 9999,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 90000,
         "gold": 41600,
         "acts": [
             {
@@ -18600,7 +18784,12 @@ window.MONSTERS_DATA = [
             "Seal": 100,
             "Debuff": 0,
             "InstantDeath": 100
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1110,
@@ -18613,7 +18802,14 @@ window.MONSTERS_DATA = [
         "def": 13500,
         "spd": 4200,
         "mag": 13500,
-        "exp": 200000,
+		"mdef": 13500,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "竜",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 100000,
         "gold": 100000,
         "acts": [
             {
@@ -18684,7 +18880,12 @@ window.MONSTERS_DATA = [
             "Seal": 100,
             "Debuff": 0,
             "InstantDeath": 100
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1120,
@@ -18697,8 +18898,15 @@ window.MONSTERS_DATA = [
         "def": 9500,
         "spd": 5200,
         "mag": 18000,
-        "exp": 300000,
-        "gold": 141600,
+		"mdef": 15000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 90000,
+        "gold": 81600,
         "acts": [
             {
                 "id": 406,
@@ -18758,7 +18966,12 @@ window.MONSTERS_DATA = [
             "Seal": 100,
             "Debuff": 0,
             "InstantDeath": 100
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1130,
@@ -18771,8 +18984,15 @@ window.MONSTERS_DATA = [
         "def": 14000,
         "spd": 5000,
         "mag": 16000,
-        "exp": 400000,
-        "gold": 200000,
+		"mdef": 15000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "竜",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 100000,
+        "gold": 100000,
         "acts": [
             {
                 "id": 610,
@@ -18828,7 +19048,12 @@ window.MONSTERS_DATA = [
             "Seal": 100,
             "Debuff": 0,
             "InstantDeath": 100
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1140,
@@ -18841,8 +19066,15 @@ window.MONSTERS_DATA = [
         "def": 15000,
         "spd": 5500,
         "mag": 20000,
-        "exp": 416000,
-        "gold": 241600,
+		"mdef": 18000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "竜",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 216000,
+        "gold": 141600,
         "acts": [
             {
                 "id": 3,
@@ -18912,7 +19144,12 @@ window.MONSTERS_DATA = [
             "Seal": 100,
             "Debuff": 0,
             "InstantDeath": 100
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1150,
@@ -18925,7 +19162,14 @@ window.MONSTERS_DATA = [
         "def": 12000,
         "spd": 4000,
         "mag": 14000,
-        "exp": 200000,
+		"mdef": 15000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "獣人",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 100000,
         "gold": 100000,
         "acts": [
             {
@@ -18970,7 +19214,12 @@ window.MONSTERS_DATA = [
             "水": 50,
             "光": 0,
             "雷": -40
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1151,
@@ -18983,7 +19232,14 @@ window.MONSTERS_DATA = [
         "def": 11000,
         "spd": 6000,
         "mag": 15000,
-        "exp": 200000,
+		"mdef": 15000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "獣人",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 100000,
         "gold": 100000,
         "acts": [
             {
@@ -19029,7 +19285,12 @@ window.MONSTERS_DATA = [
             "光": 25,
             "水": -10,
             "闇": -20
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1152,
@@ -19042,7 +19303,14 @@ window.MONSTERS_DATA = [
         "def": 13000,
         "spd": 3500,
         "mag": 18000,
-        "exp": 200000,
+		"mdef": 20000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 100000,
         "gold": 100000,
         "acts": [
             {
@@ -19092,7 +19360,12 @@ window.MONSTERS_DATA = [
             "雷": -10,
             "混沌": 40,
             "光": -10
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1153,
@@ -19105,7 +19378,14 @@ window.MONSTERS_DATA = [
         "def": 15000,
         "spd": 5000,
         "mag": 9000,
-        "exp": 200000,
+		"mdef": 12000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 100000,
         "gold": 100000,
         "acts": [
             {
@@ -19146,7 +19426,12 @@ window.MONSTERS_DATA = [
             "闇": 20,
             "混沌": 20,
             "風": 50
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1160,
@@ -19156,9 +19441,16 @@ window.MONSTERS_DATA = [
         "hp": 550000,
         "mp": 99999,
         "atk": 27000,
-        "def": 13000,
+        "def": 17000,
         "spd": 6000,
         "mag": 5000,
+		"mdef": 17000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 0,
         "gold": 0,
         "acts": [
@@ -19200,7 +19492,12 @@ window.MONSTERS_DATA = [
             "InstantDeath": 95,
             "Fear": 100
         },
-        "elmRes": {}
+        "elmRes": {},
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1161,
@@ -19213,8 +19510,15 @@ window.MONSTERS_DATA = [
         "def": 20000,
         "spd": 5000,
         "mag": 25000,
-        "exp": 800000,
-        "gold": 400000,
+		"mdef": 25000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 180000,
+        "gold": 140000,
         "acts": [
             {
                 "id": 500,
@@ -19284,7 +19588,12 @@ window.MONSTERS_DATA = [
             "Seal": 100,
             "Debuff": 50,
             "InstantDeath": 100
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1162,
@@ -19293,10 +19602,17 @@ window.MONSTERS_DATA = [
         "name": "ひだりて",
         "hp": 400000,
         "mp": 99999,
-        "atk": 10000,
+        "atk": 20000,
         "def": 15000,
         "spd": 4000,
         "mag": 27000,
+		"mdef": 15000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
         "exp": 0,
         "gold": 0,
         "acts": [
@@ -19343,7 +19659,12 @@ window.MONSTERS_DATA = [
             "InstantDeath": 95,
             "Seal": 100
         },
-        "elmRes": {}
+        "elmRes": {},
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1170,
@@ -19356,8 +19677,15 @@ window.MONSTERS_DATA = [
         "def": 25000,
         "spd": 7000,
         "mag": 30000,
-        "exp": 1000000,
-        "gold": 416000,
+		"mdef": 30000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "竜",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 100000,
+        "gold": 141600,
         "acts": [
             {
                 "id": 3,
@@ -19437,7 +19765,12 @@ window.MONSTERS_DATA = [
             "Seal": 100,
             "Debuff": 50,
             "InstantDeath": 100
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1180,
@@ -19450,8 +19783,15 @@ window.MONSTERS_DATA = [
         "def": 28000,
         "spd": 8000,
         "mag": 20000,
-        "exp": 1416000,
-        "gold": 741600,
+		"mdef": 20000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 141000,
+        "gold": 74160,
         "acts": [
             {
                 "id": 119,
@@ -19508,7 +19848,12 @@ window.MONSTERS_DATA = [
             "Seal": 100,
             "Debuff": 75,
             "InstantDeath": 100
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1190,
@@ -19521,8 +19866,15 @@ window.MONSTERS_DATA = [
         "def": 35000,
         "spd": 9999,
         "mag": 35000,
-        "exp": 2000000,
-        "gold": 1000000,
+		"mdef": 35000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "竜",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 200000,
+        "gold": 200000,
         "acts": [
             {
                 "id": 3,
@@ -19602,7 +19954,12 @@ window.MONSTERS_DATA = [
             "Seal": 100,
             "Debuff": 90,
             "InstantDeath": 100
-        }
+        },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
+        "isRare": false
     },
     {
         "id": 1200,
@@ -19615,8 +19972,15 @@ window.MONSTERS_DATA = [
         "def": 45000,
         "spd": 12000,
         "mag": 55000,
-        "exp": 9999999,
-        "gold": 9999999,
+		"mdef": 45000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": false,          // ★新規: エスタークフラグ
+        "exp": 999999,
+        "gold": 999999,
         "acts": [
             {
                 "id": 923,
@@ -19677,6 +20041,10 @@ window.MONSTERS_DATA = [
             "Debuff": 90,
             "InstantDeath": 100
         },
+		"traits": [
+        { "id": 52,  "level": 5 }, 
+        { "id": 53, "level": 5 }
+		],
         "isRare": false
     },
     {
@@ -19690,7 +20058,15 @@ window.MONSTERS_DATA = [
         "def": 50000,
         "spd": 15000,
         "mag": 60000,
-        "exp": 9999999,
+		"mdef": 45000,             // ★新規: 魔法防御
+		"hit": 150,                // ★新規: 命中率 (%)
+		"eva": 20,                 // ★新規: 回避率 (%)
+		"cri": 15,                 // ★新規: クリティカル率 (%)
+		"race": "魔族",             // ★新規: 種族（特性「悪魔ばらい」などの対象）
+		"isBoss": true,            // ★新規: ボスフラグ
+		"isEstark": true,          // ★新規: エスタークフラグ
+        "isRare": true,
+		"exp": 9999999,
         "gold": 9999999,
         "acts": [
             {
@@ -19767,6 +20143,19 @@ window.MONSTERS_DATA = [
             "Debuff": 90,
             "InstantDeath": 200
         },
-        "isRare": true
+		"traits": [
+        { "id": 52,  "level": 10 }, 
+        { "id": 19, "level": 10 },
+        { "id": 23, "level": 10 }
+		],
+		/**
+		 * ★新規: ドロップアイテム設定
+		 * 設定がない場合は、既存の floor 依存ランダムドロップを呼び出すよう
+		 * 今後のバトルリザルト処理で判定を行います。
+		 */
+		"drops": {
+			"normal": { "id": 106, "rate": 50 }, // スキルのたね (50%)
+			"rare": { "id": 107, "rate": 10 }       // 転生の実 (10%)
+		}
     }
 ];

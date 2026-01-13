@@ -29,12 +29,13 @@ const Battle = {
         Poison: 'Poison', ToxicPoison: 'Poison',
         Shock: 'Shock',
         Fear: 'Fear',
-        SpellSeal: 'SpellSeal', // ★修正: 個別の封印耐性を参照するように変更
+        SpellSeal: 'SpellSeal', 
         SkillSeal: 'SkillSeal', 
         HealSeal: 'HealSeal',
-        PercentDamage: 'InstantDeath', // 即死ガードで割合ダメも防ぐ
+        PercentDamage: 'InstantDeath', // 指示通り即死ガードで割合ダメも防ぐ
         InstantDeath: 'InstantDeath',
-        Debuff: 'Debuff'
+        Debuff: 'Debuff',
+        elmResDown: 'Debuff'          // 全属性耐性低下も弱体耐性を参照
     },
 
     getEl: (id) => document.getElementById(id),
@@ -157,31 +158,68 @@ const Battle = {
         } else {
             // 新規エンカウント
             if (isEstark) {
+                //const base = DB.MONSTERS.find(m => m.id === 2000);
+                //const scale = 1.0 + ((App.data.estarkKillCount || 0) * 0.05);
+                //const m = new Monster(base, scale); m.id = 2000; m.isEstark = true;
+                //Battle.enemies = [m];
+				
+				// エスターク（ID: 2000）の特別スケーリングロジック
                 const base = DB.MONSTERS.find(m => m.id === 2000);
-                const scale = 1.0 + ((App.data.estarkKillCount || 0) * 0.05);
-                const m = new Monster(base, scale); m.id = 2000; m.isEstark = true;
+                
+                // ★修正: 図鑑の討伐回数を参照するように変更
+                const kills = (App.data.book && App.data.book.killCounts) ? (App.data.book.killCounts[2000] || 0) : 0;
+                
+                // ★計算式: (100 + 討伐回数 * 5) % 
+                // 0回討伐なら 1.0(100%)、1回討伐なら 1.05(105%) ...
+                const scale = 1.0 + (kills * 0.05);
+                
+                const m = new Monster(base, scale); 
+                m.id = 2000; 
+                m.isEstark = true;
                 Battle.enemies = [m];
             } else {
                 Battle.enemies = Battle.generateNewEnemies(isBoss, fixedId);
             }
             Battle.enemies.forEach(e => Battle.initBattleStatus(e));
             
-            // ★修正: 生成された敵データと共に eventId も保存する
+            // 生成された敵データと共に eventId も保存
+            // ★不意打ち・先制フラグを App.data.battle から Battle オブジェクトへ継承
+            Battle.isAmbushed = App.data.battle?.isAmbushed || false;
+            Battle.isPreemptive = App.data.battle?.isPreemptive || false;
+
             App.data.battle = { 
                 active: true, 
                 isBossBattle: isBoss, 
                 isEstark: isEstark, 
                 fixedBossId: fixedId, 
                 eventId: eventId, 
+                isAmbushed: Battle.isAmbushed, // フラグ維持用
+                isPreemptive: Battle.isPreemptive,
                 enemies: Battle.enemies.map(e => ({ baseId: e.id, hp: e.hp, maxHp: e.baseMaxHp, name: e.name, battleStatus: e.battleStatus })) 
             };
             App.save();
         }
 
+        // ★追加: 戦闘開始時の特殊状況ログ表示
+        if (Battle.isAmbushed) {
+            Battle.log(`<span style="color:#ff4444; font-weight:bold;">まものの むれに ふいうちを うけた！</span>`);
+        } else if (Battle.isPreemptive) {
+            Battle.log(`<span style="color:#44ff44; font-weight:bold;">まものの むれを さきに みつけた！</span>`);
+        }
+
         Battle.renderEnemies(); Battle.renderPartyStatus();
         const scene = document.getElementById('battle-scene');
         if(scene) scene.onclick = () => { if (Battle.phase === 'result') Battle.endBattle(false); };
-        Battle.startInputPhase();
+
+        // ★修正: 不意打ちの場合は入力フェーズを飛ばして即ターン実行へ
+        // それ以外（通常・先制攻撃）は入力を受け付ける
+        if (Battle.isAmbushed) {
+            setTimeout(() => {
+                if (Battle.active) Battle.executeTurn();
+            }, 1000);
+        } else {
+            Battle.startInputPhase();
+        }
     },
 	
     getPassives: (actor) => {
@@ -218,16 +256,30 @@ const Battle = {
     // ★修正: ステータス取得時にシナジー補正を適用
     getBattleStat: (actor, key) => {
         let val = (actor[key] !== undefined) ? actor[key] : 0;
-        if (val === 0 && typeof actor.getStat === 'function') val = actor.getStat(key);
-        if (key === 'maxHp') val = actor.baseMaxHp;
-        if (key === 'maxMp') val = actor.baseMaxMp;
+        
+        // ★修正点: オブジェクト（resistsやelmRes）が空の場合、または数値が0の場合に getStat を呼び出す
+        // これにより、装備やシナジーによる耐性補正が val に格納されます
+        const isEmptyObject = (typeof val === 'object' && val !== null && Object.keys(val).length === 0);
+        if ((val === 0 || isEmptyObject) && typeof actor.getStat === 'function') {
+            val = actor.getStat(key);
+        }
 
-        // ★修正: 耐性取得時、バフ(加算)とデバフ(減算)を計算
+        // ★修正点: maxHp / maxMp も計算済みステータス (getStat) を参照するように変更
+        // これにより、限界突破や装備によるHP/MP上昇が戦闘に反映されます
+        if (key === 'maxHp' || key === 'maxMp') {
+            if (typeof actor.getStat === 'function') {
+                val = actor.getStat(key);
+            } else {
+                val = (key === 'maxHp') ? actor.baseMaxHp : actor.baseMaxMp;
+            }
+        }
+
+        // ★修正: 耐性取得時、戦闘中のバフ・デバフ（resists_XXX）を合算する
         if (key === 'resists') {
-            const base = actor.resists || val || {};
+            // val には既に装備込みの耐性が取得されているため、それをベースにする
+            const base = val || {};
             const res = { ...base }; 
 
-            // バフ (加算)
             if (actor.battleStatus && actor.battleStatus.buffs) {
                 for (let bKey in actor.battleStatus.buffs) {
                     if (bKey.startsWith('resists_')) {
@@ -237,12 +289,10 @@ const Battle = {
                 }
             }
 
-            // ★追加: デバフ (減算)
             if (actor.battleStatus && actor.battleStatus.debuffs) {
                 for (let dKey in actor.battleStatus.debuffs) {
                     if (dKey.startsWith('resists_')) {
                         const ailment = dKey.replace('resists_', '');
-                        // デバフ値(例:30)を引く
                         res[ailment] = (res[ailment] || 0) - actor.battleStatus.debuffs[dKey].val;
                     }
                 }
@@ -259,47 +309,107 @@ const Battle = {
     },
 	
 	/**
-     * 新規モンスターの生成 (出現数増加・レア複数・深層スケーリング修正版)
+     * 新規モンスターの生成 (特性・新ステータス・ドロップ・フラグ対応版)
      **/
-    /* battle.js 内の generateNewEnemies 関数 全文（省略なし） */
-
     generateNewEnemies: (isBoss, fixedBossId = null) => {
         const newEnemies = [];
         const floor = App.data.progress.floor || 1; 
         const count = isBoss ? (1 + Math.floor(Math.random() * 3)) : (1 + Math.floor(Math.random() * 4));
 
+        // 内部ヘルパー: インスタンス化されたモンスターにマスタ値と特性補正を適用する
         const setupEnemyStats = (m, base) => {
+            // 基本ステータス
             m.atk = m.baseStats?.atk || base.atk || m.atk;
             m.def = m.baseStats?.def || base.def || m.def;
             m.spd = m.baseStats?.spd || base.spd || m.spd;
             m.mag = m.baseStats?.mag || base.mag || m.mag;
+            
+            // ★追加: 新ステータス
+            m.mdef = base.mdef || 0;
+            m.hit = base.hit || 100;
+            m.eva = base.eva || 0;
+            m.cri = base.cri || 0;
+
+            // ★追加: フラグ・属性・ドロップ・種族・特性
+            m.isBoss = base.isBoss || isBoss || false;
+            m.isEstark = base.isEstark || false;
+            m.race = base.race || '不明';
+            m.drops = JSON.parse(JSON.stringify(base.drops || null));
+            m.traits = JSON.parse(JSON.stringify(base.traits || []));
+
             m.elmAtk = JSON.parse(JSON.stringify(base.elmAtk || {}));
             m.elmRes = JSON.parse(JSON.stringify(base.elmRes || {}));
-            m.finDmg = 0; m.finRed = 0;
+            m.finDmg = 0; 
+            m.finRed = 0;
+
+            // ★追加: 特性(PassiveSkill)による最終ステータス補正の適用
+            if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
+                const atkPct  = PassiveSkill.getSumValue(m, 'atk_pct');
+                const defPct  = PassiveSkill.getSumValue(m, 'def_pct');
+                const magPct  = PassiveSkill.getSumValue(m, 'mag_pct');
+                const mdefPct = PassiveSkill.getSumValue(m, 'mdef_pct');
+                const spdPct  = PassiveSkill.getSumValue(m, 'spd_pct');
+
+                if (atkPct !== 0)  m.atk  = Math.floor(m.atk  * (1 + atkPct / 100));
+                if (defPct !== 0)  m.def  = Math.floor(m.def  * (1 + defPct / 100));
+                if (magPct !== 0)  m.mag  = Math.floor(m.mag  * (1 + magPct / 100));
+                if (mdefPct !== 0) m.mdef = Math.floor(m.mdef * (1 + mdefPct / 100));
+                if (spdPct !== 0)  m.spd  = Math.floor(m.spd  * (1 + spdPct / 100));
+
+                m.hit += PassiveSkill.getSumValue(m, 'hit_pct');
+                m.eva += PassiveSkill.getSumValue(m, 'eva_pct');
+                m.cri += PassiveSkill.getSumValue(m, 'cri_pct');
+            }
+
             return m;
         };
 
-        // --- A. ボス戦のロジック ---
-        if (isBoss) {
-            Battle.log("強大な魔物が現れた！");
-            
-            // StoryManagerでセットされた固定ボスIDがあれば最優先
-            const targetId = fixedBossId || (App.data.battle ? App.data.battle.fixedBossId : null);
+        // --- 1. 固定ボスのチェック (Story/Fixed Dungeon) ---
+        const targetId = fixedBossId || (App.data.battle ? App.data.battle.fixedBossId : null);
+        if (isBoss && targetId) {
+            const base = DB.MONSTERS.find(m => m.id === targetId);
+            if (base) {
+                const m = new Monster(base, 1.0);
+                m.name = base.name; m.id = base.id; m.actCount = base.actCount || 1;
+                newEnemies.push(setupEnemyStats(m, base));
+                return newEnemies; 
+            }
+        }
 
-            if (targetId) {
-                const base = DB.MONSTERS.find(m => m.id === targetId);
-                if (base) {
-                    const m = new Monster(base, 1.0);
-                    m.name = base.name; m.id = base.id; m.actCount = base.actCount || 1;
-                    newEnemies.push(setupEnemyStats(m, base));
-                    return newEnemies; 
+        // --- 2. 201階以降: 自動スケーリング・エンカウントシステム ---
+        if (floor >= 201) {
+            if (isBoss) {
+                Battle.log(`<span style="color:#ff0000; font-size:1em; font-weight:bold;">深淵の守護者が現れた！！</span>`);
+                const candidates = DB.MONSTERS.filter(m => 
+                    m.id >= 1000 && m.id <= 1200 && m.id !== 1160 && m.id !== 1162
+                );
+                for(let i=0; i<count; i++) {
+                    const base = candidates[Math.floor(Math.random() * candidates.length)];
+                    if(!base) continue;
+                    const m = Battle.createDeepFloorMonster(base, floor, true);
+                    if (count > 1) m.name += String.fromCharCode(65+i);
+                    newEnemies.push(m);
+                }
+            } else {
+                Battle.log("強力な魔物の気配がする…！");
+                const candidates = DB.MONSTERS.filter(m => m.id >= 101 && m.id <= 999);
+                for(let i=0; i<count; i++) {
+                    const base = candidates[Math.floor(Math.random() * candidates.length)];
+                    if(!base) continue;
+                    const m = Battle.createDeepFloorMonster(base, floor, false);
+                    if (count > 1) m.name += String.fromCharCode(65+i);
+                    newEnemies.push(m);
                 }
             }
+            return newEnemies;
+        }
 
-            // ランダムボス（アビス等の階層指定）
+        // --- 3. 通常のボス戦 (200階以下) ---
+        if (isBoss) {
+            Battle.log("強大な魔物が現れた！");
             const bosses = DB.MONSTERS.filter(m => m.minF === floor && m.id >= 1000);
             if (bosses.length > 0) {
-                bosses.forEach(base => {
+                bosses.forEach((base, i) => {
                     const m = new Monster(base, 1.0);
                     m.name = base.name; m.id = base.id; m.actCount = base.actCount || 1;
                     newEnemies.push(setupEnemyStats(m, base));
@@ -311,42 +421,24 @@ const Battle = {
             return newEnemies;
         }
 
-        // --- B. 201階以降の特殊スケーリング ---
-        if (floor >= 201) {
-            Battle.log("強力な魔物の気配がする…！");
-            const candidates = DB.MONSTERS.filter(m => m.id >= 101 && m.id <= 999);
-            for(let i=0; i<count; i++) {
-                const base = candidates[Math.floor(Math.random() * candidates.length)];
-                if(!base) continue;
-                const m = Battle.createDeepFloorMonster(base, floor, false);
-                if (count > 1) m.name += String.fromCharCode(65+i);
-                newEnemies.push(m);
-            }
-            return newEnemies;
-        }
-
         // --- C. 通常エンカウントのロジック ---
         Battle.log("魔物が現れた！");
         for(let i=0; i<count; i++) {
             let monsterData = null;
             
-            // 1. レアモンスター抽選 (既存)
             if (Math.random() < 0.05) { 
                 const rares = DB.MONSTERS.filter(m => m.isRare && m.minF <= floor && floor <= (m.rank * 2));
                 if (rares.length > 0) monsterData = rares[Math.floor(Math.random() * rares.length)];
             }
 
             if (!monsterData) {
-                // 2. ★修正: 固定マップ（固定ダンジョン含む）の指定モンスター ID
                 if (Field.currentMapData && Field.currentMapData.isFixed && Field.currentMapData.monsters) {
                     const ids = Field.currentMapData.monsters;
                     const mid = ids[Math.floor(Math.random() * ids.length)];
                     monsterData = DB.MONSTERS.find(m => m.id === mid);
                 }
-                // 3. ★修正: フィールド（ワールドマップ）のストーリー進行度連動ランク
                 else if (!Field.currentMapData) {
                     const step = App.data.progress.storyStep || 0;
-                    // 例: step 0(ランク1-5), step 1(ランク3-8), step 2(ランク5-11)...
                     const minRank = Math.max(1, step * 2 + 1);
                     const maxRank = step * 3 + 5;
                     const candidates = DB.MONSTERS.filter(m => m.id < 1000 && !m.isRare && m.rank >= minRank && m.rank <= maxRank);
@@ -354,13 +446,11 @@ const Battle = {
                         monsterData = candidates[Math.floor(Math.random() * candidates.length)];
                     }
                 }
-                // 4. その他（ランダムダンジョン等）は階層から生成
                 else if (window.generateEnemy) {
                     monsterData = window.generateEnemy(floor);
                 }
             }
 
-            // モンスターのインスタンス化
             if (monsterData) {
                 const m = new Monster(monsterData, 1.0);
                 if (count > 1) m.name += String.fromCharCode(65+i);
@@ -370,19 +460,17 @@ const Battle = {
         return newEnemies;
     },
 	
-/**
-     * 深層モンスターの個別生成・スケーリング
+	/**
+     * 深層モンスターの個別生成・スケーリング (命中・回避・会心抑制 & ランダム特性付与版)
      */
     createDeepFloorMonster: (base, floor, isBoss) => {
         const m = new Monster(base, 1.0);
         const rank = Math.max(1, base.rank || 1);
         
         // ステータス倍率の決定
-        // 雑魚: (DB値/Rank) * 階数 * (0.9～1.3)
-        // ボス: (DB値/Rank) * 階数 * 2.0
         const randMult = isBoss ? 2.0 : (0.9 + Math.random() * 0.4);
-        const baseScale = (floor / rank) * randMult;
-
+        
+        // 基本ステータスのスケーリング（HP, MP, ATK, DEF, SPD, MAG, MDEF）
         m.hp = Math.floor((base.hp / rank) * floor * randMult);
         m.baseMaxHp = m.hp;
         m.mp = Math.floor((base.mp / rank) * floor * randMult);
@@ -392,40 +480,72 @@ const Battle = {
         m.baseStats.def = Math.floor((base.def / rank) * floor * randMult);
         m.baseStats.spd = Math.floor((base.spd / rank) * floor * randMult);
         m.baseStats.mag = Math.floor((base.mag / rank) * floor * randMult);
+        m.mdef           = Math.floor(((base.mdef || 10) / rank) * floor * randMult);
+
+        // ★修正: 命中・回避・会心は階層倍率を適用せず、0〜20のランダム加算に留める
+        m.hit = (base.hit || 100) + Math.floor(Math.random() * 21);
+        m.eva = (base.eva || 0)   + Math.floor(Math.random() * 21);
+        m.cri = (base.cri || 0)   + Math.floor(Math.random() * 21);
+
+        // 各種フラグ・データの継承
+        m.id = base.id;
+        m.race = base.race || '不明';
+        m.isBoss = base.isBoss || isBoss || false;
+        m.isEstark = base.isEstark || false;
+        m.drops = JSON.parse(JSON.stringify(base.drops || null));
+        
+        // マスタ側の特性を継承
+        m.traits = JSON.parse(JSON.stringify(base.traits || []));
+
+        // ★新規追加: 武器以外の特性をランダムで 1〜3 つ付与 (Lv 1〜5)
+        if (typeof PassiveSkill !== 'undefined' && PassiveSkill.MASTER) {
+            const traitCount = 1 + Math.floor(Math.random() * 3); // 1〜3個
+            // 「武器」タイプ以外の特性IDを抽出
+            const availableTraitIds = Object.keys(PassiveSkill.MASTER).filter(tid => {
+                return PassiveSkill.MASTER[tid].type !== '武器';
+            });
+
+            for (let i = 0; i < traitCount; i++) {
+                const randomId = availableTraitIds[Math.floor(Math.random() * availableTraitIds.length)];
+                const randomLv = 1 + Math.floor(Math.random() * 5); // Lv 1〜5
+                
+                // 重複習得を避けるチェック
+                if (!m.traits.some(t => t.id === parseInt(randomId))) {
+                    m.traits.push({ id: parseInt(randomId), level: randomLv });
+                }
+            }
+        }
 
         // 報酬計算
         m.exp = Math.floor(((base.exp || 10) / rank) * floor * randMult);
         m.gold = Math.floor(((base.gold || 10) / rank) * floor * randMult);
 
         // 耐性設定
-		// ボス（isBoss）またはレア敵（isRare）でない雑魚のみ一律50%にする
-		if (!isBoss && !base.isRare) {
-			m.resists = { 
-				Poison:50, ToxicPoison:50, Shock:50, Fear:50, Seal:50, 
-				Debuff:50, InstantDeath:50, SkillSeal:50, SpellSeal:50, HealSeal:50 
-			};
-		} else {
-			// ボスおよびレア敵（はぐれメタル等）はマスタデータの耐性をそのまま使用
-			m.resists = JSON.parse(JSON.stringify(base.resists || {}));
-		}
+        if (!isBoss && !base.isRare) {
+            m.resists = { 
+                Poison:50, ToxicPoison:50, Shock:50, Fear:50, Seal:50, 
+                Debuff:50, InstantDeath:50, SkillSeal:50, SpellSeal:50, HealSeal:50 
+            };
+        } else {
+            m.resists = JSON.parse(JSON.stringify(base.resists || {}));
+        }
 
-        // 属性耐性: 雑魚(-50～50) / ボス(-30～80)
+        // 属性耐性
         m.elmRes = {};
-		CONST.ELEMENTS.forEach(el => {
-			// ★修正: はぐれメタル等のレア敵(isRare)であれば、DBの耐性(1000%等)を優先する
-			if (base.isRare && base.elmRes && base.elmRes[el] !== undefined) {
-				m.elmRes[el] = base.elmRes[el];
-			} else {
-				const min = isBoss ? -30 : -50;
-				const max = isBoss ? 80 : 50;
-				m.elmRes[el] = min + Math.floor(Math.random() * (max - min + 1));
-			}
-		});
+        CONST.ELEMENTS.forEach(el => {
+            if (base.isRare && base.elmRes && base.elmRes[el] !== undefined) {
+                m.elmRes[el] = base.elmRes[el];
+            } else {
+                const min = isBoss ? -30 : -50;
+                const max = isBoss ? 80 : 50;
+                m.elmRes[el] = min + Math.floor(Math.random() * (max - min + 1));
+            }
+        });
 
-        // 名前のクリーニング (神・、 Lv○○を除去)
+        // 名前のクリーニング
         m.name = base.name.replace(/^(神・|強・|真・|極・)+/, '').replace(/\s?Lv\d+[A-Z]?$/, '').trim();
 
-        // スキルの追加 (MP500以上の物理・魔法・特殊)
+        // スキルの追加
         const skillCount = isBoss ? 4 : 2;
         const candidates = DB.SKILLS.filter(s => s.mp >= 500 && ['物理', '魔法', '特殊'].includes(s.type));
         
@@ -433,17 +553,29 @@ const Battle = {
         for(let i=0; i<skillCount; i++) {
             const sk = candidates[Math.floor(Math.random() * candidates.length)];
             if (sk && !m.acts.some(a => a.id === sk.id)) {
-                m.acts.push({ id: sk.id, rate: 20, condition: 0 }); // 重み20で追加
+                m.acts.push({ id: sk.id, rate: 20, condition: 0 });
             }
         }
         
-        // パッシブの初期化
+        // ★特性による最終ステータス補正の適用 (ランダム付与分も含む)
+        if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
+            m.baseStats.atk  = Math.floor(m.baseStats.atk  * (1 + PassiveSkill.getSumValue(m, 'atk_pct') / 100));
+            m.baseStats.def  = Math.floor(m.baseStats.def  * (1 + PassiveSkill.getSumValue(m, 'def_pct') / 100));
+            m.baseStats.mag  = Math.floor(m.baseStats.mag  * (1 + PassiveSkill.getSumValue(m, 'mag_pct') / 100));
+            m.mdef           = Math.floor(m.mdef           * (1 + PassiveSkill.getSumValue(m, 'mdef_pct') / 100));
+            m.baseStats.spd  = Math.floor(m.baseStats.spd  * (1 + PassiveSkill.getSumValue(m, 'spd_pct') / 100));
+            
+            // 命中・回避・会心の特性補正を加算
+            m.hit += PassiveSkill.getSumValue(m, 'hit_pct');
+            m.eva += PassiveSkill.getSumValue(m, 'eva_pct');
+            m.cri += PassiveSkill.getSumValue(m, 'cri_pct');
+        }
+
         m.passive = base.passive || {};
         Battle.initBattleStatus(m);
         
         return m;
     },
-
 
     log: (msg) => {
         const el = Battle.getEl('battle-log');
@@ -1089,11 +1221,21 @@ findNextActor: () => {
         
         for(let cmd of playerCommands) {
             const actor = cmd.actor;
-            const isDouble = actor.passive && actor.passive.doubleAction && Math.random() < 0.2;
-            const isFast = actor.passive && actor.passive.fastestAction && Math.random() < 0.2;
-            if (isFast) { cmd.speed = (Battle.getBattleStat(actor, 'spd') * 1.1) + (10 * 100000); Battle.log(`【${actor.name}】は最速で行動する！`); }
+            // ★特性 8, 47, 48 等の追加行動系は別途フラグ管理されるが、ここでは既存の doubleAction/fastestAction を維持
+            const isDouble = (actor.passive && actor.passive.doubleAction) || (typeof PassiveSkill !== 'undefined' && Math.random() < 0.2); 
+            const isFast = (actor.passive && actor.passive.fastestAction) || (typeof PassiveSkill !== 'undefined' && Math.random() < 0.2);
+
+            if (isFast) { 
+                cmd.speed = (Battle.getBattleStat(actor, 'spd') * 1.1) + (10 * 100000); 
+                Battle.log(`【${actor.name}】は最速で行動する！`); 
+            }
             Battle.commandQueue.push(cmd);
-            if (isDouble) { let extra = { ...cmd }; extra.speed = cmd.speed - 1; Battle.commandQueue.push(extra); Battle.log(`【${actor.name}】は2回行動する！`); }
+            if (isDouble) { 
+                let extra = { ...cmd }; 
+                extra.speed = cmd.speed - 1; 
+                Battle.commandQueue.push(extra); 
+                Battle.log(`【${actor.name}】は2回行動する！`); 
+            }
         }
 
         // 3. 行動順の確定
@@ -1103,7 +1245,7 @@ findNextActor: () => {
         for (const cmd of Battle.commandQueue) {
             if (!Battle.active) break;
             const actor = cmd.actor;
-			
+            
             // ★修正：死亡中、逃走済み、または「このターン中に一度でも死んだ」場合はスキップ
             if (cmd.type === 'skip' || !actor || actor.hp <= 0 || actor.isFled || actor.hasDiedThisTurn) continue;
 
@@ -1131,7 +1273,7 @@ findNextActor: () => {
                 cmd.target = null; 
             }
 
-            // ★修正: ターゲット選定（敵の補助スキルがプレイヤーを狙わないように修正）
+            // ★修正: ターゲット選定（特性 43:挑発 / 44:潜伏 を考慮）
             if (cmd.isEnemy && !cmd.target) {
                 const isSupport = Battle.isSupportSkill(cmd.data);
                 if (cmd.targetScope === '自分') {
@@ -1150,12 +1292,35 @@ findNextActor: () => {
                         } else {
                             pool = Battle.enemies.filter(e => !e.isDead && !e.isFled);
                         }
-                        // 候補がいなければ自分を対象にする
                         cmd.target = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : actor;
                     } else {
                         // 攻撃スキルの場合はプレイヤー側（パーティ陣営）を狙う
                         const aliveParty = Battle.party.filter(p => p && !p.isDead);
-                        cmd.target = aliveParty.length > 0 ? aliveParty[Math.floor(Math.random() * aliveParty.length)] : null;
+                        if (aliveParty.length > 0) {
+                            // --- ヘイト（狙われやすさ）計算 ---
+                            const weights = aliveParty.map(p => {
+                                let w = 100; // 基礎値
+                                if (typeof PassiveSkill !== 'undefined') {
+                                    // 特性 43:挑発 (+) と 特性 44:潜伏 (-) を加算
+                                    w += PassiveSkill.getSumValue(p, 'target_rate_base');
+                                }
+                                return Math.max(1, w); // 最低値を1に設定
+                            });
+
+                            const totalWeight = weights.reduce((a, b) => a + b, 0);
+                            let random = Math.random() * totalWeight;
+                            let selectedIndex = 0;
+                            for (let i = 0; i < weights.length; i++) {
+                                random -= weights[i];
+                                if (random <= 0) {
+                                    selectedIndex = i;
+                                    break;
+                                }
+                            }
+                            cmd.target = aliveParty[selectedIndex];
+                        } else {
+                            cmd.target = null;
+                        }
                     }
                 }
             }
@@ -1193,7 +1358,6 @@ findNextActor: () => {
                 if (Battle.enemies.includes(cmd.target)) {
                     cmd.target = Battle.getRandomAliveEnemy();
                 } else if (Battle.party.includes(cmd.target) && cmd.data?.type !== '蘇生') {
-                    // プレイヤーが死んでいるなら別の生存者を狙う
                     const aliveParty = Battle.party.filter(p => p && !p.isDead);
                     cmd.target = aliveParty.length > 0 ? aliveParty[Math.floor(Math.random() * aliveParty.length)] : null;
                 }
@@ -1204,24 +1368,24 @@ findNextActor: () => {
             
             // 行動直後のダメージ/リジェネ処理
             await Battle.onActionEnd(actor);
-			
-			// 死亡状態の更新（ここで hasDiedThisTurn フラグが立つ）
+            
+            // 死亡状態の更新
             Battle.updateDeadState();
 
-            Battle.updateDeadState(); Battle.renderEnemies(); Battle.renderPartyStatus();
+            Battle.renderEnemies(); Battle.renderPartyStatus();
             if (Battle.checkFinish()) return;
             await Battle.wait(500);
         }
         
-        // 全行動終了後に一括で持続時間を更新
+        // 全行動終了後に一括で持続時間および再生特性を更新
         await Battle.processEndOfRound();
 
-        // ボス自然回復など
-        Battle.enemies.forEach(e => { if (!e.isDead && !e.isFled && e.id >= 1000) e.hp = Math.min(e.baseMaxHp, e.hp + Math.floor(e.baseMaxHp * 0.05)); });
+        // ★修正: ボス自然回復（重複）を削除 (processEndOfRound 内に統合済みのため)
+        
         Battle.saveBattleState(); Battle.startInputPhase();
     },
 	
-	// ターン終了時に全員の状態異常・バフの持続時間を更新する
+    // ターン終了時に全員の状態異常・バフの持続時間を更新する
     processEndOfRound: async () => {
         const allParticipants = [...Battle.party, ...Battle.enemies];
 
@@ -1253,15 +1417,56 @@ findNextActor: () => {
                 }
             });
 
-            // [2] パッシブスキルによる「ターン終了時」の回復
-            if (actor.hp > 0 && actor.passive && actor.passive.hpRegen) {
-                 const rec = Math.floor(actor.baseMaxHp * 0.05);
-                 if (rec > 0 && actor.hp < actor.baseMaxHp) {
-                     actor.hp = Math.min(actor.baseMaxHp, actor.hp + rec);
-                     Battle.log(`【${actor.name}】のHPが ${rec} 自動回復`);
-                 }
+            // [2] 回復処理（パッシブ特性：再生・魔力循環・ボス自動回復）
+            if (actor.hp > 0) {
+                let totalHpRegenPct = 0;
+                let totalMpRegenPct = 0;
+
+                // --- 特性による計算 (PassiveSkill.js 参照) ---
+                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
+                    // 特性 52: 再生 (Skill %)
+                    totalHpRegenPct += PassiveSkill.getSumValue(actor, 'turn_hp_regen_pct');
+                    // 特性 53: 魔力循環 (Skill %)
+                    totalMpRegenPct += PassiveSkill.getSumValue(actor, 'turn_mp_regen_pct');
+                }
+
+                // --- 既存のレガシーパッシブおよびボスの自動回復 ---
+                // 既存の hpRegen (一律 5% 扱い)
+                if (actor.passive && actor.passive.hpRegen) {
+                    totalHpRegenPct += 5;
+                }
+                
+                // ボス等の個別データに設定された自動回復 (autoRegen プロパティがある場合)
+                //if (actor.autoRegen) {
+                //    totalHpRegenPct += actor.autoRegen;
+                //}
+
+                // --- HP回復実行 ---
+                if (totalHpRegenPct > 0 && actor.hp < actor.baseMaxHp) {
+                    const recHp = Math.floor(actor.baseMaxHp * (totalHpRegenPct / 100));
+                    if (recHp > 0) {
+                        actor.hp = Math.min(actor.baseMaxHp, actor.hp + recHp);
+                        // ボスか味方かでログを少し変えるなど、演出の統合
+                        if (actor.isBoss) {
+                            //Battle.log(`【${actor.name}】のHPが ${recHp} 回復`);
+                        } else {
+                            //Battle.log(`【${actor.name}】のHPが ${recHp} 回復`);
+                        }
+                    }
+                }
+
+                // --- MP回復実行 ---
+                if (totalMpRegenPct > 0 && actor.mp < actor.baseMaxMp) {
+                    const recMp = Math.floor(actor.baseMaxMp * (totalMpRegenPct / 100));
+                    if (recMp > 0) {
+                        actor.mp = Math.min(actor.baseMaxMp, actor.mp + recMp);
+                        Battle.log(`【${actor.name}】は魔力循環により MPが ${recMp} 回復した`);
+                    }
+                }
             }
         }
+        
+        // 画面表示の更新
         Battle.renderEnemies();
         Battle.renderPartyStatus();
     },
@@ -1462,6 +1667,12 @@ findNextActor: () => {
             element = data.elm;
             hitCount = (typeof data.count === 'number') ? data.count : 1;
             if (data.SuccessRate !== undefined) rawSuccessRate = data.SuccessRate;
+
+            // 特性 17: 魔力増幅 (消費MP 1.5倍)
+            if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue(actor, 'mag_amp_cost_mult') > 0) {
+                mpCost = Math.floor(mpCost * 1.5);
+            }
+
             if (data.id >= 500 && data.id <= 505) { mpCost = actor.mp; }
             if (actor.mp < mpCost && (data.id < 500 || data.id > 505)) {
                 Battle.log(`【${actor.name}】は${skillName}を唱えたがMPが足りない！`);
@@ -1471,355 +1682,535 @@ findNextActor: () => {
             Battle.renderPartyStatus();
         }
 
-        Battle.log(`【${actor.name}】の${skillName}！`);
-        let successRate = rawSuccessRate;
-        if (successRate <= 1 && successRate > 0) successRate *= 100;
+        // 特性 8: ニ刀流
+        let totalActionLoops = 1;
+        if (isPhysical && typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue(actor, 'dual_dmg_base') > 0) {
+            totalActionLoops = 2;
+        }
 
-        if (data && data.id >= 500 && data.id <= 505) {
-            let baseBaseDmg = mpCost * skillRate;
-            const pool = cmd.isEnemy ? Battle.party.filter(p=>p && !p.isDead) : Battle.enemies.filter(e=>!e.isDead && !e.isFled);
-            let loopTargets = [];
-            if (cmd.targetScope === 'ランダム') {
-                if (pool.length > 0) loopTargets = [pool[0]];
-            } else if (cmd.targetScope === '単体' && cmd.target) {
-                if (!cmd.target.isDead) loopTargets = [cmd.target];
+        for (let loop = 0; loop < totalActionLoops; loop++) {
+            if (loop === 1) {
+                Battle.log(`【${actor.name}】の 追撃！`);
+                const dualBonus = PassiveSkill.getSumValue(actor, 'dual_dmg_base');
+                skillRate = (dualBonus / 100);
             } else {
-                loopTargets = pool;
+                Battle.log(`【${actor.name}】の${skillName}！`);
             }
-            for (let t of loopTargets) {
-                if (!t) continue;
-                for (let i = 0; i < hitCount; i++) {
-                    let targetToHit = (cmd.targetScope === 'ランダム') ? pool[Math.floor(Math.random() * pool.length)] : t;
-                    if (!targetToHit || targetToHit.isDead) continue;
-                    let bonusRate = 0, cutRate = 0, isImmune = false; 
-                    if (element) {
-                        const elmAtkVal = (Battle.getBattleStat(actor, 'elmAtk') || {})[element] || 0;
-                        bonusRate += elmAtkVal;
-                        const baseRes = (targetToHit.getStat('elmRes') || {})[element] || 0;
-                        const buffRes = (targetToHit.battleStatus.buffs['elmResUp'] || {}).val || 0;
-                        const debuffRes = (targetToHit.battleStatus.debuffs['elmResDown'] || {}).val || 0;
-                        let resVal = baseRes + buffRes - debuffRes;
-                        if (resVal >= 100) isImmune = true; else cutRate += resVal;             
-                    }
-                    const finDmgVal = Battle.getBattleStat(actor, 'finDmg') || 0; bonusRate += finDmgVal;
-                    let finRed = Battle.getBattleStat(targetToHit, 'finRed') || 0;
-                    if (targetToHit.passive && targetToHit.passive.finRed10) finRed += 10;
-                    if (finRed > 80) finRed = 80; cutRate += finRed;
-                    let dmg = baseBaseDmg;
-                    if (dmg > 0) {
-                        dmg = dmg * (1.0 + bonusRate / 100) * (1.0 - cutRate / 100) * (0.85 + Math.random() * 0.3); 
-                        if (targetToHit.status && targetToHit.status.defend) dmg *= 0.5;
-                        dmg = Math.floor(dmg);
-                        if (!isImmune && dmg < 1) dmg = 1;
-                    }
-                    if (isImmune) dmg = 0;
-                    targetToHit.hp -= dmg;
-                    if (!cmd.isEnemy && dmg > (App.data.stats.maxDamage?.val || 0)) {
-                        App.data.stats.maxDamage = { val: dmg, actor: actor.name, skill: data ? data.name : "通常攻撃" };
-                    }
-                    let dmgColor = '#fff';
-                    if(element === '火') dmgColor = '#f88'; else if(element === '水') dmgColor = '#88f'; else if(element === '雷') dmgColor = '#ff0';
-                    else if(element === '風') dmgColor = '#8f8'; else if(element === '光') dmgColor = '#ffc'; else if(element === '闇') dmgColor = '#a8f'; else if(element === '混沌') dmgColor = '#d4d';
-                    if (dmg === 0) Battle.log(`ミス！ 【${targetToHit.name}】は ダメージを うけない！`);
-                    else Battle.log(`【${targetToHit.name}】に<span style="color:${dmgColor}">${dmg}</span>のダメージ！`);
-                    if (targetToHit.hp <= 0) { targetToHit.hp = 0; targetToHit.isDead = true; Battle.log(`【${targetToHit.name}】は倒れた！`); }
-                    Battle.renderEnemies(); Battle.renderPartyStatus();
-                    if (hitCount > 1) await Battle.wait(150);
+
+            let successRate = rawSuccessRate;
+            if (successRate <= 1 && successRate > 0) successRate *= 100;
+
+            // --- [5] マダンテ系特殊処理 ---
+            if (data && data.id >= 500 && data.id <= 505) {
+                let baseBaseDmg = mpCost * skillRate;
+                const pool = cmd.isEnemy ? Battle.party.filter(p=>p && !p.isDead) : Battle.enemies.filter(e=>!e.isDead && !e.isFled);
+                let loopTargets = [];
+                if (cmd.targetScope === 'ランダム') {
+                    if (pool.length > 0) loopTargets = [pool[0]];
+                } else if (cmd.targetScope === '単体' && cmd.target) {
+                    if (!cmd.target.isDead) loopTargets = [cmd.target];
+                } else {
+                    loopTargets = pool;
                 }
-            }
-            await Battle.wait(500);
-            return;
-        }
+                for (let t of loopTargets) {
+                    if (!t) continue;
+                    for (let i = 0; i < hitCount; i++) {
+                        let targetToHit = (cmd.targetScope === 'ランダム') ? pool[Math.floor(Math.random() * pool.length)] : t;
+                        if (!targetToHit || targetToHit.isDead) continue;
+                        
+                        let bonusRate = 0, cutRate = 0, isImmune = false; 
+                        
+                        if (element) {
+                            const elmAtkVal = (Battle.getBattleStat(actor, 'elmAtk') || {})[element] || 0;
+                            bonusRate += elmAtkVal;
+                            
+                            // ★属性貫通計算の修正
+							let pierce = 0;
+							if (typeof PassiveSkill !== 'undefined') {
+								// 全属性耐性無視 (ID 30: 解析)
+								pierce += PassiveSkill.getSumValue(actor, 'all_elm_pierce_pct');
+								// 個別属性耐性無視 (ID 23-29: 火の扱いなど)
+								const spKey = {火:'fire',水:'water',風:'wind',雷:'thunder',光:'light',闇:'dark',混沌:'chaos'}[element];
+								if(spKey) pierce += PassiveSkill.getSumValue(actor, spKey + '_pierce_pct');
+							}
 
-        // --- [6] ターゲット特定（一般スキル） ---
-        let targets = [];
-        let skillScope = cmd.targetScope;
-        if (!skillScope && cmd.target === 'all_enemy') skillScope = '全体';
-        if (!skillScope && cmd.target === 'all_ally') skillScope = '全体';
-        if (!skillScope && cmd.target === 'random') skillScope = 'ランダム';
-        
-        // ヘルパー関数の定義
-        const isSupportSkill = (d) => {
-            if (!d) return false;
-            const type = d.type || '';
-            if (['回復','蘇生','強化','MP回復'].includes(type)) return true;
-            if (d.debuff_reset || d.CureAilments || d.HPRegen || d.MPRegen) return true;
-            return false;
-        };
-        const isSupport = isSupportSkill(data);
+                            const baseRes = (targetToHit.getStat('elmRes') || {})[element] || 0;
+                            const buffRes = (targetToHit.battleStatus.buffs['elmResUp'] || {}).val || 0;
+                            const debuffRes = (targetToHit.battleStatus.debuffs['elmResDown'] || {}).val || 0; 
+                            
+                            let resVal = baseRes + buffRes - debuffRes - pierce;
+                            if (resVal >= 100) isImmune = true; else cutRate += resVal;             
+                        }
+                        
+                        const finDmgVal = Battle.getBattleStat(actor, 'finDmg') || 0; bonusRate += finDmgVal;
+                        let finRed = Battle.getBattleStat(targetToHit, 'finRed') || 0;
+                        if (targetToHit.passive && targetToHit.passive.finRed10) finRed += 10;
+                        if (finRed > 80) finRed = 80; cutRate += finRed;
+                        
+                        let dmg = baseBaseDmg;
+                        if (dmg > 0) {
+                            dmg = dmg * (1.0 + bonusRate / 100) * (1.0 - cutRate / 100) * (0.85 + Math.random() * 0.3); 
+                            if (targetToHit.status && targetToHit.status.defend) dmg *= 0.5;
+                            dmg = Math.floor(dmg); 
+                            if (!isImmune && dmg < 1) dmg = 1; 
+                        }
+                        if (isImmune) dmg = 0;
+                        targetToHit.hp -= dmg;
 
-        if (skillScope === '全体') {
-             if (cmd.isEnemy) {
-                 targets = isSupport ? Battle.enemies.filter(e => !e.isFled) : Battle.party.filter(p => p && !p.isDead);
-             } else {
-                 targets = isSupport ? Battle.party.filter(p => p) : Battle.enemies.filter(e => !e.isDead && !e.isFled);
-             }
-        } else if (skillScope === 'ランダム') {
-             let pool = cmd.isEnemy ? (isSupport ? Battle.enemies.filter(e => !e.isDead && !e.isFled) : Battle.party.filter(p => p && !p.isDead)) : (isSupport ? Battle.party.filter(p => p && !p.isDead) : Battle.enemies.filter(e => !e.isDead && !e.isFled));
-             if(pool.length > 0) targets = [pool[Math.floor(Math.random() * pool.length)]];
-        } else {
-            targets = [cmd.target];
-        }
+                        if (!cmd.isEnemy && dmg > (App.data.stats.maxDamage?.val || 0)) {
+                            App.data.stats.maxDamage = { val: dmg, actor: actor.name, skill: data ? data.name : "通常攻撃" };
+                        }
 
-        // --- [7] 内部関数：効果適用ロジック ---
-        const applyEffects = (t, d) => {
-            const checkProc = (val) => {
-                let rate = successRate;
-                if (typeof val === 'number') rate = val;
-                return Math.random() * 100 < rate;
-            };
-            const checkResist = (type) => {
-                if (type === 'Debuff' && successRate >= 200) return false;
-                const resistKey = Battle.RESIST_MAP[type] || type;
-                const resistVal = (Battle.getBattleStat(t, 'resists') || {})[resistKey] || 0;
-                if (Math.random() * 100 < resistVal) return true;
-                return false;
-            };
-            if (d.buff) {
-                let resistCount = 0; let lastResistName = "";
-                for (let key in d.buff) {
-                    const turn = d.turn || null; 
-                    if (key === 'elmResUp') {
-                        t.battleStatus.buffs[key] = { val: d.buff[key], turns: turn };
-                        Battle.log(`【${t.name}】の 全属性耐性 が あがった！`);
-                    } else if (key.startsWith('resists_')) {
-                        t.battleStatus.buffs[key] = { val: d.buff[key], turns: turn };
-                        resistCount++; lastResistName = Battle.statNames[key.replace('resists_', '')] || key.replace('resists_', '');
-                    } else {
-                        let cur = (t.battleStatus.buffs[key] && t.battleStatus.buffs[key].val) || 1.0;
-                        t.battleStatus.buffs[key] = { val: Math.min(2.5, cur * d.buff[key]), turns: turn };
-                        Battle.log(`【${t.name}】の ${Battle.statNames[key]||key} があがった！`);
+                        if (dmg > 0) {
+                            let dRate = (data && data.drain) ? 0.5 : (actor.passive?.drain ? 0.2 : 0);
+                            if (dRate > 0) {
+                                const dAmt = Math.floor(dmg * dRate);
+                                const oldHp = actor.hp; actor.hp = Math.min(actor.baseMaxHp, actor.hp + dAmt);
+                                if(actor.hp - oldHp > 0) Battle.log(`【${actor.name}】は吸収効果でHPを${actor.hp - oldHp}回復した！`);
+                            }
+                            if (actor.passive?.drainMp) { 
+                                const mpAmt = Math.max(1, Math.floor(dmg * 0.01));
+                                actor.mp = Math.min(actor.baseMaxMp, actor.mp + mpAmt);
+                            }
+                        }
+
+                        let dmgColor = element ? ({火:'#f88',水:'#88f',雷:'#ff0',風:'#8f8',光:'#ffc',闇:'#a8f',混沌:'#d4d'}[element] || '#fff') : '#fff';
+                        if (dmg === 0) Battle.log(`ミス！ 【${targetToHit.name}】は ダメージを うけない！`);
+                        else Battle.log(`【${targetToHit.name}】に<span style="color:${dmgColor}">${dmg}</span>のダメージ！`);
+                        if (targetToHit.hp <= 0) { targetToHit.hp = 0; targetToHit.isDead = true; Battle.log(`【${targetToHit.name}】は倒れた！`); }
+                        Battle.renderEnemies(); Battle.renderPartyStatus();
+                        if (hitCount > 1) await Battle.wait(150);
                     }
                 }
-                if (resistCount > 0) {
-                    if (resistCount === 1) Battle.log(`【${t.name}】の ${lastResistName}耐性 があがった！`);
-                    else Battle.log(`【${t.name}】の 状態異常耐性 があがった！`);
-                }
+                if (loop === 0 && totalActionLoops > 1) continue; 
+                await Battle.wait(500);
+                return;
             }
-            if (d.HPRegen) { t.battleStatus.buffs['HPRegen'] = { val: d.HPRegen, turns: d.turn }; Battle.log(`【${t.name}】の HPが徐々に回復する！`); }
-            if (d.MPRegen) { t.battleStatus.buffs['MPRegen'] = { val: d.MPRegen, turns: d.turn }; Battle.log(`【${t.name}】の MPが徐々に回復する！`); }
-            if (d.CureAilments) { t.battleStatus.ailments = {}; Battle.log(`【${t.name}】の 状態異常が 全て治った！`); }
-            if (d.debuff_reset) { t.battleStatus.debuffs = {}; Battle.log(`【${t.name}】の 能力低下が 元に戻った！`); }
-            if (d.debuff) {
-                if (!checkResist('Debuff')) {
-                    let rDownCount = 0; let lastRName = "";
+
+            // --- [6] ターゲット特定 ---
+            let targets = [];
+            let skillScope = cmd.targetScope;
+            if (!skillScope && cmd.target === 'all_enemy') skillScope = '全体';
+            if (!skillScope && cmd.target === 'all_ally') skillScope = '全体';
+            if (!skillScope && cmd.target === 'random') skillScope = 'ランダム';
+            
+            const isSupport = Battle.isSupportSkill(data);
+
+            if (skillScope === '全体') {
+                 if (cmd.isEnemy) {
+                     targets = isSupport ? Battle.enemies.filter(e => !e.isFled) : Battle.party.filter(p => p && !p.isDead);
+                 } else {
+                     targets = isSupport ? Battle.party.filter(p => p) : Battle.enemies.filter(e => !e.isDead && !e.isFled);
+                 }
+            } else if (skillScope === 'ランダム') {
+                 let pool = cmd.isEnemy ? (isSupport ? Battle.enemies.filter(e => !e.isDead && !e.isFled) : Battle.party.filter(p => p && !p.isDead)) : (isSupport ? Battle.party.filter(p => p && !p.isDead) : Battle.enemies.filter(e => !e.isDead && !e.isFled));
+                 if(pool.length > 0) targets = [pool[Math.floor(Math.random() * pool.length)]];
+            } else {
+                targets = [cmd.target];
+            }
+
+            // --- [7] 内部関数：効果適用ロジック (★特性ID31, 32の組み込み) ---
+            const applyEffects = (t, d, ailmentMult = 1.0) => {
+                // 特性による成功率ボーナスの算出
+                const curseBonus = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_curse_bonus') : 0;
+                const bodyBonus = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_body_bonus') : 0;
+
+                let currentCheckRate = successRate;
+                
+                // ボーナスを加味した確率判定関数
+                const checkProc = (val, bonus = 0) => {
+                    let rate = (typeof val === 'number') ? val : successRate;
+                    rate = (rate + bonus) * ailmentMult;
+                    currentCheckRate = rate; 
+                    return Math.random() * 100 < rate;
+                };
+
+                const checkResist = (type) => {
+                    const resistKey = Battle.RESIST_MAP[type] || type;
+                    const resistVal = (Battle.getBattleStat(t, 'resists') || {})[resistKey] || 0;
+                    const finalChance = Math.max(0, currentCheckRate - resistVal);
+                    if (Math.random() * 100 < finalChance) return false; 
+                    return true; 
+                };
+
+                const addA = (k, msg, chance=null) => {
+                    if (!t.battleStatus.ailments[k]) {
+                        if (checkResist(k)) { 
+                            Battle.log(`【${t.name}】には ${Battle.statNames[k]||k} は きかなかった！`); 
+                            return; 
+                        }
+                        t.battleStatus.ailments[k] = { turns: d.turn || 3, chance: chance }; 
+                        Battle.log(msg);
+                    }
+                };
+
+                if (d.buff) {
+                    for (let key in d.buff) {
+                        const turn = d.turn || null; 
+                        if (key === 'elmResUp') {
+                            t.battleStatus.buffs[key] = { val: d.buff[key], turns: turn };
+                            Battle.log(`【${t.name}】の 全属性耐性 が あがった！`);
+                        } else {
+                            let cur = (t.battleStatus.buffs[key] && t.battleStatus.buffs[key].val) || 1.0;
+                            t.battleStatus.buffs[key] = { val: Math.min(2.5, cur * d.buff[key]), turns: turn };
+                            Battle.log(`【${t.name}】の ${Battle.statNames[key]||key} があがった！`);
+                        }
+                    }
+                }
+                if (d.HPRegen) { t.battleStatus.buffs['HPRegen'] = { val: d.HPRegen, turns: d.turn }; Battle.log(`【${t.name}】の HPが徐々に回復する！`); }
+                if (d.MPRegen) { t.battleStatus.buffs['MPRegen'] = { val: d.MPRegen, turns: d.turn }; Battle.log(`【${t.name}】の MPが徐々に回復する！`); }
+                if (d.CureAilments) { t.battleStatus.ailments = {}; Battle.log(`【${t.name}】の状態異常が 全て治った！`); }
+                if (d.debuff_reset) { t.battleStatus.debuffs = {}; Battle.log(`【${t.name}】の 能力低下が 元に戻った！`); }
+                
+                if (d.debuff) {
                     for (let key in d.debuff) {
+                        // 弱体(debuff)は「人体知識」の対象
+                        if (!checkProc(successRate, bodyBonus)) continue; 
+                        
+                        if (checkResist(key)) {
+                            Battle.log(`【${t.name}】には ${Battle.statNames[key] || key}低下 は きかなかった！`);
+                            continue;
+                        }
                         const turn = d.turn || null;
                         if (key === 'elmResDown') {
                             t.battleStatus.debuffs[key] = { val: d.debuff[key], turns: turn };
                             Battle.log(`【${t.name}】の 全属性耐性 が さがった！`);
-                        } else if (key.startsWith('resists_')) {
-                            t.battleStatus.debuffs[key] = { val: d.debuff[key], turns: turn };
-                            rDownCount++; lastRName = Battle.statNames[key.replace('resists_', '')] || key.replace('resists_', '');
                         } else {
                             let cur = (t.battleStatus.debuffs[key] && t.battleStatus.debuffs[key].val) || 1.0;
                             t.battleStatus.debuffs[key] = { val: Math.max(0.1, cur * d.debuff[key]), turns: turn };
                             Battle.log(`【${t.name}】の ${Battle.statNames[key]||key} がさがった！`);
                         }
                     }
-                    if (rDownCount > 0) {
-                        if (rDownCount === 1) Battle.log(`【${t.name}】の ${lastRName}耐性 がさがった！`);
-                        else Battle.log(`【${t.name}】の 状態異常耐性 がさがった！`);
-                    }
-                } else Battle.log(`【${t.name}】には きかなかった！`);
-            }
-            if (d.buff_reset) { t.battleStatus.buffs = {}; Battle.log(`【${t.name}】の良い効果がかき消された！`); }
-            const addA = (k, msg, chance=null) => {
-                if (!t.battleStatus.ailments[k]) {
-                    if (checkResist(k)) { Battle.log(`【${t.name}】には ${Battle.statNames[k]||k} は きかなかった！`); return; }
-                    t.battleStatus.ailments[k] = { turns: d.turn, chance: chance }; Battle.log(msg);
+                }
+                if (d.buff_reset) { t.battleStatus.buffs = {}; Battle.log(`【${t.name}】の良い効果がかき消された！`); }
+                
+                // 毒系・感電は「人体知識」の対象
+                if (d.Poison && checkProc(d.Poison, bodyBonus)) addA('Poison', `【${t.name}】は どくにおかされた！`);
+                if (d.ToxicPoison && checkProc(d.ToxicPoison, bodyBonus)) addA('ToxicPoison', `【${t.name}】は もうどくにおかされた！`);
+                if (d.Shock && checkProc(d.Shock, bodyBonus)) addA('Shock', `【${t.name}】は 感電してしまった！`);
+                
+                // 怯え・封印系は「呪い体質」の対象
+                if (d.Fear && checkProc(d.Fear, curseBonus)) addA('Fear', `【${t.name}】は 怯えてしまった！`, 0.5);
+                if (d.SpellSeal && checkProc(d.SpellSeal, curseBonus)) addA('SpellSeal', `【${t.name}】の 呪文が封じられた！`);
+                if (d.SkillSeal && checkProc(d.SkillSeal, curseBonus)) addA('SkillSeal', `【${t.name}】の 特技が封じられた！`);
+                if (d.HealSeal && checkProc(d.HealSeal, curseBonus)) addA('HealSeal', `【${t.name}】の 回復が封じられた！`);
+                
+                if (d.PercentDamage) {
+                    // 割合ダメージ(PercentDamage)は特性対象外とする
+                    currentCheckRate = successRate * ailmentMult;
+                    if (checkProc() && !checkResist('PercentDamage')) {
+                        let pdmg = Math.max(1, Math.floor(t.hp * d.PercentDamage));
+                        t.hp -= pdmg; Battle.log(`【${t.name}】に ${pdmg} のダメージ！`);
+                        if (t.hp <= 0) { t.hp = 0; t.isDead = true; Battle.log(`【${t.name}】は倒れた！`); }
+                    } else Battle.log(`【${t.name}】にはきかなかった！`);
                 }
             };
-            if (d.Poison && checkProc(d.Poison)) addA('Poison', `【${t.name}】は どくにおかされた！`);
-            if (d.ToxicPoison && checkProc(d.ToxicPoison)) addA('ToxicPoison', `【${t.name}】は もうどくにおかされた！`);
-            if (d.Shock && checkProc(d.Shock)) addA('Shock', `【${t.name}】は 感電してしまった！`);
-            if (d.Fear && checkProc(d.Fear)) addA('Fear', `【${t.name}】は 怯えてしまった！`, 0.5);
-            if (d.SpellSeal && checkProc(d.SpellSeal)) addA('SpellSeal', `【${t.name}】の 呪文が封じられた！`);
-            if (d.SkillSeal && checkProc(d.SkillSeal)) addA('SkillSeal', `【${t.name}】の 特技が封じられた！`);
-            if (d.HealSeal && checkProc(d.HealSeal)) addA('HealSeal', `【${t.name}】の 回復が封じられた！`);
-            if (d.PercentDamage) {
-                if (checkProc() && !checkResist('PercentDamage')) {
-                    let pdmg = Math.max(1, Math.floor(t.hp * d.PercentDamage));
-                    t.hp -= pdmg; Battle.log(`【${t.name}】に ${pdmg} のダメージ！`);
-                    if (t.hp <= 0) { t.hp = 0; t.isDead = true; Battle.log(`【${t.name}】は倒れた！`); }
-                } else Battle.log(`【${t.name}】にはきかなかった！`);
-            }
-        };
 
-        // --- [8] メイン実行ループ ---
-        for (let t of targets) {
-            if (!t) continue;
-            if (effectType && ['回復','蘇生','強化','弱体','特殊','MP回復'].includes(effectType)) {
-                if (successRate < 100 && Math.random() * 100 > successRate) {
-                    Battle.log(`ミス！ 【${t.name}】には効かなかった！`);
+            // --- [8] メイン実行ループ ---
+            for (let t of targets) {
+                if (!t) continue;
+                if (effectType && ['回復','蘇生','強化','弱体','特殊','MP回復'].includes(effectType)) {
+                    if (successRate < 100 && Math.random() * 100 > successRate) {
+                        Battle.log(`ミス！ 【${t.name}】には効かなかった！`);
+                        continue;
+                    }
+                    if (effectType === '蘇生') {
+                        if (t.isDead) { 
+                            t.isDead = false; 
+                            t.hp = Math.max(1, Math.floor(t.baseMaxHp * (skillRate !== undefined ? skillRate : 0.5)));
+                            Battle.log(`【${t.name}】は生き返った！`); 
+                        } else { 
+                            Battle.log(`【${t.name}】には効果がなかった`); 
+                            continue; 
+                        }
+                    }
+                    if (effectType === '回復' && !t.isDead) {
+						const healBonus = 1 + (PassiveSkill.getSumValue(actor, 'heal_pct') / 100);
+						let rec;
+						if (data.ratio) {
+							rec = Math.floor(t.baseMaxHp * data.ratio);
+						} else {
+							const baseValue = data.fix ? baseDmg : (Battle.getBattleStat(actor, 'mag') * skillRate + baseDmg);
+							rec = baseValue * healBonus * (0.85 + Math.random() * 0.3);
+						}
+						t.hp = Math.min(t.baseMaxHp, t.hp + Math.floor(rec));
+						Battle.log(`【${t.name}】のHPが${Math.floor(rec)}回復！`);
+					}
+                    if (effectType === 'MP回復' && !t.isDead) {
+                        let rec = data.ratio ? Math.floor(t.baseMaxMp * data.ratio) : baseDmg;
+                        t.mp = Math.min(t.baseMaxMp, t.mp + Math.floor(rec));
+                        Battle.log(`【${t.name}】のMPが${Math.floor(rec)}回復！`);
+                    }
+                    if (!t.isDead) applyEffects(t, data);
+                    Battle.renderPartyStatus(); 
                     continue;
                 }
-                if (effectType === '蘇生') {
-                    if (t.isDead) { 
-                        t.isDead = false; 
-                        t.hp = Math.max(1, Math.floor(t.baseMaxHp * (skillRate !== undefined ? skillRate : 0.5)));
-                        Battle.log(`【${t.name}】は生き返った！`); 
-                    } else { Battle.log(`【${t.name}】には効果がなかった`); continue; }
-                }
-                if (effectType === '回復' && !t.isDead) {
-                    let rec;
-                    if (data.ratio) {
-                        rec = Math.floor(t.baseMaxHp * data.ratio);
-                    } else {
-                        const baseValue = data.fix ? baseDmg : (Battle.getBattleStat(actor, 'mag') * skillRate + baseDmg);
-                        rec = baseValue * (0.85 + Math.random() * 0.3);
-                    }
-                    t.hp = Math.min(t.baseMaxHp, t.hp + Math.floor(rec));
-                    Battle.log(`【${t.name}】のHPが${Math.floor(rec)}回復！`);
-                }
-                if (effectType === 'MP回復' && !t.isDead) {
-                    let rec = data.ratio ? Math.floor(t.baseMaxMp * data.ratio) : baseDmg;
-                    t.mp = Math.min(t.baseMaxMp, t.mp + Math.floor(rec));
-                    Battle.log(`【${t.name}】のMPが${Math.floor(rec)}回復！`);
-                }
-                if (!t.isDead) applyEffects(t, data);
-                Battle.renderPartyStatus(); 
-                continue;
-            }
 
-            for (let i = 0; i < hitCount; i++) {
-                let targetToHit = t;
-                if (skillScope === 'ランダム') {
-                    const pool = cmd.isEnemy ? Battle.party.filter(p => p && !p.isDead) : Battle.enemies.filter(e => !e.isDead && !e.isFled);
-                    if (pool.length === 0) break;
-                    targetToHit = pool[Math.floor(Math.random() * pool.length)];
-                }
-                if (targetToHit.isDead || targetToHit.isFled) { if (skillScope !== 'ランダム') break; continue; }
-                if (isPhysical && Math.random() * 100 > successRate) {
-                    Battle.log(`ミス！ 【${targetToHit.name}】に攻撃が当たらない！`);
-                    await Battle.wait(200); continue; 
-                }
-                let atkVal = 0, defVal = 0, ignoreDefense = false;
-                if (data && data.IgnoreDefense) ignoreDefense = true;
-                if (cmd.type === 'skill' && actor.passive?.atkIgnoreDef && Math.random() < 0.2) ignoreDefense = true;
-                if (isPhysical && actor.passive?.pierce && Math.random() < 0.2) ignoreDefense = true;
-                if (isPhysical) {
-                    atkVal = Battle.getBattleStat(actor, 'atk'); defVal = Battle.getBattleStat(targetToHit, 'def');
-                    if (ignoreDefense) Battle.log(`かいしんの一撃！`);
-                } else { 
-                    atkVal = Battle.getBattleStat(actor, 'mag'); defVal = Battle.getBattleStat(targetToHit, 'mag'); 
-                }
-                let baseDmgCalc = 0;
-                if (data && data.fix) {
-                    baseDmgCalc = baseDmg;
-                } else if (effectType === 'ブレス') {
-                    const atk = Battle.getBattleStat(actor, 'atk');
-                    const mag = Battle.getBattleStat(actor, 'mag');
-                    baseDmgCalc = Math.floor(((atk + mag) / 6 + baseDmg));
-                } else if (isPhysical) {
-                    baseDmgCalc = Math.floor(((atkVal / 2) + baseDmg) - (ignoreDefense ? 0 : defVal / 4));
-                } else {
-                    baseDmgCalc = Math.floor(((atkVal / 2) + baseDmg) - (defVal / 4));
-                }
-                if (baseDmgCalc < 1) baseDmgCalc = (Math.random() < 0.3) ? 1 : 0;
-                let totalMult = skillRate;
-                if (!isPhysical && cmd.type === 'skill' && actor.passive?.magCrit && Math.random() < 0.2) { totalMult *= 2.0; Battle.log(`魔力が暴走する！`); }
-                let bonusRate = 0, cutRate = 0, isImmune = false;
-                if (element) {
-                    const eAtk = (Battle.getBattleStat(actor, 'elmAtk') || {})[element] || 0;
-                    if(eAtk > 0) bonusRate += eAtk;
-                    const eRes = (targetToHit.getStat('elmRes') || {})[element] || 0;
-                    const bRes = (targetToHit.battleStatus.buffs['elmResUp']?.val || 0) - (targetToHit.battleStatus.debuffs['elmResDown']?.val || 0);
-                    if (eRes + bRes >= 100) isImmune = true; else cutRate += (eRes + bRes);
-                }
-                const finDmgVal = Battle.getBattleStat(actor, 'finDmg') || 0; bonusRate += finDmgVal;
-                let finRed = Battle.getBattleStat(targetToHit, 'finRed') || 0;
-                if (targetToHit.passive && targetToHit.passive.finRed10) finRed += 10;
-                if (finRed > 80) finRed = 80; cutRate += finRed;
-                let dmg = baseDmgCalc;
-                if (dmg > 0) {
-                    dmg = dmg * totalMult * (1.0 + bonusRate / 100) * (1.0 - cutRate / 100) * (0.85 + Math.random() * 0.3);
-                    if (targetToHit.status?.defend) dmg *= 0.5;
-                    dmg = Math.floor(dmg);
-                    if (!isImmune && dmg < 1) dmg = 1;
-                }
-                if (isImmune) dmg = 0;
-                targetToHit.hp -= dmg;
-                if (!cmd.isEnemy && dmg > (App.data.stats.maxDamage?.val || 0)) App.data.stats.maxDamage = { val: dmg, actor: actor.name, skill: data ? data.name : "通常攻撃" };
-                let dColor = '#fff';
-                const eColors = { 火: '#f88', 水: '#88f', 雷: '#ff0', 風: '#8f8', 光: '#ffc', 闇: '#a8f', 混沌: '#d4d' };
-                if (element && eColors[element]) dColor = eColors[element];
-                if (dmg === 0) Battle.log(`ミス！ 【${targetToHit.name}】は ダメージを うけない！`);
-                else Battle.log(`【${targetToHit.name}】に<span style="color:${dColor}">${dmg}</span>のダメージ！`);
-                if (dmg > 0) {
-                    let dRate = (data && data.drain) ? 0.5 : (actor.passive?.drain ? 0.2 : 0);
-                    if (dRate > 0) {
-                        const dAmt = Math.floor(dmg * dRate);
-                        const oldHp = actor.hp; actor.hp = Math.min(actor.baseMaxHp, actor.hp + dAmt);
-                        if(actor.hp - oldHp > 0) Battle.log(`【${actor.name}】は吸収効果でHPを${actor.hp - oldHp}回復した！`);
+                for (let i = 0; i < hitCount; i++) {
+                    let targetToHit = t;
+                    if (skillScope === 'ランダム') {
+                        const pool = cmd.isEnemy ? Battle.party.filter(p => p && !p.isDead) : Battle.enemies.filter(e => !e.isDead && !e.isFled);
+                        if (pool.length === 0) break;
+                        targetToHit = pool[Math.floor(Math.random() * pool.length)];
                     }
-                    if (actor.passive?.drainMp) {
-                        const mpAmt = Math.max(1, Math.floor(dmg * 0.01));
-                        actor.mp = Math.min(actor.baseMaxMp, actor.mp + mpAmt);
-                    }
-                }
-                if (dmg > 0 && isPhysical) {
-                    const tryS = (key, name, ailmentKey) => {
-                        const ch = (actor.getStat(key) || 0);
-                        if (ch > 0 && Math.random() * 100 < ch) {
-                            const resK = Battle.RESIST_MAP[ailmentKey] || ailmentKey;
-                            const resV = (Battle.getBattleStat(targetToHit, 'resists') || {})[resK] || 0;
-                            if (Math.random() * 100 >= resV && !targetToHit.battleStatus.ailments[ailmentKey]) {
-                                targetToHit.battleStatus.ailments[ailmentKey] = { turns: 3, chance: (ailmentKey==='Fear'?0.5:null) };
-                                Battle.log(`【${targetToHit.name}】は ${name}！`);
+                    if (targetToHit.isDead || targetToHit.isFled) { if (skillScope !== 'ランダム') break; continue; }
+
+                    if (!cmd.isEnemy && !isSupport) {
+                        const coverTarget = Battle.party.find(p => p && p !== targetToHit && !p.isDead && targetToHit.hp <= targetToHit.baseMaxHp * 0.5);
+                        if (coverTarget) {
+                            const coverChance = PassiveSkill.getSumValue(coverTarget, 'cover_rate_mult');
+                            if (coverChance > 0 && Math.random() * 100 < coverChance) {
+                                Battle.log(`【${coverTarget.name}】が【${targetToHit.name}】をかばった！`);
+                                targetToHit = coverTarget; targetToHit.isCovering = true;
                             }
                         }
-                    };
-                    tryS('attack_Poison', '毒におかされた', 'Poison');
-                    tryS('attack_Fear', '怯えてしまった', 'Fear');
-                    const dc = (actor.getStat('attack_InstantDeath') || 0);
-                    if (dc > 0 && Math.random() * 100 < dc) {
-                        const rv = (Battle.getBattleStat(targetToHit, 'resists') || {}).InstantDeath || 0;
-                        if (Math.random() * 100 >= rv) {
-                            targetToHit.hp = 0; targetToHit.isDead = true;
-                            Battle.log(`<span style="color:#ff00ff; font-weight:bold;">急所を貫いた！ 【${targetToHit.name}】は 息絶えた！</span>`);
-                        } 
                     }
-                }
-				
-				// ★攻撃側のシナジーによる追加判定：複数をループで処理するように修正
-				if (actor instanceof Player) {
-					Object.values(actor.equips).forEach(eq => {
-						if (eq && eq.isSynergy && eq.effects) {
-                            // 保持している全てのシナジー効果を順番に判定
-                            eq.effects.forEach(effect => {
-                                if (Math.random() < 0.2) {
-                                    // 四源の浸食: 全属性耐性ダウン
-                                    if (effect === 'allResDown20' && !t.isDead) {
-                                        t.battleStatus.debuffs['elmResDown'] = { val: 50, turns: 5 };
-                                        Battle.log(`【${t.name}】の 全属性耐性が 少しさがった！`);
-                                    }
-                                    // 終焉の宣告: 即死
-                                    if (effect === 'instantDeath20' && !t.isDead) {
-                                        const res = (t.resists && t.resists.InstantDeath) || 0;
-                                        if (Math.random() * 100 > res) {
-                                            t.hp = 0; t.isDead = true;
-                                            Battle.log(`<span style="color:#ff00ff; font-weight:bold;">急所を貫いた！ 【${targetToHit.name}】は 息絶えた！</span>`);
+
+                    if (!data.isPerfect) {
+                        let hitBonus = PassiveSkill.getSumValue(actor, 'hit_pct');
+                        if (loop === 1) hitBonus += PassiveSkill.getSumValue(actor, 'dual_hit_base');
+                        const baseHit = (data.hitRate !== undefined ? data.hitRate : 100) + hitBonus;
+                        const targetEva = (targetToHit.eva || 0) + PassiveSkill.getSumValue(targetToHit, 'eva_pct');
+                        const finalHitChance = (baseHit * ((actor.hit || 100) / 100)) - targetEva;
+                        
+                        if (Math.random() * 100 > finalHitChance) {
+                            Battle.log(`ミス！ 【${targetToHit.name}】に攻撃が当たらない！`);
+                            await Battle.wait(200); continue; 
+                        }
+                    }
+
+                    if (cmd.isEnemy && isPhysical && !cmd.isReaction) {
+                        const preemptRate = PassiveSkill.getSumValue(targetToHit, 'preempt_rate_base');
+                        if (preemptRate > 0 && Math.random() * 100 < preemptRate) {
+                            Battle.log(`【${targetToHit.name}】の 先制攻撃！`);
+                            await Battle.executeReactionAttack(targetToHit, actor);
+                        }
+                    }
+
+                    let isCrit = false; let ailmentChanceMult = 1.0;
+                    if (effectType !== 'ブレス') {
+                        const baseCrit = (data.critRate || 0) + PassiveSkill.getSumValue(actor, 'cri_pct');
+                        if (Math.random() * 100 < (baseCrit + (actor.cri || 0))) isCrit = true;
+                    }
+
+                    let atkVal = isPhysical ? Battle.getBattleStat(actor, 'atk') : Battle.getBattleStat(actor, 'mag');
+                    let defVal = isPhysical ? Battle.getBattleStat(targetToHit, 'def') : Battle.getBattleStat(targetToHit, 'mdef');
+                    
+                    let baseDmgCalc = 0;
+                    let ignoreDefense = (isCrit && isPhysical) || data.IgnoreDefense;
+                    if (!ignoreDefense && typeof PassiveSkill !== 'undefined') {
+                        if (actor.passive?.atkIgnoreDef && Math.random() < 0.2) ignoreDefense = true;
+                        if (isPhysical && actor.passive?.pierce && Math.random() < 0.2) ignoreDefense = true;
+                    }
+
+                    if (data.fix) baseDmgCalc = baseDmg;
+                    else if (effectType === 'ブレス') baseDmgCalc = Math.floor(((Battle.getBattleStat(actor, 'atk') + Battle.getBattleStat(actor, 'mag')) / 6 + baseDmg));
+                    else baseDmgCalc = Math.floor(((atkVal / 2) + baseDmg) - (ignoreDefense ? 0 : defVal / 4));
+                    if (baseDmgCalc < 1) baseDmgCalc = (Math.random() < 0.3) ? 1 : 0;
+
+                    let totalMult = skillRate;
+                    if (isPhysical) {
+                        if (actor.formation === 'back' && !['弓', '短剣', '杖'].includes(actor.weaponType)) totalMult *= 0.5;
+                        if (targetToHit.formation === 'back') totalMult *= 0.5;
+                    }
+
+                    if (typeof PassiveSkill !== 'undefined') {
+                        if (targetToHit.race === '不死者' || targetToHit.race === '魔族') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_demon_pct') / 100);
+                        if (targetToHit.race === '動物' || targetToHit.race === '獣人') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_beast_pct') / 100);
+                        if (targetToHit.race === '機械') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_machine_pct') / 100);
+                        if (targetToHit.race === '竜') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_dragon_pct') / 100);
+                        if (isPhysical) totalMult *= (1 + PassiveSkill.getSumValue(actor, 'physical_dmg_pct') / 100);
+                        else if (effectType === '魔法') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'magic_dmg_pct') / 100);
+                        else if (effectType === 'ブレス') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'breath_dmg_pct') / 100);
+                        if (actor.hp <= actor.baseMaxHp * 0.5) totalMult *= (1 + PassiveSkill.getSumValue(actor, 'low_hp_dmg_mult') / 100);
+                        if (actor.revengeStack && actor.revengeStack > 0) totalMult *= (1 + (actor.revengeStack * PassiveSkill.getSumValue(actor, 'revenge_dmg_pct')) / 100);
+                    }
+                    if (isCrit) { 
+                        if (isPhysical) { totalMult *= 1.5; Battle.log(`かいしんの一撃！`); }
+                        else { totalMult *= 2.0; ailmentChanceMult = 2.0; Battle.log(`魔力が暴走する！`); }
+                    } else if (!isPhysical && actor.passive?.magCrit && Math.random() < 0.2) { totalMult *= 2.0; Battle.log(`魔力が暴走する！`); }
+
+                    let bonusRate = 0, cutRate = 0, isImmune = false;
+                    if (element) {
+                        bonusRate += (Battle.getBattleStat(actor, 'elmAtk') || {})[element] || 0;
+                        let pierce = 0;
+                        if (typeof PassiveSkill !== 'undefined') {
+                            pierce = PassiveSkill.getSumValue(actor, 'all_elm_pierce_pct');
+                            const spKey = {火:'fire',水:'water',風:'wind',雷:'thunder',光:'light',闇:'dark',混沌:'chaos'}[element];
+                            if(spKey) pierce += PassiveSkill.getSumValue(actor, spKey + '_pierce_pct');
+                        }
+                        const finalRes = ((targetToHit.getStat('elmRes') || {})[element] || 0) + (targetToHit.battleStatus.buffs['elmResUp']?.val || 0) - (targetToHit.battleStatus.debuffs['elmResDown']?.val || 0) - pierce;
+                        if (finalRes >= 100) isImmune = true; else cutRate += finalRes;
+                    }
+                    bonusRate += Battle.getBattleStat(actor, 'finDmg') || 0;
+                    let finRed = (Battle.getBattleStat(targetToHit, 'finRed') || 0) + (targetToHit.passive?.finRed10 ? 10 : 0);
+                    if (isPhysical) finRed += PassiveSkill.getSumValue(targetToHit, 'physical_reduce_pct');
+                    else if (effectType === '魔法') finRed += PassiveSkill.getSumValue(targetToHit, 'magic_reduce_pct');
+                    else if (effectType === 'ブレス') finRed += PassiveSkill.getSumValue(targetToHit, 'breath_reduce_pct');
+                    if (targetToHit.isCovering) finRed += PassiveSkill.getSumValue(targetToHit, 'cover_reduce_mult');
+                    if (finRed > 80) finRed = 80; cutRate += finRed;
+
+                    let dmg = Math.floor(baseDmgCalc * totalMult * (1.0 + bonusRate / 100) * (1.0 - cutRate / 100) * (0.85 + Math.random() * 0.3));
+                    
+					// ★設計思想の反映: ダメージ計算の最後にタイプ別特性を計算
+					if (typeof PassiveSkill !== 'undefined') {
+						let typeDmgPct = 0;
+						let typeRedPct = 0;
+
+						if (isPhysical) {
+							typeDmgPct = PassiveSkill.getSumValue(actor, 'physical_dmg_pct'); // ID 10
+							typeRedPct = PassiveSkill.getSumValue(targetToHit, 'physical_reduce_pct'); // ID 15
+						} else if (effectType === '魔法') {
+							typeDmgPct = PassiveSkill.getSumValue(actor, 'magic_dmg_pct'); // ID 11
+							typeRedPct = PassiveSkill.getSumValue(targetToHit, 'magic_reduce_pct'); // ID 16
+						} else if (effectType === 'ブレス') {
+							typeDmgPct = PassiveSkill.getSumValue(actor, 'breath_dmg_pct'); // ID 12
+							typeRedPct = PassiveSkill.getSumValue(targetToHit, 'breath_reduce_pct'); // ID 17
+						}
+
+						// 最終乗算 (1.0 + 補正/100)
+						dmg = Math.floor(dmg * (1 + typeDmgPct / 100));
+						dmg = Math.floor(dmg * (1 - typeRedPct / 100));
+					}
+					
+					if (targetToHit.status?.defend) dmg = Math.floor(dmg * 0.5);
+                    if (isImmune) dmg = 0; else if (dmg < 1 && baseDmgCalc > 0) dmg = 1;
+
+                    targetToHit.hp -= dmg;
+                    targetToHit.revengeStack = (targetToHit.revengeStack || 0) + 1;
+                    actor.revengeStack = 0;
+
+                    if (!cmd.isEnemy && dmg > (App.data.stats.maxDamage?.val || 0)) {
+                        App.data.stats.maxDamage = { val: dmg, actor: actor.name, skill: data ? data.name : "通常攻撃" };
+                    }
+                    
+                    let dColor = element ? ({火:'#f88',水:'#88f',雷:'#ff0',風:'#8f8',光:'#ffc',闇:'#a8f',混沌:'#d4d'}[element] || '#fff') : '#fff';
+                    if (dmg === 0) Battle.log(`ミス！ 【${targetToHit.name}】は ダメージを うけない！`);
+                    else Battle.log(`【${targetToHit.name}】に<span style="color:${dColor}">${dmg}</span>のダメージ！`);
+
+                    if (targetToHit.hp <= 0) {
+                        const gutsChance = PassiveSkill.getSumValue(targetToHit, 'guts_rate');
+                        if (gutsChance > 0 && Math.random() * 100 < gutsChance) { targetToHit.hp = 1; Battle.log(`【${targetToHit.name}】は 根性で 踏みとどまった！`); }
+                    }
+                    
+                    if (dmg > 0 && effectType !== 'ブレス') {
+                        const reflectRate = PassiveSkill.getSumValue(targetToHit, 'reflect_dmg_mult');
+                        if (reflectRate > 0 && Math.random() < 0.2) { 
+                            const refDmg = Math.floor(dmg * (reflectRate / 100 + 0.1)); 
+                            actor.hp -= refDmg; Battle.log(`【${targetToHit.name}】の理力の壁が 反射！ 【${actor.name}】に ${refDmg} のダメージ！`);
+                        }
+                    }
+                    if (dmg > 0 && (data.drain || actor.passive?.drain)) {
+                        const dAmt = Math.floor(dmg * (data.drain ? 0.5 : 0.2));
+                        actor.hp = Math.min(actor.baseMaxHp, actor.hp + dAmt);
+                    }
+
+                    // --- 通常攻撃時の追加状態異常判定 (★特性ID31, 32の組み込み) ---
+                    if (dmg > 0 && isPhysical) {
+                        const curseBonus = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_curse_bonus') : 0;
+                        const bodyBonus = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_body_bonus') : 0;
+
+                        const tryS = (key, name, ailmentKey, bonus = 0) => {
+                            const ch = ((actor.getStat(key) || 0) + bonus) * ailmentChanceMult;
+                            if (ch > 0 && Math.random() * 100 < ch) {
+                                const resV = (Battle.getBattleStat(targetToHit, 'resists') || {})[Battle.RESIST_MAP[ailmentKey] || ailmentKey] || 0;
+                                if (Math.random() * 100 < (100 - resV)) {
+                                    targetToHit.battleStatus.ailments[ailmentKey] = { turns: 3, chance: (ailmentKey==='Fear'?0.5:null) };
+                                    Battle.log(`【${targetToHit.name}】は ${name}！`);
+                                }
+                            }
+                        };
+                        tryS('attack_Poison', 'どくにおかされた', 'Poison', bodyBonus);
+                        tryS('attack_Fear', '怯えてしまった', 'Fear', curseBonus);
+                        
+                        // 即死は「呪い体質」の対象
+                        const dc = ((actor.getStat('attack_InstantDeath') || 0) + curseBonus) * ailmentChanceMult;
+                        if (dc > 0 && Math.random() * 100 < dc) {
+                            const rv = (Battle.getBattleStat(targetToHit, 'resists') || {}).InstantDeath || 0;
+                            if (Math.random() * 100 < (100 - rv)) { targetToHit.hp = 0; targetToHit.isDead = true; Battle.log(`<span style="color:#ff00ff; font-weight:bold;">急所を貫いた！ 【${targetToHit.name}】は 息絶えた！</span>`); }
+                        }
+                    }
+
+                    if (actor instanceof Player) {
+                        Object.values(actor.equips).forEach(eq => {
+                            if (eq && eq.isSynergy && eq.effects) {
+                                eq.effects.forEach(effect => {
+                                    if (Math.random() < 0.2) {
+                                        if (effect === 'allResDown20' && !targetToHit.isDead) {
+                                            const dRes = (Battle.getBattleStat(targetToHit, 'resists') || {}).Debuff || 0;
+                                            if (Math.random() * 100 < (100 - dRes)) { targetToHit.battleStatus.debuffs['elmResDown'] = { val: 50, turns: 5 }; Battle.log(`【${targetToHit.name}】の 全属性耐性が 少しさがった！`); }
+                                        }
+                                        if (effect === 'instantDeath20' && !targetToHit.isDead) {
+                                            const res = (targetToHit.resists?.InstantDeath) || 0;
+                                            if (Math.random() * 100 < (100 - res)) { targetToHit.hp = 0; targetToHit.isDead = true; Battle.log(`<span style="color:#ff00ff; font-weight:bold;">急所を貫いた！ 【${targetToHit.name}】は 息絶えた！</span>`); }
                                         }
                                     }
-                                }
-                            });
-						}
-					});
-				}
+                                });
+                            }
+                        });
+                    }
 
-                if (cmd.type === 'skill') applyEffects(targetToHit, data);
+                    if (isPhysical && dmg > 0 && !targetToHit.isDead && !cmd.isReaction) {
+                        const counterRate = PassiveSkill.getSumValue(targetToHit, 'counter_rate_base');
+                        if (counterRate > 0 && Math.random() * 100 < counterRate) {
+                            Battle.log(`【${targetToHit.name}】の 反撃！`);
+                            await Battle.executeReactionAttack(targetToHit, actor);
+                        }
+                    }
 
-                if (targetToHit.hp <= 0) {
-                    targetToHit.hp = 0; targetToHit.isDead = true; Battle.log(`【${targetToHit.name}】は倒れた！`);
+                    if (cmd.type === 'skill') applyEffects(targetToHit, data, ailmentChanceMult);
+
+                    if (dmg > 0 && !targetToHit.isDead && targetToHit.hp <= targetToHit.baseMaxHp * 0.5 && !cmd.isReaction) {
+                        const chaseChance = PassiveSkill.getSumValue(actor, 'chase_rate_mult');
+                        if (chaseChance > 0 && Math.random() * 100 < chaseChance) {
+                            Battle.log(`【${actor.name}】の 追い討ち！`);
+                            await Battle.executeReactionAttack(actor, targetToHit);
+                        }
+                    }
+
+                    if (!cmd.isEnemy && !cmd.isReaction && !targetToHit.isDead) {
+                        const partners = Battle.party.filter(p => p && p !== actor && !p.isDead);
+                        for (const p of partners) {
+                            const chainChance = PassiveSkill.getSumValue(p, 'chain_rate_base');
+                            if (chainChance > 0 && Math.random() * 100 < chainChance) {
+                                Battle.log(`【${p.name}】が 連携した！`);
+                                await Battle.executeReactionAttack(p, targetToHit);
+                            }
+                        }
+                    }
+
+                    if (targetToHit.hp <= 0) {
+                        targetToHit.hp = 0; targetToHit.isDead = true; Battle.log(`【${targetToHit.name}】は倒れた！`);
+                        Battle.renderEnemies(); Battle.renderPartyStatus();
+                        break;
+                    }
+                    targetToHit.isCovering = false; 
                     Battle.renderEnemies(); Battle.renderPartyStatus();
-                    if (skillScope !== 'ランダム') break;
+                    if (hitCount > 1) await Battle.wait(150);
                 }
-                Battle.renderEnemies(); Battle.renderPartyStatus();
-                if (hitCount > 1) await Battle.wait(150);
             }
             await Battle.wait(100);
         }
+    },
+	
+	/**
+     * リアクション系特性（反撃、先制、連携、追い討ち）用の簡易攻撃実行
+     */
+    executeReactionAttack: async (actor, target) => {
+        // 通常攻撃 (ID: 1) のデータを取得
+        const attackSkill = DB.SKILLS.find(s => s.id === 1);
+        if (!attackSkill || target.isDead) return;
+
+        // 再帰呼び出しを防ぐため、isReaction フラグを立てて processAction を実行
+        await Battle.processAction({
+            type: 'skill',
+            actor: actor,
+            target: target,
+            data: attackSkill,
+            isReaction: true, // 重要：再帰（反撃の反撃など）を防止
+            targetScope: '単体',
+            isEnemy: !Battle.party.includes(actor)
+        });
     },
 	
     updateDeadState: () => {
@@ -1835,10 +2226,11 @@ findNextActor: () => {
     },
 
     checkFinish: () => {
+		if (Battle.party.every(p => p.isDead)) { setTimeout(Battle.lose, 800); return true; }
         if (Battle.enemies.every(e => e.isDead || e.isFled)) { setTimeout(Battle.win, 800); return true; }
-        if (Battle.party.every(p => p.isDead)) { setTimeout(Battle.lose, 800); return true; }
         return false;
     },
+
     getRandomAliveEnemy: () => {
         const alive = Battle.enemies.filter(e => !e.isDead && !e.isFled);
         if (alive.length === 0) return null;
@@ -2217,12 +2609,23 @@ findNextActor: () => {
         contentEl.innerHTML = html;
     },
 	
-	// --- 勝利処理：順序 [1]勝利ログ -> [2]経験値/LvUp -> [3]ドロップ判定&表示 ---
-    win: async () => {
+	win: async () => {
         Battle.phase = 'result'; Battle.active = false;
         const isEstark = App.data.battle && App.data.battle.isEstark;
         const isBossBattle = App.data.battle && App.data.battle.isBossBattle;
-        const floor = App.data.progress.floor || 1;
+        
+        // ★ドロップ品質を決定する基準階層(floor)の計算
+        let floor = App.data.progress.floor || 1;
+
+        if (Field.currentMapData && Field.currentMapData.isFixed) {
+            // 1. 固定ダンジョンの場合: マップデータの rank を使用
+            floor = Field.currentMapData.rank || 1;
+        } else if (!Field.currentMapData || Field.currentMapData.id === 'WORLD') {
+            // 2. フィールド（ワールドマップ）の場合: storystep * 5 を使用
+            const step = App.data.progress.storyStep || 0;
+            floor = Math.max(1, step * 5); // 0にならないよう最低1を担保
+        }
+        // 3. それ以外（アビス等のランダムダンジョン）: そのまま progress.floor を使用
 
         let totalExp = 0, totalGold = 0;
         const drops = []; 
@@ -2246,26 +2649,55 @@ findNextActor: () => {
             }
         });
 
-        // [2] 資源獲得・レベルアップ処理
+        // [2] 資源獲得・レベルアップ・特性（事後回復）処理
         App.data.gold += totalGold;
         Battle.log(` ${totalGold} Goldを獲得！`);
         Battle.log(` ${totalExp}ポイントの経験値を 獲得した！`);
 
         const surviveMembers = Battle.party.filter(p => !p.isDead);
+        
+        // 特性「56:解体」のパーティ合計値算出
+        let bonusNormal = 0, bonusRare = 0, bonusPlus3 = 0;
+        surviveMembers.forEach(p => {
+            const charData = App.getChar(p.uid);
+            if (charData && typeof PassiveSkill !== 'undefined') {
+                bonusNormal += PassiveSkill.getSumValue(charData, 'drop_normal_pct');
+                bonusRare   += PassiveSkill.getSumValue(charData, 'drop_rare_pct');
+                bonusPlus3  += PassiveSkill.getSumValue(charData, 'equip_plus3_pct');
+            }
+        });
+
         surviveMembers.forEach(p => {
             const charData = App.getChar(p.uid);
             if (charData) {
                 const oldLv = charData.level; // レベルアップ判定用
                 App.gainExp(charData, totalExp).forEach(msg => Battle.log(msg));
                 
-                // レベルアップした場合のみ、最大ステータスを更新して全快させる
+                // レベルアップした場合、最大ステータスを更新して全快
                 if (charData.level > oldLv) {
                     const stats = App.calcStats(charData);
                     p.level = charData.level;
                     p.baseMaxHp = stats.maxHp;
                     p.baseMaxMp = stats.maxMp;
-                    p.hp = p.baseMaxHp; // レベルアップ特典で全快
+                    p.hp = p.baseMaxHp;
                     p.mp = p.baseMaxMp;
+                } else {
+                    // ★特性 54:応急手当 / 55:魔力充填 (戦闘終了時の回復)
+                    if (typeof PassiveSkill !== 'undefined') {
+                        const hpRegen = PassiveSkill.getSumValue(charData, 'post_battle_hp_regen_pct');
+                        const mpRegen = PassiveSkill.getSumValue(charData, 'post_battle_mp_regen_pct');
+                        
+                        if (hpRegen > 0) {
+                            const amt = Math.floor(p.baseMaxHp * (hpRegen / 100));
+                            p.hp = Math.min(p.baseMaxHp, p.hp + amt);
+                            Battle.log(`【${p.name}】は応急手当でHPが${amt}回復した！`);
+                        }
+                        if (mpRegen > 0) {
+                            const amt = Math.floor(p.baseMaxMp * (mpRegen / 100));
+                            p.mp = Math.min(p.baseMaxMp, p.mp + amt);
+                            Battle.log(`【${p.name}】は魔力充填でMPが${amt}回復した！`);
+                        }
+                    }
                 }
             }
         });
@@ -2327,14 +2759,13 @@ findNextActor: () => {
             drops.push({ name: eq.name, isRare: true, isUltra: true, isEstark: true });
             hasUltraRareDrop = true; 
 
-            // ★追加: エスターク討伐時 10% の確率で「転生の実」をゲット (ウルトラレア扱い)
+            // エスターク討伐時 10% の確率で「転生の実」をゲット
             if (Math.random() < 0.10) {
                 const fruitId = 107;
                 App.data.items[fruitId] = (App.data.items[fruitId] || 0) + 1;
                 const itemDef = DB.ITEMS.find(i => i.id === fruitId);
                 if (itemDef) {
                     hasUltraRareDrop = true;
-                    // type: 'kai' を指定することでログをピンク色にする
                     drops.push({ name: itemDef.name, isRare: true, type: 'kai' });
                 }
             }
@@ -2342,11 +2773,35 @@ findNextActor: () => {
         } else {
             Battle.enemies.forEach(e => {
                 if (e.isFled) return;
-                const base = DB.MONSTERS.find(m => m.id === e.baseId);
-                if (!base) return;
+                const base = DB.MONSTERS.find(m => m.id === e.baseId) || e;
 
+                // --- A. モンスター固有ドロップ設定 (drops) がある場合 ---
+                if (e.drops) {
+                    // レアドロップ判定
+                    const rareRate = (e.drops.rare.rate || 0) + bonusRare;
+                    if (Math.random() * 100 < rareRate) {
+                        const itemDef = DB.ITEMS.find(i => i.id === e.drops.rare.id);
+                        if (itemDef) {
+                            App.data.items[itemDef.id] = (App.data.items[itemDef.id] || 0) + 1;
+                            hasRareDrop = true;
+                            drops.push({ name: itemDef.name, isRare: true, type: 'boss' });
+                        }
+                    } 
+                    // 通常ドロップ判定
+                    else {
+                        const normRate = (e.drops.normal.rate || 0) + bonusNormal;
+                        if (Math.random() * 100 < normRate) {
+                            const itemDef = DB.ITEMS.find(i => i.id === e.drops.normal.id);
+                            if (itemDef) {
+                                App.data.items[itemDef.id] = (App.data.items[itemDef.id] || 0) + 1;
+                                drops.push({ name: itemDef.name, isRare: false, type: 'item' });
+                            }
+                        }
+                    }
+                }
+
+                // --- B. ボス・強敵（ID 1000〜）の確定級ドロップロジック ---
                 if (base.id >= 1000) {
-                    // --- ボスドロップ判定 ---
                     let eq;
                     if (Math.random() < 0.02) { 
                         eq = createEquipWithMinRarity(floor, 3, ['SSR', 'UR', 'EX'], '武器');
@@ -2367,38 +2822,33 @@ findNextActor: () => {
                         hasRareDrop = true;
                         drops.push({ name: eq.name, isRare: true, type: 'boss' });
                     }
-                } else {
-                    // --- 通常モンスタードロップ判定 ---
-                    const r = Math.random();
+                } 
+                
+                // --- C. 通常ドロップロジック (固有設定がない場合も並行して動かす) ---
+                if (!e.drops) {
+                    const r = Math.random() * 100;
                     
-                    // 100階以降の育成アイテム（種・実）ドロップ判定
+                    // 100階以降の育成アイテム判定
                     if (floor >= 100) {
-                        const sr = Math.random();
+                        const sr = Math.random() * 100;
                         let sid = null;
                         
-                        // ★修正：レア敵(isRare)の場合は転生の実や種・きのみのドロップ率を増加
-                        let probFruit = base.isRare ? 0.05 : 0.001; // 転生の実: 0.1% → 5%
-                        let probSkill = base.isRare ? 0.15 : 0.011; // スキルのたね: 1.0% → 10% (累積しきい値)
-                        let probSeeds = base.isRare ? 0.45 : 0.181; // 各種種: 17% → 30% (累積しきい値)
+                        let probFruit = (base.isRare ? 5.0 : 0.1) + (bonusRare / 10); 
+                        let probSkill = (base.isRare ? 15.0 : 1.1) + bonusNormal; 
+                        let probSeeds = (base.isRare ? 45.0 : 18.0) + bonusNormal;
 
-                        if (sr < probFruit) {
-                            sid = 107;      // 転生の実
-                        } else if (sr < probSkill) {
-                            sid = 106;      // スキルのたね
-                        } else if (sr < probSeeds) {
-                            sid = 100 + Math.floor(Math.random() * 6); // 各種 種・きのみ
-                        }
+                        if (sr < probFruit) sid = 107; 
+                        else if (sr < probSkill) sid = 106;
+                        else if (sr < probSeeds) sid = 100 + Math.floor(Math.random() * 6);
 
                         if (sid) {
                             App.data.items[sid] = (App.data.items[sid] || 0) + 1;
                             const itemDef = DB.ITEMS.find(i => i.id === sid);
                             if (itemDef) {
                                 if (sid === 107) {
-                                    // 転生の実：ウルトラレア扱い (赤黒フラッシュ + ピンク文字)
                                     hasUltraRareDrop = true;
                                     drops.push({ name: itemDef.name, isRare: true, type: 'kai' });
                                 } else {
-                                    // スキルのたね(106)および通常の種(100-105)：ノーマル扱い
                                     drops.push({ name: itemDef.name, isRare: false, type: 'item' });
                                 }
                             }
@@ -2406,15 +2856,22 @@ findNextActor: () => {
                     }
                     
                     // 通常アイテム/装備判定
-                    if (r < 0.2) {
+                    const itemChance = 20 + bonusNormal;
+                    const equipChance = 35 + bonusNormal;
+
+                    if (r < itemChance) {
                         const candidates = DB.ITEMS.filter(i => i.rank <= Math.min(200, floor) && i.type !== '貴重品' && i.id < 100);
                         if (candidates.length > 0) {
                             const item = candidates[Math.floor(Math.random() * candidates.length)];
                             App.data.items[item.id] = (App.data.items[item.id] || 0) + 1;
                             drops.push({ name: item.name, isRare: false, type: 'item' });
                         }
-                    } else if (r < 0.35) {
-                        const eq = App.createEquipByFloor('drop', floor);
+                    } else if (r < equipChance) {
+                        // 特性「解体」による+3確率上昇判定
+                        let fixedPlus = null;
+                        if (Math.random() * 100 < bonusPlus3) fixedPlus = 3;
+                        
+                        const eq = App.createEquipByFloor('drop', floor, fixedPlus);
                         App.data.inventory.push(eq);
                         const isPlus3 = (eq.plus === 3);
                         if(isPlus3) hasRareDrop = true;
@@ -2464,7 +2921,6 @@ findNextActor: () => {
                     Battle.log(`<span style="color:#ffd700; font-weight:bold;">100,000 GEM</span> を獲得！`);
                     Battle.log(`なんと <span style="color:#ffd700; font-weight:bold;">${d.name}</span> を手に入れた！`);
                 } else if (d.type === 'kai') {
-                    // 転生の実や「改」装備はここでピンク色に強調
                     Battle.log(`なんと <span style="color:#ff00ff; font-weight:bold;">${d.name}</span> を手に入れた！`);
                 } else if (d.isRare) {
                     Battle.log(`なんと <span class="log-rare-drop">${d.name}</span> を手に入れた！`);
@@ -2477,22 +2933,18 @@ findNextActor: () => {
         App.save(); 
         Battle.log("\n▼ 画面タップで終了 ▼");
 
-        // ★追加・修正：ストーリー後処理の呼び出し
-        //if (isBossBattle && !isEstark) {
-            // 1. ダンジョン側の後処理 (階段出現等)
-        //    if (typeof Dungeon !== 'undefined' && typeof Dungeon.onBossDefeated === 'function') {
-        //        Dungeon.onBossDefeated();
-        //    }
-            
-            // 2. ストーリーイベント由来のバトルの場合、StoryManagerに通知
-            // App.data.battle.eventId にイベントIDが保存されていることが前提
-        //    const eventId = (App.data.battle && App.data.battle.eventId) ? App.data.battle.eventId : null;
-        //    if (eventId && typeof StoryManager !== 'undefined' && typeof StoryManager.onBattleWin === 'function') {
-        //        await StoryManager.onBattleWin(eventId);
-        //    }
-        //}
+        // ストーリー後処理
+        const eventId = (App.data.battle && App.data.battle.eventId) ? App.data.battle.eventId : null;
+        if (isBossBattle && !isEstark) {
+            if (typeof Dungeon !== 'undefined' && typeof Dungeon.onBossDefeated === 'function') {
+                Dungeon.onBossDefeated();
+            }
+            if (eventId && typeof StoryManager !== 'undefined' && typeof StoryManager.onBattleWin === 'function') {
+                await StoryManager.onBattleWin(eventId);
+            }
+        }
     },
-
+	
     lose: () => { 
 		Battle.active = false; 
 		Battle.log("全滅した..."); 
