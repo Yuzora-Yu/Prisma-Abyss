@@ -16,7 +16,7 @@ const PassiveSkill = {
         6:  { id: 6,  name: '鷹の目', type: '戦闘', weaponType: '弓', params: { dmg_pct: 1, hit_pct: 1 }, effect: '弓装備時にステータスが上昇する', desc: '弓装備時、与ダメージがスキル%上昇、命中率がスキル%上昇' },
         7:  { id: 7,  name: '杖', type: '武器', weaponType: '杖', params: { mag_pct: 3 }, effect: '杖装備時にステータスが上昇する', desc: '杖装備時の魔力がスキル×3%上昇' },
         //8:  { id: 8,  name: 'ニ刀流', type: '戦闘', params: { dual_dmg_base: 50, dual_hit_base: 50 }, effect: '盾装備不可になり、二刀流が可能になる', desc: '盾装備不可で武器を2本装備できるようになり、二刀流時は全ての攻撃スキルが2回発動する。2回目のダメージ・命中率は(スキル×2)+50%' },
-		8:  { id: 8,  name: 'ニ刀流', type: '戦闘', params: { dual_dmg_mult: 2, dual_dmg_base: 50, dual_hit_mult: 2, dual_hit_base: 50 }, effect: '盾装備不可になり、二刀流が可能になる', desc: '盾装備不可で武器を2本装備できるようになり、二刀流時は全ての攻撃スキルが2回発動する。2回目のダメージは(スキル×2)+50%、命中率は(スキル×2)+50%' },
+		8:  { id: 8,  name: 'ニ刀流', type: '戦闘', params: { dual_dmg_mult: 5, dual_dmg_base: 50, dual_hit_mult: 2, dual_hit_base: 50 }, effect: '盾装備不可になり、二刀流が可能になる', desc: '盾装備不可で武器を2本装備できるようになり、二刀流時は全ての攻撃スキルが2回発動する。2回目のダメージは(スキル×5)+50%、命中率は(スキル×2)+50%' },
         9:  { id: 9,  name: '両手持ち', type: '武器', params: { physical_dmg_pct: 3, hit_pct: 2, cri_pct: 2, two_handed: 1 }, effect: '盾装備が不可になり、両手持ちボーナスを得る', desc: '盾装備不可となり、与ダメージがスキル×3％上昇、命中率がスキル×2%上昇、クリティカル率がスキル×2%上昇' },
         10: { id: 10, name: '武術', type: '戦闘', params: { physical_dmg_pct: 3 }, effect: '物理攻撃が強くなる', desc: '物理攻撃時の与ダメージがスキル×3%上昇' },
         11: { id: 11, name: '呪文', type: '戦闘', params: { magic_dmg_pct: 3 }, effect: '呪文攻撃が強くなる', desc: '呪文攻撃時の与ダメージがスキル×3%上昇' },
@@ -251,6 +251,11 @@ PassiveSkill.getSumValue = function(entity, key) {
         // --- A. 通常のキー合算（耐性系など） ---
         if (p[key] !== undefined) {
             total += p[key] * lv;
+            // ★追加: _mult, _rate, _add, _pct で終わるキーの場合、対応する _base を一度だけ加算する
+            if (!key.endsWith('_base')) {
+                const baseKey = key.replace(/(_mult|_rate|_add|_pct)$/, '_base');
+                if (p[baseKey] !== undefined) total += p[baseKey];
+            }
         }
 
         // --- B. 特殊計算セクション（固定値を含むもの） ---

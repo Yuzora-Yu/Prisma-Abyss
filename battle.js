@@ -1693,7 +1693,13 @@ findNextActor: () => {
             totalActionLoops = 2;
         }
 
-        for (let loop = 0; loop < totalActionLoops; loop++) {
+        // ループの前に元のレートを保持
+        const baseSkillRate = skillRate;
+		
+		for (let loop = 0; loop < totalActionLoops; loop++) {
+			// ループごとに現在の倍率を決定
+            let currentSkillRate = baseSkillRate;
+			
             if (loop === 1) {
                 // ★修正: 追撃前に有効なターゲット（生存者）がいるかチェック
                 let hasValidTarget = false;
@@ -1712,7 +1718,8 @@ findNextActor: () => {
 
 				Battle.log(`【${actor.name}】の 追撃！`);
 				const dualBonus = PassiveSkill.getSumValue(actor, 'dual_dmg_mult');
-				skillRate = (dualBonus / 100);
+                // ★元の倍率に対して二刀流補正を乗算する
+                currentSkillRate = baseSkillRate * (dualBonus / 100);
             } else {
                 Battle.log(`【${actor.name}】の${skillName}！`);
             }
@@ -1989,14 +1996,16 @@ findNextActor: () => {
                     // 1. dataが未定義（通常攻撃等）でもエラーが出ないよう data?.isPerfect を使用
                     if (!data || !data.isPerfect) {
                         let baseHit;
+						
+						// スキル本来の命中率を取得（未定義なら100）
+                        const baseHitRate = (data && data.hitRate !== undefined) ? data.hitRate : 100;
 
-                        if (loop === 1) {
-                            // ★修正: 2回目の命中率は特性「二刀流」の計算式 (スキル×2)+50% を直接使用する
-                            // PassiveSkill.jsの汎用ロジックにより dual_hit_mult を呼べば base(50) も加算されます
-                            baseHit = PassiveSkill.getSumValue(actor, 'dual_hit_mult');
+                       if (loop === 1) {
+                            // ★2回目は「本来の命中率」に「二刀流補正(スキル*2 + 50)」を乗算する
+                            const dualHitBonus = PassiveSkill.getSumValue(actor, 'dual_hit_mult');
+                            baseHit = baseHitRate * (dualHitBonus / 100);
                         } else {
-                            // 2. 1回目：dataが未定義、またはhitRateが未定義の場合は 100(%) 扱いとする
-                            const baseHitRate = (data && data.hitRate !== undefined) ? data.hitRate : 100;
+                            // 1回目は通常通り（ステータス加算）
                             const hitBonus = PassiveSkill.getSumValue(actor, 'hit_pct');
                             baseHit = baseHitRate + hitBonus;
                         }
@@ -2051,7 +2060,9 @@ findNextActor: () => {
                     else baseDmgCalc = Math.floor(((atkVal / 2) + baseDmg) - (ignoreDefense ? 0 : defVal / 4));
                     if (baseDmgCalc < 1) baseDmgCalc = (Math.random() < 0.3) ? 1 : 0;
 
-                    let totalMult = skillRate;
+                    // ★修正: ループ内で計算された currentSkillRate（二刀流補正済み）を使用する
+                    let totalMult = currentSkillRate;
+					
                     if (isPhysical) {
                         if (actor.formation === 'back' && !['弓', '短剣', '杖'].includes(actor.weaponType)) totalMult *= 0.5;
                         if (targetToHit.formation === 'back') totalMult *= 0.5;
