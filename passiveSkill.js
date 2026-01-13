@@ -128,15 +128,18 @@ PassiveSkill.applyLevelUpTraits = function(char) {
                     newTraitId = PassiveSkill.getRandomTraitId();
                 }
             }
-
+			
             if (newTraitId) {
-                char.traits.push({ id: newTraitId, level: 1 });
-                // ログを文字列で返す
-                return `<span style="color:#00ffff;">特性【${PassiveSkill.MASTER[newTraitId].name}】を習得した！</span>`;
+                // 重複習得を避けるチェック（既存にあればレベルアップ扱いにするかスキップ）
+                if (char.traits.find(t => t.id === newTraitId)) return null;
+
+                char.traits.push({ id: newTraitId, level: 1, battleCount: 0 }); // battleCountを初期化
+                const m = PassiveSkill.MASTER[newTraitId];
+                // ★修正: ログにキャラ名を追加
+                return `<span style="color:#00ffff;">【${char.name}】は 新たな特性【${m.name}】を習得した！</span>`;
             }
         }
     }
-
     return null;
 };
 
@@ -169,23 +172,38 @@ PassiveSkill.getRandomTraitId = function(category = null) {
 };
 
 /**
- * 戦闘終了時に1%の確率で特性のレベルアップ判定を行う
- * @param {Object} char - App.data.characters内のキャラデータ
+ * 戦闘終了時の特性成長判定
+ * 確率式: 1 + (蓄積戦闘回数 / (現在Lv * 2)) %
  */
-PassiveSkill.checkTraitLevelUp = function(char) {
-    if (!char.traits || char.traits.length === 0) return;
+PassiveSkill.checkTraitGrowth = function(char) {
+    if (!char.traits || char.traits.length === 0 || char.isDead) return null;
+    
+    let growthLogs = [];
 
-    if (Math.random() < 0.01) {
-        const targetIdx = Math.floor(Math.random() * char.traits.length);
-        const trait = char.traits[targetIdx];
-        const master = PassiveSkill.MASTER[trait.id];
+    char.traits.forEach(trait => {
+        // 最大レベル(10)に達している場合はスキップ
+        if (trait.level >= 10) return;
 
-        trait.level = (trait.level || 0) + 1;
-        
-        if (window.App) {
-            App.log(`<span style="color:#ffff00; font-weight:bold;">${char.name}の特性【${master.name}】のレベルが ${trait.level} に上がった！</span>`);
+        // 特性ごとの戦闘回数を加算（未定義なら1で初期化）
+        trait.battleCount = (trait.battleCount || 0) + 1;
+
+        // 確率の計算: 1 + (戦闘回数 / (レベル * 2))
+        const chance = 1 + (trait.battleCount / (trait.level * 2));
+
+        // 判定実行
+        if (Math.random() * 100 < chance) {
+            trait.level++;
+            trait.battleCount = 0; // レベルアップしたのでリセット
+
+            const m = PassiveSkill.MASTER[trait.id];
+            if (m) {
+                growthLogs.push(`<span style="color:#ffd700;">${char.name}の特性【${m.name}】がLv${trait.level}に上がった！</span>`);
+            }
         }
-    }
+    });
+
+    // 複数の特性が同時に上がる可能性を考慮し、改行で繋いで返す（1つも上がらなければnull）
+    return growthLogs.length > 0 ? growthLogs.join('<br>') : null;
 };
 
 /**
