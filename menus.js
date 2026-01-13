@@ -949,6 +949,17 @@ const MenuInventory = {
             });
             const rarityColor = Menu.getRarityColor(item.rarity || 'N');
             
+            // ★追加ロジック: 特性情報の生成
+            let traitHtml = '';
+            if (item.traits && item.traits.length > 0) {
+                traitHtml = `<div style="display:flex; flex-wrap:wrap; gap:2px 6px; margin-top:2px; border-top:1px dashed #444; padding-top:2px; width:100%;">` +
+                    item.traits.map(t => {
+                        const m = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.MASTER[t.id] : null;
+                        return m ? `<span style="color:#00ffff; font-size:9px;">★${m.name} Lv${t.level}</span>` : '';
+                    }).join('') + 
+                `</div>`;
+            }
+            
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; width:100%; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:4px;">
                     <div style="display:flex; align-items:center; gap:5px;">
@@ -961,6 +972,7 @@ const MenuInventory = {
                         onclick="event.stopPropagation(); MenuInventory.toggleLock('${item.id}')">${item.locked ? '解除' : 'ロック'}</button>
                 </div>
                 ${Menu.getEquipDetailHTML(item, false)}
+                ${traitHtml} 
             `;
             
             div.onclick = () => {
@@ -1202,7 +1214,7 @@ const MenuAllies = {
 		if (eq.traits && eq.traits.length > 0) {
 			const traitList = eq.traits.map(t => {
 				const m = PassiveSkill.MASTER[t.id];
-				return m ? `<div style="color:#00ffff; font-size:10px;">★特性: ${m.name} Lv${t.level}</div>` : '';
+				return m ? `<div style="color:#00ffff; font-size:10px;">★${m.name} Lv${t.level}</div>` : '';
 			}).join('');
 			traitHtml = `<div style="margin-top:2px; border-top:1px solid rgba(0,255,255,0.2); padding-top:2px;">${traitList}</div>`;
 		}
