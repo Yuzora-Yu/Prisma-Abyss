@@ -1158,12 +1158,6 @@ const App = {
                 charData.exp -= nextExp;
                 charData.level++;
 				
-				// 特性習得チェックの呼び出し
-				if (typeof PassiveSkill !== 'undefined' && PassiveSkill.applyLevelUpTraits) {
-					const traitLog = PassiveSkill.applyLevelUpTraits(charData);
-					if (traitLog) logs.push(traitLog); // 特性習得ログをリザルトに追加
-				}
-                
                 // DBの基礎値を取得
                 const master = (window.CHARACTERS_DATA || []).find(c => c.id === charData.charId) || charData;
 
@@ -1229,12 +1223,7 @@ const App = {
                 charData.currentMp = stats.maxMp;
 
                 let logMsg = `${charData.name}はLv${charData.level}になった！<br>HP+${incHp}, 攻+${incAtk}, 魔防+${incMdef}...`;
-                
-                // 特性習得チェックの呼び出し
-                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.applyLevelUpTraits) {
-                    PassiveSkill.applyLevelUpTraits(charData);
-                }
-
+				
                 // 既存のスキル習得チェック
                 const newSkill = App.checkNewSkill(charData);
                 if (newSkill) {
@@ -1245,6 +1234,13 @@ const App = {
                         logMsg += `<br><span style="color:#ffff00;">${newSkill.name}を覚えた！</span>`;
                     }
                 }
+				
+				// 特性習得チェックの呼び出し
+				if (typeof PassiveSkill !== 'undefined' && PassiveSkill.applyLevelUpTraits) {
+					const traitLog = PassiveSkill.applyLevelUpTraits(charData);
+					if (traitLog) logs.push(traitLog); // 特性習得ログをリザルトに追加
+				}
+                
                 logs.push(logMsg);
             } else { break; }
         }

@@ -231,69 +231,101 @@ PassiveSkill.generateEquipmentTraits = function() {
  * @param {string} key - 取得したいパラメータキー
  * @returns {number} 合算された補正値
  */
+/* passiveSkill.js: PassiveSkill.getSumValue */
 PassiveSkill.getSumValue = function(entity, key) {
     let total = 0;
-    const allTraits = [];
+    // 特性IDごとの合計レベルを算出するマップ
+    const traitLvlMap = {};
 
-    // 1. キャラクター自身の特性 (ON/OFFチェック)
+    // 1. キャラクター自身の特性 (習得分：有効なもののみ)
     if (entity.traits) {
         entity.traits.forEach(t => {
             if (entity.disabledTraits && entity.disabledTraits.includes(t.id)) return;
-            allTraits.push({ id: t.id, lv: t.level });
+            traitLvlMap[t.id] = (traitLvlMap[t.id] || 0) + (t.level || 0);
         });
     }
 
-    // 2. 装備品の特性
+    // 2. 装備品の特性 (装備分：常に有効)
     if (entity.equips) {
         Object.values(entity.equips).forEach(eq => {
             if (eq && eq.traits) {
                 eq.traits.forEach(t => {
-                    allTraits.push({ id: t.id, lv: t.level });
+                    traitLvlMap[t.id] = (traitLvlMap[t.id] || 0) + (t.level || 0);
                 });
             }
         });
     }
 
-    // 3. 各特性の値を集計
-    allTraits.forEach(trait => {
-        const m = PassiveSkill.MASTER[trait.id];
-        if (!m || !m.params) return;
+    // 3. 各特性の値を集計 (加算されたLvを使用)
+    for (let id in traitLvlMap) {
+        const lv = traitLvlMap[id];
+        const m = PassiveSkill.MASTER[id];
+        if (!m || !m.params) continue;
 
-        const lv = trait.lv || 1;
         const p = m.params;
 
         // 武器条件チェック
-        if (m.weaponType && entity.weaponType !== m.weaponType) return;
-        if (p.weaponTypes && !p.weaponTypes.includes(entity.weaponType)) return;
+        if (m.weaponType && entity.weaponType !== m.weaponType) continue;
+        if (p.weaponTypes && !p.weaponTypes.includes(entity.weaponType)) continue;
 
-        // --- A. 通常のキー合算（耐性系など） ---
+        // --- A. 通常のキー合算（耐性・ステ補正など） ---
         if (p[key] !== undefined) {
             total += p[key] * lv;
-            // ★追加: _mult, _rate, _add, _pct で終わるキーの場合、対応する _base を一度だけ加算する
+            // _mult, _pct 等の場合に対応する _base を一度だけ加算
             if (!key.endsWith('_base')) {
                 const baseKey = key.replace(/(_mult|_rate|_add|_pct)$/, '_base');
                 if (p[baseKey] !== undefined) total += p[baseKey];
             }
         }
 
-        // --- B. 特殊計算セクション（固定値を含むもの） ---
-        
-        // ID 18: 根性 (guts_rate) の修正
-        if (key === 'guts_rate' && trait.id === 18) {
+        // --- B. 特殊計算セクション ---
+        // ID 18: 根性 (guts_rate)
+        if (key === 'guts_rate' && Number(id) === 18) {
             total += (p.guts_rate * lv) + p.guts_base;
         }
-
-        // ID 31: 呪い体質 (怯え・封印・即死用)
-        if (key === 'proc_curse_bonus' && trait.id === 31) {
+        // ID 31: 呪い体質
+        if (key === 'proc_curse_bonus' && Number(id) === 31) {
             total += (p.proc_curse_add * lv) + p.proc_curse_base;
         }
-
-        // ID 32: 人体知識 (毒・猛毒・感電・弱体用)
-        if (key === 'proc_body_bonus' && trait.id === 32) {
+        // ID 32: 人体知識
+        if (key === 'proc_body_bonus' && Number(id) === 32) {
             total += (p.proc_body_add * lv) + p.proc_body_base;
         }
-    });
+    }
+    return total;
+};
 
+
+PassiveSkill.getPartySumValue = function(key) {
+    let total = 0;
+    if (!App.data || !App.data.party) return 0;
+    const partyMembers = App.data.party.map(uid => App.data.characters.find(c => c.uid === uid)).filter(c => c);
+
+    partyMembers.forEach(c => {
+        const traitLvlMap = {};
+        if (c.traits) {
+            c.traits.forEach(t => {
+                if (c.disabledTraits && c.disabledTraits.includes(t.id)) return;
+                traitLvlMap[t.id] = (traitLvlMap[t.id] || 0) + (t.level || 0);
+            });
+        }
+        if (c.equips) {
+            Object.values(c.equips).forEach(eq => {
+                if (eq && eq.traits) {
+                    eq.traits.forEach(t => {
+                        traitLvlMap[t.id] = (traitLvlMap[t.id] || 0) + (t.level || 0);
+                    });
+                }
+            });
+        }
+        for (let id in traitLvlMap) {
+            const lv = traitLvlMap[id];
+            const master = PassiveSkill.MASTER[id];
+            if (master && master.params && master.params[key] !== undefined) {
+                total += master.params[key] * lv;
+            }
+        }
+    });
     return total;
 };
 
