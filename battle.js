@@ -255,7 +255,9 @@ const Battle = {
 
     // ★修正: ステータス取得時にシナジー補正を適用
     getBattleStat: (actor, key) => {
-        let val = (actor[key] !== undefined) ? actor[key] : 0;
+        // 基礎値の取得。mdefが未定義ならmagを代用（主にモンスター用）
+		let val = (actor[key] !== undefined) ? actor[key] : 
+				  (key === 'mdef' && actor['mag'] !== undefined) ? actor['mag'] : 0;
         
         // ★修正点: オブジェクト（resistsやelmRes）が空の場合、または数値が0の場合に getStat を呼び出す
         // これにより、装備やシナジーによる耐性補正が val に格納されます
@@ -1222,9 +1224,10 @@ findNextActor: () => {
         for(let cmd of playerCommands) {
             const actor = cmd.actor;
             // ★特性 8, 47, 48 等の追加行動系は別途フラグ管理されるが、ここでは既存の doubleAction/fastestAction を維持
-            const isDouble = (actor.passive && actor.passive.doubleAction) || (typeof PassiveSkill !== 'undefined' && Math.random() < 0.2); 
-            const isFast = (actor.passive && actor.passive.fastestAction) || (typeof PassiveSkill !== 'undefined' && Math.random() < 0.2);
-
+            // 固定確率(0.2)を削除し、純粋にスキルツリー等のパッシブフラグのみを参照するように修正
+			const isDouble = (actor.passive && actor.passive.doubleAction); 
+			const isFast = (actor.passive && actor.passive.fastestAction);
+			
             if (isFast) { 
                 cmd.speed = (Battle.getBattleStat(actor, 'spd') * 1.1) + (10 * 100000); 
                 Battle.log(`【${actor.name}】は最速で行動する！`); 
@@ -1684,15 +1687,16 @@ findNextActor: () => {
 
         // 特性 8: ニ刀流
         let totalActionLoops = 1;
-        if (isPhysical && typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue(actor, 'dual_dmg_base') > 0) {
-            totalActionLoops = 2;
-        }
+        // キーを _mult に変更することで (スキル*2 + 50) の合計値を取得
+		if (isPhysical && typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue(actor, 'dual_dmg_mult') > 0) {
+			totalActionLoops = 2;
+		}
 
         for (let loop = 0; loop < totalActionLoops; loop++) {
             if (loop === 1) {
-                Battle.log(`【${actor.name}】の 追撃！`);
-                const dualBonus = PassiveSkill.getSumValue(actor, 'dual_dmg_base');
-                skillRate = (dualBonus / 100);
+				Battle.log(`【${actor.name}】の 追撃！`);
+				const dualBonus = PassiveSkill.getSumValue(actor, 'dual_dmg_mult');
+				skillRate = (dualBonus / 100);
             } else {
                 Battle.log(`【${actor.name}】の${skillName}！`);
             }
@@ -1966,14 +1970,22 @@ findNextActor: () => {
                         }
                     }
 
-                    if (!data.isPerfect) {
-                        let hitBonus = PassiveSkill.getSumValue(actor, 'hit_pct');
-                        if (loop === 1) hitBonus += PassiveSkill.getSumValue(actor, 'dual_hit_base');
-                        const baseHit = (data.hitRate !== undefined ? data.hitRate : 100) + hitBonus;
-                        const targetEva = (targetToHit.eva || 0) + PassiveSkill.getSumValue(targetToHit, 'eva_pct');
-                        const finalHitChance = (baseHit * ((actor.hit || 100) / 100)) - targetEva;
-                        
-                        if (Math.random() * 100 > finalHitChance) {
+                    // 1. dataが未定義（通常攻撃等）でもエラーが出ないよう data?.isPerfect を使用
+					if (!data || !data.isPerfect) {
+						let hitBonus = PassiveSkill.getSumValue(actor, 'hit_pct');
+						if (loop === 1) hitBonus += PassiveSkill.getSumValue(actor, 'dual_hit_base');
+
+						// 2. dataが未定義、またはhitRateが未定義の場合は 100(%) 扱いとする
+						const baseHitRate = (data && data.hitRate !== undefined) ? data.hitRate : 100;
+						const baseHit = baseHitRate + hitBonus;
+
+						// 3. targetToHit（モンスター等）の回避率が未定義の場合は 0(%) 扱いとする
+						const targetEvaBase = (targetToHit.eva !== undefined) ? targetToHit.eva : 0;
+						const targetEva = targetEvaBase + PassiveSkill.getSumValue(targetToHit, 'eva_pct');
+						
+						const finalHitChance = (baseHit * ((actor.hit || 100) / 100)) - targetEva;
+						
+						if (Math.random() * 100 > finalHitChance) {
                             Battle.log(`ミス！ 【${targetToHit.name}】に攻撃が当たらない！`);
                             await Battle.wait(200); continue; 
                         }
@@ -1987,23 +1999,32 @@ findNextActor: () => {
                         }
                     }
 
-                    let isCrit = false; let ailmentChanceMult = 1.0;
-                    if (effectType !== 'ブレス') {
-                        const baseCrit = (data.critRate || 0) + PassiveSkill.getSumValue(actor, 'cri_pct');
-                        if (Math.random() * 100 < (baseCrit + (actor.cri || 0))) isCrit = true;
-                    }
+                    let isCrit = false;
+					let ailmentChanceMult = 1.0;
+
+					if (effectType !== 'ブレス') {
+						// スキル側会心率：未定義 or data=null なら 0%
+						const baseCrit = (data?.critRate ?? 0) + PassiveSkill.getSumValue(actor, 'cri_pct');
+
+						// actor の会心率：未定義なら 0%
+						const actorCri = (actor.cri ?? 0);
+
+						if (Math.random() * 100 < (baseCrit + actorCri)) isCrit = true;
+					}
 
                     let atkVal = isPhysical ? Battle.getBattleStat(actor, 'atk') : Battle.getBattleStat(actor, 'mag');
                     let defVal = isPhysical ? Battle.getBattleStat(targetToHit, 'def') : Battle.getBattleStat(targetToHit, 'mdef');
                     
                     let baseDmgCalc = 0;
-                    let ignoreDefense = (isCrit && isPhysical) || data.IgnoreDefense;
+                    //let ignoreDefense = (isCrit && isPhysical) || data.IgnoreDefense;
+					let ignoreDefense = (isCrit && isPhysical) || (data?.IgnoreDefense ?? false);
                     if (!ignoreDefense && typeof PassiveSkill !== 'undefined') {
                         if (actor.passive?.atkIgnoreDef && Math.random() < 0.2) ignoreDefense = true;
                         if (isPhysical && actor.passive?.pierce && Math.random() < 0.2) ignoreDefense = true;
                     }
 
-                    if (data.fix) baseDmgCalc = baseDmg;
+                    //if (data.fix) baseDmgCalc = baseDmg;
+					if (data?.fix) baseDmgCalc = baseDmg;
                     else if (effectType === 'ブレス') baseDmgCalc = Math.floor(((Battle.getBattleStat(actor, 'atk') + Battle.getBattleStat(actor, 'mag')) / 6 + baseDmg));
                     else baseDmgCalc = Math.floor(((atkVal / 2) + baseDmg) - (ignoreDefense ? 0 : defVal / 4));
                     if (baseDmgCalc < 1) baseDmgCalc = (Math.random() < 0.3) ? 1 : 0;
@@ -2089,21 +2110,29 @@ findNextActor: () => {
                     else Battle.log(`【${targetToHit.name}】に<span style="color:${dColor}">${dmg}</span>のダメージ！`);
 
                     if (targetToHit.hp <= 0) {
-                        const gutsChance = PassiveSkill.getSumValue(targetToHit, 'guts_rate');
-                        if (gutsChance > 0 && Math.random() * 100 < gutsChance) { targetToHit.hp = 1; Battle.log(`【${targetToHit.name}】は 根性で 踏みとどまった！`); }
+                        // MASTERの定義に合わせ guts_mult を呼び出すことで (スキル*3 + 20) を取得
+						const gutsChance = PassiveSkill.getSumValue(targetToHit, 'guts_mult');
+						if (gutsChance > 0 && Math.random() * 100 < gutsChance) { targetToHit.hp = 1; Battle.log(`【${targetToHit.name}】は 根性で 踏みとどまった！`); }
                     }
                     
                     if (dmg > 0 && effectType !== 'ブレス') {
                         const reflectRate = PassiveSkill.getSumValue(targetToHit, 'reflect_dmg_mult');
-                        if (reflectRate > 0 && Math.random() < 0.2) { 
-                            const refDmg = Math.floor(dmg * (reflectRate / 100 + 0.1)); 
-                            actor.hp -= refDmg; Battle.log(`【${targetToHit.name}】の理力の壁が 反射！ 【${actor.name}】に ${refDmg} のダメージ！`);
-                        }
+						// ハードコードされた 0.2 を CSV準拠の計算値 (スキル*1 + 5) に変更
+						const reflectTrigger = PassiveSkill.getSumValue(targetToHit, 'reflect_trigger_mult');
+						if (reflectRate > 0 && Math.random() * 100 < reflectTrigger) { 
+							const refDmg = Math.floor(dmg * (reflectRate / 100 + 0.1)); 
+							actor.hp -= refDmg; Battle.log(`【${targetToHit.name}】の理力の壁が 反射！ 【${actor.name}】に ${refDmg} のダメージ！`);
+						}
                     }
-                    if (dmg > 0 && (data.drain || actor.passive?.drain)) {
-                        const dAmt = Math.floor(dmg * (data.drain ? 0.5 : 0.2));
-                        actor.hp = Math.min(actor.baseMaxHp, actor.hp + dAmt);
-                    }
+                    //if (dmg > 0 && (data.drain || actor.passive?.drain)) {
+                    //    const dAmt = Math.floor(dmg * (data.drain ? 0.5 : 0.2));
+                    //    actor.hp = Math.min(actor.baseMaxHp, actor.hp + dAmt);
+                    //}
+					if (dmg > 0 && ((data?.drain ?? false) || actor.passive?.drain)) {
+						const dAmt = Math.floor(dmg * ((data?.drain ?? false) ? 0.5 : 0.2));
+						actor.hp = Math.min(actor.baseMaxHp, actor.hp + dAmt);
+					}
+
 
                     // --- 通常攻撃時の追加状態異常判定 (★特性ID31, 32の組み込み) ---
                     if (dmg > 0 && isPhysical) {
