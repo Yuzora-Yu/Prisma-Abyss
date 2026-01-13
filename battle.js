@@ -14,7 +14,7 @@ const Battle = {
     
     // ステータス表示名マッピング
     statNames: {
-        atk: '攻撃力', def: '守備力', spd: '素早さ', mag: '魔力',
+        atk: '攻撃力', def: '守備力', spd: '素早さ', mag: '魔力', mdef: '魔法防御',
         elmResUp: '全属性耐性', elmResDown: '全属性耐性',
         Poison: '毒', ToxicPoison: '猛毒', Shock: '感電', Fear: '怯え',
         SpellSeal: '呪文封印', SkillSeal: '特技封印', HealSeal: '回復封印',HPRegen: 'HP回復' ,MPRegen: 'MP回復',
@@ -482,7 +482,7 @@ const Battle = {
         m.baseStats.def = Math.floor((base.def / rank) * floor * randMult);
         m.baseStats.spd = Math.floor((base.spd / rank) * floor * randMult);
         m.baseStats.mag = Math.floor((base.mag / rank) * floor * randMult);
-        m.mdef           = Math.floor(((base.mdef || 10) / rank) * floor * randMult);
+        m.mdef           = Math.floor(((base.mdef || base.mag) / rank) * floor * randMult);
 
         // ★修正: 命中・回避・会心は階層倍率を適用せず、0〜20のランダム加算に留める
         m.hit = (base.hit || 100) + Math.floor(Math.random() * 21);
@@ -1463,7 +1463,7 @@ findNextActor: () => {
                     const recMp = Math.floor(actor.baseMaxMp * (totalMpRegenPct / 100));
                     if (recMp > 0) {
                         actor.mp = Math.min(actor.baseMaxMp, actor.mp + recMp);
-                        Battle.log(`【${actor.name}】は魔力循環により MPが ${recMp} 回復した`);
+                        //Battle.log(`【${actor.name}】は魔力循環により MPが ${recMp} 回復した`);
                     }
                 }
             }
