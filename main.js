@@ -818,35 +818,42 @@ const App = {
     // DBのマスタデータを取得 (基礎ステータス参照用)
     const base = (window.CHARACTERS_DATA || []).find(c => c.id === char.charId) || char;
 
-        // equips キー揺れ吸収用ヘルパ (全部位対応版)
+    /* main-1.js の App.calcStats 内、getEquip を以下に差し替えてください */
+
+    // equips キー揺れ吸収用ヘルパ (全装備タイプ・スロット網羅版)
     const getEquip = (part) => {
         if (!char.equips) return null;
 
-        // 1. そのままのキーで見つかれば返す
-        if (char.equips[part]) return char.equips[part];
-
-        // 2. 英語名と日本語名のマッピング
+        // 英語の内部パーツ名から、セーブデータで使われうる「日本語キー」の候補リスト
         const mapping = {
-            'Weapon': '武器', 'weapon': '武器',
-            'Shield': '盾',   'shield': '盾',
-            'Head':   '頭',   'head':   '頭',
-            'Body':   '体',   'body':   '体', 'Armor': '体',
-            'Legs':   '足',   'legs':   '足', 'Feet':  '足'
+            // 武器：BASE_OPTS_MAPの武器種を網羅
+            'Weapon': ['武器', '剣', '斧', '槍', '短剣', '弓', '杖', 'weapon'],
+            // 盾：腕輪は盾装備という仕様を反映
+            'Shield': ['盾', '腕輪', 'shield'],
+            // 頭
+            'Head':   ['頭', '兜', '帽子', 'head'],
+            // 体
+            'Body':   ['体', '鎧', 'ローブ', 'body', 'Armor'],
+            // 足
+            'Legs':   ['足', 'ブーツ', 'くつ', 'legs', 'Feet']
         };
 
-        const jpPart = mapping[part];
-        if (jpPart && char.equips[jpPart]) {
-            return char.equips[jpPart];
+        // 1. まずは指定されたキーそのものでチェック (例: getEquip('武器'))
+        if (char.equips[part]) return char.equips[part];
+
+        // 2. マッピングリストから候補を順番にチェック
+        const candidates = mapping[part] || [];
+        for (const key of candidates) {
+            if (char.equips[key]) return char.equips[key];
         }
 
         return null;
     };
 
-
-    // 武器種の判定 (特性およびスキルツリー判定用)
-    const weaponEq = getEquip('武器') || getEquip('Weapon') || getEquip('weapon');
+    /* main-1.js の calcStats 冒頭 */
+    // 武器種の判定 (ここで確実に '斧' 等をセットし、データ末尾の '素手' を上書きする)
+    const weaponEq = getEquip('Weapon'); // 上記の網羅版getEquipを使用
     if (weaponEq) {
-        // ★ baseName は装備直下 / data内 どちらにも対応
         const bn = weaponEq.baseName || (weaponEq.data && weaponEq.data.baseName);
         char.weaponType = bn || '素手';
     } else {
