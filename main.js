@@ -818,23 +818,30 @@ const App = {
     // DBのマスタデータを取得 (基礎ステータス参照用)
     const base = (window.CHARACTERS_DATA || []).find(c => c.id === char.charId) || char;
 
-    // equips キー揺れ吸収用ヘルパ
+        // equips キー揺れ吸収用ヘルパ (全部位対応版)
     const getEquip = (part) => {
         if (!char.equips) return null;
 
-        // まずはそのまま
+        // 1. そのままのキーで見つかれば返す
         if (char.equips[part]) return char.equips[part];
 
-        // 武器スロットの揺れだけ特別扱い（他スロットに武器を流用しない）
-        const isWeaponSlot =
-            part === '武器' || part === 'Weapon' || part === 'weapon';
+        // 2. 英語名と日本語名のマッピング
+        const mapping = {
+            'Weapon': '武器', 'weapon': '武器',
+            'Shield': '盾',   'shield': '盾',
+            'Head':   '頭',   'head':   '頭',
+            'Body':   '体',   'body':   '体', 'Armor': '体',
+            'Legs':   '足',   'legs':   '足', 'Feet':  '足'
+        };
 
-        if (isWeaponSlot) {
-            return char.equips['武器'] || char.equips.Weapon || char.equips.weapon || null;
+        const jpPart = mapping[part];
+        if (jpPart && char.equips[jpPart]) {
+            return char.equips[jpPart];
         }
 
         return null;
     };
+
 
     // 武器種の判定 (特性およびスキルツリー判定用)
     const weaponEq = getEquip('武器') || getEquip('Weapon') || getEquip('weapon');
