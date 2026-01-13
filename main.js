@@ -876,7 +876,7 @@ const App = {
         maxMp: char.mp + Math.floor((base.mp || 50) * lbRate * lb),
         atk:   char.atk + Math.floor((base.atk || 10) * lbRate * lb),
         def:   char.def + Math.floor((base.def || 10) * lbRate * lb),
-        mdef:  (base.mdef || 0) + Math.floor((base.mdef || 10) * lbRate * lb),
+        mdef:  char.mdef + Math.floor((base.mdef || 10) * lbRate * lb),
         spd:   char.spd + Math.floor((base.spd || 10) * lbRate * lb),
         mag:   char.mag + Math.floor((base.mag || 10) * lbRate * lb),
 
