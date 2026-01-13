@@ -1162,49 +1162,64 @@ const MenuAllies = {
         else MenuAllies.renderDetail();
     },
 
-    getEquipFullDetailHTML: (eq) => {
-        if (!eq) return '<span style="color:#555;">装備なし</span>';
-        let stats = [];
-        if(eq.data.atk) stats.push(`攻+${eq.data.atk}`);
-        if(eq.data.def) stats.push(`防+${eq.data.def}`);
-        if(eq.data.spd) stats.push(`速+${eq.data.spd}`);
-        if(eq.data.mag) stats.push(`魔+${eq.data.mag}`);
-        if(eq.data.mdef) stats.push(`魔防+${eq.data.mdef}`);
-        if(eq.data.finDmg) stats.push(`与ダメ+${eq.data.finDmg}%`);
-        if(eq.data.finRed) stats.push(`被ダメ-${eq.data.finRed}%`);
-        
-        for (let key in eq.data) {
-            if (key.startsWith('resists_')) {
-                const label = (typeof Battle !== 'undefined' && Battle.statNames) ? (Battle.statNames[key.replace('resists_', '')] || key) : key;
-                stats.push(`${label}耐+${eq.data[key]}%`);
-            } else if (key.startsWith('attack_')) {
-                const label = (typeof Battle !== 'undefined' && Battle.statNames) ? (Battle.statNames[key.replace('attack_', '')] || key) : key;
-                stats.push(`攻撃時${eq.data[key]}%で${label}`);
-            }
-        }
-        
-        let baseHtml = `<div style="font-size:10px; color:#ccc;">${stats.join(' ')}</div>`;
-        let optsHtml = '';
-        if (eq.opts && eq.opts.length > 0) {
-            const optsList = eq.opts.map(o => {
-                const color = Menu.getRarityColor(o.rarity || 'N');
-                const unit = o.unit === 'val' ? '' : o.unit;
-                return `<div style="color:${color}; font-size:10px;">[${o.rarity}] ${o.label} +${o.val}${unit}</div>`;
-            }).join('');
-            optsHtml = `<div style="margin-top:2px;">${optsList}</div>`;
-        }
+    /* menus.js 内に追加または修正 */
+	getEquipFullDetailHTML: (eq) => {
+		if (!eq) return '<span style="color:#555;">装備なし</span>';
+		let stats = [];
+		if(eq.data.atk) stats.push(`攻+${eq.data.atk}`);
+		if(eq.data.def) stats.push(`防+${eq.data.def}`);
+		if(eq.data.spd) stats.push(`速+${eq.data.spd}`);
+		if(eq.data.mag) stats.push(`魔+${eq.data.mag}`);
+		if(eq.data.mdef) stats.push(`魔防+${eq.data.mdef}`);
+		if(eq.data.finDmg) stats.push(`与ダメ+${eq.data.finDmg}%`);
+		if(eq.data.finRed) stats.push(`被ダメ-${eq.data.finRed}%`);
+		
+		for (let key in eq.data) {
+			if (key.startsWith('resists_')) {
+				const label = (typeof Battle !== 'undefined' && Battle.statNames) ? (Battle.statNames[key.replace('resists_', '')] || key) : key;
+				stats.push(`${label}耐+${eq.data[key]}%`);
+			} else if (key.startsWith('attack_')) {
+				const label = (typeof Battle !== 'undefined' && Battle.statNames) ? (Battle.statNames[key.replace('attack_', '')] || key) : key;
+				stats.push(`攻撃時${eq.data[key]}%で${label}`);
+			}
+		}
+		
+		let baseHtml = `<div style="font-size:10px; color:#ccc;">${stats.join(' ')}</div>`;
+		
+		// オプション表示
+		let optsHtml = '';
+		if (eq.opts && eq.opts.length > 0) {
+			const optsList = eq.opts.map(o => {
+				const color = Menu.getRarityColor(o.rarity || 'N');
+				const unit = o.unit === 'val' ? '' : o.unit;
+				return `<div style="color:${color}; font-size:10px;">[${o.rarity}] ${o.label} +${o.val}${unit}</div>`;
+			}).join('');
+			optsHtml = `<div style="margin-top:2px;">${optsList}</div>`;
+		}
 
-        let synHtml = '';
-        if (typeof App.checkSynergy === 'function') {
-            const syns = App.checkSynergy(eq);
-            if (syns && syns.length > 0) {
-                synHtml = syns.map(syn => 
-                    `<div style="margin-top:2px; font-size:10px; color:${syn.color||'#f88'};">★${syn.name}: ${syn.desc}</div>`
-                ).join('');
-            }
-        }
-        return `<div>${baseHtml}${optsHtml}${synHtml}</div>`;
-    },
+		// ★追加：特性表示 (青文字で目立たせる)
+		let traitHtml = '';
+		if (eq.traits && eq.traits.length > 0) {
+			const traitList = eq.traits.map(t => {
+				const m = PassiveSkill.MASTER[t.id];
+				return m ? `<div style="color:#00ffff; font-size:10px;">★特性: ${m.name} Lv${t.level}</div>` : '';
+			}).join('');
+			traitHtml = `<div style="margin-top:2px; border-top:1px solid rgba(0,255,255,0.2); padding-top:2px;">${traitList}</div>`;
+		}
+
+		// シナジー表示
+		let synHtml = '';
+		if (typeof App.checkSynergy === 'function') {
+			const syns = App.checkSynergy(eq);
+			if (syns && syns.length > 0) {
+				synHtml = syns.map(syn => 
+					`<div style="margin-top:2px; font-size:10px; color:${syn.color||'#f88'};">★${syn.name}: ${syn.desc}</div>`
+				).join('');
+			}
+		}
+		
+		return `<div>${baseHtml}${optsHtml}${traitHtml}${synHtml}</div>`;
+	},
 
     renderDetail: () => {
         document.getElementById('allies-list-view').style.display = 'none'; 
@@ -1539,48 +1554,63 @@ const MenuAllies = {
                 }).join('');
             contentHtml = `<div style="margin-bottom:10px; padding:8px; background:#333; border-radius:4px; border:1px solid #444;"><button class="btn" style="width:100%; background:${autoStatus ? '#d00' : '#444'}; font-weight:bold; font-size:11px;" onclick="MenuAllies.toggleFullAuto()">フルオート(スキル使用): ${autoStatus ? 'ON' : 'OFF'}</button></div><div id="skill-list-container" style="display:flex; flex-direction:column;">${skillHtml}</div>`;
         } else if (MenuAllies.currentTab === 4) {
-			// --- 特性タブ ---
-			const allTraits = [];
-			if (c.traits) c.traits.forEach(t => { 
-				const m = PS ? PS.MASTER[t.id] : null; 
-				if (m) allTraits.push({ ...m, lv: t.level, isEquip: false, id: t.id }); 
-			});
-			if (c.equips) Object.values(c.equips).forEach(eq => { 
-				if (eq && eq.traits) eq.traits.forEach(t => { 
-					const m = PS ? PS.MASTER[t.id] : null; 
-					if (m) allTraits.push({ ...m, lv: t.level, isEquip: true, id: t.id, eqName: eq.name }); 
-				}); 
-			});
+			// --- 特性タブ (取得順 -> 装備品の順) ---
+			const PS = (typeof PassiveSkill !== 'undefined') ? PassiveSkill : null;
+			const listData = [];
 
-			const traitMap = {};
-			allTraits.forEach(t => {
-				// ここで ...t により、マスターの effect や desc がコピーされます
-				if (!traitMap[t.id]) traitMap[t.id] = { ...t, lv: 0, sources: [] }; 
-				traitMap[t.id].lv += t.lv;
+			// 1) 自力習得 (取得順を維持)
+			if (c.traits) {
+				c.traits.forEach(t => {
+					const m = PS ? PS.MASTER[t.id] : null;
+					if (m) listData.push({ ...m, lv: t.level, isEquip: false, id: t.id });
+				});
+			}
+
+			// 2) 装備品由来 (各装備スロットから抽出)
+			if (c.equips) {
+				Object.values(c.equips).forEach(eq => {
+					if (eq && eq.traits) {
+						eq.traits.forEach(t => {
+							const m = PS ? PS.MASTER[t.id] : null;
+							if (m) listData.push({ ...m, lv: t.level, isEquip: true, id: t.id, eqName: eq.name });
+						});
+					}
+				});
+			}
+
+			MenuAllies.currentTraitListData = listData;
+
+			const traitListHtml = listData.map((t, index) => {
+				// 自力習得分のみ無効化判定
+				const isDisabled = !t.isEquip && c.disabledTraits.includes(t.id);
 				
-				// 由来（ソース）は内部的に保持するだけにする
-				const sourceLabel = t.isEquip ? `[${t.eqName}]` : '[習得]';
-				traitMap[t.id].sources.push(`${sourceLabel} Lv.${t.lv}`);
-			});
-
-			// データの保持
-			const traitListData = Object.values(traitMap);
-			MenuAllies.currentTraitListData = traitListData;
-
-			const traitListHtml = traitListData.map((t, index) => {
-				const isDisabled = c.disabledTraits.includes(t.id);
-				return `
-				<div style="background:#252525; border:1px solid #444; border-radius:4px; padding:8px; margin-bottom:6px; cursor:pointer;" 
-					 onclick="MenuTraitDetail.open(${index}, MenuAllies.currentTraitListData)">
-					<div style="display:flex; justify-content:space-between; align-items:flex-start;">
-						<div>
-							<span style="font-weight:bold; color:${isDisabled ? '#666' : '#ffd700'}; font-size:13px;">${t.name} Lv.${t.lv}</span>
-							<span style="font-size:9px; color:#888; margin-left:5px;">(${t.type})</span>
-						</div>
+				// 装備由来は常にON（固定）扱い
+				const statusColor = t.isEquip ? '#00ffff' : (isDisabled ? '#666' : '#ffd700');
+				
+				// 操作ボタンの構築
+				let buttonHtml = '';
+				if (t.isEquip) {
+					// 装備由来は「装備固定」として表示し、クリック不可
+					buttonHtml = `<div style="padding:2px 10px; font-size:10px; background:#222; border:1px solid #00ffff; color:#00ffff; border-radius:3px; opacity:0.8;">装備固定</div>`;
+				} else {
+					// 自力習得は従来通りトグル可能
+					buttonHtml = `
 						<button class="btn" style="padding:2px 10px; font-size:10px; background:${isDisabled ? '#444' : '#060'}; color:#fff;" 
 								onclick="event.stopPropagation(); MenuAllies.toggleTrait(${t.id})">
 							${isDisabled ? 'OFF' : 'ON'}
-						</button>
+						</button>`;
+				}
+
+				return `
+				<div style="background:#252525; border:1px solid ${t.isEquip ? '#00ffff44' : '#444'}; border-radius:4px; padding:8px; margin-bottom:6px; cursor:pointer;" 
+					 onclick="MenuTraitDetail.open(${index}, MenuAllies.currentTraitListData)">
+					<div style="display:flex; justify-content:space-between; align-items:flex-start;">
+						<div>
+							<span style="font-weight:bold; color:${statusColor}; font-size:13px;">${t.name} Lv.${t.lv}</span>
+							${t.isEquip ? `<span style="font-size:8px; color:#00ffff; margin-left:4px;">[${t.eqName}]</span>` : ''}
+							<span style="font-size:9px; color:#888; margin-left:5px;">(${t.type})</span>
+						</div>
+						${buttonHtml}
 					</div>
 					<div style="font-size:11px; color:${isDisabled ? '#555' : '#ccc'}; margin-top:4px; line-height:1.3;">
 						${t.effect || '効果情報なし'}
