@@ -2884,54 +2884,69 @@ findNextActor: () => {
         let hpRecovered = false; // パーティ内の一人でも回復すればtrue
         let mpRecovered = false;
 
-        surviveMembers.forEach(p => {
-            const charData = App.getChar(p.uid);
-            if (charData) {
-                const oldLv = charData.level;
+        // --- 修正版: 勝利リザルトのループ処理 ---
+		for (const p of surviveMembers) {
+			const charData = App.getChar(p.uid);
+			if (!charData) continue;
 
-                // [A] キャラクターのレベルアップログ取得
-                const lvLogs = App.gainExp(charData, totalExp);
-                
-                // [B] 特性の成長ログ取得（内部でbattleCount加算とLvUP判定）
-                let traitGrowthLog = null;
-                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.checkTraitGrowth) {
-                    traitGrowthLog = PassiveSkill.checkTraitGrowth(charData);
-                }
+			const oldLv = charData.level;
 
-                // --- ログ表示の実行順序を固定： キャラLvUP -> 特性LvUP ---
-                lvLogs.forEach(msg => Battle.log(msg));
-                if (traitGrowthLog) Battle.log(traitGrowthLog);
+			// [A] キャラクターのレベルアップログ取得
+			const lvLogs = App.gainExp(charData, totalExp);
 
-                // --- ステータス更新および回復処理 ---
-                if (charData.level > oldLv) {
-                    // レベルアップした場合はステータス更新して全快
-                    const stats = App.calcStats(charData);
-                    p.level = charData.level;
-                    p.baseMaxHp = stats.maxHp;
-                    p.baseMaxMp = stats.maxMp;
-                    p.hp = p.baseMaxHp;
-                    p.mp = p.baseMaxMp;
-                } else {
-                    // レベルアップしなかったキャラに対し、パーティ特性による回復を適用
-                    // HP回復（特性 54:応急手当）
-                    if (partyHpRegen > 0 && p.hp < p.baseMaxHp) {
-                        const amt = Math.floor(p.baseMaxHp * (partyHpRegen / 100));
-                        if (amt > 0) {
-                            p.hp = Math.min(p.baseMaxHp, p.hp + amt);
-                            hpRecovered = true;
-                        }
-                    }
-                    // MP回復（特性 55:魔力充填）
-                    if (partyMpRegen > 0 && p.mp < p.baseMaxMp) {
-                        const amt = Math.floor(p.baseMaxMp * (partyMpRegen / 100));
-                        if (amt > 0) {
-                            p.mp = Math.min(p.baseMaxMp, p.mp + amt);
-                            mpRecovered = true;
-                        }
-                    }
-                }
-            }
-        });
+			// キャラクターのレベルアップログを1つずつ表示（0.6秒刻み）
+			for (const msg of lvLogs) {
+				Battle.log(msg);
+				await Battle.wait(600);
+			}
+
+			// [B] 特性の成長判定
+			let traitGrowthLog = null;
+			if (typeof PassiveSkill !== 'undefined' && PassiveSkill.checkTraitGrowth) {
+				traitGrowthLog = PassiveSkill.checkTraitGrowth(charData);
+			}
+
+			// ★特性レベルアップの演出（表示される直前に溜めを作る）
+			if (traitGrowthLog) {
+				// 特性が出るか出ないかの「醍醐味」を作るための1.2秒待機
+				await Battle.wait(600);
+				
+				const logs = traitGrowthLog.split('<br>');
+				for (const log of logs) {
+					if (log) {
+						Battle.log(log);
+						await Battle.wait(200); // 1つ1つの特性を確認させるための待機
+					}
+				}
+			}
+
+			// --- [C] ステータス更新および回復処理 ---
+			if (charData.level > oldLv) {
+				// レベルアップした場合はステータス更新して全快
+				const stats = App.calcStats(charData);
+				p.level = charData.level;
+				p.baseMaxHp = stats.maxHp;
+				p.baseMaxMp = stats.maxMp;
+				p.hp = p.baseMaxHp;
+				p.mp = p.baseMaxMp;
+			} else {
+				// レベルアップしなかったキャラに対し、パーティ特性による回復（応急手当など）を適用
+				if (partyHpRegen > 0 && p.hp < p.baseMaxHp) {
+					const amt = Math.floor(p.baseMaxHp * (partyHpRegen / 100));
+					if (amt > 0) {
+						p.hp = Math.min(p.baseMaxHp, p.hp + amt);
+						hpRecovered = true;
+					}
+				}
+				if (partyMpRegen > 0 && p.mp < p.baseMaxMp) {
+					const amt = Math.floor(p.baseMaxMp * (partyMpRegen / 100));
+					if (amt > 0) {
+						p.mp = Math.min(p.baseMaxMp, p.mp + amt);
+						mpRecovered = true;
+					}
+				}
+			}
+		}
 
         // --- 2. パーティ全体としての回復ログを一度だけ出力 ---
         if (hpRecovered) {

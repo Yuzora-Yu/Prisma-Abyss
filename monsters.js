@@ -18271,7 +18271,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 48, "level": 2 }
 		],
         "isRare": false,
 		"drops": {
@@ -18343,7 +18344,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 49, "level": 2 }
 		],
         "isRare": false,
 		"drops": {
@@ -18420,7 +18422,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 50, "level": 2 }
 		],
         "isRare": false,
 		"drops": {
@@ -18487,7 +18490,9 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 12, "level": 2 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -18549,7 +18554,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -18621,7 +18627,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -18698,7 +18705,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -18775,7 +18783,9 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }, 
+        { "id": 30, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -18865,7 +18875,9 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 18, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -18965,7 +18977,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -19055,7 +19068,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -19141,7 +19155,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -19241,7 +19256,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -19315,7 +19331,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -19390,7 +19407,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -19469,7 +19487,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -19539,7 +19558,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -19609,7 +19629,8 @@ window.MONSTERS_DATA = [
         "elmRes": {},
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false
     },
@@ -19705,7 +19726,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -19780,7 +19802,8 @@ window.MONSTERS_DATA = [
         "elmRes": {},
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false
     },
@@ -19886,7 +19909,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -19973,7 +19997,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -20083,7 +20108,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
@@ -20173,7 +20199,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 19, "level": 5 }
 		],
         "isRare": false,
 		"drops": {
