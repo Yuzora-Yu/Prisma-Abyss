@@ -1095,51 +1095,68 @@ const App = {
         pctMods.eva   += PassiveSkill.getSumValue(char, 'eva_pct');
         pctMods.cri   += PassiveSkill.getSumValue(char, 'cri_pct');
     }
+	
+	
+	// --- calcStats の内部、オーラ判定の直前に配置 ---
+	const getAuraVal = (entity, traitId, key) => {
+		let totalLevel = 0;
 
-    // 5. オーラ系特性補正（パーティのみ・自分も対象に含める）
-	if (App.data && App.data.party && typeof PassiveSkill !== 'undefined') {
-		const myPos = char.formation || 'front';
+		// 1. 本人が習得している特性 (disabledTraitsによるOFF設定を反映)
+		const learned = entity.traits ? entity.traits.find(t => t.id === traitId) : null;
+		if (learned && !(entity.disabledTraits && entity.disabledTraits.includes(traitId))) {
+			totalLevel += (learned.level || 1);
+		}
 
-		App.data.party.forEach(uid => {
-			const other = App.data.characters.find(c => c.uid === uid);
-			// オーラ発動者が生存しているかチェック
-			if (!other || other.hp <= 0) return;
+		// 2. 装備品に付いている特性 (常にON)
+		if (entity.equips) {
+			Object.values(entity.equips).forEach(eq => {
+				if (eq && eq.traits) {
+					eq.traits.forEach(t => {
+						if (t.id === traitId) totalLevel += (t.level || 1);
+					});
+				}
+			});
+		}
 
-			const otherPos = other.formation || 'front';
+		if (totalLevel === 0) return 0;
+		const master = PassiveSkill.MASTER[traitId];
+		return (master && master.params[key]) ? master.params[key] * totalLevel : 0;
+	};
 
-			// 特定のIDの特性値のみを安全に取得するヘルパー
-			const getVal = (entity, traitId, key) => {
-				const t = entity.traits.find(x => x.id === traitId);
-				if (!t) return 0;
-				if (entity.disabledTraits && entity.disabledTraits.includes(traitId)) return 0;
-				const m = PassiveSkill.MASTER[traitId];
-				return (m && m.params[key]) ? m.params[key] * (t.level || 1) : 0;
-			};
+    // 5. オーラ系特性補正
+		if (App.data && App.data.party && typeof PassiveSkill !== 'undefined') {
+			const myPos = char.formation || 'front';
 
-			// --- マスタ定義に基づいた厳密な判定 ---
+			App.data.party.forEach(uid => {
+				const other = App.data.characters.find(c => c.uid === uid);
+				if (!other || other.hp <= 0) return; // 生存チェック
 
-			// 37: 護衛 (発動者:前列 -> 対象:後列)
-			if (otherPos === 'front' && myPos === 'back') {
-				pctMods.def += getVal(other, 37, 'aura_back_def_pct');
-			}
-			
-			// 38: 勇猛 (発動者:前列 -> 対象:前列)
-			if (otherPos === 'front' && myPos === 'front') {
-				pctMods.atk += getVal(other, 38, 'aura_front_atk_pct');
-			}
+				const otherPos = other.formation || 'front';
 
-			// 39: 応援 (発動者:後列 -> 対象:前列)
-			if (otherPos === 'back' && myPos === 'front') {
-				pctMods.atk += getVal(other, 39, 'aura_front_atk_pct');
-			}
+				// 37: 護衛 (発動:前列 -> 対象:後列)
+				if (otherPos === 'front' && myPos === 'back') {
+					pctMods.def += getAuraVal(other, 37, 'aura_back_def_pct');
+				}
+				
+				// 38: 勇猛 (発動:前列 -> 対象:前列)
+				if (otherPos === 'front' && myPos === 'front') {
+					pctMods.atk += getAuraVal(other, 38, 'aura_front_atk_pct');
+				}
 
-			// 40: 司令塔 (発動者:後列 -> 対象:前列)
-			if (otherPos === 'back' && myPos === 'front') {
-				pctMods.hit += getVal(other, 40, 'aura_front_hit_pct');
-				pctMods.eva += getVal(other, 40, 'aura_front_eva_pct');
-			}
-		});
-	}
+				// 39: 応援 (発動:後列 -> 対象:前列)
+				if (otherPos === 'back' && myPos === 'front') {
+					pctMods.atk += getAuraVal(other, 39, 'aura_front_atk_pct');
+				}
+
+				// 40: 司令塔 (発動:後列 -> 対象:前列)
+				if (otherPos === 'back' && myPos === 'front') {
+					const hitVal = getAuraVal(other, 40, 'aura_front_hit_pct');
+					const evaVal = getAuraVal(other, 40, 'aura_front_eva_pct');
+					pctMods.hit += hitVal;
+					pctMods.eva += evaVal;
+				}
+			});
+		}
 
     // 最終計算（主要7ステは%乗算）
     s.maxHp = Math.floor(s.maxHp * (1 + pctMods.maxHp / 100));

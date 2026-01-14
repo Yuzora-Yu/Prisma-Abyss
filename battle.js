@@ -1685,12 +1685,19 @@ findNextActor: () => {
             Battle.renderPartyStatus();
         }
 
-        // 特性 8: ニ刀流 (全ての攻撃スキルに対応)
+        // 特性 8: 二刀流 (特殊、強化、弱体、回復、攻撃、魔法、ブレス、物理の全てに対応)
         let totalActionLoops = 1;
-        // 攻撃スキル（物理・通常・魔法・ブレス）であるかを判定
-        const isAttackAction = isPhysical || effectType === '魔法' || effectType === 'ブレス';
-        if (isAttackAction && typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue(actor, 'dual_dmg_mult') > 0) {
-            totalActionLoops = 2;
+        
+        // アイテム使用以外で、かつ actor が「二刀流」の特性を持っている場合を判定
+        const canDualWield = !command.isItem && typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue(actor, 'dual_dmg_mult') > 0;
+
+        if (canDualWield) {
+            // 対象となるタイプを網羅 (物理・通常・魔法・ブレス・特殊・強化・弱体・回復)
+            const isApplicableType = isPhysical || ['魔法', 'ブレス', '特殊', '強化', '弱体', '回復'].includes(effectType);
+            
+            if (isApplicableType) {
+                totalActionLoops = 2;
+            }
         }
 
         // ループの前に元のレートを保持
@@ -1911,16 +1918,18 @@ findNextActor: () => {
                 }
                 if (d.buff_reset) { t.battleStatus.buffs = {}; Battle.log(`【${t.name}】の良い効果がかき消された！`); }
                 
-                // 毒系・感電は「人体知識」の対象
-                if (d.Poison && checkProc(d.Poison, bodyBonus)) addA('Poison', `【${t.name}】は どくにおかされた！`);
-                if (d.ToxicPoison && checkProc(d.ToxicPoison, bodyBonus)) addA('ToxicPoison', `【${t.name}】は もうどくにおかされた！`);
-                if (d.Shock && checkProc(d.Shock, bodyBonus)) addA('Shock', `【${t.name}】は 感電してしまった！`);
-                
-                // 怯え・封印系は「呪い体質」の対象
-                if (d.Fear && checkProc(d.Fear, curseBonus)) addA('Fear', `【${t.name}】は 怯えてしまった！`, 0.5);
-                if (d.SpellSeal && checkProc(d.SpellSeal, curseBonus)) addA('SpellSeal', `【${t.name}】の 呪文が封じられた！`);
-                if (d.SkillSeal && checkProc(d.SkillSeal, curseBonus)) addA('SkillSeal', `【${t.name}】の 特技が封じられた！`);
-                if (d.HealSeal && checkProc(d.HealSeal, curseBonus)) addA('HealSeal', `【${t.name}】の 回復が封じられた！`);
+				// 1. 毒系・感電・弱体は「人体知識」の対象
+				// 元のデータ(d.Poison等)が 0 より大きい場合のみ、ボーナスを乗せて判定する
+				if ((d.Poison > 0) && checkProc(d.Poison, bodyBonus)) addA('Poison', `【${t.name}】は どくにおかされた！`);
+				if ((d.ToxicPoison > 0) && checkProc(d.ToxicPoison, bodyBonus)) addA('ToxicPoison', `【${t.name}】は もうどくにおかされた！`);
+				if ((d.Shock > 0) && checkProc(d.Shock, bodyBonus)) addA('Shock', `【${t.name}】は 感電してしまった！`);
+				if ((d.Debuff > 0) && checkProc(d.Debuff, bodyBonus)) addA('Debuff', `【${t.name}】の ステータスが低下した！`);
+
+				// 2. 怯え・封印系は「呪い体質」の対象
+				if ((d.Fear > 0) && checkProc(d.Fear, curseBonus)) addA('Fear', `【${t.name}】は 怯えてしまった！`, 0.5);
+				if ((d.SpellSeal > 0) && checkProc(d.SpellSeal, curseBonus)) addA('SpellSeal', `【${t.name}】の 呪文が封じられた！`);
+				if ((d.SkillSeal > 0) && checkProc(d.SkillSeal, curseBonus)) addA('SkillSeal', `【${t.name}】の 特技が封じられた！`);
+				if ((d.HealSeal > 0) && checkProc(d.HealSeal, curseBonus)) addA('HealSeal', `【${t.name}】の 回復が封じられた！`);
                 
                 if (d.PercentDamage) {
                     // 割合ダメージ(PercentDamage)は特性対象外とする
@@ -2201,19 +2210,21 @@ findNextActor: () => {
 						if (gutsChance > 0 && Math.random() * 100 < gutsChance) { targetToHit.hp = 1; Battle.log(`【${targetToHit.name}】は 根性で 踏みとどまった！`); }
                     }
                     
-                    if (dmg > 0 && effectType !== 'ブレス') {
-                        const reflectRate = PassiveSkill.getSumValue(targetToHit, 'reflect_dmg_mult');
-						// ハードコードされた 0.2 を CSV準拠の計算値 (スキル*1 + 5) に変更
-						const reflectTrigger = PassiveSkill.getSumValue(targetToHit, 'reflect_trigger_mult');
-						if (reflectRate > 0 && Math.random() * 100 < reflectTrigger) { 
-							const refDmg = Math.floor(dmg * (reflectRate / 100 + 0.1)); 
-							actor.hp -= refDmg; Battle.log(`【${targetToHit.name}】の理力の壁が 反射！ 【${actor.name}】に ${refDmg} のダメージ！`);
+                    // --- 修正: ブレスを含む全ダメージを反射対象にする ---
+					if (dmg > 0) { 
+						if (targetToHit.weaponType === '杖') {
+							const reflectRate = PassiveSkill.getSumValue(targetToHit, 'reflect_dmg_mult');
+							const reflectTrigger = PassiveSkill.getSumValue(targetToHit, 'reflect_trigger_mult');
+
+							if (reflectRate > 0 && Math.random() * 100 < reflectTrigger) { 
+								// 反射ダメージ = 元ダメージ * (反射率% + 基礎10%)
+								const refDmg = Math.floor(dmg * (reflectRate / 100 + 0.1)); 
+								actor.hp -= refDmg; 
+								Battle.log(`【${targetToHit.name}】の理力の壁が 反射！ 【${actor.name}】に ${refDmg} のダメージ！`);
+							}
 						}
-                    }
-                    //if (dmg > 0 && (data.drain || actor.passive?.drain)) {
-                    //    const dAmt = Math.floor(dmg * (data.drain ? 0.5 : 0.2));
-                    //    actor.hp = Math.min(actor.baseMaxHp, actor.hp + dAmt);
-                    //}
+					}
+					
 					if (dmg > 0 && ((data?.drain ?? false) || actor.passive?.drain)) {
 						const dAmt = Math.floor(dmg * ((data?.drain ?? false) ? 0.5 : 0.2));
 						actor.hp = Math.min(actor.baseMaxHp, actor.hp + dAmt);
@@ -2238,12 +2249,21 @@ findNextActor: () => {
                         tryS('attack_Poison', 'どくにおかされた', 'Poison', bodyBonus);
                         tryS('attack_Fear', '怯えてしまった', 'Fear', curseBonus);
                         
-                        // 即死は「呪い体質」の対象
-                        const dc = ((actor.getStat('attack_InstantDeath') || 0) + curseBonus) * ailmentChanceMult;
-                        if (dc > 0 && Math.random() * 100 < dc) {
-                            const rv = (Battle.getBattleStat(targetToHit, 'resists') || {}).InstantDeath || 0;
-                            if (Math.random() * 100 < (100 - rv)) { targetToHit.hp = 0; targetToHit.isDead = true; Battle.log(`<span style="color:#ff00ff; font-weight:bold;">急所を貫いた！ 【${targetToHit.name}】は 息絶えた！</span>`); }
-                        }
+                        // [1] まず、装備やスキルに元々設定されている「基礎即死率」を出す
+						const baseID = (actor.getStat('attack_InstantDeath') || 0) + (data?.InstantDeath || 0);
+
+						// [2] 基礎即死率が 0 より大きい場合のみ、特性ボーナスを上乗せする
+						// 基礎が 0 なら、いくら呪い体質があっても 0 のまま
+						const finalID = (baseID > 0 ? (baseID + curseBonus) : 0) * ailmentChanceMult;
+
+						if (finalID > 0 && Math.random() * 100 < finalID) {
+							const rv = (Battle.getBattleStat(targetToHit, 'resists') || {}).InstantDeath || 0;
+							if (Math.random() * 100 < (100 - rv)) { 
+								targetToHit.hp = 0; 
+								targetToHit.isDead = true; 
+								Battle.log(`<span style="color:#ff00ff; font-weight:bold;">急所を貫いた！ 【${targetToHit.name}】は 息絶えた！</span>`); 
+							}
+						}
                     }
 
                     if (actor instanceof Player) {

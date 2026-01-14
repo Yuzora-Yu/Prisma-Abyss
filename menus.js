@@ -1013,7 +1013,8 @@ const MenuInventory = {
    5. 仲間一覧 & 詳細 (特性タブ・動的スロット・バグ修正完遂版)
    ========================================================================== */
 const MenuAllies = {
-    selectedChar: null, 
+    selectedChar: null,
+	selectedUid: null, // 追加	
     currentTab: 1,
     targetPart: null,      
     selectedEquip: null,  
@@ -1021,6 +1022,13 @@ const MenuAllies = {
     _tempCandidates: [], 
     candidateFilter: 'ALL',
     candidateSortMode: 'NEWEST',
+	
+	getSelectedChar: () => {
+		if (MenuAllies.selectedUid != null) {
+		  return App.data.characters.find(c => c.uid == MenuAllies.selectedUid) || null;
+		}
+		return MenuAllies.selectedChar || null;
+	},
 
     init: () => {
         let container = document.getElementById('sub-screen-allies');
@@ -1135,6 +1143,7 @@ const MenuAllies = {
                 </div>`;
             div.onclick = () => {
                 MenuAllies.selectedChar = c;
+				MenuAllies.selectedUid = c.uid; // 追加
                 MenuAllies.currentTab = 1;
                 MenuAllies.targetPart = null;
                 MenuAllies.selectedEquip = null;
@@ -1169,6 +1178,15 @@ const MenuAllies = {
         MenuAllies.selectedChar = chars[newIdx]; 
         MenuAllies.targetPart = null;
         MenuAllies.selectedEquip = null;
+		
+		const nextChar = chars[newIdx];
+        MenuAllyDetail.selectedChar = nextChar;
+        // ★重要: MenuAllies側の状態も完全に同期させる
+        MenuAllies.selectedChar = nextChar;
+        MenuAllies.selectedUid = nextChar.uid; // ★追加：UIDを同期
+        
+        MenuAllyDetail.render();
+		
         const treeView = document.getElementById('allies-tree-view');
         if (treeView && treeView.style.display === 'flex') MenuAllies.renderTreeView();
         else MenuAllies.renderDetail();
@@ -1572,21 +1590,56 @@ const MenuAllies = {
 
 			// 1) 自力習得 (取得順を維持)
 			if (c.traits) {
-				c.traits.forEach(t => {
+				c.traits.forEach((t, index) => { // indexを取得
 					const m = PS ? PS.MASTER[t.id] : null;
-					if (m) listData.push({ ...m, lv: t.level, isEquip: false, id: t.id });
+					if (m) {
+						listData.push({ 
+							...m, 
+							lv: t.level, 
+							isEquip: false, 
+							id: t.id,
+							slotIndex: index // ★ここが詳細画面の判定に必須です
+						});
+					}
 				});
 			}
 
-			// 2) 装備品由来 (各装備スロットから抽出)
+			// 2) 装備品由来 (同一特性はレベルを合算)
 			if (c.equips) {
+				// IDをキーにして合算用の一時オブジェクトを作成
+				const equipTraitMap = {};
+
 				Object.values(c.equips).forEach(eq => {
 					if (eq && eq.traits) {
 						eq.traits.forEach(t => {
 							const m = PS ? PS.MASTER[t.id] : null;
-							if (m) listData.push({ ...m, lv: t.level, isEquip: true, id: t.id, eqName: eq.name });
+							if (!m) return;
+
+							if (equipTraitMap[t.id]) {
+								// 既にマップにある場合はLvを加算し、装備名を追記
+								equipTraitMap[t.id].lv += t.level;
+								if (!equipTraitMap[t.id].sourceItems.includes(eq.name)) {
+									equipTraitMap[t.id].sourceItems.push(eq.name);
+								}
+							} else {
+								// 新規登録
+								equipTraitMap[t.id] = {
+									...m,
+									lv: t.level,
+									isEquip: true,
+									id: t.id,
+									sourceItems: [eq.name]
+								};
+							}
 						});
 					}
+				});
+
+				// 合算したオブジェクトを配列に変換して listData に追加
+				Object.values(equipTraitMap).forEach(data => {
+					// 複数の装備から来ている場合は名前をカンマ区切りにする
+					data.eqName = data.sourceItems.join(', ');
+					listData.push(data);
 				});
 			}
 
@@ -1596,7 +1649,7 @@ const MenuAllies = {
 				// 自力習得分のみ無効化判定
 				const isDisabled = !t.isEquip && c.disabledTraits.includes(t.id);
 				
-				// 装備由来は常にON（固定）扱い
+				// 装備由来は常にON（固定）扱い。合算されている場合はシアン色
 				const statusColor = t.isEquip ? '#00ffff' : (isDisabled ? '#666' : '#ffd700');
 				
 				// 操作ボタンの構築
@@ -1605,7 +1658,7 @@ const MenuAllies = {
 					// 装備由来は「装備固定」として表示し、クリック不可
 					buttonHtml = `<div style="padding:2px 10px; font-size:10px; background:#222; border:1px solid #00ffff; color:#00ffff; border-radius:3px; opacity:0.8;">装備固定</div>`;
 				} else {
-					// 自力習得は従来通りトグル可能
+					// 自力習得はトグル可能
 					buttonHtml = `
 						<button class="btn" style="padding:2px 10px; font-size:10px; background:${isDisabled ? '#444' : '#060'}; color:#fff;" 
 								onclick="event.stopPropagation(); MenuAllies.toggleTrait(${t.id})">
@@ -2577,6 +2630,7 @@ const MenuAllyDetail = {
         MenuAllyDetail.selectedChar = nextChar;
         // ★重要: 基本画面のターゲットも同期させる
         MenuAllies.selectedChar = nextChar;
+		MenuAllies.selectedUid = nextChar.uid; // ★追加：UIDを同期
         
         MenuAllyDetail.render();
     },
@@ -2743,6 +2797,10 @@ const MenuSkillDetail = {
     }
 };
 
+
+/**
+ * 特性詳細モーダル (確定版)
+ */
 const MenuTraitDetail = {
     traitList: [],
     currentIndex: -1,
@@ -2765,9 +2823,78 @@ const MenuTraitDetail = {
         if (el) el.remove();
     },
 
+    reroll: () => {
+        const t = MenuTraitDetail.traitList[MenuTraitDetail.currentIndex];
+        const char = MenuAllies.getSelectedChar();
+        if (!char || t.isEquip) return;
+
+        // 【修正】Playerクラスは masterID を charId に持っているため、両方で検索
+        const masterId = char.charId || char.id;
+        const masterData = (typeof window.CHARACTERS_DATA !== 'undefined') ? window.CHARACTERS_DATA : [];
+        const charMaster = masterData.find(m => m.id == masterId);
+        
+        // 【修正】固定枠の判定を厳密化
+        const isFixedSlot = charMaster && charMaster.fixedTraits && 
+                            charMaster.fixedTraits[t.slotIndex] !== undefined && 
+                            charMaster.fixedTraits[t.slotIndex] !== null;
+
+        if (isFixedSlot) {
+            const m = Menu.msg("このスロットは固定枠のため変更できません。");
+            if(m) document.getElementById('menu-dialog-area').style.zIndex = "50000";
+            return;
+        }
+
+        // 【修正】ダイアログをモーダル(5000)の前に出す
+        Menu.confirm(`2000 GEM を使用して特性を再抽選しますか？`, () => {
+            const dialogArea = document.getElementById('menu-dialog-area');
+            
+            if ((App.data.gems || 0) < 2000) {
+                Menu.msg("GEMが足りません");
+                if(dialogArea) dialogArea.style.zIndex = "50000";
+                return;
+            }
+
+            App.data.gems -= 2000;
+            const currentIds = char.traits.map(x => x.id);
+            const pool = Object.values(PassiveSkill.MASTER).filter(m => !currentIds.includes(m.id));
+            const newMaster = pool[Math.floor(Math.random() * pool.length)];
+
+            char.traits[t.slotIndex] = { id: newMaster.id, level: 1, battleCount: 0 };
+
+            App.save();
+            App.refreshAllStats();
+            
+            Menu.msg(`特性を再抽選しました！`);
+            if(dialogArea) dialogArea.style.zIndex = "50000";
+
+            MenuTraitDetail.close();
+            MenuAllies.renderDetail(); 
+        });
+
+        // confirm表示直後に Z-index を調整
+        const dialogArea = document.getElementById('menu-dialog-area');
+        if(dialogArea) dialogArea.style.zIndex = "50000";
+    },
+
     render: () => {
         const t = MenuTraitDetail.traitList[MenuTraitDetail.currentIndex];
-        if (!t) return;
+        const char = MenuAllies.getSelectedChar();
+        
+        if (!t || !char) {
+            console.error("Trait or Character not found:", { t, char, uid: MenuAllies.selectedUid });
+            return;
+        }
+
+        // 【修正】検索キーを masterId に統一
+        const masterId = char.charId || char.id;
+        const masterData = (typeof window.CHARACTERS_DATA !== 'undefined') ? window.CHARACTERS_DATA : [];
+        const charMaster = masterData.find(m => m.id == masterId);
+        
+        const isFixedSlot = charMaster && charMaster.fixedTraits && 
+                            charMaster.fixedTraits[t.slotIndex] !== undefined && 
+                            charMaster.fixedTraits[t.slotIndex] !== null;
+        
+        const isChangable = !t.isEquip && !isFixedSlot;
 
         let modal = document.getElementById('trait-detail-modal');
         if (!modal) {
@@ -2776,30 +2903,43 @@ const MenuTraitDetail = {
             document.body.appendChild(modal);
         }
 
-        modal.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:5000; display:flex; align-items:center; justify-content:center; font-family:sans-serif;`;
+        modal.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:5000; display:flex; align-items:center; justify-content:center;`;
 
         modal.innerHTML = `
-            <div style="width:310px; background:rgba(0,0,30,0.95); border:2px solid #ffd700; border-radius:12px; padding:20px; color:#eee; box-shadow:0 0 30px #000; position:relative;">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #444; padding-bottom:10px; margin-bottom:12px;">
-                    <span style="color:#ffd700; font-size:17px; font-weight:bold;">${t.name}</span>
-                    <div style="font-size:10px;"><span style="background:#444; color:#eee; padding:2px 6px; border-radius:3px;">${t.type || '特性'}</span></div>
-                </div>
-                
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px; background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; margin-bottom:15px;">
-                    <div>現在のLv: <span style="color:#ffd700; font-weight:bold;">${t.lv}</span></div>
-                    <div>特性分類: <span style="color:#fff;">${t.type}</span></div>
+            <div style="width:310px; background:#111; border:1px solid ${t.isEquip ? '#00ffff' : '#ffd700'}; border-radius:8px; padding:20px; color:#eee; box-shadow:0 10px 40px #000;">
+                <div style="border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:${t.isEquip ? '#00ffff' : '#ffd700'}; font-size:18px; font-weight:bold;">${t.name}</span>
+                    <span style="font-size:10px; background:#333; padding:2px 8px; border-radius:4px; color:#aaa;">${t.isEquip ? '装備品' : (isChangable ? '自由枠' : '固定枠')}</span>
                 </div>
 
-                <div style="font-size:13px; line-height:1.6; color:#ddd; min-height:4em; border-left:3px solid #ffd700; padding-left:12px; font-style:italic; margin-bottom:20px;">
-                    ${t.desc || '（説明なし）'}
+                <div style="background:#222; padding:10px; border-radius:4px; font-size:12px; margin-bottom:15px; display:flex; justify-content:space-between;">
+                    <span>現在のLv: <b style="color:#fff;">${t.lv}</b></span>
+                    <span style="color:#888;">分類: ${t.type}</span>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; gap:10px;">
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn" style="padding:10px 20px; background:#222; border:1px solid #ffd700; color:#ffd700;" onclick="MenuTraitDetail.move(-1)">▲</button>
-                        <button class="btn" style="padding:10px 20px; background:#222; border:1px solid #ffd700; color:#ffd700;" onclick="MenuTraitDetail.move(1)">▼</button>
+                <div style="font-size:13px; line-height:1.6; color:#ccc; min-height:60px; margin-bottom:20px; padding:0 5px;">
+                    ${t.desc || '効果なし'}
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div style="display:flex; justify-content:space-between; gap:10px;">
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn" style="width:45px; height:35px; background:#333; border:1px solid #555;" onclick="MenuTraitDetail.move(-1)">▲</button>
+                            <button class="btn" style="width:45px; height:35px; background:#333; border:1px solid #555;" onclick="MenuTraitDetail.move(1)">▼</button>
+                        </div>
+                        <button class="btn" style="flex:1; background:#444; border:1px solid #555;" onclick="MenuTraitDetail.close()">閉じる</button>
                     </div>
-                    <button class="btn" style="flex:1; background:#444; border:1px solid #666; font-weight:bold;" onclick="MenuTraitDetail.close()">閉じる</button>
+
+                    ${isChangable ? `
+                        <button class="btn" style="width:100%; padding:12px; background:#1a1a1a; border:1px solid #555; color:#aaa; font-size:12px; font-weight:bold; border-radius:4px;" 
+                            onclick="MenuTraitDetail.reroll()">
+                            特性を再抽選する (2000 GEM)
+                        </button>
+                    ` : `
+                        <div style="text-align:center; font-size:10px; color:#555; padding:8px; border-top:1px solid #222; margin-top:5px;">
+                            ${t.isEquip ? '装備品による特性は変更できません' : 'このスロットは固定枠のため変更できません'}
+                        </div>
+                    `}
                 </div>
             </div>
         `;
