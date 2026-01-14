@@ -18203,7 +18203,8 @@ window.MONSTERS_DATA = [
         },
 		"traits": [
         { "id": 52,  "level": 5 }, 
-        { "id": 53, "level": 5 }
+        { "id": 53, "level": 5 }, 
+        { "id": 49, "level": 2 }
 		],
         "isRare": false,
 		"drops": {
