@@ -26,9 +26,7 @@ const Battle = {
     resists_Poison: '毒耐性',
     resists_Shock: '感電耐性',
     resists_Fear: '怯え耐性',
-    resists_SpellSeal: '呪文封印耐性',
-    resists_SkillSeal: '特技封印耐性',
-    resists_HealSeal: '回復封印耐性',
+    resists_Seal: '封印耐性',
     resists_InstantDeath: '即死耐性',
     resists_Debuff: '弱体耐性'
     },
