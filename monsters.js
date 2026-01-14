@@ -17709,6 +17709,10 @@ window.MONSTERS_DATA = [
         "def": 99999,
         "spd": 9999,
         "mag": 416,
+        "mdef": 99999,             // ★新規: 魔法防御
+		"hit": 100,                // ★新規: 命中率 (%)
+		"eva": 25,                 // ★新規: 回避率 (%)
+		"cri": 20,                 // ★新規: クリティカル率 (%)
         "exp": 1000,
         "gold": 50,
         "acts": [
@@ -17729,13 +17733,13 @@ window.MONSTERS_DATA = [
             }
         ],
         "elmRes": {
-            "火": 100,
-            "水": 100,
-            "風": 100,
-            "雷": 100,
-            "光": 100,
-            "闇": 100,
-            "混沌": 100
+            "火": 120,
+            "水": 120,
+            "風": 120,
+            "雷": 120,
+            "光": 120,
+            "闇": 120,
+            "混沌": 120
         },
         "resists": {
             "Poison": 100,
@@ -17744,7 +17748,12 @@ window.MONSTERS_DATA = [
             "Seal": 100,
             "Debuff": 100,
             "InstantDeath": 100
-        }
+        },
+		"drops": {
+			"normal": { "id": 102, "rate": 20 }, 
+			"rare": { "id": 106, "rate": 10 }
+		},
+		"archives":"とても固く逃げ足が速いが、倒すと大きな経験を得られるとして人気の魔物。"
     },
     {
         "id": 202,
@@ -17758,6 +17767,10 @@ window.MONSTERS_DATA = [
         "def": 99999,
         "spd": 25555,
         "mag": 2555,
+        "mdef": 99999,             // ★新規: 魔法防御
+		"hit": 100,                // ★新規: 命中率 (%)
+		"eva": 25,                 // ★新規: 回避率 (%)
+		"cri": 20,                 // ★新規: クリティカル率 (%)
         "exp": 20000,
         "gold": 200,
         "acts": [
@@ -17792,8 +17805,12 @@ window.MONSTERS_DATA = [
             "Fear": 50,
             "Seal": 100,
             "Debuff": 100,
-            "InstantDeath": 100
-        }
+            "InstantDeath": 1000
+        },
+		"drops": {
+			"normal": { "id": 103, "rate": 20 }, 
+			"rare": { "id": 106, "rate": 10 }
+		}
     },
     {
         "id": 203,
@@ -17807,6 +17824,10 @@ window.MONSTERS_DATA = [
         "def": 999999,
         "spd": 99999,
         "mag": 9999,
+        "mdef": 999999,             // ★新規: 魔法防御
+		"hit": 100,                // ★新規: 命中率 (%)
+		"eva": 25,                 // ★新規: 回避率 (%)
+		"cri": 20,                 // ★新規: クリティカル率 (%)
         "exp": 100000,
         "gold": 1000,
         "acts": [
@@ -17841,8 +17862,12 @@ window.MONSTERS_DATA = [
             "Fear": 50,
             "Seal": 100,
             "Debuff": 100,
-            "InstantDeath": 100
-        }
+            "InstantDeath": 1000
+        },
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 204,
@@ -17856,6 +17881,10 @@ window.MONSTERS_DATA = [
         "def": 999999,
         "spd": 9999,
         "mag": 20000,
+        "mdef": 999999,             // ★新規: 魔法防御
+		"hit": 100,                // ★新規: 命中率 (%)
+		"eva": 25,                 // ★新規: 回避率 (%)
+		"cri": 20,                 // ★新規: クリティカル率 (%)
         "exp": 416000,
         "gold": 4160,
         "acts": [
@@ -17900,9 +17929,13 @@ window.MONSTERS_DATA = [
             "Fear": 50,
             "Seal": 100,
             "Debuff": 100,
-            "InstantDeath": 100
+            "InstantDeath": 1000
         },
-        "actCount": 2
+        "actCount": 2,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
 	{
         "id": 1000,
@@ -18023,7 +18056,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 4, "rate": 20 }, 
+			"rare": { "id": 100, "rate": 1 }
+		}
     },
     {
         "id": 1020,
@@ -18091,7 +18128,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 4, "rate": 20 }, 
+			"rare": { "id": 101, "rate": 1 }
+		}
     },
     {
         "id": 1030,
@@ -18164,7 +18205,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 4, "rate": 20 }, 
+			"rare": { "id": 102, "rate": 1 }
+		}
     },
     {
         "id": 1040,
@@ -18227,7 +18272,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 4, "rate": 20 }, 
+			"rare": { "id": 104, "rate": 1 }
+		}
     },
     {
         "id": 1050,
@@ -18295,7 +18344,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 4, "rate": 20 }, 
+			"rare": { "id": 105, "rate": 1 }
+		}
     },
     {
         "id": 1060,
@@ -18368,7 +18421,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 4, "rate": 20 }, 
+			"rare": { "id": 103, "rate": 1 }
+		}
     },
     {
         "id": 1070,
@@ -18431,7 +18488,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 4, "rate": 20 }, 
+			"rare": { "id": 101, "rate": 1 }
+		}
     },
     {
         "id": 1080,
@@ -18489,7 +18550,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 4, "rate": 20 }, 
+			"rare": { "id": 102, "rate": 1 }
+		}
     },
     {
         "id": 1081,
@@ -18557,7 +18622,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 4, "rate": 20 }, 
+			"rare": { "id": 104, "rate": 1 }
+		}
     },
     {
         "id": 1082,
@@ -18630,7 +18699,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 4, "rate": 20 }, 
+			"rare": { "id": 105, "rate": 1 }
+		}
     },
     {
         "id": 1090,
@@ -18703,7 +18776,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 5, "rate": 20 }, 
+			"rare": { "id": 106, "rate": 1 }
+		}
     },
     {
         "id": 1100,
@@ -18789,7 +18866,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 1110,
@@ -18885,7 +18966,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 1120,
@@ -18971,7 +19056,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 1130,
@@ -19053,7 +19142,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 1140,
@@ -19149,7 +19242,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 1150,
@@ -19219,7 +19316,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 100, "rate": 5 }, 
+			"rare": { "id": 106, "rate": 1 }
+		}
     },
     {
         "id": 1151,
@@ -19290,7 +19391,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 101, "rate": 5 }, 
+			"rare": { "id": 106, "rate": 1 }
+		}
     },
     {
         "id": 1152,
@@ -19365,7 +19470,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 103, "rate": 5 }, 
+			"rare": { "id": 106, "rate": 1 }
+		}
     },
     {
         "id": 1153,
@@ -19431,7 +19540,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 102, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 1160,
@@ -19593,7 +19706,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 1162,
@@ -19770,7 +19887,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 1180,
@@ -19853,7 +19974,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 1190,
@@ -19959,7 +20084,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 1200,
@@ -20045,7 +20174,11 @@ window.MONSTERS_DATA = [
         { "id": 52,  "level": 5 }, 
         { "id": 53, "level": 5 }
 		],
-        "isRare": false
+        "isRare": false,
+		"drops": {
+			"normal": { "id": 106, "rate": 5 }, 
+			"rare": { "id": 107, "rate": 1 }
+		}
     },
     {
         "id": 2000,
@@ -20144,15 +20277,10 @@ window.MONSTERS_DATA = [
             "InstantDeath": 200
         },
 		"traits": [
-        { "id": 52,  "level": 10 }, 
+        { "id": 52,  "level": 5 }, 
         { "id": 19, "level": 10 },
         { "id": 23, "level": 10 }
 		],
-		/**
-		 * ★新規: ドロップアイテム設定
-		 * 設定がない場合は、既存の floor 依存ランダムドロップを呼び出すよう
-		 * 今後のバトルリザルト処理で判定を行います。
-		 */
 		"drops": {
 			"normal": { "id": 106, "rate": 50 }, // スキルのたね (50%)
 			"rare": { "id": 107, "rate": 10 }       // 転生の実 (10%)
