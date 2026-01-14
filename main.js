@@ -1097,30 +1097,49 @@ const App = {
     }
 
     // 5. オーラ系特性補正（パーティのみ・自分も対象に含める）
-    if (App.data && App.data.party && typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
-        const myPos = char.formation || 'front';
+	if (App.data && App.data.party && typeof PassiveSkill !== 'undefined') {
+		const myPos = char.formation || 'front';
 
-        App.data.party.forEach(uid => {
-            const other = App.data.characters.find(c => c.uid === uid);
-            if (!other) return;
+		App.data.party.forEach(uid => {
+			const other = App.data.characters.find(c => c.uid === uid);
+			// オーラ発動者が生存しているかチェック
+			if (!other || other.hp <= 0) return;
 
-            const otherPos = other.formation || 'front';
+			const otherPos = other.formation || 'front';
 
-            if (otherPos === 'front' && myPos === 'back') {
-                pctMods.def += PassiveSkill.getSumValue(other, 'aura_back_def_pct', 37);
-            }
-            if (otherPos === 'front' && myPos === 'front') {
-                pctMods.atk += PassiveSkill.getSumValue(other, 'aura_front_atk_pct', 38);
-            }
-            if (otherPos === 'back' && myPos === 'front') {
-                pctMods.atk += PassiveSkill.getSumValue(other, 'aura_front_atk_pct', 39);
-            }
-            if (otherPos === 'back' && myPos === 'front') {
-                pctMods.hit += PassiveSkill.getSumValue(other, 'aura_front_hit_pct', 40);
-                pctMods.eva += PassiveSkill.getSumValue(other, 'aura_front_eva_pct', 40);
-            }
-        });
-    }
+			// 特定のIDの特性値のみを安全に取得するヘルパー
+			const getVal = (entity, traitId, key) => {
+				const t = entity.traits.find(x => x.id === traitId);
+				if (!t) return 0;
+				if (entity.disabledTraits && entity.disabledTraits.includes(traitId)) return 0;
+				const m = PassiveSkill.MASTER[traitId];
+				return (m && m.params[key]) ? m.params[key] * (t.level || 1) : 0;
+			};
+
+			// --- マスタ定義に基づいた厳密な判定 ---
+
+			// 37: 護衛 (発動者:前列 -> 対象:後列)
+			if (otherPos === 'front' && myPos === 'back') {
+				pctMods.def += getVal(other, 37, 'aura_back_def_pct');
+			}
+			
+			// 38: 勇猛 (発動者:前列 -> 対象:前列)
+			if (otherPos === 'front' && myPos === 'front') {
+				pctMods.atk += getVal(other, 38, 'aura_front_atk_pct');
+			}
+
+			// 39: 応援 (発動者:後列 -> 対象:前列)
+			if (otherPos === 'back' && myPos === 'front') {
+				pctMods.atk += getVal(other, 39, 'aura_front_atk_pct');
+			}
+
+			// 40: 司令塔 (発動者:後列 -> 対象:前列)
+			if (otherPos === 'back' && myPos === 'front') {
+				pctMods.hit += getVal(other, 40, 'aura_front_hit_pct');
+				pctMods.eva += getVal(other, 40, 'aura_front_eva_pct');
+			}
+		});
+	}
 
     // 最終計算（主要7ステは%乗算）
     s.maxHp = Math.floor(s.maxHp * (1 + pctMods.maxHp / 100));

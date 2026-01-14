@@ -45,10 +45,10 @@ const PassiveSkill = {
         34: { id: 34, name: '獣狩り', type: '戦闘', params: { anti_beast_pct: 5 }, effect: '動物・獣人へのダメージ上昇', desc: '動物や獣人への与ダメージがスキル×5%上昇' },
         35: { id: 35, name: 'メカニック', type: '戦闘', params: { anti_machine_pct: 5 }, effect: '機械へのダメージ上昇', desc: '機械への与ダメージがスキル×5%上昇' },
         36: { id: 36, name: '竜殺し', type: '戦闘', params: { anti_dragon_pct: 5 }, effect: '竜へのダメージ上昇', desc: '竜への与ダメージがスキル×5%上昇' },
-        37: { id: 37, name: '護衛', type: '戦闘', params: { aura_back_def_pct: 2 }, effect: '前列時、後列の防御力上昇', desc: '所持者が前列に配置されている場合、後列の防御力がスキル×2%上昇' },
+        37: { id: 37, name: '護衛', type: '戦闘', params: { aura_back_def_pct: 5 }, effect: '前列時、後列の防御力上昇', desc: '所持者が前列に配置されている場合、後列の防御力がスキル×5%上昇' },
         38: { id: 38, name: '勇猛', type: '戦闘', params: { aura_front_atk_pct: 2 }, effect: '前列時、前列の攻撃力上昇', desc: '所持者が前列に配置されている場合、前列の攻撃力がスキル×2%上昇' },
         39: { id: 39, name: '応援', type: '戦闘', params: { aura_front_atk_pct: 2 }, effect: '後列時、前列の攻撃力上昇', desc: '所持者が後列に配置されている場合、前列の攻撃力がスキル×2%上昇' },
-        40: { id: 40, name: '司令塔', type: '戦闘', params: { aura_front_hit_pct: 1, aura_front_eva_pct: 1 }, effect: '後列時、前列の回避と命中上昇', desc: '所持者が後列に配置されている場合、前列の命中率がスキル%上昇、前列の回避率がスキル%上昇' },
+        40: { id: 40, name: '司令塔', type: '戦闘', params: { aura_front_hit_pct: 2, aura_front_eva_pct: 1 }, effect: '後列時、前列の回避と命中上昇', desc: '所持者が後列に配置されている場合、前列の命中率がスキル×2%上昇、前列の回避率がスキル%上昇' },
         41: { id: 41, name: '警戒', type: '補助', params: { ambush_prevent_pct: 1 }, effect: '敵の不意打ち確率を下げる', desc: '敵の不意打ち確率をスキル%下げる' },
         42: { id: 42, name: '忍び足', type: '補助', params: { ambush_chance_pct: 1 }, effect: '味方の不意打ち確率を上げる', desc: '味方の不意打ち確率がスキル%上昇' },
         43: { id: 43, name: '挑発', type: '防御', params: { target_rate_mult: 3, target_rate_base: 5 }, effect: '敵に狙われやすくなる', desc: '攻撃対象に選ばれる確率が(スキル×3)+5%上昇' },
@@ -72,12 +72,12 @@ const PassiveSkill = {
 				name: '大器晩成', 
 				type: '補助', 
 				// params を修正: exp_bonus_pct(メリット) から exp_need_mult(デメリット) へ変更
-				params: { exp_need_mult: 10, stat_bonus_mult: 0.1 }, 
+				params: { exp_need_mult: 5, stat_bonus_mult: 0.1 }, 
 				effect: 'レベルが上がりにくくなるが、成長率が大きく上昇する', 
-				desc: 'レベルアップに必要な経験値がスキル×10%増加するが、レベルアップ時のステータス上昇量にスキル×10%のボーナスを得る' 
+				desc: 'レベルアップに必要な経験値がスキル×5%増加するが、レベルアップ時のステータス上昇量にスキル×10%のボーナスを得る' 
 			},
-        59: { id: 59, name: '武の極み', type: '戦闘', params: { atk_growth_bonus: 5, def_growth_bonus: 5 }, effect: '物理アタッカーの素質', desc: '物理アタッカーとしての素質。攻撃力と防御力の成長率が上昇する' },
-        60: { id: 60, name: '魔の極み', type: '戦闘', params: { mag_growth_bonus: 5, mdef_growth_bonus: 5 }, effect: '魔導師の素質', desc: '魔導師としての素質。魔力と魔法防御の成長率が上昇する' }
+        59: { id: 59, name: '武の極み', type: '戦闘', params: { atk_growth_bonus: 3, def_growth_bonus: 3 }, effect: '物理アタッカーの素質', desc: '攻撃力と防御力の成長率がスキル×5%上昇する' },
+        60: { id: 60, name: '魔の極み', type: '戦闘', params: { mag_growth_bonus: 3, mdef_growth_bonus: 3 }, effect: '魔導師の素質', desc: '魔力と魔法防御の成長率がスキル×5%上昇する' }
     }
 };
 
@@ -138,22 +138,6 @@ PassiveSkill.applyLevelUpTraits = function(char) {
                 // ★修正: ログにキャラ名を追加
                 return `<span style="color:#00ffff;">【${char.name}】は 新たな特性【${m.name}】を習得した！</span>`;
             }
-        }
-    }
-    return null;
-};
-
-// --- 新規追加: checkTraitGrowth (戦闘終了時のレベルアップ判定) ---
-PassiveSkill.checkTraitGrowth = function(char) {
-    if (!char.traits || char.traits.length === 0 || char.isDead) return null;
-    
-    // 成長判定（例：1%の確率でいずれかの特性がレベルアップ。上限Lv10）
-    if (Math.random() < 0.01) {
-        const targetTrait = char.traits[Math.floor(Math.random() * char.traits.length)];
-        if (targetTrait.level < 10) {
-            targetTrait.level++;
-            const m = PassiveSkill.MASTER[targetTrait.id];
-            return `<span style="color:#ffd700;">${char.name}の特性【${m.name}】がLv${targetTrait.level}に上がった！</span>`;
         }
     }
     return null;

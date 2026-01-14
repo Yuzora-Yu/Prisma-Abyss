@@ -1982,13 +1982,25 @@ findNextActor: () => {
                     }
                     if (targetToHit.isDead || targetToHit.isFled) { if (skillScope !== 'ランダム') break; continue; }
 
-                    if (!cmd.isEnemy && !isSupport) {
-                        const coverTarget = Battle.party.find(p => p && p !== targetToHit && !p.isDead && targetToHit.hp <= targetToHit.baseMaxHp * 0.5);
+                    // --- 特性 19:献身 (かばう) ---
+                    if (!isSupport) {
+                        // 攻撃者が敵(cmd.isEnemy)なら「味方(party)」を、
+                        // 攻撃者が味方なら「敵(enemies)」を、かばう候補として取得
+                        const friends = cmd.isEnemy ? Battle.party : Battle.enemies;
+
+                        // 同じ陣営の中から、瀕死(50%以下)の仲間を助けに来る者を探す
+                        const coverTarget = friends.find(p => 
+                            p && p !== targetToHit && !p.isDead && !p.isFled &&
+                            targetToHit.hp <= targetToHit.baseMaxHp * 0.5
+                        );
+
                         if (coverTarget) {
                             const coverChance = PassiveSkill.getSumValue(coverTarget, 'cover_rate_mult');
                             if (coverChance > 0 && Math.random() * 100 < coverChance) {
-                                Battle.log(`【${coverTarget.name}】が【${targetToHit.name}】をかばった！`);
-                                targetToHit = coverTarget; targetToHit.isCovering = true;
+                                Battle.log(`【${coverTarget.name}】が 【${targetToHit.name}】を かばった！`);
+                                // 攻撃対象を「かばった者」に差し替え
+                                targetToHit = coverTarget; 
+                                targetToHit.isCovering = true;
                             }
                         }
                     }
@@ -2030,59 +2042,100 @@ findNextActor: () => {
                         }
                     }
 
-                    let isCrit = false;
+                    // --- [1] 会心・暴走判定フェーズ ---
+					let isCrit = false;
 					let ailmentChanceMult = 1.0;
 
 					if (effectType !== 'ブレス') {
-						// スキル側会心率：未定義 or data=null なら 0%
-						const baseCrit = (data?.critRate ?? 0) + PassiveSkill.getSumValue(actor, 'cri_pct');
+						// 基礎会心率 = スキル値 + 装備特性(cri_pct) + キャラステータス(actor.cri)
+						const totalCritRate = (data?.critRate ?? 0) + 
+											  PassiveSkill.getSumValue(actor, 'cri_pct') + 
+											  (actor.cri ?? 0);
 
-						// actor の会心率：未定義なら 0%
-						const actorCri = (actor.cri ?? 0);
-
-						if (Math.random() * 100 < (baseCrit + actorCri)) isCrit = true;
+						// A. 通常の会心判定
+						if (Math.random() * 100 < totalCritRate) {
+							isCrit = true;
+						} 
+						// B. 魔法の場合のみ：スキルツリー等の magCrit パッシブによる独立 20% 判定
+						else if (!isPhysical && actor.passive?.magCrit && Math.random() < 0.2) {
+							isCrit = true;
+						}
 					}
 
-                    let atkVal = isPhysical ? Battle.getBattleStat(actor, 'atk') : Battle.getBattleStat(actor, 'mag');
-                    let defVal = isPhysical ? Battle.getBattleStat(targetToHit, 'def') : Battle.getBattleStat(targetToHit, 'mdef');
-                    
-                    let baseDmgCalc = 0;
-                    //let ignoreDefense = (isCrit && isPhysical) || data.IgnoreDefense;
-					let ignoreDefense = (isCrit && isPhysical) || (data?.IgnoreDefense ?? false);
-                    if (!ignoreDefense && typeof PassiveSkill !== 'undefined') {
-                        if (actor.passive?.atkIgnoreDef && Math.random() < 0.2) ignoreDefense = true;
-                        if (isPhysical && actor.passive?.pierce && Math.random() < 0.2) ignoreDefense = true;
-                    }
+					// --- [2] ステータス取得と防御無視判定フェーズ ---
+					let atkVal = isPhysical ? Battle.getBattleStat(actor, 'atk') : Battle.getBattleStat(actor, 'mag');
+					let defVal = isPhysical ? Battle.getBattleStat(targetToHit, 'def') : Battle.getBattleStat(targetToHit, 'mdef');
 
-                    //if (data.fix) baseDmgCalc = baseDmg;
-					if (data?.fix) baseDmgCalc = baseDmg;
-                    else if (effectType === 'ブレス') baseDmgCalc = Math.floor(((Battle.getBattleStat(actor, 'atk') + Battle.getBattleStat(actor, 'mag')) / 6 + baseDmg));
-                    else baseDmgCalc = Math.floor(((atkVal / 2) + baseDmg) - (ignoreDefense ? 0 : defVal / 4));
-                    if (baseDmgCalc < 1) baseDmgCalc = (Math.random() < 0.3) ? 1 : 0;
+					let ignoreDefense = (data?.IgnoreDefense ?? false);
 
-                    // ★修正: ループ内で計算された currentSkillRate（二刀流補正済み）を使用する
-                    let totalMult = currentSkillRate;
+					// 会心・暴走が発生した場合は、物理・魔法問わず防御無視を適用
+					if (isCrit) {
+						ignoreDefense = true;
+					} 
+					// 会心でない場合のみ、各種パッシブによる確率防御無視（貫通）を判定
+					else if (typeof PassiveSkill !== 'undefined') {
+						// 物理：スキルツリー(atkIgnoreDef) or シナジー(pierce)
+						if (isPhysical) {
+							if (actor.passive?.atkIgnoreDef && Math.random() < 0.2) ignoreDefense = true;
+							if (actor.passive?.pierce && Math.random() < 0.2) ignoreDefense = true;
+						}
+						// ※魔法側の貫通パッシブを実装する場合はここに追加可能
+					}
+
+					// --- [3] 基礎ダメージ計算フェーズ ---
+					let baseDmgCalc = 0;
+					if (data?.fix) {
+						baseDmgCalc = baseDmg;
+					} else if (effectType === 'ブレス') {
+						// ブレスは攻+魔の合計を参照
+						baseDmgCalc = Math.floor(((Battle.getBattleStat(actor, 'atk') + Battle.getBattleStat(actor, 'mag')) / 6 + baseDmg));
+					} else {
+						// 物理・魔法：防御無視フラグにより、引き算の defVal/4 を 0 にする
+						baseDmgCalc = Math.floor(((atkVal / 2) + baseDmg) - (ignoreDefense ? 0 : defVal / 4));
+					}
+
+					// 最低ダメージ保証（30%で1ダメージ）
+					if (baseDmgCalc < 1) baseDmgCalc = (Math.random() < 0.3) ? 1 : 0;
+
+					// --- [4] 特性・シナジーによる最終倍率計算フェーズ ---
+					let totalMult = currentSkillRate; // 二刀流等の補正済み倍率
+
+					// 隊列補正（物理のみ）
+					if (isPhysical) {
+						if (actor.formation === 'back' && !['弓', '短剣', '杖'].includes(actor.weaponType)) totalMult *= 0.5;
+						if (targetToHit.formation === 'back') totalMult *= 0.5;
+					}
+
+					// 特性(PassiveSkill)による種族特効・属性強化
+					if (typeof PassiveSkill !== 'undefined') {
+						if (targetToHit.race === '死霊' || targetToHit.race === '魔族') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_demon_pct') / 100);
+						if (targetToHit.race === '獣' || targetToHit.race === '獣人') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_beast_pct') / 100);
+						if (targetToHit.race === '機械' || targetToHit.race === '無生物') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_machine_pct') / 100);
+						if (targetToHit.race === '竜' || targetToHit.race === '竜人') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_dragon_pct') / 100);
+
+						if (isPhysical) totalMult *= (1 + PassiveSkill.getSumValue(actor, 'physical_dmg_pct') / 100);
+						else if (effectType === '魔法') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'magic_dmg_pct') / 100);
+						else if (effectType === 'ブレス') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'breath_dmg_pct') / 100);
+
+						if (actor.hp <= actor.baseMaxHp * 0.5) totalMult *= (1 + PassiveSkill.getSumValue(actor, 'low_hp_dmg_mult') / 100);
+						if (actor.revengeStack && actor.revengeStack > 0) totalMult *= (1 + (actor.revengeStack * PassiveSkill.getSumValue(actor, 'revenge_dmg_pct')) / 100);
+					}
+
+					// --- [5] 会心・暴走による最終倍率適用とログ出力 ---
+					if (isCrit) {
+						// 防御無視に加え、ダメージを1.5倍にする（ご要望どおり魔法も1.5倍で統一）
+						totalMult *= 1.5;
+						
+						// 会心時は状態異常付与率を2倍にする
+						ailmentChanceMult = 2.0;
+						
+						if (isPhysical) {
+							Battle.log(`<span style="color:#ff4444; font-weight:bold;">かいしんの一撃！</span>`);
+						} else {
+							Battle.log(`<span style="color:#4444ff; font-weight:bold;">魔力が暴走！</span>`);
+						}
+					}
 					
-                    if (isPhysical) {
-                        if (actor.formation === 'back' && !['弓', '短剣', '杖'].includes(actor.weaponType)) totalMult *= 0.5;
-                        if (targetToHit.formation === 'back') totalMult *= 0.5;
-                    }
-
-                    if (typeof PassiveSkill !== 'undefined') {
-                        if (targetToHit.race === '不死者' || targetToHit.race === '魔族') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_demon_pct') / 100);
-                        if (targetToHit.race === '動物' || targetToHit.race === '獣人') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_beast_pct') / 100);
-                        if (targetToHit.race === '機械') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_machine_pct') / 100);
-                        if (targetToHit.race === '竜') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'anti_dragon_pct') / 100);
-                        if (isPhysical) totalMult *= (1 + PassiveSkill.getSumValue(actor, 'physical_dmg_pct') / 100);
-                        else if (effectType === '魔法') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'magic_dmg_pct') / 100);
-                        else if (effectType === 'ブレス') totalMult *= (1 + PassiveSkill.getSumValue(actor, 'breath_dmg_pct') / 100);
-                        if (actor.hp <= actor.baseMaxHp * 0.5) totalMult *= (1 + PassiveSkill.getSumValue(actor, 'low_hp_dmg_mult') / 100);
-                        if (actor.revengeStack && actor.revengeStack > 0) totalMult *= (1 + (actor.revengeStack * PassiveSkill.getSumValue(actor, 'revenge_dmg_pct')) / 100);
-                    }
-                    if (isCrit) { 
-                        if (isPhysical) { totalMult *= 1.5; Battle.log(`かいしんの一撃！`); }
-                        else { totalMult *= 2.0; ailmentChanceMult = 2.0; Battle.log(`魔力が暴走する！`); }
-                    } else if (!isPhysical && actor.passive?.magCrit && Math.random() < 0.2) { totalMult *= 2.0; Battle.log(`魔力が暴走する！`); }
 
                     let bonusRate = 0, cutRate = 0, isImmune = false;
                     if (element) {
@@ -2729,20 +2782,34 @@ findNextActor: () => {
             }
         });
 
+// --- 1. パーティ全体の特性回復量を事前に集計 ---
+        const partyHpRegen = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getPartySumValue('post_battle_hp_regen_pct') : 0;
+        const partyMpRegen = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getPartySumValue('post_battle_mp_regen_pct') : 0;
+        
+        let hpRecovered = false; // パーティ内の一人でも回復すればtrue
+        let mpRecovered = false;
+
         surviveMembers.forEach(p => {
             const charData = App.getChar(p.uid);
             if (charData) {
-                const oldLv = charData.level; // レベルアップ判定用
-                App.gainExp(charData, totalExp).forEach(msg => Battle.log(msg));
-				
-				// --- ★追加: 戦闘終了時の特性レベルアップ（成長）判定 ---
-                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.checkTraitGrowth) {
-                    const growthLog = PassiveSkill.checkTraitGrowth(charData);
-                    if (growthLog) Battle.log(growthLog);
-                }
+                const oldLv = charData.level;
+
+                // [A] キャラクターのレベルアップログ取得
+                const lvLogs = App.gainExp(charData, totalExp);
                 
-                // レベルアップした場合、最大ステータスを更新して全快
+                // [B] 特性の成長ログ取得（内部でbattleCount加算とLvUP判定）
+                let traitGrowthLog = null;
+                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.checkTraitGrowth) {
+                    traitGrowthLog = PassiveSkill.checkTraitGrowth(charData);
+                }
+
+                // --- ログ表示の実行順序を固定： キャラLvUP -> 特性LvUP ---
+                lvLogs.forEach(msg => Battle.log(msg));
+                if (traitGrowthLog) Battle.log(traitGrowthLog);
+
+                // --- ステータス更新および回復処理 ---
                 if (charData.level > oldLv) {
+                    // レベルアップした場合はステータス更新して全快
                     const stats = App.calcStats(charData);
                     p.level = charData.level;
                     p.baseMaxHp = stats.maxHp;
@@ -2750,26 +2817,35 @@ findNextActor: () => {
                     p.hp = p.baseMaxHp;
                     p.mp = p.baseMaxMp;
                 } else {
-                    // ★特性 54:応急手当 / 55:魔力充填 (戦闘終了時の回復)
-                    if (typeof PassiveSkill !== 'undefined') {
-                        const hpRegen = PassiveSkill.getSumValue(charData, 'post_battle_hp_regen_pct');
-                        const mpRegen = PassiveSkill.getSumValue(charData, 'post_battle_mp_regen_pct');
-                        
-                        if (hpRegen > 0) {
-                            const amt = Math.floor(p.baseMaxHp * (hpRegen / 100));
+                    // レベルアップしなかったキャラに対し、パーティ特性による回復を適用
+                    // HP回復（特性 54:応急手当）
+                    if (partyHpRegen > 0 && p.hp < p.baseMaxHp) {
+                        const amt = Math.floor(p.baseMaxHp * (partyHpRegen / 100));
+                        if (amt > 0) {
                             p.hp = Math.min(p.baseMaxHp, p.hp + amt);
-                            Battle.log(`【${p.name}】は応急手当でHPが${amt}回復した！`);
+                            hpRecovered = true;
                         }
-                        if (mpRegen > 0) {
-                            const amt = Math.floor(p.baseMaxMp * (mpRegen / 100));
+                    }
+                    // MP回復（特性 55:魔力充填）
+                    if (partyMpRegen > 0 && p.mp < p.baseMaxMp) {
+                        const amt = Math.floor(p.baseMaxMp * (partyMpRegen / 100));
+                        if (amt > 0) {
                             p.mp = Math.min(p.baseMaxMp, p.mp + amt);
-                            Battle.log(`【${p.name}】は魔力充填でMPが${amt}回復した！`);
+                            mpRecovered = true;
                         }
                     }
                 }
             }
         });
 
+        // --- 2. パーティ全体としての回復ログを一度だけ出力 ---
+        if (hpRecovered) {
+            Battle.log(`<span style="color:#8f8;">応急手当でパーティのHPが回復した！</span>`);
+        }
+        if (mpRecovered) {
+            Battle.log(`<span style="color:#88f;">魔力十分でパーティのMPが回復した！</span>`);
+        }
+		
         // オプション再抽選サブ関数 (内部用)
         const createEquipWithMinRarity = (floor, plus, minRarityList, forcePart = null) => {
             let eq = App.createEquipByFloor('drop', floor, plus);
