@@ -21,7 +21,16 @@ const Battle = {
         // ★以下を追記・修正
         InstantDeath: '即死', 
         Debuff: '弱体',
-        Seal: '封印'
+        Seal: '封印',
+		// ★追加：耐性系の内部キーを直接日本語にマッピング
+    resists_Poison: '毒耐性',
+    resists_Shock: '感電耐性',
+    resists_Fear: '怯え耐性',
+    resists_SpellSeal: '呪文封印耐性',
+    resists_SkillSeal: '特技封印耐性',
+    resists_HealSeal: '回復封印耐性',
+    resists_InstantDeath: '即死耐性',
+    resists_Debuff: '弱体耐性'
     },
     
     // 状態異常と耐性IDの対応表 (拡張)
@@ -1224,9 +1233,9 @@ findNextActor: () => {
         for(let cmd of playerCommands) {
             const actor = cmd.actor;
             // ★特性 8, 47, 48 等の追加行動系は別途フラグ管理されるが、ここでは既存の doubleAction/fastestAction を維持
-            // 固定確率(0.2)を削除し、純粋にスキルツリー等のパッシブフラグのみを参照するように修正
-			const isDouble = (actor.passive && actor.passive.doubleAction); 
-			const isFast = (actor.passive && actor.passive.fastestAction);
+            // 確率（ここでは20%）を判定に加える
+const isDouble = (actor.passive && actor.passive.doubleAction && Math.random() < 0.2); 
+const isFast = (actor.passive && actor.passive.fastestAction && Math.random() < 0.2);
 			
             if (isFast) { 
                 cmd.speed = (Battle.getBattleStat(actor, 'spd') * 1.1) + (10 * 100000); 
