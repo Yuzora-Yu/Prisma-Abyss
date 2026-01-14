@@ -729,34 +729,39 @@ const App = {
         } 
     },
 
-    load: () => { 
-        try { 
-            const j=localStorage.getItem(CONST.SAVE_KEY); 
-            if(j){ 
-                App.data=JSON.parse(j); 
-                if(!App.data.book) App.data.book = { monsters: [] }; 
-				
-				if (!App.data.book.killCounts) {
-					App.data.book.killCounts = {}; 
-				}
-				
-                if(!App.data.battle) App.data.battle = { active: false }; 
-				
-				// ★追加: 統計データオブジェクトがない場合の初期化
-				if(!App.data.stats) {
-					App.data.stats = {
-						maxGold: 0,
-						maxGems: 0,
-						wipeoutCount: 0,
-						totalSteps: 0,
-						totalBattles: 0,
-						maxDamage: { val: 0, actor: '', skill: '' },
-						startTime: Date.now()
-					};
-				}
-            } 
-        }catch(e){ console.error(e); } 
-    },
+Load: () => { 
+    try { 
+        const j = localStorage.getItem(CONST.SAVE_KEY); 
+        if(j){ 
+            App.data = JSON.parse(j); 
+            
+            // --- ここから mdef 補完ロジック ---
+            if (App.data.characters) {
+                App.data.characters.forEach(char => {
+                    // mdef が未定義、または null の場合に mag * 0.8 で初期化
+                    if (char.mdef === undefined || char.mdef === null) {
+                        char.mdef = Math.floor((char.mag || 0) * 0.8);
+                    }
+                });
+            }
+            // ----------------------------------
+
+            if(!App.data.book) App.data.book = { monsters: [] }; 
+            if(!App.data.book.killCounts) App.data.book.killCounts = {}; 
+            if(!App.data.battle) App.data.battle = { active: false }; 
+            
+            if(!App.data.stats) {
+                App.data.stats = {
+                    maxGold: 0, maxGems: 0, wipeoutCount: 0,
+                    totalSteps: 0, totalBattles: 0,
+                    maxDamage: { val: 0, actor: '', skill: '' },
+                    startTime: Date.now()
+                };
+            }
+        } 
+    } catch(e) { console.error(e); } 
+},
+
 	
     save: () => { 
         if(App.data && Field.ready) { 
