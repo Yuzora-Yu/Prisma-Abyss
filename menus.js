@@ -411,34 +411,53 @@ const MenuParty = {
                 const formationLabel = (c.formation === 'back') ? '後衛' : '前衛';
                 const formationColor = (c.formation === 'back') ? '#44aaff' : '#ff4444';
 
-                div.innerHTML = `
-                    <div style="display:flex; align-items:center; width:100%;">
-                        <div style="margin-right:10px; font-size:14px; font-weight:bold; color:#aaa; width:15px;">${i+1}.</div>
-                        <div style="margin-right:10px;">${imgHtml}</div>
-                        <div style="flex:1;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
-                                <div style="font-size:13px; font-weight:bold; color:#fff;">${c.name} ${lbText} <span style="font-size:10px; color:#aaa; font-weight:normal;">(${c.job})</span></div>
-                                <div style="font-size:11px; font-weight:bold; color:${rarityColor};">${rarityLabel}</div>
-                            </div>
-                            <div style="font-size:11px; color:#ddd; display:flex; align-items:baseline; margin-bottom:1px;">
-                                <span style="color:#ffd700; font-weight:bold; margin-right:8px;">Lv.${c.level}</span>
-                                <span style="margin-right:8px;">HP <span style="color:#8f8;">${curHp}/${s.maxHp}</span></span>
-                                <span>MP <span style="color:#88f;">${curMp}/${s.maxMp}</span></span>
-                            </div>
-                            <div style="font-size:10px; color:#aaa; display:flex; flex-wrap:wrap; gap:6px;">
-                                <span>攻:${s.atk}</span> <span>防:${s.def}</span> <span>魔防:${s.mdef}</span> <span>魔:${s.mag}</span> <span>速:${s.spd}</span>
-                            </div>
-                        </div>
-                        
-                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; margin-left:10px;">
-                            <div style="font-size:10px; color:#888;" onclick="event.stopPropagation(); MenuParty.openChangeMember(${i})">変更 &gt;</div>
-                            <div style="background:#222; border-radius:4px; padding:2px; display:flex; border:1px solid #444;" onclick="event.stopPropagation(); MenuParty.toggleFormation('${c.uid}')">
-                                <div style="font-size:9px; padding:2px 6px; border-radius:2px; background:${c.formation !== 'back' ? formationColor : 'transparent'}; color:${c.formation !== 'back' ? '#fff' : '#666'};">前衛</div>
-                                <div style="font-size:9px; padding:2px 6px; border-radius:2px; background:${c.formation === 'back' ? formationColor : 'transparent'}; color:${c.formation === 'back' ? '#fff' : '#666'};">後衛</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+				div.innerHTML = `
+					<div style="display:flex; align-items:center; width:100%; padding:6px 0;">
+						<div style="display:flex; align-items:center; flex-shrink:0; margin-right:10px;">
+							<div style="font-size:14px; font-weight:bold; color:#aaa; width:15px;">${i+1}.</div>
+							<div style="width:40px;">${imgHtml}</div>
+						</div>
+
+						<div style="flex:1; min-width:0; margin-right:8px;">
+							<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+								<div style="font-size:13px; font-weight:bold; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+									${c.name} ${lbText} <span style="font-size:10px; color:#aaa; font-weight:normal;">(${c.job})</span>
+								</div>
+							</div>
+
+							<div style="display:grid; grid-template-columns: 40px 1fr 1fr; gap:4px; font-size:11px; color:#ddd; align-items:baseline; margin-bottom:3px;">
+								<span style="color:#ffd700; font-weight:bold;">Lv.${c.level}</span>
+								<span style="white-space:nowrap;">HP:<span style="color:#8f8;">${curHp}/${s.maxHp}</span></span>
+								<span style="white-space:nowrap;"> MP:<span style="color:#88f;">${curMp}/${s.maxMp}</span></span>
+							</div>
+
+							<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:2px 6px; font-size:9px; color:#aaa; line-height:1.2;">
+								<span>攻:${s.atk}</span>
+								<span>防:${s.def}</span>
+								<span>速:${s.spd}</span>
+								<span>魔:${s.mag}</span>
+								<span>魔防:${s.mdef}</span>
+							</div>
+						</div>
+
+						<div style="display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; align-self:stretch; margin-left:10px;">
+							
+							<div style="flex:1;"></div>
+
+							<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; position:relative; bottom:-6px;">
+								
+								<div style="font-size:10px; color:#888; cursor:pointer;" onclick="event.stopPropagation(); MenuParty.openChangeMember(${i})">
+									変更 &gt;
+								</div>
+
+								<div style="background:#222; border-radius:4px; padding:2px; display:flex; border:1px solid #444; cursor:pointer;" onclick="event.stopPropagation(); MenuParty.toggleFormation('${c.uid}')">
+									<div style="font-size:9px; padding:2px 6px; border-radius:2px; background:${c.formation !== 'back' ? formationColor : 'transparent'}; color:${c.formation !== 'back' ? '#fff' : '#666'};">前衛</div>
+									<div style="font-size:9px; padding:2px 6px; border-radius:2px; background:${c.formation === 'back' ? formationColor : 'transparent'}; color:${c.formation === 'back' ? '#fff' : '#666'};">後衛</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				`;
 
                 // メイン領域クリックでキャラ変更画面へ
                 div.onclick = () => MenuParty.openChangeMember(i);
@@ -518,7 +537,7 @@ const MenuParty = {
                             <span>MP <span style="color:#88f;">${curMp}/${s.maxMp}</span></span>
                         </div>
                         <div style="font-size:10px; color:#aaa; display:flex; flex-wrap:wrap; gap:6px;">
-                            <span>攻:${s.atk}</span> <span>防:${s.def}</span> <span>魔防:${s.mdef}</span> <span>魔:${s.mag}</span> <span>速:${s.spd}</span>
+                            <span>攻:${s.atk}</span> <span>防:${s.def}</span> <span>魔:${s.mag}</span> <span>魔防:${s.mdef}</span> <span>速:${s.spd}</span>
                         </div>
                     </div>
                 </div>
@@ -1137,7 +1156,7 @@ const MenuAllies = {
                             <span>MP <span style="color:#88f;">${curMp}/${s.maxMp}</span></span>
                         </div>
                         <div style="font-size:10px; color:#aaa; display:flex; gap:8px;">
-                            <span>攻:${s.atk}</span> <span>防:${s.def}</span> <span>魔:${s.mag}</span> <span>速:${s.spd}</span>
+                            <span>攻:${s.atk}</span> <span>防:${s.def}</span> <span>魔:${s.mag}</span> <span>魔防:${s.mdef}</span> <span>速:${s.spd}</span>
                         </div>
                     </div>
                 </div>`;
@@ -1159,6 +1178,11 @@ const MenuAllies = {
 
     switchChar: (dir) => {
         if (!MenuAllies.selectedChar) return;
+
+        // ★修正点1: キャラ切り替え時に「装備変更中」の選択状態をリセットする
+        MenuAllies.targetPart = null;
+        MenuAllies.selectedEquip = null;
+
         const rarityVal = { N:1, R:2, SR:3, SSR:4, UR:5, EX:6 };
         const chars = [...App.data.characters].sort((a, b) => {
             const aInParty = App.data.party.includes(a.uid);
@@ -1175,23 +1199,24 @@ const MenuAllies = {
         let idx = chars.findIndex(c => c.uid === MenuAllies.selectedChar.uid);
         if (idx === -1) idx = 0;
         let newIdx = (idx + dir + chars.length) % chars.length;
-        MenuAllies.selectedChar = chars[newIdx]; 
-        MenuAllies.targetPart = null;
-        MenuAllies.selectedEquip = null;
-		
-		const nextChar = chars[newIdx];
-        MenuAllyDetail.selectedChar = nextChar;
-        // ★重要: MenuAllies側の状態も完全に同期させる
-        MenuAllies.selectedChar = nextChar;
-        MenuAllies.selectedUid = nextChar.uid; // ★追加：UIDを同期
         
-        MenuAllyDetail.render();
-		
+        const nextChar = chars[newIdx];
+        
+        // メインの状態同期
+        MenuAllies.selectedChar = nextChar;
+        MenuAllies.selectedUid = nextChar.uid;
+        
+        // ★修正点2: アーカイブ側（MenuAllyDetail）が存在する場合のみレンダリングを実行（堅牢化）
+        if (window.MenuAllyDetail && typeof MenuAllyDetail.render === 'function') {
+            MenuAllyDetail.selectedChar = nextChar;
+            MenuAllyDetail.render();
+        }
+        
         const treeView = document.getElementById('allies-tree-view');
         if (treeView && treeView.style.display === 'flex') MenuAllies.renderTreeView();
         else MenuAllies.renderDetail();
     },
-
+	
     /* menus.js 内に追加または修正 */
 	getEquipFullDetailHTML: (eq) => {
 		if (!eq) return '<span style="color:#555;">装備なし</span>';
@@ -1530,37 +1555,38 @@ const MenuAllies = {
 						<div style="display:flex; flex-direction:column; gap:2px;">${candidates.map((item, idx) => `<div class="list-item" style="flex-direction:column; align-items:flex-start;" onclick="MenuAllies.selectCandidate(${idx}, ${item.isRemove?'true':'false'})"><div style="font-weight:bold; color:${item.isRemove ? '#aaa' : Menu.getRarityColor(item.rarity)};">${item.name} ${item.owner ? `<span style="color:#f88; font-size:9px;">[${item.owner}装備中]</span>` : ''}</div>${!item.isRemove ? MenuAllies.getEquipFullDetailHTML(item) : ''}</div>`).join('')}</div>`;
 				}
 			} else {
-				// --- 部位選択画面 (省略なし) ---
-				let listHtml = '';
-				const parts = ['武器', '盾', '頭', '体', '足'];
-				parts.forEach(p => {
-					let label = p;
-					let isLocked = false;
-					let eq = (c.equips || {})[p];
-					if (p === '盾') {
-						if (hasTwoHanded) { label = '盾(不可)'; isLocked = true; }
-						else if (hasDualWield) { label = '武器2'; }
-					}
-					const rarityColor = eq ? Menu.getRarityColor(eq.rarity) : '#888';
-					const onclick = isLocked ? '' : `onclick="MenuAllies.targetPart='${label}'; MenuAllies.selectedEquip=null; MenuAllies.renderDetail();"`;
-					listHtml += `<div class="list-item" style="align-items:center; opacity:${isLocked?0.5:1};" ${onclick}>
-						<div style="width:40px; font-size:10px; color:#aaa; font-weight:bold;">${label}</div>
-						<div style="flex:1;">
-							<div style="font-size:12px; font-weight:bold; color:${rarityColor};">${eq ? eq.name : (isLocked ? '両手持ち中' : 'なし')}</div>
-							${eq ? MenuAllies.getEquipFullDetailHTML(eq) : ''}
-						</div>
-						<div style="font-size:10px; color:#aaa; margin-left:5px;">${isLocked ? '' : '変更 >'}</div>
-					</div>`;
-				});
-				const summaryHtml = `
-					<div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-bottom:10px; background:#1a1a1a; padding:5px; border-radius:4px; border:1px solid #333;">
-						<div style="font-size:10px; color:#aaa;">魔法防御: <span style="color:#fff;">${s.mdef}</span></div>
-						<div style="font-size:10px; color:#aaa;">命中率: <span style="color:#fff;">${s.hit}%</span></div>
-						<div style="font-size:10px; color:#aaa;">回避率: <span style="color:#fff;">${s.eva}%</span></div>
-						<div style="font-size:10px; color:#aaa;">会心率: <span style="color:#fff;">${s.cri}%</span></div>
-					</div>`;
-				contentHtml = summaryHtml + `<div style="display:flex; flex-direction:column; gap:2px;">${listHtml}</div>`;
-			}
+                let listHtml = '';
+                const parts = ['武器', '盾', '頭', '体', '足'];
+                parts.forEach(p => {
+                    let label = p;
+                    let isLocked = false;
+                    let eq = (c.equips || {})[p];
+                    if (p === '盾') {
+                        if (hasTwoHanded) { label = '盾(不可)'; isLocked = true; }
+                        else if (hasDualWield) { label = '武器2'; }
+                    }
+                    const rarityColor = eq ? Menu.getRarityColor(eq.rarity) : '#888';
+                    const onclick = isLocked ? '' : `onclick="MenuAllies.targetPart='${label}'; MenuAllies.selectedEquip=null; MenuAllies.renderDetail();"`;
+                    listHtml += `<div class="list-item" style="align-items:center; opacity:${isLocked?0.5:1};" ${onclick}>
+                        <div style="width:40px; font-size:10px; color:#aaa; font-weight:bold;">${label}</div>
+                        <div style="flex:1;">
+                            <div style="font-size:12px; font-weight:bold; color:${rarityColor};">${eq ? eq.name : (isLocked ? '両手持ち中' : 'なし')}</div>
+                            ${eq ? MenuAllies.getEquipFullDetailHTML(eq) : ''}
+                        </div>
+                        <div style="font-size:10px; color:#aaa; margin-left:5px;">${isLocked ? '' : '変更 >'}</div>
+                    </div>`;
+                });
+
+                // ★修正点3: 魔法防御、命中、回避、会心のステータスサマリーを復活
+                const summaryHtml = `
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; margin-bottom:10px; background:#1a1a1a; padding:5px; border-radius:4px; border:1px solid #333;">
+                        <div style="font-size:10px; color:#aaa;">　　命中率: <span style="color:#fff;">${s.hit}%</span></div>
+                        <div style="font-size:10px; color:#aaa;">　　回避率: <span style="color:#fff;">${s.eva}%</span></div>
+                        <div style="font-size:10px; color:#aaa;">　　会心率: <span style="color:#fff;">${s.cri}%</span></div>
+                    </div>`;
+
+                contentHtml = summaryHtml + `<div style="display:flex; flex-direction:column; gap:2px;">${listHtml}</div>`;
+            }
         } else if (MenuAllies.currentTab === 3) {
             const playerObj = new Player(c);
             const autoStatus = c.config.fullAuto;
@@ -1708,11 +1734,12 @@ const MenuAllies = {
                         </div>
                     </div>
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:4px; margin-top:5px; margin-bottom:12px;">
-                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:10px; color:#aaa; display:block; margin-bottom:2px;">攻撃力</span><span style="font-weight:bold; font-size:12px; display:block;">${s.atk}</span></div>
-                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:10px; color:#aaa; display:block; margin-bottom:2px;">防御力</span><span style="font-weight:bold; font-size:12px; display:block;">${s.def}</span></div>
-                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:10px; color:#aaa; display:block; margin-bottom:2px;">素早さ</span><span style="font-weight:bold; font-size:12px; display:block;">${s.spd}</span></div>
-                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:10px; color:#aaa; display:block; margin-bottom:2px;">魔力</span><span style="font-weight:bold; font-size:12px; display:block;">${s.mag}</span></div>
+                <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:3px; margin-top:5px; margin-bottom:12px;">
+                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">攻撃力</span><span style="font-weight:bold; font-size:11px; display:block;">${s.atk}</span></div>
+                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">防御力</span><span style="font-weight:bold; font-size:11px; display:block;">${s.def}</span></div>
+                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">魔力</span><span style="font-weight:bold; font-size:11px; display:block;">${s.mag}</span></div>
+                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">魔防</span><span style="font-weight:bold; font-size:11px; display:block;">${s.mdef}</span></div>
+                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">素早さ</span><span style="font-weight:bold; font-size:11px; display:block;">${s.spd}</span></div>
                 </div>
                 <div style="display:flex; margin-bottom:10px;">${tabBtns}</div>
                 <div>${contentHtml}</div>

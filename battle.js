@@ -1689,7 +1689,11 @@ findNextActor: () => {
         let totalActionLoops = 1;
         
         // アイテム使用以外で、かつ actor が「二刀流」の特性を持っている場合を判定
-        const canDualWield = !command.isItem && typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue(actor, 'dual_dmg_mult') > 0;
+        const canDualWield =
+		  cmd.type !== 'item' &&
+		  typeof PassiveSkill !== 'undefined' &&
+		  typeof PassiveSkill.getSumValue === 'function' &&
+		  PassiveSkill.getSumValue(actor, 'dual_dmg_mult') > 0;
 
         if (canDualWield) {
             // 対象となるタイプを網羅 (物理・通常・魔法・ブレス・特殊・強化・弱体・回復)
@@ -2860,10 +2864,10 @@ findNextActor: () => {
 
         // --- 2. パーティ全体としての回復ログを一度だけ出力 ---
         if (hpRecovered) {
-            Battle.log(`<span style="color:#8f8;">応急手当でパーティのHPが回復した！</span>`);
+            Battle.log(`<span style="color:#8f8;">特性：応急手当でパーティのHPが回復した！</span>`);
         }
         if (mpRecovered) {
-            Battle.log(`<span style="color:#88f;">魔力十分でパーティのMPが回復した！</span>`);
+            Battle.log(`<span style="color:#88f;">特性：魔力充填でパーティのMPが回復した！</span>`);
         }
 		
         // オプション再抽選サブ関数 (内部用)
