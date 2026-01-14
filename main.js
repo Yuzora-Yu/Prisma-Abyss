@@ -729,7 +729,7 @@ const App = {
         } 
     },
 
-Load: () => { 
+load: () => { 
     try { 
         const j = localStorage.getItem(CONST.SAVE_KEY); 
         if(j){ 
