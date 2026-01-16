@@ -1130,32 +1130,34 @@ load: () => {
             // ここで ReferenceError を防ぐため App.checkSynergy を使用
             if (typeof App.checkSynergy === 'function') {
                 const syns = App.checkSynergy(eq);
-                if (syns) {
-                    syns.forEach(syn => {
-                        if (syn.effect === 'might') s.finDmg += 30;
-                        if (syn.effect === 'ironWall') s.finRed += 10;
-                        if (syn.effect === 'guardian') pctMods.def += 100;
-                        if (syn.effect === 'divineProtection') {
-                            for (let k in s.resists) s.resists[k] = (s.resists[k] || 0) + 20;
-                        }
-                        if (syn.effect === 'hpBoost100') pctMods.maxHp += 100;
-                        if (syn.effect === 'spdBoost100') pctMods.spd += 100;
-                        if (syn.effect === 'debuffImmune') s.resists.Debuff = 100;
-                        if (syn.effect === 'sealGuard50') {
-                            s.resists.SkillSeal = (s.resists.SkillSeal || 0) + 50;
-                            s.resists.SpellSeal = (s.resists.SpellSeal || 0) + 50;
-                            s.resists.HealSeal  = (s.resists.HealSeal  || 0) + 50;
-                        }
-                        if (syn.effect === 'elmAtk25') {
-                            const elmOpt = eq.opts && eq.opts.find(x => x.key === 'elmAtk');
-                            if (elmOpt) s.elmAtk[elmOpt.elm] = (s.elmAtk[elmOpt.elm] || 0) + 25;
-                        }
-                        // ★シナジーによるスキル習得 (深淵の刃など)
-                        if (syn.effect === 'grantSkill' && syn.value) {
-                            allSkillIds.add(syn.value);
-                        }
-                    });
-                }
+				if (syns) {
+					syns.forEach(syn => {
+						if (syn.effect === 'might') s.finDmg += 30;
+						if (syn.effect === 'ironWall') s.finRed += 10;
+						if (syn.effect === 'guardian') pctMods.def += 100;
+						if (syn.effect === 'divineProtection') {
+							for (let k in s.resists) s.resists[k] = (s.resists[k] || 0) + 20;
+						}
+						if (syn.effect === 'hpBoost100') pctMods.maxHp += 100;
+						if (syn.effect === 'spdBoost100') pctMods.spd += 100;
+						if (syn.effect === 'debuffImmune') s.resists.Debuff = 100;
+						if (syn.effect === 'sealGuard50') {
+							s.resists.SkillSeal = (s.resists.SkillSeal || 0) + 50;
+							s.resists.SpellSeal = (s.resists.SpellSeal || 0) + 50;
+							s.resists.HealSeal  = (s.resists.HealSeal  || 0) + 50;
+						}
+						
+						// ★修正：極意系（elmAtk25）。syn.elm を直接参照して加算する
+						if (syn.effect === 'elmAtk25' && syn.elm) {
+							s.elmAtk[syn.elm] = (s.elmAtk[syn.elm] || 0) + 25;
+						}
+
+						// ★シナジーによるスキル習得 (深淵の刃など)
+						if (syn.effect === 'grantSkill' && syn.value) {
+							allSkillIds.add(syn.value);
+						}
+					});
+				}
             }
         }
 
