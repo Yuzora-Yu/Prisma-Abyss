@@ -513,6 +513,22 @@ const App = {
                 App.changeScene('field');
             }
         }
+		
+		// main.js の startGameLogic 内に追加
+		if (App.data && App.data.progress.rerollState) {
+			const state = App.data.progress.rerollState;
+			const char = App.data.characters.find(c => c.uid === state.charUid);
+			if (char) {
+				MenuAllies.selectedChar = char;
+				MenuAllies.selectedUid = char.uid;
+				// 画面を仲間詳細まで進めてから比較モーダルを開く
+				Menu.openSubScreen('allies');
+				MenuAllies.renderDetail();
+				MenuTraitDetail.renderRerollResult();
+			}
+		}
+		
+		
         
         let moveTimer = null;
         const startMove = (dx, dy) => {
