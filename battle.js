@@ -1402,6 +1402,8 @@ const isFast = (actor.passive && actor.passive.fastestAction && Math.random() < 
             Battle.renderEnemies(); Battle.renderPartyStatus();
             if (Battle.checkFinish()) return;
             await Battle.wait(500);
+			Battle.log("<br>"); 
+            await Battle.wait(50);
         }
         
         // 全行動終了後に一括で持続時間および再生特性を更新
@@ -3033,22 +3035,29 @@ const isFast = (actor.passive && actor.passive.fastestAction && Math.random() < 
 						}
 					}
 				}
+				
 				// 2. 装備ドロップ判定 (独立)
 				const isBoss = (base.id >= 1000);
 				const equipChance = isBoss ? 100 : 30; 
 				if (Math.random() * 100 < equipChance) {
 					let eq;
 					if (isBoss && Math.random() < 0.02) {
+						// 2%の確率で発生する超強力な「改」装備
 						eq = createEquipWithMinRarity(floor, 3, ['SSR', 'UR', 'EX'], '武器');
 						eq.name = eq.name.replace(/\+3$/, "") + "・改+3";
+						
+						// ★追加修正：能力増加は基礎値（主要7ステータス）のみとする
+						const BASE_SCALE_KEYS = new Set(['atk', 'def', 'mag', 'mdef', 'spd', 'hp', 'mp']);
 						for (let key in eq.data) {
-							if (typeof eq.data[key] === 'number') eq.data[key] *= 2;
-							else if (typeof eq.data[key] === 'object' && eq.data[key] !== null) {
-								for (let sub in eq.data[key]) eq.data[key][sub] *= 2;
+							if (!BASE_SCALE_KEYS.has(key)) continue;
+							if (typeof eq.data[key] === 'number') {
+								eq.data[key] *= 2; // 基礎ステータスを2倍
 							}
 						}
+						
 						eq.val *= 4;
 						hasUltraRareDrop = true;
+						// 超レア演出用の type: 'kai'
 						drops.push({ name: eq.name, isRare: true, type: 'kai' });
 					} else {
 						let fixedPlus = isBoss ? 3 : (Math.random() * 100 < (10 + bonusPlus3) ? 3 : null);
@@ -3059,6 +3068,7 @@ const isFast = (actor.passive && actor.passive.fastestAction && Math.random() < 
 					}
 					App.data.inventory.push(eq);
 				}
+				
 				// 3. 通常ドロップ判定 (独立)
 				if (monsterDrops && monsterDrops.normal) {
 					const normRate = (monsterDrops.normal.rate || 0) + bonusNormal;
