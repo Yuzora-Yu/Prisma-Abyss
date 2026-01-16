@@ -210,7 +210,7 @@ const Menu = {
                 const optRarity = o.rarity || 'N';
                 const optColor = Menu.getRarityColor(optRarity);
                 const unit = o.unit === 'val' ? '' : o.unit;
-                return `<span style="color:${optColor};">[${o.label}${fV(o.val)}${unit} ${optRarity}]</span>`;
+                return `<span style="color:${optColor};">${o.label}${fV(o.val)}${unit} [${optRarity}]</span>`;
             }).join(' ');
             optsHTML = `<div style="font-size:10px; color:#aaa; margin-top:2px;">${optsList}</div>`;
         }
@@ -542,7 +542,7 @@ const MenuParty = {
             const curMp = c.currentMp !== undefined ? c.currentMp : s.maxMp;
             const inParty = App.data.party.includes(c.uid) ? '<span style="color:#4ff; font-weight:bold; font-size:10px; margin-right:4px;">[PT]</span>' : '';
             const lbText = c.limitBreak > 0 ? `<span style="color:#f0f; font-weight:bold; font-size:11px;">+${c.limitBreak}</span>` : '';
-            const rarityLabel = (c.uid === 'p1') ? 'Player' : `[${c.rarity}]`;
+            const rarityLabel = (c.uid === 'p1') ? 'Player' : `${c.rarity}`;
             const rarityColor = (c.uid === 'p1') ? '#ffd700' : Menu.getRarityColor(c.rarity);
             
             const master = DB.CHARACTERS.find(m => m.id === c.charId);
@@ -1161,7 +1161,7 @@ const MenuAllies = {
             const curMp = c.currentMp !== undefined ? c.currentMp : s.maxMp;
             const inParty = App.data.party.includes(c.uid) ? '<span style="color:#4ff; font-weight:bold; font-size:10px; margin-right:4px;">[PT]</span>' : '';
             const lbText = c.limitBreak > 0 ? `<span style="color:#f0f; font-weight:bold; font-size:11px;">+${c.limitBreak}</span>` : '';
-            const rarityLabel = (c.uid === 'p1') ? 'Player' : `[${c.rarity}]`;
+            const rarityLabel = (c.uid === 'p1') ? 'Player' : `${c.rarity}`;
             const rarityColor = (c.uid === 'p1') ? '#ffd700' : Menu.getRarityColor(c.rarity);
             
             const master = DB.CHARACTERS.find(m => m.id === c.charId);
@@ -1651,8 +1651,8 @@ const MenuAllies = {
                     return `
                         <div style="background:${isHidden ? 'rgba(0,0,0,0.2)' : '#252525'}; border:1px solid #444; border-radius:4px; padding:6px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
                             <div style="flex:1; cursor:pointer;" onclick="MenuSkillDetail.open(${sk.id}, ${JSON.stringify(playerObj.skills).replace(/"/g, '&quot;')})">
-                                <div style="font-size:12px; font-weight:bold; color:${isHidden ? '#666' : '#ddd'};">${elmHtml}${sk.name} <span style="font-size:10px; color:#888;">(${sk.type})</span></div>
-                                <div style="font-size:10px; color:#aaa;">${sk.desc || ''}</div>
+                                <div style="font-size:12px; font-weight:bold; color:${isHidden ? '#666' : '#ddd'};">${sk.name} <span style="font-size:10px; color:#888;">(${sk.type})</span></div>
+                                <div style="font-size:10px; color:#aaa;">${elmHtml}${sk.desc || ''}</div>
                             </div>
                             <div style="text-align:right; min-width:80px;">
                                 <div style="font-size:11px; color:#88f; margin-bottom:4px;">MP:${sk.mp}</div>
