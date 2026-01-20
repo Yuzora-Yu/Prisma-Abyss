@@ -530,20 +530,24 @@ const App = {
 		
 		
         
-        let moveTimer = null;
+        //let moveTimer = null;
         const startMove = (dx, dy) => {
-            if(moveTimer) clearInterval(moveTimer);
+            Field.stopMove(); // 二重起動防止
             if(typeof Menu !== 'undefined' && Menu.isMenuOpen()) return;
             Field.move(dx, dy); 
-            moveTimer = setInterval(() => {
-                if(typeof Menu !== 'undefined' && Menu.isMenuOpen()) { stopMove(); return; }
+            Field.moveTimer = setInterval(() => {
+                // メニューが開いたか、フィールド画面以外になったら停止
+                if((typeof Menu !== 'undefined' && Menu.isMenuOpen()) || 
+                   document.getElementById('field-scene').style.display === 'none') { 
+                    Field.stopMove(); 
+                    return; 
+                }
                 Field.move(dx, dy);
             }, 150); 
         };
         const stopMove = (e) => {
             if(e) e.preventDefault(); 
-            if(moveTimer) clearInterval(moveTimer);
-            moveTimer = null;
+            Field.stopMove(); // ★共通メソッドを呼ぶ
         };
 
         window.addEventListener('keydown', e => {
@@ -1914,9 +1918,18 @@ load: () => {
 
 const Field = {
     x: 23, y: 28, 
-    dir: 0, // 向き (0:下, 1:左, 2:右, 3:上)
+    dir: 3, // 向き (0:下, 1:左, 2:右, 3:上)
     step: 1, // 歩行アニメ用 (1 または 2)
     ready: false, currentMapData: null,
+	moveTimer: null, // ★追加：タイマー保持用
+	
+	// ★追加：移動を強制停止するメソッド
+    stopMove: () => {
+        if (Field.moveTimer) {
+            clearInterval(Field.moveTimer);
+            Field.moveTimer = null;
+        }
+    },
     
     init: () => {
         if(App.data) {
@@ -2174,6 +2187,7 @@ const Field = {
                 // エンカウント率自体は 0.03 / 0.06 のまま進行します
 
                 if(Math.random() < rate) { 
+					Field.stopMove(); // ★ここでタイマーを確実に殺す
                     App.data.walkCount = 0; 
                     App.log("敵だ！"); 
                     
