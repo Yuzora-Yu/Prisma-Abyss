@@ -3137,9 +3137,9 @@ findNextActor: () => {
 		App.save(); 
 
 		// --- [5] ここから勝利演出（ログ表示、レベルアップ、待機など） ---
-		Battle.log(`\n<span style="color:#ffff00; font-size:1em; font-weight:bold;">戦闘に勝利した！</span>`);
-		Battle.log(` ${totalGold} Goldを獲得！`);
-		Battle.log(` ${totalExp} ポイントの経験値を 獲得した！`);
+		Battle.log(`<br><span style="color:#ffff00; font-size:1em; font-weight:bold;">戦闘に勝利した！</span>`);
+		Battle.log(`${totalGold} Goldを獲得！`);
+		Battle.log(`${totalExp} ポイントの経験値を 獲得した！`);
 
 		const partyHpRegen = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getPartySumValue('post_battle_hp_regen_pct') : 0;
 		const partyMpRegen = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getPartySumValue('post_battle_mp_regen_pct') : 0;
@@ -3154,13 +3154,13 @@ findNextActor: () => {
 
 			const oldLv = charData.level;
 
-			// キャラクターのレベルアップログ取得 (App.gainExp内でもセーブが走る)
+			// App.gainExp が [Lv通知, ステ上昇, スキル習得, 特性習得] の順で配列を返す
 			const lvLogs = App.gainExp(charData, totalExp);
 
-			// レベルアップログを順次表示
+			// 1項目ずつウェイトを挟んでログに流す
 			for (const msg of lvLogs) {
 				Battle.log(msg);
-				await Battle.wait(600);
+				await Battle.wait(500); // 1行ごとの余韻
 			}
 
 			// 特性の成長判定
