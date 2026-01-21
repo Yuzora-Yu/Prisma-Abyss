@@ -1606,6 +1606,9 @@ load: () => {
 	createEquipById: (eid, plus = 0) => {
 		const base = window.EQUIP_MASTER.find(e => e.eid === eid);
 		if (!base) return null;
+		
+		// ★修正点：レアリティ計算に使用する targetFloor を定義
+		const targetFloor = App.getVirtualFloor();
 
 		// createEquipByFloor の「4. ベース作成」以降のロジックを流用
 		const eq = { 

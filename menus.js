@@ -3,11 +3,27 @@
 const Menu = {
     // --- メインメニュー制御 ---
     openMainMenu: () => {
+        // 開く直前に実績の達成判定を最新にする
+        if (typeof MenuAchievements !== 'undefined' && MenuAchievements.checkProgress) {
+            MenuAchievements.checkProgress();
+        }
+
         document.getElementById('menu-overlay').style.display = 'flex';
         Menu.renderPartyBar();
         
         const grid = document.querySelector('#menu-overlay .menu-grid');
         if(grid) {
+            // 通知バッジ（赤丸）の判定
+            // 1. 実績: 「達成済み」かつ「未受取」のものが1つでもあるか
+            const hasUnclaimedAchievement = Object.values(App.data.achievements || {}).some(a => a.completed && !a.claimed);
+            
+            // 2. 取引所: 本日の日付と保存されている最後受取日が一致しない（＝未受取）か
+            const today = (typeof MenuExchange !== 'undefined' && MenuExchange.getTodayStr) ? MenuExchange.getTodayStr() : new Date().toLocaleDateString('sv-SE');
+            const hasUnclaimedDaily = (App.data.flags?.lastGemClaimDate !== today) || (App.data.flags?.lastGoldClaimDate !== today);
+            
+            // バッジ用HTMLパーツ
+            const badge = '<span style="display:inline-block; width:10px; height:10px; background:#ff4444; border-radius:50%; margin-left:5px; vertical-align:middle; box-shadow:0 0 5px #f00; border:1px solid #fff;"></span>';
+
             grid.innerHTML = `
                 <button class="menu-btn" onclick="Menu.openSubScreen('party')">仲間編成</button>
                 <button class="menu-btn" onclick="Menu.openSubScreen('allies')">仲間一覧</button>
@@ -15,12 +31,13 @@ const Menu = {
                 <button class="menu-btn" onclick="Menu.openSubScreen('items')">道具</button>
                 <button class="menu-btn" onclick="Menu.openSubScreen('blacksmith')">鍛冶屋</button>
                 <button class="menu-btn" onclick="Menu.openSubScreen('skills')">スキル</button>
-                <button class="menu-btn" style="background:#400040;" onclick="Dungeon.enter()">ダンジョン</button>
-                <button class="menu-btn" style="background:#664400;" onclick="Menu.openSubScreen('gacha')">ガチャ</button>
                 <button class="menu-btn" onclick="Menu.openSubScreen('book')">魔物図鑑</button>
                 <button class="menu-btn" onclick="Menu.openSubScreen('status')">プレイ状況</button>
-				<button class="menu-btn" onclick="Menu.openSubScreen('exchange')">取引所</button>
-				<button class="menu-btn" onclick="Menu.openSubScreen('achievements')">実績</button>
+				<button class="menu-btn" onclick="Menu.openSubScreen('exchange')">取引所${hasUnclaimedDaily ? badge : ''}</button>
+				<button class="menu-btn" onclick="Menu.openSubScreen('achievements')">実績${hasUnclaimedAchievement ? badge : ''}</button>
+                <button class="menu-btn" style="background:#400040;" onclick="Dungeon.enter()">ダンジョン</button>
+                <button class="menu-btn" style="background:#664400;" onclick="Menu.openSubScreen('gacha')">ガチャ</button>
+				
                 <button class="menu-btn" style="background:#004444;" onclick="App.downloadSave()">データ出力</button>
                 <button class="menu-btn" style="background:#004444;" onclick="App.importSave()">データ読込</button>
                 
@@ -130,8 +147,8 @@ const Menu = {
 
     closeSubScreen: (id) => {
         document.getElementById('sub-screen-' + id).style.display = 'none';
-        document.getElementById('menu-overlay').style.display = 'flex';
-        Menu.renderPartyBar();
+        // 単に表示するのではなく、バッジ判定を含む openMainMenu を呼び出して戻る
+        Menu.openMainMenu();
     },
 
     getDialogEl: (id) => document.getElementById(id),

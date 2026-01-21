@@ -8,7 +8,8 @@ const ACHIEVEMENTS_DATA = [
             { type: 'GOLD', val: 5000 }
         ] },
     { id: 103, type: "LV", goal: 50, title: "伝説の胎動", desc: "主人公のレベルが50に到達", rewards: [
-            { type: 'GEM', val: 1000 }
+            { type: 'GEM', val: 1000 },
+			{ type: 'ITEM', id: 6, val: 5 }
         ] },
     { id: 104, type: "LV", goal: 100, title: "深淵の到達者", desc: "主人公のレベルが100に到達", rewards: [
             { type: 'GEM', val: 3000 },
