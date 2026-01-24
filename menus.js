@@ -51,7 +51,7 @@ const AdManager = {
 				line-height: 1.4; 
 				box-sizing: border-box;
 			">
-				【AD AREA INSIDE WINDOW】<br>
+				【 SAMPLE AD AREA 】<br>
 				©Yuzora-Games CONTACT:@yuu_mintia
 			</div>
 		`;
