@@ -2157,8 +2157,15 @@ const Field = {
         Field.ready = true;
         Field.render();
         
-        if(document.getElementById('disp-gold')) document.getElementById('disp-gold').innerText = App.data.gold;
-        if(document.getElementById('disp-gem')) document.getElementById('disp-gem').innerText = App.data.gems;
+        // ★修正：直接代入を App.updateHUD() の呼び出しに変更
+        if (typeof App.updateHUD === 'function') {
+            App.updateHUD();
+        } else {
+            // updateHUDがない場合のフォールバック（カンマ付き）
+            if(document.getElementById('disp-gold')) document.getElementById('disp-gold').innerText = (App.data.gold || 0).toLocaleString();
+            if(document.getElementById('disp-gem')) document.getElementById('disp-gem').innerText = (App.data.gems || 0).toLocaleString();
+        }
+
         if(typeof Menu !== 'undefined') Menu.renderPartyBar();
     },
 
