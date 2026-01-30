@@ -145,7 +145,7 @@ const GRAPHICS = {
         'monster_フレイムヴァイン': 'monster/フレイムヴァイン.png',
         'monster_レナード・アビス': 'monster/レナード・アビス.png',
         'monster_炎楔のグラド': 'monster/炎楔のグラド.png',
-        'monster_氷楔のシーリス ': 'monster/氷楔のシーリス .png',
+        'monster_氷楔のシーリス': 'monster/氷楔のシーリス.png',
         'monster_風楔のエリシア': 'monster/風楔のエリシア.png',
         'monster_魔王ゼノン': 'monster/魔王ゼノン.png',
         'monster_雷楔のリクシア': 'monster/雷楔のリクシア.png',
