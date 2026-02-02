@@ -193,40 +193,40 @@ const GRAPHICS = {
 
 // 2. 切り出し（スプライト）の定義
     // { 登録名: [使用するdataキー, x, y, width, height] }
-    sprites: {
-        'floor':    ['map_grass', 0, 0, 352, 384], //草原
-        'Low_mountain':    ['map_grass', 352, 0, 352, 384], //低山
-        'mountain':    ['map_grass', 704, 0, 352, 384], //岩山
-        'forest':    ['map_grass', 1056, 0, 352, 384], //森
-        'house-1':    ['map_grass', 1408, 0, 352, 384], //家1
-        'house-2':    ['map_grass', 1760, 0, 352, 384], //家2
-        'village':    ['map_grass', 2112, 0, 352, 384], //村
-        'inn':    ['map_grass', 2464, 0, 352, 384], //宿
-        'casino':    ['map_grass', 0, 384, 352, 384], //カジノ
-        'weapon':    ['map_grass', 352, 384, 352, 384], //武器屋
-        'shop':    ['map_grass', 704, 384, 352, 384], //道具屋
-        'medal':    ['map_grass', 1056, 384, 352, 384], //メダル王
-        'town':    ['map_grass', 1408, 384, 352, 384], //町
-        'settlement':    ['map_grass', 1760, 384, 352, 384], //里
-        'castle':    ['map_grass', 2112, 384, 352, 384], //城
-        'temple':    ['map_grass', 2464, 384, 352, 384], //神殿
-        'fortress':    ['map_grass', 0, 768, 352, 384], //要塞
-        'cave':    ['map_grass', 352, 768, 352, 384], //洞窟
-        'hall':    ['map_grass', 704, 768, 352, 384], //大穴
-        'ruins':    ['map_grass', 1056, 768, 352, 384], //遺跡
-        'lost':    ['map_grass', 1408, 768, 352, 384], //廃墟
-        'darkcastle':    ['map_grass', 1760, 768, 352, 384], //魔王城
-        'lighthouse':    ['map_grass', 2112, 768, 352, 384], //灯台
-        'tower':    ['map_grass', 2464, 768, 352, 384], //塔
-        'farm':    ['map_grass', 0, 1152, 352, 384], //畑
-        'pot_grass':    ['map_grass', 352, 1152, 352, 384], //ツボ
-        'barrel_grass':    ['map_grass', 704, 1152, 352, 384], //タル
-        'chest_grass':    ['map_grass', 1056, 1152, 352, 384], //普通宝箱
-        'chest_rare_grass':    ['map_grass', 1408, 1152, 352, 384], //レア宝箱
-        'smith':    ['map_grass', 1760, 1152, 352, 384], //鍛冶屋
-        'fire_village':    ['map_grass', 2112, 1152, 352, 384], //炎の里
-        'dummy_grass':    ['map_grass', 2464, 1152, 352, 384], //ダミー
-    },
+	sprites: {
+        'floor':    ['map_grass', 0, 0, 352, 384], //草原
+        'Low_mountain':    ['map_grass', 352, 0, 352, 384], //低山
+        'mountain':    ['map_grass', 704, 0, 352, 384], //岩山
+        'forest':    ['map_grass', 1056, 0, 352, 384], //森
+        'house-1':    ['map_grass', 1408, 0, 352, 384], //家1
+        'house-2':    ['map_grass', 1760, 0, 352, 384], //家2
+        'village':    ['map_grass', 2112, 0, 352, 384], //村
+        'inn':    ['map_grass', 2464, 0, 352, 384], //宿
+        'casino':    ['map_grass', 0, 384, 352, 384], //カジノ
+        'weapon':    ['map_grass', 352, 384, 352, 384], //武器屋
+        'shop':    ['map_grass', 704, 384, 352, 384], //道具屋
+        'medal':    ['map_grass', 1056, 384, 352, 384], //メダル王
+        'town':    ['map_grass', 1408, 384, 352, 384], //町
+        'settlement':    ['map_grass', 1760, 384, 352, 384], //里
+        'castle':    ['map_grass', 2112, 384, 352, 384], //城
+        'temple':    ['map_grass', 2464, 384, 352, 384], //神殿
+        'fortress':    ['map_grass', 0, 768, 352, 384], //要塞
+        'cave':    ['map_grass', 352, 768, 352, 384], //洞窟
+        'hall':    ['map_grass', 704, 768, 352, 384], //大穴
+        'ruins':    ['map_grass', 1056, 768, 352, 384], //遺跡
+        'lost':    ['map_grass', 1408, 768, 352, 384], //廃墟
+        'darkcastle':    ['map_grass', 1760, 768, 352, 384], //魔王城
+        'lighthouse':    ['map_grass', 2112, 768, 352, 384], //灯台
+        'tower':    ['map_grass', 2464, 768, 352, 384], //塔
+        'farm':    ['map_grass', 0, 1152, 352, 384], //畑
+        'pot_grass':    ['map_grass', 352, 1152, 352, 384], //ツボ
+        'barrel_grass':    ['map_grass', 704, 1152, 352, 384], //タル
+        'chest_grass':    ['map_grass', 1056, 1152, 352, 384], //普通宝箱
+        'chest_rare_grass':    ['map_grass', 1408, 1152, 352, 384], //レア宝箱
+        'smith':    ['map_grass', 1760, 1152, 352, 384], //鍛冶屋
+        'fire_village':    ['map_grass', 2112, 1152, 352, 384], //炎の里
+        'dummy_grass':    ['map_grass', 2464, 1152, 352, 384], //ダミー
+    },
 
     load: (callback) => {
         const keys = Object.keys(GRAPHICS.data);
