@@ -1,9 +1,11 @@
-const CACHE_NAME = "prisma-abyss-v2.50;
+const CACHE_NAME = "prisma-abyss-v2.54-dungeon-wall-face";
 const FILES_TO_CACHE = [
   "./", // ルート
   "main.html",
   "index.html",
   "manifest.json",
+  "modern-polish.css",
+  "polish.js",
   "main.js",
   "menus.js",
   "database.js",
@@ -21,7 +23,9 @@ const FILES_TO_CACHE = [
   "job_data.js",
   "map.js",
   "story.js",
-  "passiveSkill.js"
+  "passiveSkill.js",
+  "achievements.js",
+  "news.js"
 ];
 
 // インストール時にキャッシュ
@@ -47,7 +51,7 @@ self.addEventListener("activate", (e) => {
 // フェッチ（通信）発生時の処理
 self.addEventListener("fetch", (e) => {
   e.respondWith(
-    caches.match(e.target ? e.target : e.request).then((res) => {
+    caches.match(e.request).then((res) => {
       // キャッシュがあれば返し、なければネットワークへ（オフライン時はここでエラーになる）
       return res || fetch(e.request);
     })

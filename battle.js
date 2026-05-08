@@ -1944,15 +1944,31 @@ findNextActor: () => {
                     return true; 
                 };
 
+                const ailmentMessages = {
+                    Poison: "どくにかかった",
+                    ToxicPoison: "もうどくにかかった",
+                    Shock: "感電した",
+                    Debuff: "ステータスが低下した",
+                    Fear: "おびえている",
+                    SpellSeal: "呪文を封じられた",
+                    SkillSeal: "特技を封じられた",
+                    HealSeal: "回復を封じられた"
+                };
                 const addA = (k, msg, chance=null) => {
-                    if (!t.battleStatus.ailments[k]) {
-                        if (checkResist(k)) { 
-                            Battle.log(`${t.name}には ${Battle.statNames[k]||k} は きかなかった！`); 
-                            return; 
-                        }
-                        t.battleStatus.ailments[k] = { turns: d.turn || 3, chance: chance }; 
-                        Battle.log(msg);
+                    const text = ailmentMessages[k] || msg || `${Battle.statNames[k]||k}にかかった`;
+                    if (t.battleStatus.ailments[k]) {
+                        const current = t.battleStatus.ailments[k];
+                        current.turns = Math.max(Number(current.turns || 0), d.turn || 3);
+                        if (chance !== null) current.chance = chance;
+                        Battle.log(`${t.name}は ${text}！`);
+                        return;
                     }
+                    if (checkResist(k)) { 
+                        Battle.log(`${t.name}には ${Battle.statNames[k]||k} は きかなかった！`); 
+                        return; 
+                    }
+                    t.battleStatus.ailments[k] = { turns: d.turn || 3, chance: chance }; 
+                    Battle.log(`${t.name}は ${text}！`);
                 };
 
                 if (d.buff) {
@@ -2462,9 +2478,20 @@ findNextActor: () => {
 
                     if (cmd.type === 'skill') applyEffects(targetToHit, data, ailmentChanceMult);
 
+					const isOpposingTarget = cmd.isEnemy
+						? Battle.party.includes(targetToHit)
+						: Battle.enemies.includes(targetToHit);
+					const canTriggerAttackFollowups = () => (
+						dmg > 0 &&
+						!cmd.isReaction &&
+						!targetToHit.isDead &&
+						!isSupport &&
+						isOpposingTarget
+					);
+
 					// --- 連携部分：同陣営の仲間による追撃 ---
-					// メイン行動が「リアクション攻撃」でなく、かつターゲットが生存している場合に判定
-					if (!cmd.isReaction && !targetToHit.isDead) {
+					// 回復・補助では発火させず、敵対対象へ実ダメージが出た攻撃だけ判定する。
+					if (canTriggerAttackFollowups()) {
 						const allies = cmd.isEnemy ? Battle.enemies : Battle.party;
 						const partners = allies.filter(p => p && p !== actor && !p.isDead && !p.isFled);
 
@@ -2487,7 +2514,7 @@ findNextActor: () => {
 					
 					// --- 追い討ち部分：自分自身による追撃 ---
 					// 連携の発生有無に関わらず、現時点でターゲットが生存・HP50%以下なら判定
-					if (dmg > 0 && !targetToHit.isDead && !cmd.isReaction) {
+					if (canTriggerAttackFollowups()) {
 						if (targetToHit.hp <= targetToHit.baseMaxHp * 0.5) {
 							const isMonster = (actor instanceof Monster);
 							const chaseChance = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'chase_rate_mult', isMonster) : 0;
@@ -2654,9 +2681,11 @@ findNextActor: () => {
 		}
 
         // 実際の描画ループ
-        Battle.enemies.forEach(e => {
+        Battle.enemies.forEach((e, index) => {
             const div = document.createElement('div');
             div.className = `enemy-sprite`;
+            div.dataset.battleIndex = String(index);
+            if (e.id !== undefined) div.dataset.enemyId = String(e.id);
             
             div.style.cssText = `
                 position: relative; 
@@ -2738,6 +2767,8 @@ findNextActor: () => {
         container.innerHTML = '';
         Battle.party.forEach((p, index) => {
             const div = document.createElement('div'); div.className = 'p-box'; div.style.justifyContent = 'flex-start'; div.style.paddingTop = '2px';
+            div.dataset.battleIndex = String(index);
+            if (p.uid) div.dataset.battleUid = String(p.uid);
             const hpPer = (p.baseMaxHp > 0) ? (p.hp / p.baseMaxHp) * 100 : 0; const mpPer = (p.baseMaxMp > 0) ? (p.mp / p.baseMaxMp) * 100 : 0;
             const isActor = (Battle.phase === 'input' && index === Battle.currentActorIndex);
             if(isActor) { div.style.border = "2px solid #ffd700"; div.style.background = "#333"; }
