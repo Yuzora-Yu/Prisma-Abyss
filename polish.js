@@ -8,716 +8,20 @@
     if (el) el.textContent = text;
   };
 
-  const canvasData = (w, h, draw) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
-    draw(ctx, w, h);
-    return canvas.toDataURL("image/png");
-  };
-
-  const blockNoise = (ctx, w, h, colors, seed, size = 4, alpha = 1) => {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    for (let y = 0; y < h; y += size) {
-      for (let x = 0; x < w; x += size) {
-        const i = Math.abs((x * 37 + y * 71 + seed * 997) % colors.length);
-        ctx.fillStyle = colors[i];
-        ctx.fillRect(x, y, size, size);
-      }
-    }
-    ctx.restore();
-  };
-
-  const drawBrickLines = (ctx, color, stepY = 12, offset = 12) => {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    for (let y = stepY; y < 64; y += stepY) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(64, y);
-      ctx.stroke();
-    }
-    for (let y = 0; y < 64; y += stepY) {
-      const shift = (y / stepY) % 2 ? offset / 2 : 0;
-      for (let x = shift; x < 64; x += offset) {
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x, Math.min(64, y + stepY));
-        ctx.stroke();
-      }
-    }
-  };
-
-  const drawRoofHouse = (ctx, roof, wall, trim = "#f1d48a") => {
-    ctx.fillStyle = "rgba(0,0,0,.25)";
-    ctx.fillRect(12, 49, 42, 7);
-    ctx.fillStyle = wall;
-    ctx.fillRect(16, 28, 32, 24);
-    ctx.fillStyle = roof;
-    ctx.beginPath();
-    ctx.moveTo(10, 30);
-    ctx.lineTo(32, 10);
-    ctx.lineTo(54, 30);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = trim;
-    ctx.fillRect(28, 39, 8, 13);
-    ctx.fillStyle = "#2c1b20";
-    ctx.fillRect(20, 33, 7, 7);
-    ctx.fillRect(39, 33, 7, 7);
-  };
-
-  const tile = (kind) => canvasData(64, 64, (ctx) => {
-    ctx.fillStyle = "#182125";
-    ctx.fillRect(0, 0, 64, 64);
-
-    switch (kind) {
-      case "floor":
-        blockNoise(ctx, 64, 64, ["#245f42", "#2c7a4e", "#3c8f52", "#1c4939"], 2, 4);
-        ctx.strokeStyle = "rgba(226,214,151,.22)";
-        ctx.lineWidth = 2;
-        for (let y = 10; y < 64; y += 18) {
-          ctx.beginPath();
-          ctx.moveTo(-5, y);
-          ctx.quadraticCurveTo(18, y - 7, 36, y + 2);
-          ctx.quadraticCurveTo(51, y + 9, 69, y - 2);
-          ctx.stroke();
-        }
-        break;
-      case "forest":
-        blockNoise(ctx, 64, 64, ["#153527", "#1f4d32", "#2d653a", "#123022"], 3, 4);
-        for (let i = 0; i < 7; i += 1) {
-          const x = 8 + ((i * 17) % 44);
-          const y = 12 + ((i * 13) % 36);
-          ctx.fillStyle = "#2a1f16";
-          ctx.fillRect(x + 7, y + 16, 5, 16);
-          ctx.fillStyle = i % 2 ? "#1f6a3f" : "#2f8750";
-          ctx.beginPath();
-          ctx.arc(x + 9, y + 14, 12, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "rgba(255,236,156,.15)";
-          ctx.fillRect(x + 4, y + 8, 5, 5);
-        }
-        break;
-      case "sea":
-      case "canal":
-        blockNoise(ctx, 64, 64, ["#123f5d", "#155d7a", "#1b7790", "#0e344f"], 4, 4);
-        ctx.strokeStyle = kind === "canal" ? "#91dcda" : "#76c9e1";
-        ctx.lineWidth = 3;
-        for (let y = 10; y < 64; y += 14) {
-          ctx.beginPath();
-          for (let x = -6; x <= 70; x += 10) {
-            const yy = y + Math.sin((x + y) * 0.25) * 3;
-            if (x === -6) ctx.moveTo(x, yy);
-            else ctx.lineTo(x, yy);
-          }
-          ctx.stroke();
-        }
-        break;
-      case "mountain":
-      case "Low_mountain":
-      case "cliff":
-        blockNoise(ctx, 64, 64, ["#4c514e", "#5d655c", "#343b3f", "#74786b"], 7, 4);
-        ctx.fillStyle = kind === "Low_mountain" ? "#6c6847" : "#64636a";
-        ctx.beginPath();
-        ctx.moveTo(0, 56);
-        ctx.lineTo(18, 14);
-        ctx.lineTo(33, 43);
-        ctx.lineTo(45, 7);
-        ctx.lineTo(64, 56);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = "#d9e1d1";
-        ctx.beginPath();
-        ctx.moveTo(45, 7);
-        ctx.lineTo(39, 24);
-        ctx.lineTo(50, 22);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = "rgba(0,0,0,.28)";
-        ctx.stroke();
-        break;
-      case "wall":
-      case "brick-wall":
-      case "ancient-brick":
-        blockNoise(ctx, 64, 64, kind === "brick-wall" ? ["#4d3340", "#6a3e4a", "#7b4f47"] : ["#242a32", "#303541", "#3e3f46"], 8, 4);
-        drawBrickLines(ctx, kind === "ancient-brick" ? "rgba(150,171,126,.45)" : "rgba(13,17,24,.48)");
-        if (kind === "ancient-brick") {
-          ctx.fillStyle = "rgba(88,132,82,.35)";
-          ctx.fillRect(5, 6, 9, 21);
-          ctx.fillRect(49, 28, 6, 25);
-        }
-        break;
-      case "dungeon_floor":
-      case "stone-pave":
-      case "moss-stone":
-        blockNoise(ctx, 64, 64, ["#303541", "#3c4151", "#4b4d56", "#252b36"], 9, 4);
-        drawBrickLines(ctx, "rgba(13,17,24,.5)", 16, 16);
-        if (kind === "moss-stone") {
-          ctx.fillStyle = "rgba(55,119,68,.42)";
-          ctx.fillRect(4, 45, 27, 8);
-          ctx.fillRect(36, 7, 20, 6);
-        }
-        break;
-      case "stairs":
-        blockNoise(ctx, 64, 64, ["#303541", "#3b3e48", "#222936"], 11, 4);
-        ctx.fillStyle = "#d7b45a";
-        for (let i = 0; i < 5; i += 1) ctx.fillRect(16 + i * 3, 18 + i * 7, 32 - i * 6, 5);
-        ctx.strokeStyle = "#6c5031";
-        ctx.strokeRect(15, 17, 34, 37);
-        break;
-      case "cave":
-      case "hall":
-        blockNoise(ctx, 64, 64, ["#252632", "#373341", "#1a1b23"], 12, 4);
-        ctx.fillStyle = "#0b0d12";
-        ctx.beginPath();
-        ctx.arc(32, 38, 22, Math.PI, Math.PI * 2);
-        ctx.lineTo(54, 56);
-        ctx.lineTo(10, 56);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = kind === "hall" ? "#d7b45a" : "#5d6070";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        break;
-      case "house-1":
-        blockNoise(ctx, 64, 64, ["#245f42", "#2c7a4e"], 13, 4);
-        drawRoofHouse(ctx, "#a94142", "#d9bd84");
-        break;
-      case "house-2":
-      case "inn":
-        blockNoise(ctx, 64, 64, ["#245f42", "#2c7a4e"], 14, 4);
-        drawRoofHouse(ctx, kind === "inn" ? "#356ab8" : "#7e3fa1", "#e1c691", "#ffe08a");
-        if (kind === "inn") {
-          ctx.fillStyle = "#fff0b5";
-          ctx.fillRect(22, 22, 20, 5);
-        }
-        break;
-      case "casino":
-        blockNoise(ctx, 64, 64, ["#24314c", "#34234e", "#4a294f"], 15, 4);
-        ctx.fillStyle = "#ffe07a";
-        ctx.fillRect(14, 18, 36, 30);
-        ctx.fillStyle = "#171a25";
-        ctx.fillRect(18, 23, 28, 20);
-        ctx.fillStyle = "#e44858";
-        ctx.beginPath();
-        ctx.arc(32, 33, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(31, 25, 2, 16);
-        ctx.fillRect(24, 32, 16, 2);
-        break;
-      case "medal":
-        blockNoise(ctx, 64, 64, ["#234458", "#2b5d69", "#1d3648"], 16, 4);
-        ctx.fillStyle = "#f6ca62";
-        ctx.beginPath();
-        ctx.arc(32, 31, 18, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#7d5520";
-        ctx.beginPath();
-        ctx.arc(32, 31, 11, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#fff1aa";
-        ctx.fillRect(29, 19, 6, 25);
-        break;
-      case "boss":
-        blockNoise(ctx, 64, 64, ["#24162b", "#381b39", "#4b1f3f", "#17121f"], 17, 4);
-        ctx.fillStyle = "#db3b4d";
-        ctx.beginPath();
-        ctx.arc(32, 30, 18, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#11131a";
-        ctx.fillRect(23, 25, 7, 5);
-        ctx.fillRect(36, 25, 7, 5);
-        ctx.fillStyle = "#ffe08a";
-        ctx.beginPath();
-        ctx.moveTo(19, 18);
-        ctx.lineTo(8, 5);
-        ctx.lineTo(26, 13);
-        ctx.moveTo(45, 18);
-        ctx.lineTo(56, 5);
-        ctx.lineTo(38, 13);
-        ctx.fill();
-        break;
-      case "chest":
-      case "chest_rare":
-        blockNoise(ctx, 64, 64, ["#303541", "#3b3e48"], 18, 4);
-        ctx.fillStyle = kind === "chest_rare" ? "#b6324b" : "#9c6332";
-        ctx.fillRect(14, 27, 36, 20);
-        ctx.fillStyle = kind === "chest_rare" ? "#f0c65a" : "#d7b45a";
-        ctx.fillRect(14, 27, 36, 5);
-        ctx.fillRect(30, 27, 5, 20);
-        ctx.strokeStyle = "#20161a";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(14, 27, 36, 20);
-        break;
-      case "magma-rock":
-        blockNoise(ctx, 64, 64, ["#2b1a1b", "#4b2524", "#6a2c26", "#21151a"], 19, 4);
-        ctx.fillStyle = "#f47b3d";
-        ctx.fillRect(7, 42, 50, 5);
-        ctx.fillRect(25, 20, 6, 37);
-        ctx.fillStyle = "#ffd36a";
-        ctx.fillRect(9, 44, 23, 2);
-        break;
-      case "ash-floor":
-        blockNoise(ctx, 64, 64, ["#494b4f", "#5b514d", "#383c42", "#6a584a"], 20, 4);
-        ctx.strokeStyle = "rgba(255,166,92,.25)";
-        ctx.strokeRect(8, 8, 48, 48);
-        break;
-      case "highland":
-        blockNoise(ctx, 64, 64, ["#466b4c", "#5b7b51", "#778c5e", "#2f5141"], 21, 4);
-        ctx.strokeStyle = "rgba(232,238,197,.25)";
-        ctx.beginPath();
-        ctx.moveTo(0, 18);
-        ctx.lineTo(64, 8);
-        ctx.moveTo(0, 42);
-        ctx.lineTo(64, 35);
-        ctx.stroke();
-        break;
-      case "carpet":
-        blockNoise(ctx, 64, 64, ["#512743", "#65314c", "#3b2135"], 22, 4);
-        ctx.strokeStyle = "#d7b45a";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(8, 8, 48, 48);
-        ctx.strokeRect(18, 18, 28, 28);
-        break;
-      case "metal-wall":
-      case "iron-plate":
-        blockNoise(ctx, 64, 64, ["#354450", "#52616c", "#25313b", "#6e7880"], 23, 4);
-        ctx.strokeStyle = "rgba(9,12,16,.5)";
-        for (let i = 0; i < 64; i += 16) {
-          ctx.strokeRect(i + 2, 2, 13, 60);
-          ctx.fillStyle = "#b8c7c7";
-          ctx.fillRect(i + 5, 8, 3, 3);
-          ctx.fillRect(i + 10, 52, 3, 3);
-        }
-        break;
-      case "marble-wall":
-      case "white-tile":
-        blockNoise(ctx, 64, 64, ["#bfc8c0", "#d9ded4", "#aab8b2", "#eef0e8"], 24, 4);
-        ctx.strokeStyle = "rgba(50,70,80,.22)";
-        drawBrickLines(ctx, "rgba(50,70,80,.22)", 16, 16);
-        break;
-      default:
-        blockNoise(ctx, 64, 64, ["#303541", "#3c4151", "#252b36"], 42, 4);
-    }
-
-    ctx.strokeStyle = "rgba(255,255,255,.12)";
-    ctx.strokeRect(1, 1, 62, 62);
-    ctx.strokeStyle = "rgba(0,0,0,.25)";
-    ctx.strokeRect(0, 0, 64, 64);
-  });
-
-  const battleBg = (kind) => canvasData(960, 540, (ctx, w, h) => {
-    const sky = ctx.createLinearGradient(0, 0, 0, h);
-    const palettes = {
-      field: ["#122b35", "#2f694a", "#182029"],
-      forest: ["#102a27", "#1d5134", "#0d171d"],
-      mountain: ["#171d2a", "#505561", "#151821"],
-      dungeon: ["#141720", "#303446", "#0d0f16"],
-      boss: ["#1a1022", "#4d1f37", "#0d0812"],
-      maze: ["#101522", "#27344b", "#090d16"],
-      lastboss: ["#170b1b", "#641b42", "#05050a"]
-    };
-    const p = palettes[kind] || palettes.field;
-    sky.addColorStop(0, p[0]);
-    sky.addColorStop(0.64, p[1]);
-    sky.addColorStop(1, p[2]);
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, w, h);
-
-    ctx.globalAlpha = 0.28;
-    for (let i = 0; i < 9; i += 1) {
-      ctx.fillStyle = i % 2 ? "#d7b45a" : "#67d7c4";
-      ctx.beginPath();
-      ctx.arc(110 + i * 105, 90 + ((i * 53) % 120), 2 + (i % 3), 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    if (kind === "forest" || kind === "field") {
-      ctx.fillStyle = "rgba(11,31,25,.78)";
-      for (let i = 0; i < 15; i += 1) {
-        const x = i * 72 - 30;
-        const y = 280 + ((i * 31) % 70);
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + 42, y - 130);
-        ctx.lineTo(x + 84, y);
-        ctx.fill();
-      }
-    }
-    if (kind === "mountain") {
-      ctx.fillStyle = "rgba(30,34,45,.72)";
-      ctx.beginPath();
-      ctx.moveTo(0, 335);
-      ctx.lineTo(210, 120);
-      ctx.lineTo(330, 318);
-      ctx.lineTo(520, 105);
-      ctx.lineTo(780, 335);
-      ctx.lineTo(960, 160);
-      ctx.lineTo(960, 540);
-      ctx.lineTo(0, 540);
-      ctx.closePath();
-      ctx.fill();
-    }
-    if (kind === "dungeon" || kind === "maze") {
-      ctx.fillStyle = "rgba(7,9,15,.55)";
-      for (let i = 0; i < 10; i += 1) ctx.fillRect(i * 108, 0, 46, 330);
-      ctx.strokeStyle = "rgba(215,180,90,.24)";
-      ctx.lineWidth = 3;
-      for (let y = 80; y < 340; y += 64) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y + (kind === "maze" ? 24 : 0));
-        ctx.stroke();
-      }
-    }
-    if (kind === "boss" || kind === "lastboss") {
-      ctx.fillStyle = "rgba(219,59,77,.22)";
-      for (let i = 0; i < 7; i += 1) {
-        ctx.beginPath();
-        ctx.arc(130 + i * 135, 225 + ((i * 41) % 80), 58 + (i % 3) * 17, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = "rgba(255,215,126,.18)";
-      ctx.fillRect(0, 350, w, 8);
-    }
-
-    const ground = ctx.createLinearGradient(0, 350, 0, h);
-    ground.addColorStop(0, "rgba(245,221,150,.12)");
-    ground.addColorStop(1, "rgba(5,8,12,.88)");
-    ctx.fillStyle = ground;
-    ctx.beginPath();
-    ctx.moveTo(0, 366);
-    ctx.quadraticCurveTo(240, 330, 480, 360);
-    ctx.quadraticCurveTo(720, 392, 960, 342);
-    ctx.lineTo(960, 540);
-    ctx.lineTo(0, 540);
-    ctx.closePath();
-    ctx.fill();
-  });
-
-  const hero = (dir, step) => canvasData(64, 64, (ctx) => {
-    const bob = step === 2 ? 1 : 0;
-    const side = dir === "left" ? -1 : dir === "right" ? 1 : 0;
-    ctx.fillStyle = "rgba(0,0,0,.28)";
-    ctx.beginPath();
-    ctx.ellipse(32, 54, 17, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#222733";
-    ctx.fillRect(23 - side * 2, 43 - bob, 8, 9);
-    ctx.fillRect(35 + side * 2, 43 + bob, 8, 9);
-    ctx.fillStyle = "#5a2b2e";
-    ctx.fillRect(21 - side * 2, 50 - bob, 11, 4);
-    ctx.fillRect(35 + side * 2, 50 + bob, 11, 4);
-
-    ctx.fillStyle = "#226e89";
-    ctx.fillRect(22, 30, 20, 15);
-    ctx.fillStyle = "#d7b45a";
-    ctx.fillRect(29, 31, 6, 15);
-    ctx.fillStyle = "#8b2f45";
-    ctx.fillRect(18 - side * 2, 31, 7, 17);
-    ctx.fillRect(39 + side * 2, 31, 7, 17);
-
-    ctx.fillStyle = "#f1bb86";
-    ctx.beginPath();
-    ctx.arc(32 + side * 2, 23, 14, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#233041";
-    ctx.fillRect(20 + side, 11, 25, 8);
-    ctx.fillRect(17 + side, 17, 31, 5);
-    ctx.fillStyle = "#d7b45a";
-    ctx.fillRect(30 + side, 8, 6, 7);
-
-    ctx.fillStyle = "#18202a";
-    if (dir === "up") {
-      ctx.fillRect(23, 21, 18, 6);
-      ctx.fillStyle = "#4d2f25";
-      ctx.fillRect(24, 28, 17, 5);
-    } else {
-      ctx.fillRect(26 + side * 2, 23, 4, 4);
-      ctx.fillRect(37 + side * 2, 23, 4, 4);
-      ctx.fillStyle = "#8a3f35";
-      ctx.fillRect(30 + side * 2, 31, 9, 2);
-    }
-
-    ctx.fillStyle = "#d9e2e0";
-    if (dir === "left") {
-      ctx.fillRect(12, 28, 4, 20);
-      ctx.fillRect(8, 44, 12, 4);
-    } else if (dir === "right") {
-      ctx.fillRect(48, 28, 4, 20);
-      ctx.fillRect(44, 44, 12, 4);
-    } else {
-      ctx.fillRect(48, 28, 4, 21);
-      ctx.fillRect(45, 47, 10, 4);
-    }
-  });
-
-  const installGraphics = () => {
-    if (typeof GRAPHICS === "undefined" || !GRAPHICS.data) return;
-
-    const generated = {
-      floor: tile("floor"),
-      forest: tile("forest"),
-      sea: tile("sea"),
-      mountain: tile("mountain"),
-      Low_mountain: tile("Low_mountain"),
-      wall: tile("wall"),
-      dungeon_floor: tile("dungeon_floor"),
-      stairs: tile("stairs"),
-      cave: tile("cave"),
-      hall: tile("hall"),
-      "house-1": tile("house-1"),
-      "house-2": tile("house-2"),
-      inn: tile("inn"),
-      casino: tile("casino"),
-      medal: tile("medal"),
-      boss: tile("boss"),
-      chest: tile("chest"),
-      chest_rare: tile("chest_rare"),
-      "magma-rock": tile("magma-rock"),
-      "ash-floor": tile("ash-floor"),
-      cliff: tile("cliff"),
-      highland: tile("highland"),
-      canal: tile("canal"),
-      "stone-pave": tile("stone-pave"),
-      "brick-wall": tile("brick-wall"),
-      carpet: tile("carpet"),
-      "metal-wall": tile("metal-wall"),
-      "iron-plate": tile("iron-plate"),
-      "marble-wall": tile("marble-wall"),
-      "white-tile": tile("white-tile"),
-      "ancient-brick": tile("ancient-brick"),
-      "moss-stone": tile("moss-stone"),
-      battle_bg_field: battleBg("field"),
-      battle_bg_forest: battleBg("forest"),
-      battle_bg_mountain: battleBg("mountain"),
-      battle_bg_dungeon: battleBg("dungeon"),
-      battle_bg_boss: battleBg("boss"),
-      battle_bg_maze: battleBg("maze"),
-      battle_bg_lastboss: battleBg("lastboss"),
-      hero_down_1: hero("down", 1),
-      hero_down_2: hero("down", 2),
-      hero_up_1: hero("up", 1),
-      hero_up_2: hero("up", 2),
-      hero_left_1: hero("left", 1),
-      hero_left_2: hero("left", 2),
-      hero_right_1: hero("right", 1),
-      hero_right_2: hero("right", 2)
-    };
-
-    const aiAssets = {
-      floor: "assets/managed/current/map/terrain/terrain_grass_field_v001.png",
-      sea: "assets/managed/current/map/terrain/terrain_sea_v001.png",
-      forest: "assets/managed/current/map/objects/object_field_forest_v003.png",
-      mountain: "assets/managed/current/map/objects/object_field_mountain_v002.png",
-      Low_mountain: "assets/managed/current/map/objects/object_field_low_mountain_v002.png",
-      wall: "assets/managed/current/map/terrain/terrain_dungeon_wall_v001.png",
-      wall_face: "assets/managed/current/map/terrain/terrain_dungeon_wall_face_v002.png",
-      wall_face_torch: "assets/managed/current/map/terrain/terrain_dungeon_wall_face_torch_v002.png",
-      dungeon_floor: "assets/managed/current/map/terrain/terrain_dungeon_floor_v001.png",
-      stairs: "assets/managed/current/map/objects/object_field_stairs_v002.png",
-      stairs_dungeon: "assets/managed/current/map/objects/object_dungeon_stairs_v002.png",
-      cave: "assets/managed/current/map/objects/object_field_cave_v002.png",
-      cave_dungeon: "assets/managed/current/map/terrain/terrain_dungeon_floor_v001.png",
-      hall: "assets/managed/current/map/objects/object_field_hall_v002.png",
-      "house-1": "assets/managed/current/map/objects/object_field_house_1_v002.png",
-      "house-2": "assets/managed/current/map/objects/object_field_house_2_v002.png",
-      village: "assets/managed/current/map/objects/object_field_village_v002.png",
-      inn: "assets/managed/current/map/objects/object_field_inn_v002.png",
-      casino: "assets/managed/current/map/objects/object_field_casino_v002.png",
-      weapon: "assets/managed/current/map/objects/object_field_weapon_v002.png",
-      shop: "assets/managed/current/map/objects/object_field_shop_v002.png",
-      medal: "assets/managed/current/map/objects/object_field_medal_v002.png",
-      town: "assets/managed/current/map/objects/object_field_town_v002.png",
-      settlement: "assets/managed/current/map/objects/object_field_settlement_v002.png",
-      castle: "assets/managed/current/map/objects/object_field_castle_v002.png",
-      temple: "assets/managed/current/map/objects/object_field_temple_v002.png",
-      fortress: "assets/managed/current/map/objects/object_field_fortress_v002.png",
-      ruins: "assets/managed/current/map/objects/object_field_ruins_v002.png",
-      lost: "assets/managed/current/map/objects/object_field_lost_v002.png",
-      darkcastle: "assets/managed/current/map/objects/object_field_darkcastle_v002.png",
-      lighthouse: "assets/managed/current/map/objects/object_field_lighthouse_v002.png",
-      tower: "assets/managed/current/map/objects/object_field_tower_v002.png",
-      farm: "assets/managed/current/map/objects/object_field_farm_v002.png",
-      pot_grass: "assets/managed/current/map/objects/object_field_pot_v002.png",
-      barrel_grass: "assets/managed/current/map/objects/object_field_barrel_v002.png",
-      chest: "assets/managed/current/map/objects/object_field_chest_v002.png",
-      chest_rare: "assets/managed/current/map/objects/object_field_chest_rare_v002.png",
-      chest_dungeon: "assets/managed/current/map/objects/object_dungeon_chest_v002.png",
-      chest_rare_dungeon: "assets/managed/current/map/objects/object_dungeon_chest_rare_v002.png",
-      smith: "assets/managed/current/map/objects/object_field_smith_v002.png",
-      fire_village: "assets/managed/current/map/objects/object_field_fire_village_v002.png",
-      dummy_grass: "assets/managed/current/map/objects/object_field_grass_v002.png",
-      boss: "assets/managed/current/map/objects/object_field_boss_v002.png",
-      boss_dungeon: "assets/managed/current/map/objects/object_dungeon_boss_v002.png",
-      event_field: "assets/managed/current/map/objects/object_field_event_v002.png",
-      event_dungeon: "assets/managed/current/map/objects/object_dungeon_event_v002.png",
-      portal_dungeon: "assets/managed/current/map/objects/object_dungeon_portal_v002.png",
-      battle_bg_field: "assets/generated/battle-field-ai.png",
-      battle_bg_forest: "assets/generated/battle-forest-ai.png",
-      battle_bg_mountain: "assets/generated/battle-mountain-ai.png",
-      battle_bg_dungeon: "assets/generated/battle-dungeon-ai.png",
-      battle_bg_boss: "assets/generated/battle-boss-ai.png",
-      battle_bg_maze: "assets/generated/battle-maze-ai.png",
-      battle_bg_lastboss: "assets/generated/battle-abyss-ai.png",
-      hero_down_1: "assets/generated/hero-down-1.gif",
-      hero_down_2: "assets/generated/hero-down-2.gif",
-      hero_up_1: "assets/generated/hero-up-1.gif",
-      hero_up_2: "assets/generated/hero-up-2.gif",
-      hero_left_1: "assets/generated/hero-left-1.gif",
-      hero_left_2: "assets/generated/hero-left-2.gif",
-      hero_right_1: "assets/generated/hero-right-1.gif",
-      hero_right_2: "assets/generated/hero-right-2.gif",
-      "monster_スライム": "assets/generated/monster-jelly-ai.png",
-      "monster_ジェリー": "assets/generated/monster-jelly-ai.png",
-      "monster_ヒールジェリー": "assets/generated/monster-heal-jelly-ai.png",
-      "monster_リペアジェリー": "assets/generated/monster-heal-jelly-ai.png",
-      "monster_ポイズンジェリー": "assets/generated/monster-heal-jelly-ai.png",
-      "monster_メタルジェリー": "assets/generated/monster-metal-jelly-ai.png",
-      "monster_シルバージェリー": "assets/generated/monster-metal-jelly-ai.png",
-      "monster_ゴールドジェリー": "assets/generated/monster-metal-jelly-ai.png",
-      "monster_ゴースト": "assets/generated/monster-ghost-ai.png",
-      "monster_エビルゴースト": "assets/generated/monster-ghost-ai.png",
-      "monster_やみこうもり": "assets/generated/monster-bat-ai.png",
-      "monster_カースバット": "assets/generated/monster-bat-ai.png",
-      "monster_キラーバット": "assets/generated/monster-bat-ai.png",
-      "monster_ホーンラビット": "assets/generated/monster-horn-rabbit-ai.png",
-      "monster_キラーラビット": "assets/generated/monster-horn-rabbit-ai.png",
-      "monster_アーマーナイト": "assets/generated/monster-armor-knight-ai.png",
-      "monster_カオスアーマー": "assets/generated/monster-armor-knight-ai.png",
-      "monster_アーミーウルフ": "assets/generated/monster-army-wolf-ai.png",
-      "monster_ダークウルフ": "assets/generated/monster-army-wolf-ai.png",
-      "monster_アルリザード": "assets/generated/monster-lizard-warrior-ai.png",
-      "monster_バトルリザード": "assets/generated/monster-lizard-warrior-ai.png",
-      "monster_カオスリザード": "assets/generated/monster-lizard-warrior-ai.png",
-      "monster_ベビーデビル": "assets/generated/monster-baby-devil-ai.png",
-      "monster_小悪魔デビル": "assets/generated/monster-baby-devil-ai.png",
-      "monster_ファイアウィスプ": "assets/generated/monster-fire-wisp-ai.png",
-      "monster_サンダーウィスプ": "assets/generated/monster-thunder-wisp-ai.png",
-      "monster_バンパイア": "assets/generated/monster-vampire-ai.png",
-      "monster_機械兵士": "assets/generated/monster-machine-soldier-ai.png",
-      "monster_デスマシーン": "assets/generated/monster-machine-soldier-ai.png",
-      "monster_アビスドラゴン": "assets/generated/monster-abyss-dragon-ai.png",
-      "monster_混沌竜アビス": "assets/generated/monster-abyss-dragon-ai.png"
-    };
-
-    Object.keys(aiAssets).forEach((key) => {
-      if (key.startsWith("monster_")) delete aiAssets[key];
-    });
-
-    Object.assign(GRAPHICS.data, generated, aiAssets);
-    if (GRAPHICS.spriteDefs) {
-      Object.keys({ ...generated, ...aiAssets }).forEach((key) => delete GRAPHICS.spriteDefs[key]);
-    }
-  };
+  // 画像管理は assets.js に統一しました。
+  // 以前は polish.js が canvas 生成画像や assets/map のパスを GRAPHICS.data へ
+  // Object.assign していましたが、管理箇所が二重化して分かりにくくなるため廃止。
+  // 今後、マップ/戦闘背景/主人公歩行画像を追加・変更する場合は assets.js の
+  // PRISMA_ASSETS.graphics を編集してください。
+  const installGraphics = () => {};
 
   const entry = (img, color) => ({ img, color });
-  const installThemes = () => {
-    if (typeof TILE_THEMES === "undefined") return;
-    const themes = {
-      WORLD: {
-        W: entry("sea", "#155d7a"),
-        M: entry("mountain", "#64636a"),
-        F: entry("forest", "#1f6a3f"),
-        L: entry("Low_mountain", "#6c6847"),
-        G: entry("floor", "#2c7a4e"),
-        T: entry("floor", "#2c7a4e"),
-        I: entry("inn", "#d7b45a"),
-        B: entry("boss", "#db3b4d"),
-        E: entry("event_field", "#8f7dff"),
-        D: entry("hall", "#303541")
-      },
-      DEFAULT: {
-        W: entry("wall", "#303541"),
-        T: entry("dungeon_floor", "#3c4151"),
-        G: entry("dungeon_floor", "#3c4151"),
-        S: entry("stairs_dungeon", "#d7b45a"),
-        C: entry("chest_dungeon", "#9c6332"),
-        R: entry("chest_rare_dungeon", "#b6324b"),
-        B: entry("boss_dungeon", "#db3b4d"),
-        I: entry("inn", "#356ab8"),
-        K: entry("casino", "#7e3fa1"),
-        E: entry("medal", "#f6ca62"),
-        H: entry("dungeon_floor", "#8f7dff"),
-        V: entry("dungeon_floor", "#4ab9d8")
-      },
-      START_VILLAGE: {
-        W: entry("forest", "#1f6a3f"),
-        T: entry("floor", "#2c7a4e"),
-        G: entry("floor", "#2c7a4e"),
-        H: entry("house-1", "#d9bd84"),
-        V: entry("house-2", "#7e3fa1"),
-        D: entry("cave", "#303541"),
-        S: entry("floor", "#d7b45a"),
-        C: entry("chest", "#9c6332"),
-        R: entry("chest_rare", "#b6324b"),
-        B: entry("boss", "#db3b4d")
-      },
-      START_CAVE: {
-        W: entry("wall", "#303541"),
-        T: entry("dungeon_floor", "#3c4151"),
-        G: entry("dungeon_floor", "#3c4151"),
-        S: entry("dungeon_floor", "#d7b45a"),
-        V: entry("dungeon_floor", "#4ab9d8"),
-        C: entry("chest_dungeon", "#9c6332"),
-        R: entry("chest_rare_dungeon", "#b6324b"),
-        B: entry("boss_dungeon", "#db3b4d")
-      },
-      FIRE_VILLAGE: { W: entry("magma-rock", "#4b2524"), T: entry("ash-floor", "#5b514d"), G: entry("ash-floor", "#5b514d") },
-      WIND_VILLAGE: { W: entry("cliff", "#64636a"), T: entry("highland", "#5b7b51"), G: entry("highland", "#5b7b51") },
-      WATER_CITY: { W: entry("canal", "#155d7a"), T: entry("stone-pave", "#3c4151"), G: entry("stone-pave", "#3c4151") },
-      BIG_TOWER: { W: entry("brick-wall", "#6a3e4a"), T: entry("carpet", "#65314c"), G: entry("carpet", "#65314c") },
-      THUNDER_FORT: { W: entry("metal-wall", "#52616c"), T: entry("iron-plate", "#52616c"), G: entry("iron-plate", "#52616c") },
-      LIGHT_PALACE: { W: entry("marble-wall", "#d9ded4"), T: entry("white-tile", "#eef0e8"), G: entry("white-tile", "#eef0e8") },
-      DARK_CASTLE: { W: entry("wall", "#242a32"), T: entry("dungeon_floor", "#252b36"), G: entry("dungeon_floor", "#252b36"), S: entry("stairs_dungeon", "#d7b45a"), B: entry("boss_dungeon", "#db3b4d") },
-      ABYSS: { W: entry("wall", "#141720"), T: entry("dungeon_floor", "#252b36"), G: entry("dungeon_floor", "#252b36"), S: entry("stairs_dungeon", "#d7b45a"), B: entry("boss_dungeon", "#db3b4d") },
-      RUINED_SHRINE: { W: entry("ancient-brick", "#4b5b48"), T: entry("moss-stone", "#3c5145"), G: entry("moss-stone", "#3c5145") }
-    };
+  // マップ名・タイルテーマの正本は map.js に集約。
+  // 以前は polish.js でも TILE_THEMES / STORY_DATA 名称を上書きしていたが、
+  // 地域別マップチップ管理と座標正規化の妨げになるためここでは触らない。
+  const installThemes = () => {};
 
-    Object.entries(themes).forEach(([key, value]) => {
-      TILE_THEMES[key] = { ...(TILE_THEMES[key] || {}), ...value };
-    });
-  };
-
-  const installNames = () => {
-    const names = {
-      START_VILLAGE: "はじまりの村",
-      START_CAVE: "試練の洞窟",
-      FIRE_VILLAGE: "火の里",
-      WIND_VILLAGE: "風の集落",
-      WATER_CITY: "水上都市",
-      BIG_TOWER: "大灯台",
-      THUNDER_FORT: "雷の要塞",
-      LIGHT_PALACE: "光の神殿",
-      DARK_CASTLE: "常闇城",
-      ABYSS: "深淵の魔窟",
-      RUINED_SHRINE: "朽ちた神殿",
-      MEDAL: "メダル王の館",
-      CASINO: "カジノ"
-    };
-    if (typeof STORY_DATA !== "undefined" && STORY_DATA.areas) {
-      Object.entries(names).forEach(([key, name]) => {
-        if (STORY_DATA.areas[key]) STORY_DATA.areas[key].name = name;
-      });
-    }
-    if (typeof FIXED_MAPS !== "undefined") {
-      Object.entries(names).forEach(([key, name]) => {
-        if (FIXED_MAPS[key]) FIXED_MAPS[key].name = name;
-      });
-    }
-    if (typeof FIXED_DUNGEON_MAPS !== "undefined") {
-      Object.entries(names).forEach(([key, name]) => {
-        if (FIXED_DUNGEON_MAPS[key]) FIXED_DUNGEON_MAPS[key].name = name;
-      });
-    }
-  };
+  const installNames = () => {};
 
   const shouldReplace = (text) => !text || garbledRe.test(text);
   const fixTitleText = () => {
@@ -860,59 +164,131 @@
     pendingNeutralPhysicalTimer: 0,
     pendingCriticalKind: null,
     pendingCriticalTimer: 0,
-    assets: {
-      slash: "assets/generated/fx-slash-ai.png",
-      claw: "assets/generated/fx-claw-ai.png",
-      fire: "assets/generated/fx-fire-ai.png",
-      ice: "assets/generated/fx-ice-ai.png",
-      thunder: "assets/generated/fx-thunder-ai.png",
-      wind: "assets/generated/fx-wind-ai.png",
-      light: "assets/generated/fx-light-ai.png",
-      dark: "assets/generated/fx-dark-ai.png",
-      chaos: "assets/generated/fx-chaos-ai.png",
-      heal: "assets/generated/fx-heal-ai.png",
-      buff: "assets/managed/current/battle/fx/fx_support_buff_v001.png",
-      debuff: "assets/managed/current/battle/fx/fx_support_debuff_v001.png",
-      combo: "assets/generated/fx-combo-ai.png",
-      "all-slash": "assets/generated/fx-all-slash-ai.png",
-      "enemy-claw": "assets/generated/fx-enemy-claw-ai.png",
-      "party-hit": "assets/generated/fx-party-hit-ai.png",
-      meteor: "assets/generated/fx-meteor-ai.png",
-      "ice-spear": "assets/generated/fx-ice-spear-ai.png",
-      "thunder-pillar": "assets/generated/fx-thunder-pillar-ai.png",
-      "abyss-vortex": "assets/generated/fx-abyss-vortex-ai.png",
-      "holy-burst": "assets/generated/fx-holy-burst-ai.png",
-      poison: "assets/generated/fx-poison-ai.png",
-      "ultimate-chaos": "assets/generated/fx-ultimate-chaos-ai.png",
-      "heal-blossom": "assets/managed/current/battle/fx/fx_support_heal_v001.png",
-      "neutral-slash": "assets/managed/current/battle/fx/fx_phys_neutral_slash_v001.png",
-      "neutral-smash": "assets/managed/current/battle/fx/fx_phys_neutral_smash_v001.png",
-      "neutral-pierce": "assets/managed/current/battle/fx/fx_phys_neutral_pierce_v001.png",
-      "neutral-combo": "assets/managed/current/battle/fx/fx_phys_neutral_combo_v001.png",
-      "neutral-chain": "assets/managed/current/battle/fx/fx_phys_neutral_chain_v001.png",
-      "neutral-heavy": "assets/managed/current/battle/fx/fx_phys_neutral_heavy_v001.png",
-      "phys-sword": "assets/managed/current/battle/fx/fx_phys_neutral_slash_v001.png",
-      "phys-spear": "assets/managed/current/battle/fx/fx_phys_neutral_pierce_v001.png",
-      "phys-axe": "assets/managed/current/battle/fx/fx_phys_neutral_smash_v001.png",
-      "phys-combo": "assets/managed/current/battle/fx/fx_phys_neutral_combo_v001.png",
-      "spell-fire": "assets/managed/current/battle/fx/fx_spell_fire_v001.png",
-      "spell-ice": "assets/managed/current/battle/fx/fx_spell_ice_v001.png",
-      "spell-thunder": "assets/managed/current/battle/fx/fx_spell_thunder_v001.png",
-      "spell-wind": "assets/managed/current/battle/fx/fx_spell_wind_v001.png",
-      "spell-light": "assets/managed/current/battle/fx/fx_spell_light_v001.png",
-      "spell-dark": "assets/managed/current/battle/fx/fx_spell_dark_v001.png",
-      "spell-chaos": "assets/managed/current/battle/fx/fx_spell_chaos_v001.png",
-      breath: "assets/managed/current/battle/fx/fx_breath_dragon_v001.png",
-      "special-rupture": "assets/managed/current/battle/fx/fx_special_rupture_v001.png",
-      "critical-spark": "assets/managed/current/battle/fx/fx_critical_spark_v001.png"
+    // 戦闘エフェクト画像のパスは assets.js の PRISMA_ASSETS.battleFx に統一。
+    // ここへ画像パス一覧を再追加しないこと。
+    assets: (window.PRISMA_ASSETS && window.PRISMA_ASSETS.battleFx) || {},
+    // 全体対象エフェクトの切替。
+    // "screen" = 新方式: 命中先エリア(enemy-container / battle-party-bar)に面エフェクト → 左から順に揺れ/ダメージ表示
+    // "legacy" = 従前方式: 対象ごとに既存エフェクトを出す
+    // HTML側で先に window.PRISMA_BATTLE_FX_AREA_MODE = "legacy"; を置いても上書き可能。
+    areaEffectMode: "screen",
+    // screen方式: 面エフェクト発生後、最初の個別ダメージ演出まで待つ時間。
+    areaHitInitialDelayMs: 400,
+    // screen方式: 左から順に出す個別ダメージ演出の間隔。
+    areaHitIntervalMs: 300,
+    // HP0の敵が解放漏れで残り続けないようにする保険時間。通常の消失タイミングは各ダメージ表示直後に決める。
+    defeatHoldExtraMs: 800,
+    // 単体/ランダム/追撃などの着弾エフェクト後、数値表示まで待つ時間。
+    hitEffectLeadMs: 200,
+    // 個別ヒット同士の演出間隔。全体screen方式以外にも適用して、追撃や反撃と順序が崩れないようにする。
+    hitSequenceIntervalMs: 300,
+    visualReadyAt: 0,
+    visualTail: Promise.resolve(),
+    pendingDefeatHolds: new WeakMap(),
+    defeatHoldTimers: new WeakMap(),
+    releasedDefeatedUnits: new WeakSet(),
+    lastDamageEventByUnit: new WeakMap(),
+    enemyHpDisplayHolds: new WeakMap(),
+    enemyHpHoldTimers: new WeakMap(),
+    beforeSnapshot: null,
+    now() {
+      return (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    },
+    wait(ms) {
+      return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+    },
+    queueVisual(run, options = {}) {
+      const beforeMs = Math.max(0, Number(options.beforeMs) || 0);
+      const durationMs = Math.max(0, Number(options.durationMs) || 0);
+      const estimatedRunMs = Math.max(0, Number(options.estimatedRunMs) || 0);
+      const afterMs = Math.max(0, Number(options.afterMs) || 0);
+      const now = this.now();
+      const startAt = Math.max(now, this.visualReadyAt || 0) + beforeMs;
+      const endAt = startAt + estimatedRunMs + durationMs + afterMs;
+      this.visualReadyAt = endAt;
+
+      const previous = this.visualTail || Promise.resolve();
+      this.visualTail = previous
+        .catch(() => {})
+        .then(async () => {
+          if (beforeMs > 0) await this.wait(beforeMs);
+          await run();
+          if (durationMs > 0) await this.wait(durationMs);
+          if (afterMs > 0) await this.wait(afterMs);
+        })
+        .catch((error) => console.warn("[PolishFX] visual queue failed", error));
+
+      return {
+        startDelayMs: Math.max(0, startAt - now),
+        endDelayMs: Math.max(0, endAt - now),
+        promise: this.visualTail
+      };
+    },
+    async waitForVisuals(extraMs = 0) {
+      const tail = this.visualTail || Promise.resolve();
+      await tail.catch(() => {});
+      const remain = Math.max(0, (this.visualReadyAt || 0) - this.now(), Number(extraMs) || 0);
+      if (remain > 0) await this.wait(remain);
     },
     stripHtml(value) {
       const div = document.createElement("div");
       div.innerHTML = String(value || "");
       return (div.textContent || div.innerText || "").replace(/\s+/g, " ").trim();
     },
+    fxConfig(data) {
+      // skills.js の各スキルへ battleFx / battleEffect / effectFx / fx / effect を書くと、
+      // 既存の自動判定より優先して戦闘エフェクトを指定できる。
+      // 例: "battleFx": "meteor"
+      // 例: "battleFx": { "screen": "meteor", "hit": "spell-fire" }
+      // 例: "battleFx": "assets/effect/fx-meteor-ai.png"
+      const raw = data && (data.battleFx ?? data.battleEffect ?? data.effectFx ?? data.fx ?? data.effect);
+      if (!raw) return null;
+      if (typeof raw === "string") return { kind: raw };
+      if (typeof raw === "object") return raw;
+      return null;
+    },
+    isAssetPath(value) {
+      const text = String(value || "").trim();
+      return /\.(?:png|jpe?g|gif|webp|svg)(?:[?#].*)?$/i.test(text) || /^(?:assets\/|\.\/|\/)/.test(text);
+    },
+    cssKind(kind) {
+      return String(kind || "custom")
+        .replace(/^battle-fx-/, "")
+        .replace(/[^a-z0-9_-]+/gi, "-")
+        .replace(/^-+|-+$/g, "") || "custom";
+    },
+    fxValue(config, keys) {
+      if (!config) return null;
+      for (const key of keys) {
+        if (config[key] !== undefined && config[key] !== null && config[key] !== "") return config[key];
+      }
+      return null;
+    },
+    normalizeFxKind(value) {
+      if (!value) return null;
+      if (typeof value === "string") return value.replace(/^battle-fx-/, "").trim();
+      if (typeof value === "object") {
+        return this.normalizeFxKind(value.kind ?? value.type ?? value.id ?? value.name ?? value.image ?? value.path ?? value.src);
+      }
+      return null;
+    },
+    customFxKind(cmd, perHit = false, slot = null) {
+      const config = this.fxConfig(cmd?.data);
+      if (!config) return null;
+      const area = this.isArea(cmd);
+      const keys = slot
+        ? [slot]
+        : perHit
+          ? ["hit", "impact", "perHit", "kind", "type", "id", "name", "image", "path", "src"]
+          : area
+            ? ["screen", "fullScreen", "area", "cast", "kind", "type", "id", "name", "image", "path", "src"]
+            : ["cast", "kind", "hit", "impact", "type", "id", "name", "image", "path", "src"];
+      return this.normalizeFxKind(this.fxValue(config, keys));
+    },
     assetFor(kind) {
-      const key = String(kind || "").replace(/^battle-fx-/, "");
+      const raw = String(kind || "").trim();
+      if (this.isAssetPath(raw)) return raw;
+      const key = raw.replace(/^battle-fx-/, "");
       if (this.assets[key]) return this.assets[key];
       if (/^breath-/.test(key)) return this.assets.breath;
       if (/^phys-(fire|ice|thunder|wind|light|dark|chaos)$/.test(key)) return this.assets["neutral-slash"];
@@ -922,51 +298,171 @@
       const scope = [cmd?.targetScope, cmd?.target, cmd?.data?.target].filter(Boolean).join(" ");
       return /全体|全敵|all|蜈ｨ菴|陷茨ｽｨ/i.test(scope);
     },
+    areaEffectModeFor(cmd) {
+      const config = this.fxConfig(cmd?.data);
+      const skillMode = this.fxValue(config, ["areaMode", "allMode", "areaEffectMode", "allTargetEffectMode"]);
+      const globalConfig = window.PRISMA_BATTLE_FX || window.PRISMA_BATTLE_EFFECTS || {};
+      const globalMode = window.PRISMA_BATTLE_FX_AREA_MODE ||
+        window.PRISMA_ALL_TARGET_FX_MODE ||
+        globalConfig.areaEffectMode ||
+        globalConfig.allTargetEffectMode ||
+        globalConfig.areaMode ||
+        this.areaEffectMode;
+      const mode = String(skillMode || globalMode || "screen").toLowerCase();
+      return /legacy|old|default|target|unit|per-target|perhit|hit|従前|旧/.test(mode) ? "legacy" : "screen";
+    },
+    useScreenAreaEffect(cmd) {
+      return this.isArea(cmd) && this.areaEffectModeFor(cmd) === "screen";
+    },
+    isDefeatedEnemy(unit) {
+      return !!(unit && this.isEnemy(unit) && !unit.isFled && Number(unit.hp || 0) <= 0);
+    },
+    previousSnapshotFor(unit) {
+      return (unit && this.beforeSnapshot && typeof this.beforeSnapshot.get === "function") ? this.beforeSnapshot.get(unit) : null;
+    },
+    hpDisplayForEnemy(unit, actualHp = null) {
+      if (!unit || !this.isEnemy(unit)) return actualHp;
+      const hold = this.enemyHpDisplayHolds.get(unit);
+      if (!hold) return actualHp;
+      const until = Number(hold.until || 0);
+      if (until && until <= this.now()) {
+        this.enemyHpDisplayHolds.delete(unit);
+        const timer = this.enemyHpHoldTimers.get(unit);
+        if (timer) clearTimeout(timer);
+        this.enemyHpHoldTimers.delete(unit);
+        return actualHp;
+      }
+      return Number.isFinite(Number(hold.hp)) ? Number(hold.hp) : actualHp;
+    },
+    startEnemyHpDisplayHold(unit, fallbackDelayMs = 0, displayHp = null) {
+      if (!unit || !this.isEnemy(unit) || unit.isFled) return;
+      const prev = this.previousSnapshotFor(unit);
+      const hp = displayHp !== null && displayHp !== undefined ? Number(displayHp) : Number(prev?.hp);
+      if (!Number.isFinite(hp)) return;
+      const actual = Number(unit.hp || 0);
+      if (hp === actual) return;
+      const fallbackMs = Math.max(360, Math.max(0, Number(fallbackDelayMs) || 0) + Math.max(0, Number(this.defeatHoldExtraMs) || 0));
+      const until = this.now() + fallbackMs;
+      const current = this.enemyHpDisplayHolds.get(unit);
+      if (current && current.until >= until && current.hp === hp) return;
+      this.enemyHpDisplayHolds.set(unit, { hp, until });
+
+      const oldTimer = this.enemyHpHoldTimers.get(unit);
+      if (oldTimer) clearTimeout(oldTimer);
+      const timer = setTimeout(() => {
+        const latest = this.enemyHpDisplayHolds.get(unit);
+        if (!latest) return;
+        if ((latest.until || 0) <= this.now() + 16) {
+          this.enemyHpDisplayHolds.delete(unit);
+          this.enemyHpHoldTimers.delete(unit);
+          this.updateEnemyHpBar(unit);
+        }
+      }, fallbackMs + 24);
+      this.enemyHpHoldTimers.set(unit, timer);
+    },
+    releaseEnemyHpDisplayHold(unit) {
+      if (!unit || !this.isEnemy(unit)) return;
+      this.enemyHpDisplayHolds.delete(unit);
+      const timer = this.enemyHpHoldTimers.get(unit);
+      if (timer) clearTimeout(timer);
+      this.enemyHpHoldTimers.delete(unit);
+      this.updateEnemyHpBar(unit);
+    },
+    updateEnemyHpBar(unit) {
+      if (!unit || !this.isEnemy(unit) || typeof Battle === "undefined") return;
+      const enemies = Battle.enemies || [];
+      const index = enemies.indexOf(unit);
+      if (index < 0) return;
+      const el = this.nodeForUnit("enemy-container", unit, enemies);
+      if (!el) return;
+      const hp = Math.max(0, Number(unit.hp || 0));
+      const maxHp = Math.max(1, Number(unit.baseMaxHp || unit.maxHp || hp || 1));
+      const hpPer = Math.max(0, Math.min(100, (hp / maxHp) * 100));
+      const hpRatio = maxHp > 0 ? hp / maxHp : 0;
+      const bar = el.querySelector(".enemy-hp-val");
+      if (bar) bar.style.width = `${hpPer}%`;
+      const name = el.querySelector(".enemy-name");
+      if (name) name.style.color = hpRatio < 0.5 ? "#ff4" : "#fff";
+    },
+    releaseHpAfterHit(unit, event) {
+      if (event?.damageMatch || event?.healMatch) this.releaseEnemyHpDisplayHold(unit);
+    },
+    startDefeatedHold(unit, fallbackDelayMs = 0) {
+      if (!this.isDefeatedEnemy(unit)) {
+        if (unit) this.releasedDefeatedUnits.delete(unit);
+        return;
+      }
+      // 一度ダメージ表示起点で消した敵は、後続の重複ログ・追撃ログで再表示しない。
+      if (this.releasedDefeatedUnits.has(unit)) return;
+      const now = this.now();
+      const fallbackMs = Math.max(
+        320,
+        Math.max(0, Number(fallbackDelayMs) || 0) + Math.max(0, Number(this.defeatHoldExtraMs) || 0)
+      );
+      const until = now + fallbackMs;
+      const current = this.pendingDefeatHolds.get(unit);
+      if (current && current.until >= until) return;
+      this.pendingDefeatHolds.set(unit, { until });
+
+      const oldTimer = this.defeatHoldTimers.get(unit);
+      if (oldTimer) clearTimeout(oldTimer);
+      const timer = setTimeout(() => {
+        const latest = this.pendingDefeatHolds.get(unit);
+        if (!latest) return;
+        if ((latest.until || 0) <= this.now() + 16) {
+          this.pendingDefeatHolds.delete(unit);
+          this.defeatHoldTimers.delete(unit);
+          if (typeof Battle !== "undefined" && typeof Battle.renderEnemies === "function") Battle.renderEnemies();
+        }
+      }, fallbackMs + 24);
+      this.defeatHoldTimers.set(unit, timer);
+    },
+    holdDefeatedVisible(unit, delayMs = 0) {
+      // 旧呼び出し名との互換用。通常はダメージ表示直後に releaseDefeatedAfterHit() で解放する。
+      this.startDefeatedHold(unit, delayMs);
+    },
+    releaseDefeatedHold(unit) {
+      if (!unit || !this.isEnemy(unit)) return;
+      const hadHold = this.pendingDefeatHolds.has(unit);
+      if (this.isDefeatedEnemy(unit)) this.releasedDefeatedUnits.add(unit);
+      this.pendingDefeatHolds.delete(unit);
+      const timer = this.defeatHoldTimers.get(unit);
+      if (timer) clearTimeout(timer);
+      this.defeatHoldTimers.delete(unit);
+      if (hadHold && typeof Battle !== "undefined" && typeof Battle.renderEnemies === "function") {
+        Battle.renderEnemies();
+      }
+    },
+    releaseDefeatedAfterHit(unit, event) {
+      if (!event?.defeatAtLog || !this.isDefeatedEnemy(unit)) return;
+      this.releaseDefeatedHold(unit);
+    },
+    shouldKeepDefeatedVisible(unit) {
+      if (!this.isDefeatedEnemy(unit)) {
+        if (unit) this.releasedDefeatedUnits.delete(unit);
+        return false;
+      }
+      const hold = this.pendingDefeatHolds.get(unit);
+      if (!hold) return false;
+      const until = typeof hold === "number" ? hold : hold.until;
+      if (!until || until <= this.now()) {
+        this.pendingDefeatHolds.delete(unit);
+        const timer = this.defeatHoldTimers.get(unit);
+        if (timer) clearTimeout(timer);
+        this.defeatHoldTimers.delete(unit);
+        return false;
+      }
+      return true;
+    },
+    shouldPlayIntentEffects(cmd) {
+      // 発動時エフェクトは全体対象だけに限定する。
+      // 単体攻撃・複数ランダム攻撃はHP増減ログ側で命中エフェクト＋振動＋数値を出す。
+      // これにより「発動時」と「HP増減時」の二重エフェクトを避ける。
+      if (!cmd || cmd.type === "defend" || cmd.type === "skip" || cmd.type === "flee") return false;
+      return this.isArea(cmd);
+    },
     hitCount(cmd) {
       return Math.max(1, Number(cmd?.data?.count || cmd?.hitCount || 1) || 1);
-    },
-    specialKind(data, cmd) {
-      const raw = [data?.elm, data?.type, data?.name, data?.desc].filter(Boolean).join(" ");
-      if (/火|炎|メラ|ギラ|燃|轣ｫ|轤|辟/.test(raw)) return "fire";
-      if (/水|氷|ヒャ|凍|豌ｴ|豌ｷ/.test(raw)) return "ice";
-      if (/雷|電|ライ|稲妻|髮ｷ|髮ｻ/.test(raw)) return "thunder";
-      if (/風|バギ|嵐|鬚ｨ/.test(raw)) return "wind";
-      if (/光|聖|閃|蜈/.test(raw)) return "light";
-      if (/闇|ドル|影|暗黒|髣/.test(raw)) return "dark";
-      if (/混沌|深淵|カオス|豺ｷ|雎ｺ/.test(raw)) return "chaos";
-      if (/回復|蘇生|治|癒|ヒール|蝗槫ｾｩ|豐ｻ/.test(raw)) return "heal";
-      if (/強化|防御|耐性|アップ|蠑ｷ蛹|陟托ｽｷ/.test(raw)) return "buff";
-      if (/弱体|毒|封印|眠|恐怖|ダウン|蠑ｱ菴|陟托ｽｱ/.test(raw)) return "debuff";
-      if (/カラミティ|深淵|混沌|災厄|終焉|奈落|豺ｷ|雎ｺ/.test(raw)) return "ultimate-chaos";
-      if (/メテオ|隕石|流星|彗星/.test(raw)) return "meteor";
-      if (/氷|吹雪|ブリザード|凍|豌ｷ/.test(raw)) return "ice-spear";
-      if (/雷|稲妻|サンダー|ライトニング|髮ｷ|髮ｻ/.test(raw)) return "thunder-pillar";
-      if (/毒|ポイズン|猛毒|蠍|蝮/.test(raw)) return "poison";
-      if (/聖|光|ホーリー|天罰|蜈榎/.test(raw)) return "holy-burst";
-      if (/闇|暗黒|影|アビス|髣/.test(raw)) return "abyss-vortex";
-      return null;
-    },
-    specialKind(data, cmd) {
-      const raw = [data?.elm, data?.type, data?.name, data?.desc].filter(Boolean).join(" ");
-      if (/カラミティ|深淵|混沌|災厄|終焉|奈落|豺ｷ|雎ｺ/.test(raw)) return "ultimate-chaos";
-      if (/メテオ|隕石|流星|彗星/.test(raw)) return "meteor";
-      if (/氷|吹雪|ブリザード|凍|豌ｷ/.test(raw)) return "ice-spear";
-      if (/雷|稲妻|サンダー|ライトニング|髮ｷ|髮ｻ/.test(raw)) return "thunder-pillar";
-      if (/毒|ポイズン|猛毒|蠍|蝮/.test(raw)) return "poison";
-      if (/聖|光|ホーリー|天罰|蜈榎/.test(raw)) return "holy-burst";
-      if (/闇|暗黒|影|アビス|髣/.test(raw)) return "abyss-vortex";
-      return null;
-    },
-    visualKind(cmd, perHit = false) {
-      const support = this.isSupport(cmd?.data);
-      if (support) return this.specialKind(cmd?.data, cmd) || "heal-blossom";
-      const special = this.specialKind(cmd?.data, cmd);
-      if (special) return special;
-      const base = this.elementKind(cmd?.data, cmd);
-      if (cmd?.isEnemy || cmd?.type === "enemy_attack") return perHit ? "party-hit" : "enemy-claw";
-      if (this.isArea(cmd) && (base === "slash" || base === "claw")) return "all-slash";
-      if (perHit && this.hitCount(cmd) > 1 && (base === "slash" || base === "claw")) return "combo";
-      return base;
     },
     ensureLayer() {
       const scene = byId("battle-scene");
@@ -1004,43 +500,6 @@
         (unit?.isBoss || unit?.id >= 1000 || unit?.baseId >= 1000 || byId("battle-scene")?.dataset?.bossBattle === "true" ||
           (typeof App !== "undefined" && App.data?.battle?.isBossBattle))
       );
-    },
-    elementKind(data, cmd) {
-      const raw = [data?.elm, data?.type, data?.name, data?.desc].filter(Boolean).join(" ");
-      if (/火|炎|メラ|ギラ|轣|焔/.test(raw)) return "fire";
-      if (/水|氷|ヒャ|豌/.test(raw)) return "ice";
-      if (/雷|電|ライ|髮/.test(raw)) return "thunder";
-      if (/風|バギ|鬚/.test(raw)) return "wind";
-      if (/光|聖|蜈/.test(raw)) return "light";
-      if (/闇|ドル|影|髣/.test(raw)) return "dark";
-      if (/混沌|深淵|豺/.test(raw)) return "chaos";
-      if (/回復|蘇生|治|蝗|陂/.test(raw)) return "heal";
-      if (/強化|防御|耐性|蠑ｷ/.test(raw)) return "buff";
-      if (/弱体|毒|封|恐|感電|蠑ｱ|豈|諢|蟆|諤/.test(raw)) return "debuff";
-      if (/ブレス|息|繝悶Ξ/.test(raw)) return cmd?.isEnemy ? "dark" : "wind";
-      if (cmd?.type === "enemy_attack") return "claw";
-      return "slash";
-    },
-    elementKind(data, cmd) {
-      const raw = [data?.elm, data?.type, data?.name, data?.desc].filter(Boolean).join(" ");
-      if (/火|炎|メラ|ギラ|燃|轣ｫ|轤|辟/.test(raw)) return "fire";
-      if (/水|氷|ヒャ|凍|豌ｴ|豌ｷ/.test(raw)) return "ice";
-      if (/雷|電|ライ|稲妻|髮ｷ|髮ｻ/.test(raw)) return "thunder";
-      if (/風|バギ|嵐|鬚ｨ/.test(raw)) return "wind";
-      if (/光|聖|閃|蜈/.test(raw)) return "light";
-      if (/闇|ドル|影|暗黒|髣/.test(raw)) return "dark";
-      if (/混沌|深淵|カオス|豺ｷ|雎ｺ/.test(raw)) return "chaos";
-      if (/回復|蘇生|治|癒|ヒール|蝗槫ｾｩ|豐ｻ/.test(raw)) return "heal";
-      if (/強化|防御|耐性|アップ|蠑ｷ蛹|陟托ｽｷ/.test(raw)) return "buff";
-      if (/弱体|毒|封印|眠|恐怖|ダウン|蠑ｱ菴|陟托ｽｱ/.test(raw)) return "debuff";
-      if (cmd?.type === "enemy_attack") return "claw";
-      return "slash";
-    },
-    isSupport(data) {
-      if (!data) return false;
-      if (typeof Battle !== "undefined" && typeof Battle.isSupportSkill === "function" && Battle.isSupportSkill(data)) return true;
-      const raw = [data.type, data.name, data.desc].filter(Boolean).join(" ");
-      return /回復|蘇生|強化|治|蝗|陂|蠑ｷ/.test(raw);
     },
     isSupport(data) {
       if (!data) return false;
@@ -1137,11 +596,11 @@
     },
     ultimateSkillKind(data, cmd) {
       const id = Number(data?.id || 0);
-      if ([500, 901, 906, 999].includes(id)) return "ultimate-chaos";
-      if (id === 501) return "holy-burst";
-      if ([502, 902, 924].includes(id)) return "abyss-vortex";
-      if (id === 925) return "meteor";
-      if ((id >= 500 && id <= 502) || id >= 900) return this.specialKind(data, cmd) || "special-rupture";
+      if ([245, 238, 244, 248].includes(id)) return "ultimate-chaos";
+      if (id === 246) return "holy-burst";
+      if ([247, 166, 242].includes(id)) return "abyss-vortex";
+      if (id === 243) return "meteor";
+      if ([245, 246, 247, 238, 166, 244, 168, 242, 243, 248].includes(id)) return this.specialKind(data, cmd) || "special-rupture";
       return null;
     },
     spellKind(data, cmd) {
@@ -1177,6 +636,8 @@
     },
     visualKind(cmd, perHit = false) {
       if (!cmd) return "neutral-slash";
+      const custom = this.customFxKind(cmd, perHit);
+      if (custom) return custom;
       const statusOnly = this.statusOnlyKind(cmd?.data, cmd);
       if (statusOnly) return statusOnly;
       if (this.isDebuffOnlyData(cmd?.data)) {
@@ -1303,13 +764,16 @@
     effect(unit, kind, options = {}) {
       const pos = this.anchor(unit);
       if (!pos) return;
-      document.documentElement.dataset.polishLastFxKind = String(kind || "");
+      const fxKind = this.normalizeFxKind(kind) || "neutral-slash";
+      const classKind = this.cssKind(fxKind);
+      document.documentElement.dataset.polishLastFxKind = String(fxKind || "");
       const node = document.createElement("div");
-      node.className = `battle-fx battle-fx-${kind}`;
+      node.className = `battle-fx battle-fx-${classKind}`;
+      node.dataset.fxKind = fxKind;
       node.style.left = `${pos.x}px`;
       node.style.top = `${pos.y}px`;
-      const imageAsset = this.assetFor(kind);
-      const isWide = /all-|ultimate|meteor|pillar|vortex|burst|combo|breath|special|critical/.test(kind);
+      const imageAsset = options.image || this.assetFor(fxKind);
+      const isWide = /all-|ultimate|meteor|pillar|vortex|burst|combo|breath|special|critical/.test(classKind);
       const size = Math.max(72, Math.min(isWide ? 190 : 148, Math.max(pos.w, pos.h) * (options.big || isWide ? 1.08 : 0.76)));
       node.style.width = `${size}px`;
       node.style.height = `${size}px`;
@@ -1323,8 +787,66 @@
         node.style.setProperty("--fx-rotate", `${spread * 0.7}deg`);
       }
       pos.layer.appendChild(node);
-      this.particles(pos, kind, { ...options, quiet: !!imageAsset && !options.big });
+      this.particles(pos, fxKind, { ...options, quiet: !!imageAsset && !options.big });
       setTimeout(() => node.remove(), 760);
+    },
+    areaRegionForTargets(targets = []) {
+      const layer = this.ensureLayer();
+      const scene = byId("battle-scene");
+      if (!layer || !scene) return null;
+
+      const target = (targets || []).find(Boolean);
+      const regionId = target && this.isParty(target) ? "battle-party-bar" : "enemy-container";
+      const regionEl = byId(regionId) || scene;
+      const base = scene.getBoundingClientRect();
+      const rect = regionEl.getBoundingClientRect();
+      const width = Math.max(180, rect.width || scene.clientWidth);
+      const height = Math.max(86, rect.height || scene.clientHeight);
+      return {
+        layer,
+        scene,
+        regionId,
+        left: rect.left - base.left,
+        top: rect.top - base.top,
+        width,
+        height
+      };
+    },
+    screenEffect(kind, options = {}) {
+      const region = this.areaRegionForTargets(options.targets || []);
+      if (!region) return;
+      const fxKind = this.normalizeFxKind(kind) || "all-slash";
+      const classKind = this.cssKind(fxKind);
+      document.documentElement.dataset.polishLastFxKind = String(fxKind || "");
+
+      const clip = document.createElement("div");
+      clip.className = `battle-fx-area-clip battle-fx-area-${region.regionId}`;
+      clip.style.left = `${region.left}px`;
+      clip.style.top = `${region.top}px`;
+      clip.style.width = `${region.width}px`;
+      clip.style.height = `${region.height}px`;
+
+      const node = document.createElement("div");
+      node.className = `battle-fx battle-fx-${classKind} battle-fx-screen`;
+      node.dataset.fxKind = fxKind;
+      node.style.left = "50%";
+      node.style.top = "50%";
+      const width = Math.max(220, region.width * 1.04);
+      const height = Math.max(96, region.height * 1.02);
+      node.style.width = `${width}px`;
+      node.style.height = `${height}px`;
+      const imageAsset = options.image || this.assetFor(fxKind);
+      if (imageAsset) {
+        node.classList.add("battle-fx-image");
+        node.style.backgroundImage = `url("${imageAsset}")`;
+      }
+      clip.appendChild(node);
+      region.layer.appendChild(clip);
+      this.particles({ layer: clip, x: region.width / 2, y: region.height / 2, w: width, h: height }, fxKind, {
+        big: true,
+        quiet: !!imageAsset && !options.particles
+      });
+      setTimeout(() => clip.remove(), 920);
     },
     particles(pos, kind, options = {}) {
       const colors = {
@@ -1433,6 +955,23 @@
         .sort((a, b) => String(b.name || "").length - String(a.name || "").length)
         .find((unit) => unit?.name && text.includes(this.stripHtml(unit.name))) || null;
     },
+    unitLeftOrderIndex(unit) {
+      if (typeof Battle === "undefined" || !unit) return 0;
+      const units = this.isParty(unit) ? (Battle.party || []) : (Battle.enemies || []);
+      const withPos = units
+        .filter(Boolean)
+        .map((entry, index) => {
+          const pos = this.anchor(entry);
+          return { unit: entry, index, x: pos ? pos.x : index * 100 };
+        })
+        .sort((a, b) => (a.x - b.x) || (a.index - b.index));
+      const orderIndex = withPos.findIndex((entry) => entry.unit === unit);
+      return Math.max(0, orderIndex);
+    },
+    areaHitDelay(cmd, unit, hitIndex = 1) {
+      if (!this.useScreenAreaEffect(cmd)) return Math.min(120, (hitIndex - 1) * 24);
+      return this.areaHitInitialDelayMs + this.unitLeftOrderIndex(unit) * this.areaHitIntervalMs;
+    },
     hitColorFromLog(message, fallback = "#ff7777") {
       const match = String(message || "").match(/color:\s*([^;"']+)/i);
       return match ? match[1].trim() : fallback;
@@ -1459,15 +998,83 @@
           normalized === `${actorName}の 追撃`)
       );
     },
+    enqueueHitEvent(event) {
+      if (!event?.unit) return null;
+      const { unit, cmd, hitIndex, area, screenArea, damageMatch, healMatch, kind, criticalKind, amount, hitColor } = event;
+      const sequenceAfterMs = screenArea ? this.areaHitIntervalMs : this.hitSequenceIntervalMs;
+      const shouldShowPointEffect = !area || !screenArea;
+      const leadMs = shouldShowPointEffect ? this.hitEffectLeadMs : 0;
+      const queued = this.queueVisual(async () => {
+        if (damageMatch) {
+          if (shouldShowPointEffect) {
+            this.effect(unit, kind, { hitIndex });
+            if (criticalKind) this.effect(unit, criticalKind, { hitIndex, big: true });
+            await this.wait(leadMs);
+          }
+          this.mark(unit, "battle-hit-shake");
+          if (this.isBossTarget(unit)) this.mark(unit, "battle-boss-flash");
+          if (this.isParty(unit)) this.mark(unit, "battle-party-damaged");
+          if (criticalKind) {
+            this.float(unit, `-${amount}`, "#fff2a8", { hitIndex, critical: true });
+          } else {
+            this.float(unit, `-${amount}`, hitColor, { hitIndex });
+          }
+          this.releaseHpAfterHit(unit, event);
+          this.releaseDefeatedAfterHit(unit, event);
+          return;
+        }
+        if (healMatch) {
+          if (shouldShowPointEffect) {
+            this.effect(unit, kind, { hitIndex });
+            await this.wait(leadMs);
+          }
+          this.mark(unit, "battle-heal-pulse");
+          this.float(unit, `+${amount}`, "#8fffad", { hitIndex });
+          this.releaseHpAfterHit(unit, event);
+          return;
+        }
+        if (shouldShowPointEffect) {
+          this.effect(unit, kind, { hitIndex, big: false });
+          await this.wait(leadMs);
+        }
+        this.float(unit, "MISS", "#d6d1c2", { hitIndex });
+      }, { estimatedRunMs: leadMs, afterMs: sequenceAfterMs });
+
+      if ((damageMatch || healMatch) && this.isEnemy(unit)) this.startEnemyHpDisplayHold(unit, queued.endDelayMs);
+      if (damageMatch && event.defeatAtLog) this.startDefeatedHold(unit, queued.endDelayMs);
+      return queued;
+    },
+    flushAreaHits(context) {
+      if (!context || !Array.isArray(context.areaHitEvents) || context.areaHitEvents.length === 0) return;
+      const events = context.areaHitEvents.splice(0);
+      events
+        .sort((a, b) => {
+          const order = this.unitLeftOrderIndex(a.unit) - this.unitLeftOrderIndex(b.unit);
+          return order || ((a.hitIndex || 0) - (b.hitIndex || 0));
+        })
+        .forEach((event) => {
+          const queued = this.enqueueHitEvent(event);
+          if (context) context.maxHitDelay = Math.max(context.maxHitDelay || 0, queued?.endDelayMs || 0);
+        });
+    },
     playIntentEffects(cmd, options = {}) {
-      if (!cmd || cmd.type === "defend" || cmd.type === "skip" || cmd.type === "flee") return 0;
+      if (!this.shouldPlayIntentEffects(cmd)) return 0;
       const targets = this.getTargets(cmd).filter(Boolean);
       if (targets.length === 0) return 0;
-      const kind = options.kind || this.visualKind(cmd, false);
-      targets.forEach((target, index) => {
-        setTimeout(() => this.effect(target, kind, { big: targets.length > 1 }), Math.min(index * 55, 260));
+      const kind = options.kind || this.customFxKind(cmd, false, this.useScreenAreaEffect(cmd) ? "screen" : null) || this.visualKind(cmd, false);
+      if (this.useScreenAreaEffect(cmd)) {
+        this.queueVisual(() => {
+          this.screenEffect(kind, { big: true, targets });
+        }, { afterMs: this.areaHitInitialDelayMs });
+        this.lastAt = this.now();
+        return targets.length;
+      }
+      targets.forEach((target) => {
+        this.queueVisual(() => {
+          this.effect(target, kind, { big: targets.length > 1 });
+        }, { afterMs: Math.min(90, this.hitSequenceIntervalMs) });
       });
-      this.lastAt = performance.now();
+      this.lastAt = this.now();
       return targets.length;
     },
     reactToLog(message) {
@@ -1480,8 +1087,8 @@
         return;
       }
       if (!text || text === "--- ターン開始 ---") return;
-      const criticalKind = this.criticalKindFromLog(text);
-      if (criticalKind) this.queueCriticalKind(criticalKind);
+      const logCriticalKind = this.criticalKindFromLog(text);
+      if (logCriticalKind) this.queueCriticalKind(logCriticalKind);
       if (this.current?.cmd?.isReaction) {
         this.queueNeutralPhysicalKind(this.logNeutralPhysicalKind(text));
       }
@@ -1491,8 +1098,17 @@
       const damageMatch = text.match(/に\s*([0-9,]+)\s*のダメージ/) || text.match(/ダメージを\s*([0-9,]+)\s*受けた/) || text.match(/に\s*([0-9,]+)\s*の?ダメージ/);
       const healMatch = text.match(/HP[をが]\s*([0-9,]+)\s*回復/) || text.match(/([0-9,]+)\s*回復/);
       const missMatch = /ミス|身をかわした|うけない|効かなかった|きかなかった/.test(text);
+      const defeatMatch = /倒れた|息絶えた|戦闘不能/.test(text);
 
-      if (!damageMatch && !healMatch && !missMatch) return;
+      if (!damageMatch && !healMatch && !missMatch) {
+        if (defeatMatch) {
+          const lastEvent = this.lastDamageEventByUnit.get(unit);
+          if (lastEvent) lastEvent.defeatAtLog = true;
+          const pending = Math.max(0, (this.visualReadyAt || 0) - this.now());
+          this.startDefeatedHold(unit, pending);
+        }
+        return;
+      }
 
       this.current.hits += 1;
       this.totalHitEvents += 1;
@@ -1500,41 +1116,77 @@
 
       const hitIndex = this.current.hits;
       const cmd = this.current.cmd;
-      const delay = Math.min(120, (hitIndex - 1) * 24);
       const area = this.isArea(cmd);
-      setTimeout(() => {
-        if (damageMatch) {
-          const amount = damageMatch[1].replace(/,/g, "");
-          const kind = cmd?.isReaction ? (this.consumeNeutralPhysicalKind() || this.visualKind(cmd, true)) : (this.current?.dualWieldKind || this.visualKind(cmd, true));
-          const criticalKind = this.consumeCriticalKind() || this.enhancedDamageKind(cmd);
-          this.mark(unit, "battle-hit-shake");
-          if (this.isBossTarget(unit)) this.mark(unit, "battle-boss-flash");
-          if (this.isParty(unit)) this.mark(unit, "battle-party-damaged");
-          if (!area) this.effect(unit, kind, { hitIndex });
-          if (criticalKind) {
-            if (!area) this.effect(unit, criticalKind, { hitIndex, big: true });
-            this.float(unit, `-${amount}`, "#fff2a8", { hitIndex, critical: true });
-          } else {
-            this.float(unit, `-${amount}`, this.hitColorFromLog(message), { hitIndex });
-          }
-          return;
-        }
-        if (healMatch) {
-          const amount = healMatch[1].replace(/,/g, "");
-          this.mark(unit, "battle-heal-pulse");
-          if (!area) this.effect(unit, this.visualKind(cmd, true) || "heal-blossom", { hitIndex });
-          this.float(unit, `+${amount}`, "#8fffad", { hitIndex });
-          return;
-        }
-        const missKind = cmd?.isReaction ? (this.consumeNeutralPhysicalKind() || "neutral-slash") : (this.current?.dualWieldKind || this.visualKind(cmd, true) || (this.isParty(unit) ? "party-hit" : "neutral-slash"));
-        if (!area) this.effect(unit, missKind, { hitIndex });
-        this.float(unit, "MISS", "#d6d1c2", { hitIndex });
-      }, delay);
+      const screenArea = this.useScreenAreaEffect(cmd);
+
+      let kind = null;
+      let criticalKind = null;
+      if (damageMatch) {
+        kind = cmd?.isReaction
+          ? (this.consumeNeutralPhysicalKind() || this.visualKind(cmd, true))
+          : (this.current?.dualWieldKind || this.visualKind(cmd, true));
+        criticalKind = this.consumeCriticalKind() || this.enhancedDamageKind(cmd);
+      } else if (healMatch) {
+        kind = this.visualKind(cmd, true) || "heal-blossom";
+      } else {
+        kind = cmd?.isReaction
+          ? (this.consumeNeutralPhysicalKind() || "neutral-slash")
+          : (this.current?.dualWieldKind || this.visualKind(cmd, true) || (this.isParty(unit) ? "party-hit" : "neutral-slash"));
+      }
+
+      const event = {
+        unit,
+        cmd,
+        hitIndex,
+        area,
+        screenArea,
+        damageMatch: !!damageMatch,
+        healMatch: !!healMatch,
+        missMatch: !!missMatch,
+        kind,
+        criticalKind,
+        amount: (damageMatch || healMatch)?.[1]?.replace(/,/g, "") || "",
+        hitColor: this.hitColorFromLog(message),
+        defeatAtLog: !!damageMatch && this.isDefeatedEnemy(unit)
+      };
+
+      if (damageMatch) {
+        this.lastDamageEventByUnit.set(unit, event);
+        if (this.isEnemy(unit)) this.startEnemyHpDisplayHold(unit);
+        if (event.defeatAtLog) this.startDefeatedHold(unit);
+      } else if (healMatch && this.isEnemy(unit)) {
+        this.startEnemyHpDisplayHold(unit);
+      }
+
+      if (screenArea) {
+        if (!Array.isArray(this.current.areaHitEvents)) this.current.areaHitEvents = [];
+        this.current.areaHitEvents.push(event);
+        const pending = Math.max(0, (this.visualReadyAt || 0) - this.now());
+        const estimatedOrderDelay = this.unitLeftOrderIndex(unit) * this.areaHitIntervalMs + this.areaHitIntervalMs;
+        if (damageMatch && event.defeatAtLog) this.startDefeatedHold(unit, pending + estimatedOrderDelay);
+        this.current.maxHitDelay = Math.max(this.current.maxHitDelay || 0, pending + estimatedOrderDelay);
+        return;
+      }
+
+      const queued = this.enqueueHitEvent(event);
+      if (this.current) {
+        this.current.maxHitDelay = Math.max(this.current.maxHitDelay || 0, queued?.endDelayMs || 0);
+      }
+    },
+    markEnemyIntent(cmd) {
+      if (!cmd?.isEnemy || !cmd.actor) return false;
+      this.mark(cmd.actor, "battle-enemy-action");
+      return true;
     },
     async playIntent(cmd) {
+      const movedEnemy = this.markEnemyIntent(cmd);
       const targetCount = this.playIntentEffects(cmd);
-      if (targetCount === 0) return;
-      await new Promise((resolve) => setTimeout(resolve, targetCount > 1 ? 310 : 240));
+      if (targetCount === 0) {
+        if (movedEnemy) await new Promise((resolve) => setTimeout(resolve, 110));
+        return;
+      }
+      const waitMs = this.useScreenAreaEffect(cmd) ? 0 : (targetCount > 1 ? 310 : 240);
+      if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
     },
     async playResults(cmd, before, options = {}) {
       if (!before || typeof Battle === "undefined") return;
@@ -1550,35 +1202,56 @@
       const area = this.isArea(cmd);
 
       if (options.skipNumbers) {
-        damaged.forEach(({ unit }) => {
-          this.mark(unit, "battle-hit-shake");
-          if (this.isBossTarget(unit)) this.mark(unit, "battle-boss-flash");
-          if (this.isParty(unit)) this.mark(unit, "battle-party-damaged");
-        });
-        healed.forEach(({ unit }) => this.mark(unit, "battle-heal-pulse"));
+        // ログ側で演出をキュー化しているため、全体/単体/ランダム/追撃のいずれも
+        // ここでは重ね描きせず、キューが消化されるまで待つ。
+        this.flushAreaHits(options.actionContext);
+        await this.waitForVisuals(120);
         return;
       }
 
-      damaged.forEach(({ unit, hpDelta }, index) => {
-        setTimeout(() => {
+      const sortByLeft = (items) => items
+        .slice()
+        .sort((a, b) => this.unitLeftOrderIndex(a.unit) - this.unitLeftOrderIndex(b.unit));
+      const damagedOrdered = this.useScreenAreaEffect(cmd) ? sortByLeft(damaged) : damaged;
+      const healedOrdered = this.useScreenAreaEffect(cmd) ? sortByLeft(healed) : healed;
+      const resultInterval = this.useScreenAreaEffect(cmd) ? this.areaHitIntervalMs : 45;
+      const resultStartDelay = this.useScreenAreaEffect(cmd) ? this.areaHitInitialDelayMs : 0;
+
+      damagedOrdered.forEach(({ unit, hpDelta }, index) => {
+        const beforeMs = index === 0 ? resultStartDelay : 0;
+        const unitDefeated = this.isDefeatedEnemy(unit);
+        const queued = this.queueVisual(async () => {
+          if (!area) {
+            this.effect(unit, this.visualKind(cmd, true));
+            await this.wait(this.hitEffectLeadMs);
+          }
           this.mark(unit, "battle-hit-shake");
           if (this.isBossTarget(unit)) this.mark(unit, "battle-boss-flash");
           if (this.isParty(unit)) this.mark(unit, "battle-party-damaged");
-          if (!area) this.effect(unit, this.visualKind(cmd, true));
           this.float(unit, `${hpDelta}`, "#ff7777");
-        }, index * 45);
+          this.releaseEnemyHpDisplayHold(unit);
+          if (unitDefeated) this.releaseDefeatedHold(unit);
+        }, { beforeMs, estimatedRunMs: area ? 0 : this.hitEffectLeadMs, afterMs: resultInterval });
+        if (this.isEnemy(unit)) this.startEnemyHpDisplayHold(unit, queued.endDelayMs, before.get(unit)?.hp);
+        if (unitDefeated) this.startDefeatedHold(unit, queued.endDelayMs);
       });
 
-      healed.forEach(({ unit, hpDelta }, index) => {
-        setTimeout(() => {
+      healedOrdered.forEach(({ unit, hpDelta }, index) => {
+        const beforeMs = damagedOrdered.length === 0 && index === 0 ? resultStartDelay : 0;
+        this.queueVisual(async () => {
+          if (!area) {
+            this.effect(unit, "heal");
+            await this.wait(this.hitEffectLeadMs);
+          }
           this.mark(unit, "battle-heal-pulse");
-          if (!area) this.effect(unit, "heal");
           this.float(unit, `+${hpDelta}`, "#8fffad");
-        }, index * 45);
+          this.releaseEnemyHpDisplayHold(unit);
+        }, { beforeMs, estimatedRunMs: area ? 0 : this.hitEffectLeadMs, afterMs: resultInterval });
+        if (this.isEnemy(unit)) this.startEnemyHpDisplayHold(unit, resultStartDelay + (index + 1) * resultInterval, before.get(unit)?.hp);
       });
 
       if (damaged.length || healed.length) {
-        await new Promise((resolve) => setTimeout(resolve, 220 + Math.max(damaged.length, healed.length) * 40));
+        await this.waitForVisuals(120);
       }
     }
   };
@@ -1603,7 +1276,11 @@
     Battle.processAction = async (cmd) => {
       const before = BattleFX.snapshot();
       const previous = BattleFX.current;
-      BattleFX.current = { cmd, hits: 0 };
+      const previousSnapshot = BattleFX.beforeSnapshot;
+      if (previous) BattleFX.flushAreaHits(previous);
+      BattleFX.beforeSnapshot = before;
+      BattleFX.current = { cmd, hits: 0, maxHitDelay: 0, areaHitEvents: [] };
+      const actionContext = BattleFX.current;
       let loggedHits = 0;
       try {
         await BattleFX.playIntent(cmd);
@@ -1611,16 +1288,20 @@
         console.warn("[PolishFX] intent failed", error);
       }
       let result;
+      let visualWaitMs = 0;
       try {
         result = await originalProcessAction(cmd);
-        loggedHits = BattleFX.current?.hits || 0;
+        loggedHits = actionContext?.hits || 0;
+        visualWaitMs = actionContext?.maxHitDelay || 0;
       } finally {
         BattleFX.current = previous;
       }
       try {
-        await BattleFX.playResults(cmd, before, { skipNumbers: loggedHits > 0 });
+        await BattleFX.playResults(cmd, before, { skipNumbers: loggedHits > 0, visualWaitMs, actionContext });
       } catch (error) {
         console.warn("[PolishFX] result failed", error);
+      } finally {
+        BattleFX.beforeSnapshot = previousSnapshot;
       }
       return result;
     };

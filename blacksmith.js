@@ -43,25 +43,27 @@ const MenuBlacksmith = {
             }
         });
 
-        const selectScreen = document.getElementById('smith-screen-select');
-        selectScreen.innerHTML = `
-            <div style="padding:8px; background:#222; display:flex; gap:8px; border-bottom:1px solid #333; flex-shrink:0;">
-                <button class="btn" style="flex:1; font-size:11px; background:linear-gradient(#555, #333);" onclick="MenuBlacksmith.changeScreen('main')">鍛冶メニュー</button>
-                <button class="btn" style="flex:1; font-size:11px; background:linear-gradient(#444, #222);" onclick="Menu.closeSubScreen('blacksmith')">閉じる</button>
-            </div>
-            <div id="smith-list" class="scroll-area" style="flex:1;"></div>
-            <div id="smith-footer" style="padding:10px; background:rgba(0,0,0,0.4); border-top:1px solid #444; flex-shrink:0; min-height:40px;"></div>
-        `;
+	const selectScreen = document.getElementById('smith-screen-select');
+	selectScreen.innerHTML = `
+		<div id="smith-list" class="scroll-area" style="flex:1; min-height:0;"></div>
 
-        const optScreen = document.getElementById('smith-screen-option');
-        optScreen.innerHTML = `
-            <div style="padding:8px; background:#222; display:flex; gap:8px; border-bottom:1px solid #333; flex-shrink:0;">
-                <button class="btn" style="flex:1; font-size:11px; background:linear-gradient(#555, #333);" onclick="MenuBlacksmith.changeScreen('main')">鍛冶メニュー</button>
-                <button class="btn" style="flex:1; font-size:11px; background:linear-gradient(#444, #222);" onclick="MenuBlacksmith.goBackStep()">戻る</button>
-            </div>
-            <div id="smith-option-header" style="padding:10px; text-align:center; color:#ffd700; font-size:12px; background:rgba(255,215,0,0.1); border-bottom:1px solid #444; flex-shrink:0;"></div>
-            <div id="smith-option-list" class="scroll-area" style="flex:1;"></div>
-        `;
+		<div id="smith-footer" style="padding:10px; background:rgba(0,0,0,0.4); border-top:1px solid #444; flex-shrink:0; min-height:40px;"></div>
+
+		<div class="sub-screen-bottom-panel">
+			<button class="btn sub-screen-back-btn" onclick="MenuBlacksmith.handleBottomBack()">もどる</button>
+		</div>
+	`;
+
+	const optScreen = document.getElementById('smith-screen-option');
+	optScreen.innerHTML = `
+		<div id="smith-option-header" style="padding:10px; text-align:center; color:#ffd700; font-size:12px; background:rgba(255,215,0,0.1); border-bottom:1px solid #444; flex-shrink:0;"></div>
+
+		<div id="smith-option-list" class="scroll-area" style="flex:1; min-height:0;"></div>
+
+		<div class="sub-screen-bottom-panel">
+			<button class="btn sub-screen-back-btn" onclick="MenuBlacksmith.handleBottomBack()">もどる</button>
+		</div>
+	`;
     },
 
     resetState: () => {
@@ -81,9 +83,33 @@ const MenuBlacksmith = {
         if(ctrl) ctrl.style.display = (screenId === 'select') ? 'block' : 'none';
         if (screenId === 'main') {
             MenuBlacksmith.renderMain();
-            MenuBlacksmith.updateTitle("鍛冶屋");
+            MenuBlacksmith.updateTitle("⚒️ 鍛冶屋");
         }
     },
+	
+	handleBottomBack: () => {
+		const mainScreen = document.getElementById('smith-screen-main');
+		const selectScreen = document.getElementById('smith-screen-select');
+		const optionScreen = document.getElementById('smith-screen-option');
+
+		if (mainScreen && mainScreen.style.display === 'flex') {
+			Menu.closeSubScreen('blacksmith');
+			return;
+		}
+
+		if (optionScreen && optionScreen.style.display === 'flex') {
+			MenuBlacksmith.goBackStep();
+			return;
+		}
+
+		if (selectScreen && selectScreen.style.display === 'flex') {
+			if (MenuBlacksmith.step === 'material') {
+				MenuBlacksmith.goBackStep();
+			} else {
+				MenuBlacksmith.changeScreen('main');
+			}
+		}
+	},
 
     goBackStep: () => {
         if (MenuBlacksmith.step === 'material') {
@@ -129,9 +155,9 @@ const MenuBlacksmith = {
                     ${MenuBlacksmith.renderMenuBtn('enhance', '装備強化', 'オプションの数値を素材を使って上昇させます', 'linear-gradient(135deg, #131, #020)', '#4f4')}
                 </div>
             </div>
-            <div style="flex-shrink:0; padding:15px 20px; background:rgba(0,0,0,0.4); border-top:1px solid #333;">
-                <button class="btn" style="width:100%; height:45px; background:linear-gradient(#444, #222); border:1px solid #555; border-radius:4px; color:#fff; font-weight:bold; letter-spacing:2px;" onclick="Menu.closeSubScreen('blacksmith')">メニューを閉じる</button>
-            </div>
+			<div class="sub-screen-bottom-panel">
+				<button class="btn sub-screen-back-btn" onclick="Menu.closeSubScreen('blacksmith')">もどる</button>
+			</div>
         `;
     },
 
@@ -180,10 +206,11 @@ const MenuBlacksmith = {
                 }).join('')}
             </div>
             <div style="padding:6px; background:#1a1a1a; display:flex; align-items:center; gap:8px;">
-                <div style="flex:1; display:flex; align-items:center; gap:4px;"><span style="font-size:9px; color:#888;">効果:</span><select style="background:#222; color:#fff; font-size:10px; border:1px solid #444; flex:1; height:24px; border-radius:4px;" onchange="MenuBlacksmith.updateFilter('option', this.value)"><option value="ALL">全ての効果</option>${rules.map(opt => `<option value="${opt.key}${opt.elm ? '_' + opt.elm : ''}" ${MenuBlacksmith.filter.option === (opt.key + (opt.elm ? '_' + opt.elm : '')) ? 'selected' : ''}>${opt.name}</option>`).join('')}</select></div>
-                <div style="flex:1; display:flex; align-items:center; gap:4px;"><span style="font-size:9px; color:#888;">並替:</span><select style="background:#222; color:#fff; font-size:10px; border:1px solid #444; flex:1; height:24px; border-radius:4px;" onchange="MenuBlacksmith.updateFilter('sortMode', this.value)"><option value="NEWEST" ${MenuBlacksmith.sortMode === 'NEWEST' ? 'selected' : ''}>取得順</option><option value="RANK" ${MenuBlacksmith.sortMode === 'RANK' ? 'selected' : ''}>Rank順</option></select></div>
+                <div style="flex:1; display:flex; align-items:center; gap:4px;"><span style="font-size:9px; color:#888;">効果:</span><select style="background:#222; color:#fff; font-size:10px; border:1px solid #444; flex:1; height:24px; border-radius:4px; touch-action:auto; user-select:auto; -webkit-user-select:auto; pointer-events:auto;" ${typeof Menu !== 'undefined' && Menu.selectTouchAttrs ? Menu.selectTouchAttrs() : ''} onchange="MenuBlacksmith.updateFilter('option', this.value)"><option value="ALL">全ての効果</option>${rules.map(opt => `<option value="${opt.key}${opt.elm ? '_' + opt.elm : ''}" ${MenuBlacksmith.filter.option === (opt.key + (opt.elm ? '_' + opt.elm : '')) ? 'selected' : ''}>${opt.name}</option>`).join('')}</select></div>
+                <div style="flex:1; display:flex; align-items:center; gap:4px;"><span style="font-size:9px; color:#888;">並替:</span><select style="background:#222; color:#fff; font-size:10px; border:1px solid #444; flex:1; height:24px; border-radius:4px; touch-action:auto; user-select:auto; -webkit-user-select:auto; pointer-events:auto;" ${typeof Menu !== 'undefined' && Menu.selectTouchAttrs ? Menu.selectTouchAttrs() : ''} onchange="MenuBlacksmith.updateFilter('sortMode', this.value)"><option value="NEWEST" ${MenuBlacksmith.sortMode === 'NEWEST' ? 'selected' : ''}>取得順</option><option value="RANK" ${MenuBlacksmith.sortMode === 'RANK' ? 'selected' : ''}>Rank順</option></select></div>
             </div>
         `;
+        if (typeof Menu !== 'undefined' && Menu.makeSelectTouchSafe) Menu.makeSelectTouchSafe(ctrl);
     },
 
     updateFilter: (key, val) => {

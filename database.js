@@ -1,12 +1,13 @@
 /* database.js (装備システム独立化・クリーンアップ版) */
 
 const CONST = {
-    SAVE_KEY: 'QoE_SaveData_v38_BalanceFix', 
+    SAVE_KEY: 'QoE_SaveData_v39_DQScale_LB99', 
     PARTS: ['武器', '盾', '頭', '体', '足'],
     ELEMENTS: ['火', '水', '風', '雷', '光', '闇', '混沌'],
     RARITY: ['N', 'R', 'SR', 'SSR', 'UR', 'EX'],
 	
-    GACHA_RATES: { N:0, R:52.5, SR:35, SSR:10, UR:2, EX:0.5 },
+    //GACHA_RATES: { N:0, R:0, SR:0, SSR:97.5, UR:2, EX:0.5 },　//ガチャ演出検証用
+    GACHA_RATES: { N:0, R:0, SR:0, SSR:97.5, UR:2, EX:0.5 },
     SMITH_RATES: { 1: { R:80, SR:15, SSR:5 }, 10: { R:10, SR:30, SSR:40, UR:15, EX:5 } },
     POKER_ODDS: { ROYAL_FLUSH: 500, STRAIGHT_FLUSH: 100, FOUR_CARD: 30, FULL_HOUSE: 10, FLUSH: 8, STRAIGHT: 5, THREE_CARD: 3, TWO_PAIR: 2, JACKS_OR_BETTER: 1 },
     PLUS_RATES: { 3: 0.10, 2: 0.30, 1: 0.60 }, 
@@ -14,7 +15,7 @@ const CONST = {
     MAX_LEVEL: 100,
     EXP_BASE: 100,
     EXP_GROWTH: 1.08,
-    RARITY_EXP_MULT: { N:1.0, R:1.1, SR:1.2, SSR:1.3, UR:1.5, EX:2.0 },
+    RARITY_EXP_MULT: { N:1.0, R:1.0, SR:1.0, SSR:1.0, UR:1.15, EX:1.25 },
 	
 	SKILL_TREES : {
 		// --- 転生回数 0 から表示される基本ツリー ---
@@ -25,8 +26,8 @@ const CONST = {
 			steps: [
 				{ desc: '攻撃力 +5%', stats: { atkMult: 0.05 } },
 				{ desc: '攻撃力 +10%', stats: { atkMult: 0.05 } },
-				{ desc: '攻撃力 +15% / 渾身斬り習得', stats: { atkMult: 0.05 }, skillId: 102 },
-				{ desc: '攻撃力 +20% / 超はやぶさ斬り習得', stats: { atkMult: 0.05 }, skillId: 108 },
+				{ desc: '攻撃力 +15% / 渾身斬り習得', stats: { atkMult: 0.05 }, skillId: 113 },
+				{ desc: '攻撃力 +20% / 超はやぶさ斬り習得', stats: { atkMult: 0.05 }, skillId: 132 },
 				{ desc: '攻撃力 +25% / 20％で防御無視', stats: { atkMult: 0.05 }, passive: 'atkIgnoreDef' }
 			]
 		},
@@ -37,8 +38,8 @@ const CONST = {
 			steps: [
 				{ desc: '魔力 +5%', stats: { magMult: 0.05 } },
 				{ desc: '魔力 +10%', stats: { magMult: 0.05 } },
-				{ desc: '魔力 +15% / ベギラマ習得', stats: { magMult: 0.05 }, skillId: 302 },
-				{ desc: '魔力 +20% / メラゾーマ習得', stats: { magMult: 0.05 }, skillId: 305 },
+				{ desc: '魔力 +15% / ベギラマ習得', stats: { magMult: 0.05 }, skillId: 209 },
+				{ desc: '魔力 +20% / メラゾーマ習得', stats: { magMult: 0.05 }, skillId: 213 },
 				{ desc: '魔力 +25% / 20％でダメージ2倍', stats: { magMult: 0.05 }, passive: 'magCrit' }
 			]
 		},
@@ -49,7 +50,7 @@ const CONST = {
 			steps: [
 				{ desc: '素早さ +5%', stats: { spdMult: 0.05 } },
 				{ desc: '素早さ +10%', stats: { spdMult: 0.05 } },
-				{ desc: '素早さ +15% / 疾風突き習得', stats: { spdMult: 0.05 }, skillId: 49 },
+				{ desc: '素早さ +15% / 疾風突き習得', stats: { spdMult: 0.05 }, skillId: 101 },
 				{ desc: '素早さ +20% / 20%で最速行動', stats: { spdMult: 0.05 }, passive: 'fastestAction' },
 				{ desc: '素早さ +25% / 20%で2回行動', stats: { spdMult: 0.05 }, passive: 'doubleAction' }
 			]
@@ -61,8 +62,8 @@ const CONST = {
 			steps: [
 				{ desc: '最大HP +10%', stats: { hpMult: 0.10 } },
 				{ desc: '最大HP +20%', stats: { hpMult: 0.10 } },
-				{ desc: '最大HP +30% / ハッスルダンス習得', stats: { hpMult: 0.10 }, skillId: 22 },
-				{ desc: '最大HP +40% / ザオラル習得', stats: { hpMult: 0.10 }, skillId: 30 },
+				{ desc: '最大HP +30% / ハッスルダンス習得', stats: { hpMult: 0.10 }, skillId: 404 },
+				{ desc: '最大HP +40% / ザオラル習得', stats: { hpMult: 0.10 }, skillId: 407 },
 				{ desc: '最大HP +50% / HP5％回復', stats: { hpMult: 0.10 }, passive: 'hpRegen' }
 			]
 		},
@@ -73,8 +74,8 @@ const CONST = {
 			steps: [
 				{ desc: 'MP・防御・魔防 +5%', stats: { mpMult: 0.05, defMult: 0.05 } },
 				{ desc: 'MP・防御・魔防 +10%', stats: { mpMult: 0.05, defMult: 0.05 } },
-				{ desc: 'MP・防御・魔防 +15% / 無念無想習得', stats: { mpMult: 0.05, defMult: 0.05 }, skillId: 81 },
-				{ desc: 'MP・防御・魔防 +20% / マジックバリア習得', stats: { mpMult: 0.05, defMult: 0.05 }, skillId: 53 },
+				{ desc: 'MP・防御・魔防 +15% / 無念無想習得', stats: { mpMult: 0.05, defMult: 0.05 }, skillId: 403 },
+				{ desc: 'MP・防御・魔防 +20% / マジックバリア習得', stats: { mpMult: 0.05, defMult: 0.05 }, skillId: 503 },
 				{ desc: 'MP・防御・魔防 +25% / 被ダメ軽減 +10%', stats: { mpMult: 0.05, defMult: 0.05 }, passive: 'finRed10' }
 			]
 		},
@@ -88,8 +89,8 @@ const CONST = {
 				{ desc: '最大HP +25%', stats: { hpMult: 0.25 } },
 				{ desc: '攻撃力 +25%', stats: { atkMult: 0.25 } },
 				{ desc: '与ダメージ +20%', stats: { dmgMult: 0.20 } },
-				{ desc: '鉄甲斬習得', skillId: 117 },
-				{ desc: '真やいばくだき習得', skillId: 118 }
+				{ desc: '鉄甲斬習得', skillId: 143 },
+				{ desc: '真やいばくだき習得', skillId: 144 }
 			]
 		},
 		MAGE: {
@@ -100,8 +101,8 @@ const CONST = {
 				{ desc: '最大MP +25%', stats: { mpMult: 0.25 } },
 				{ desc: '魔力 +25%', stats: { magMult: 0.25 } },
 				{ desc: '与ダメージ +20%', stats: { dmgMult: 0.20 } },
-				{ desc: '魔力覚醒習得', skillId: 54 },
-				{ desc: 'メテオ習得', skillId: 416 }
+				{ desc: '魔力覚醒習得', skillId: 506 },
+				{ desc: 'メテオ習得', skillId: 231 }
 			]
 		},
 		PRIEST: {
@@ -112,8 +113,8 @@ const CONST = {
 				{ desc: '最大HP +25%', stats: { hpMult: 0.25 } },
 				{ desc: '防御力 +25%', stats: { defMult: 0.25 } },
 				{ desc: '被ダメージ軽減 +10%', passive: 'finRed10' },
-				{ desc: 'ザオリク習得', skillId: 31 },
-				{ desc: 'ひかりのはどう習得', skillIds: 56 }
+				{ desc: 'ザオリク習得', skillId: 414 },
+				{ desc: 'ひかりのはどう習得', skillIds: 408 }
 			]
 		},
 		M_KNIGHT: {
@@ -124,8 +125,8 @@ const CONST = {
 				{ desc: '最大MP +25%', stats: { mpMult: 0.25 } },
 				{ desc: '最大HP +25%', stats: { hpMult: 0.25 } },
 				{ desc: '全属性攻撃 +20%', stats: { allElmMult: 0.20 } },
-				{ desc: 'シャイニングボウ習得', skillId: 207 },
-				{ desc: 'フォースブレイク習得', skillId: 55 }
+				{ desc: 'シャイニングボウ習得', skillId: 146 },
+				{ desc: 'フォースブレイク習得', skillId: 115 }
 			]
 		}
 	}
@@ -204,8 +205,8 @@ const DB = {
             color:'#ffc',
             req: [ {key:'hp', count:2}, {key:'mp', count:2} ]
         },
-        { key: 'elmAtk', elm: '混沌', count: 4, name: '深淵の刃', effect: 'grantSkill', value: 923, desc: '魔奥義:カラミティエンド習得', color:'#d4d' },
-        { key: 'elmRes', elm: '混沌', count: 4, name: '混沌の壁', effect: 'grantSkill', value: 924, desc: '魔奥義:カラミティウォール習得', color:'#d4d' },
+        { key: 'elmAtk', elm: '混沌', count: 4, name: '深淵の刃', effect: 'grantSkill', value: 168, desc: '魔奥義:カラミティエンド習得', color:'#d4d' },
+        { key: 'elmRes', elm: '混沌', count: 4, name: '混沌の壁', effect: 'grantSkill', value: 242, desc: '魔奥義:カラミティウォール習得', color:'#d4d' },
 
 		{ key: 'hp', count: 4, name: '鉄人', effect: 'hpBoost100', desc: '最大HP +100%', color: '#f88' },
 		{ key: 'mp', count: 4, name: '夢幻の悟り', effect: 'sealGuard50', desc: '全封印耐性 +50%', color: '#88f' },
@@ -235,6 +236,8 @@ const DB = {
     ],
 
     MEDAL_REWARDS: [
+        { medals: 1, name: '魔法の小舟', type: 'item', id: 108, count: 1, unique: true },
+        { medals: 1, name: '光の翼', type: 'item', id: 109, count: 1, unique: true },
         { medals: 5, name: '上やくそう x3', type: 'item', id: 2, count: 3 },
         { medals: 10, name: '魔法の小瓶 x5', type: 'item', id: 3, count: 5 },
         { medals: 15, name: '世界樹の葉 x1', type: 'item', id: 5, count: 1 },
@@ -251,43 +254,55 @@ const DB = {
 
 // ユーティリティ関数
 window.generateEnemy = function(floor) {
-    const candidates = DB.MONSTERS.filter(m => Math.floor(m.rank) === floor && m.id < 1000);
-    if (candidates.length > 0) {
-        const base = candidates[Math.floor(Math.random() * candidates.length)];
-        return JSON.parse(JSON.stringify(base));
+    if (window.MonsterData && typeof window.MonsterData.generateEnemyForFloor === 'function') {
+        const monster = window.MonsterData.generateEnemyForFloor(floor);
+        if (monster) return monster;
     }
-    return { name:'エラースライム', hp:50, atk:10, def:10, spd:10, mag:10, exp:1, gold:1, acts:[1] };
+    if (window.MonsterData && typeof window.MonsterData.generateBandMonster === 'function') {
+        const monster = window.MonsterData.generateBandMonster(floor);
+        if (monster) return monster;
+    }
+    return { id: 0, name:'\u30a8\u30e9\u30fc\u30b9\u30e9\u30a4\u30e0', race:'\u7c98\u4f53', hp:50, atk:10, def:10, spd:10, mag:10, mdef:10, exp:1, gold:1, acts:[{ id:1, rate:100, condition:0 }] };
 };
 
 // 初期データテンプレート
 const INITIAL_DATA_TEMPLATE = {
     gold: 0, gems: 9000,
+    settings: { battleSpeed: 'normal', battleAutoStart: false },
     items: { 1: 5 }, 
     inventory: [], 
     location: { 
         area: 'START_VILLAGE', 
         x: 7, y: 8 // 村の広場の真ん中あたり
     },
+    transportMode: null, // null / "boat" / "flying"
+    mapReturnPoint: null,
     progress: { 
         floor: 0,
         storyStep: 0,        // ストーリー進行フラグ
-        flags: {},           // イベント個別フラグ (hasShip 等)
-        unlocked: { smith: false, gacha: false }, // 機能解放
+        flags: { hasShip: false },           // イベント個別フラグ (hasShip 等)
+        quests: {},
+        unlocked: { smith: false, gacha: false, boat: false }, // 機能解放
         clearedDungeons: []  // 攻略済みエリア
     },
     characters: [
         {
-            uid:'p1', isHero:true, charId:301, name:'アルス', job:'勇者', rarity:'N', 
-            level:1, hp:700, mp:300, atk:150, def:120, spd:120, mag:130, 
-            mdef: 120, hit: 100, eva: 0, cri: 0, // ★新規ステータス追加 
+            uid:'p1', isHero:true, charId:301, name:'アルス', job:'勇者', rarity:'SSR', 
+            level:1, hp:32, mp:10, atk:10, def:8, spd:8, mag:8, 
+            mdef: 8, hit: 100, eva: 0, cri: 0, // ★新規ステータス追加 
 			limitBreak:0, sp:1,
+            lbProgress: {
+                counters: { battleWins: 0 },
+                sources: { story: 0, battle: 0, dungeon: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, trial: 0, legacy: 0 },
+                trials: { mid: false, final: false, midClearedAt: null, finalClearedAt: null }
+            },
             tree:{"ATK":0,"MAG":0,"SPD":0,"HP":0,"MP":0, "WARRIOR":0, "MAGE":0, "PRIEST":0, "M_KNIGHT":0}, 
             equips:{}, alloc:{}, skills:[1],
             traits: [ { id: 30, level: 1 } ], // ★初期特性の付与
             disabledTraits: [], // 特性ON/OFF管理用
         }		
     ],
-    party: ['p1'],
+    party: ['p1', null, null, null],
     book: { monsters: [], killCounts: {} },
     stats: { totalSteps: 0, startTime: Date.now() }
 };
