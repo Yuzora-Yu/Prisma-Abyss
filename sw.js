@@ -1,13 +1,11 @@
 // sw.js: Prisma Abyss Service Worker
 // ============================================================================
-// 2026-06-22 方針変更: 全画像データは main.js の起動時確認/設定メニューでキャッシュ
+// 2026-07-15 方針: 初回に全量取得の待機可否を確認し、どちらでも全画像をキャッシュ
 // ----------------------------------------------------------------------------
-// 初回起動時/キャッシュ削除後に未ダウンロード画像がある場合、main.js 側で
-// 「全データをダウンロードしますか」を表示する。
-// 「はい」は起動前に全画像を保存し、「いいえ」は起動後に裏側ウォームキャッシュを進める。
+// 「はい」は起動前に進捗表示付きで全量取得し、「いいえ」は即起動後、裏で全量取得する。
 //
 // 今後の方針:
-// - App Shell と最低限の重要画像だけを初回install時にキャッシュする。
+// - App Shell と重要画像はService Worker install時にキャッシュする。
 // - 全画像リストの正本は assets.js の PRISMA_ASSETS.cacheWarmup.installImages。
 // - sw.js 側にモンスター/エフェクト/背景の巨大配列を手書きで復活させないこと。
 // - 設定メニューの「全データダウンロード」も main.js の同じロジックを使う。
@@ -15,15 +13,16 @@
 // ============================================================================
 
 try {
-  // 画像キャッシュ対象の正本を assets.js に統一する。
-  // Service Worker内では DOM/Image は使わず、PRISMA_ASSETS.cacheWarmup の配列だけ参照する。
-  importScripts("assets.js");
+  // assets.js の汎用登録処理へ monsters.js の全定義を渡し、
+  // monster_<ID>.png を全量キャッシュへ自動登録する。
+  // Service Worker内では DOM/Image を生成せず、構築済み配列だけを参照する。
+  importScripts("assets.js", "monsters.js", "abyss_content.js", "monster-images.js");
 } catch (error) {
-  console.warn("[SW] assets.js の読み込みに失敗しました。画像初回キャッシュは最小限で続行します。", error);
+  console.warn("[SW] モンスター定義を含む画像一覧の読み込みに失敗しました。画像初回キャッシュは最小限で続行します。", error);
 }
 
-const CACHE_NAME = "prisma-abyss-v3.44-full-data";
-const RUNTIME_CACHE_NAME = "prisma-abyss-v3.44-full-data-runtime-assets";
+const CACHE_NAME = "prisma-abyss-v26.20260801";
+const RUNTIME_CACHE_NAME = "prisma-abyss-v26.20260801-runtime";
 const WARM_CACHE_META_KEY = "__prisma_abyss_warm_cache_complete__";
 
 // 起動に必要な App Shell。
@@ -35,11 +34,15 @@ const PRECACHE_FILES = [
   "index.html",
   "manifest.json",
   "modern-polish.css",
+  "opening.css",
   "assets.js",
   "vendor/phaser/phaser.min.js",
   "phaser-field.js",
+  "map_render_shared.js",
   "polish.js",
   "main.js",
+  "audio_manifest.js",
+  "audio.js",
   "save_crypto.js",
   "menus.js",
   "menus_config.js",
@@ -54,11 +57,16 @@ const PRECACHE_FILES = [
   "menus_skill_detail.js",
   "menus_trait_detail.js",
   "menus_exchange.js",
+  "tutorial.js",
   "menus_news_detail.js",
   "menus_achievements.js",
   "database.js",
+  "item_runtime.js",
   "gacha.js",
   "monsters.js",
+  "abyss_content.js",
+  "chest-mimics.js",
+  "monster-drop-policy.js",
   "monster-images.js",
   "skills.js",
   "characters.js",
@@ -67,11 +75,20 @@ const PRECACHE_FILES = [
   "blacksmith.js",
   "dungeon.js",
   "facilities.js",
+  "guild_master.js",
+  "guild_quests.js",
+  "guild.js",
   "items.js",
   "job_data.js",
   "map.js",
+  "maps_logic.js",
   "story.js",
+  "story_logic.js",
+  "abyss_story.js",
+  "opening.js",
+  "quests.js",
   "passiveSkill.js",
+  "alchemy.js",
   "achievements.js",
   "news.js",
 ];
@@ -80,19 +97,15 @@ const ASSET_WARMUP = (self.PRISMA_ASSETS && self.PRISMA_ASSETS.cacheWarmup) || {
 
 // 初回表示で特に遅延が目立つ画像。assets.js から取得する。
 const INITIAL_IMAGE_PRECACHE = ASSET_WARMUP.criticalImages || [
-  ...Array.from({ length: 24 }, (_, i) => `assets/monsters/monster_${100001 + i}.png`),
   "assets/generated/battle-field-ai.png",
   "assets/generated/battle-dungeon-ai.png",
-  "assets/generated/battle-fire.png",
-  "assets/map/objects/magma.png",
-  "assets/gacha/back_card.png",
-  "assets/gacha/front_card.png",
-  "assets/background/bg_inn.jpg",
-  "assets/background/bg_casino.png",
+  "assets/map/terrain/terrain_grass_field.png",
+  "assets/map/objects/object_field_forest.png",
+  "assets/map/overlays/overlay_npc_villager.png",
 ];
 
 // 初回install時は最低限の重要画像だけをキャッシュする。
-// 全画像データは main.js の起動時モーダル、または設定メニューの「全データダウンロード」から実行する。
+// 全画像データは main.js の起動時モーダル、起動後の背景ウォーム、または設定メニューから取得する。
 const INSTALL_IMAGE_PRECACHE = ASSET_WARMUP.criticalImages || INITIAL_IMAGE_PRECACHE;
 
 const isSameOrigin = (request) => {
@@ -179,31 +192,51 @@ const isWarmCacheComplete = async (version) => {
   }
 };
 
+const fetchAndCacheWithRetry = async (cache, request, maxAttempts = 3) => {
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const retryRequest = new Request(request, { cache: attempt === 1 ? "reload" : "no-cache" });
+      const response = await fetch(retryRequest);
+      if (!response || !response.ok) throw new Error(`HTTP ${response ? response.status : "ERR"}`);
+      await cache.put(request, response.clone());
+      return true;
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts) await sleep(180 * attempt);
+    }
+  }
+  console.warn(`[SW] キャッシュ取得を${maxAttempts}回試行しても失敗: ${request.url}`, lastError);
+  return false;
+};
+
 const warmCacheList = async (urls, options = {}) => {
   const cache = await caches.open(RUNTIME_CACHE_NAME);
   const uniqueUrls = Array.from(new Set((urls || []).filter(Boolean)));
   const batchSize = options.batchSize || 6;
   const delayMs = options.delayMs || 120;
+  const failedUrls = [];
 
   for (let i = 0; i < uniqueUrls.length; i += batchSize) {
     const batch = uniqueUrls.slice(i, i + batchSize);
 
-    await Promise.allSettled(batch.map(async (url) => {
+    const results = await Promise.all(batch.map(async (url) => {
       const request = toSameOriginRequest(url);
-      if (!request) return;
+      if (!request) return true;
 
       const cached = await cache.match(request);
-      if (cached) return;
+      if (cached) return true;
 
-      const response = await fetch(request);
-      if (response && response.ok) {
-        await cache.put(request, response.clone());
-      }
+      return fetchAndCacheWithRetry(cache, request, 3);
     }));
+    results.forEach((ok, index) => {
+      if (!ok) failedUrls.push(batch[index]);
+    });
 
     // 一気に大量取得すると、プレイ中の通信や描画に影響するため少し間隔を空ける。
     if (i + batchSize < uniqueUrls.length) await sleep(delayMs);
   }
+  return failedUrls;
 };
 
 const warmCacheInBackground = async (payload = {}) => {
@@ -217,25 +250,44 @@ const warmCacheInBackground = async (payload = {}) => {
   const backgroundImages = payload.backgroundImages || [];
 
   // 先にロード画面/初戦闘向けを少数キャッシュ。
-  await warmCacheList(criticalImages, { batchSize: 10, delayMs: 40 });
+  const failedUrls = await warmCacheList(criticalImages, { batchSize: 8, delayMs: 40 });
 
   // install時に取りこぼした画像の再試行。起動処理では待たないが、以前より速めに温める。
-  await warmCacheList(backgroundImages, { batchSize: 8, delayMs: 80 });
+  failedUrls.push(...await warmCacheList(backgroundImages, { batchSize: 6, delayMs: 80 }));
 
+  // 1件でも不足した状態を「全件完了」と記録しない。次回の起動・設定操作で再試行する。
+  if (failedUrls.length) {
+    console.warn(`[SW] 全画像キャッシュ未完了: ${failedUrls.length}件を次回再試行します。`, failedUrls);
+    return;
+  }
   await markWarmCacheComplete(version);
+};
+
+const precacheRequiredList = async (cache, files, batchSize = 8) => {
+  const uniqueFiles = Array.from(new Set(files || []));
+  for (let i = 0; i < uniqueFiles.length; i += batchSize) {
+    const batch = uniqueFiles.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(async file => {
+      const request = new Request(file, { cache: "reload" });
+      return fetchAndCacheWithRetry(cache, request, 3);
+    }));
+    const failedIndex = results.findIndex(ok => !ok);
+    if (failedIndex >= 0) throw new Error(`Required precache failed: ${batch[failedIndex]}`);
+  }
 };
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      Promise.allSettled(
-        Array.from(new Set([...PRECACHE_FILES, ...INSTALL_IMAGE_PRECACHE])).map((file) =>
-          cache.add(new Request(file, { cache: "reload" }))
-        )
-      )
-    )
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // 新版の必須画像が一つでも取得できなければinstallを失敗させる。
+      // 旧Service Workerと旧キャッシュを残し、更新直後の画像欠落を防ぐ。
+      await precacheRequiredList(cache, INSTALL_IMAGE_PRECACHE, 8);
+
+      // App Shellも同じ更新単位で確立する。必須ファイルが欠けた新版へ切り替えない。
+      await precacheRequiredList(cache, PRECACHE_FILES, 8);
+    })
   );
 });
 
@@ -246,7 +298,8 @@ self.addEventListener("activate", (event) => {
       caches.keys().then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== CACHE_NAME && key !== RUNTIME_CACHE_NAME)
+            // 同一オリジンを共有する別アプリのCache Storageは削除しない。
+            .filter((key) => key.startsWith("prisma-abyss-") && key !== CACHE_NAME && key !== RUNTIME_CACHE_NAME)
             .map((key) => caches.delete(key))
         )
       ),

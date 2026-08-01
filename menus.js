@@ -323,21 +323,29 @@ const Menu = {
 
     getItemIconPath: (item) => {
         const type = String(item?.type || '');
-        let key = 'item';
-        if (type.includes('HP') || type.includes('回復')) key = 'heal';
-        else if (type.includes('MP')) key = 'mp';
-        else if (type.includes('蘇生')) key = 'revive';
-        else if (type.includes('移動')) key = 'travel';
-        else if (type.includes('乗り物')) key = 'vehicle';
-        else if (type.includes('育成')) key = 'growth';
-        else if (type.includes('貴重')) key = 'key';
-        return Menu.getMenuIconPath('item', key);
+        if (type === 'スキル書') return 'assets/ui/menu-icons/item-skill-book.png';
+        if (type === '特性書') return 'assets/ui/menu-icons/item-trait-book.png';
+        if (item?.icon) return item.icon;
+        if (type === '攻撃道具') return 'assets/ui/menu-icons/item-attack.png';
+        if (type === '強化道具') return 'assets/ui/menu-icons/item-buff.png';
+        if (type === '弱体道具') return 'assets/ui/menu-icons/item-debuff.png';
+        if (type === '素材') return 'assets/ui/menu-icons/item-material.png';
+        if (type === '乗り物') return 'assets/ui/menu-icons/item-vehicle.png';
+        if (type === '移動' || Number(item?.id) === 110 || item?.name === 'スカイプリズム') return 'assets/ui/menu-icons/item-travel.png';
+        if (type === '蘇生') return 'assets/ui/menu-icons/item-revive.png';
+        if (type === '育成' || type === '特性書') return 'assets/ui/menu-icons/item-growth.png';
+        if (type === '貴重品') return 'assets/ui/menu-icons/item-key.png';
+        if (type === 'HP回復' || type === 'MP回復' || type === '状態異常回復' || type.includes('回復')) {
+            return 'assets/ui/menu-icons/item-heal.png';
+        }
+        return Menu.getMenuIconPath('item', 'item');
     },
 
     getIconFallbackAttr: (fallbackPath) => ` onerror="this.onerror=null;this.src='${fallbackPath}'"`,
 
     subScreenFeatureMap: {
-        blacksmith: 'smith',
+        crafting: 'craftingMenu',
+        blacksmith: 'craftingMenu',
         dungeon: 'dungeonMenu',
         gacha: 'gacha'
     },
@@ -358,7 +366,7 @@ const Menu = {
         const styleAttr = finalStyle ? ` style="${finalStyle}"` : '';
         const className = locked ? 'menu-btn is-feature-locked' : 'menu-btn';
         const body = locked
-            ? `？？？？<span style="display:block; font-size:9px; color:#444; margin-top:2px;">未開放</span>`
+            ? `${id === 'crafting' ? label : '？？？？'}<span style="display:block; font-size:9px; color:#444; margin-top:2px;">未開放</span>`
             : (isDungeonEscape ? 'エスケープ' : label);
         return `<button class="${className}" onclick="${click}"${styleAttr}>${body}</button>`;
     },
@@ -367,6 +375,33 @@ const Menu = {
         if (typeof App !== 'undefined' && typeof App.requireFeatureUnlocked === 'function') {
             App.requireFeatureUnlocked(featureKey);
         }
+    },
+
+    openCraftingBlacksmith: () => {
+        if (typeof App !== 'undefined' && typeof App.requireFeatureUnlocked === 'function' && !App.requireFeatureUnlocked('craftingMenu')) return;
+        document.getElementById('menu-overlay').style.display = 'none';
+        document.querySelectorAll('.sub-screen').forEach(e => e.style.display = 'none');
+        const target = document.getElementById('sub-screen-blacksmith');
+        if (target) target.style.display = 'flex';
+        if (typeof MenuBlacksmith !== 'undefined') MenuBlacksmith.init({ source: 'menu', returnTo: 'crafting' });
+        if (target) Menu.refreshKeyboardNavigation(target);
+    },
+
+    openCraftingAlchemy: () => {
+        if (typeof App !== 'undefined' && typeof App.requireFeatureUnlocked === 'function' && !App.requireFeatureUnlocked('craftingMenu')) return;
+        if (typeof Alchemy !== 'undefined' && typeof Alchemy.openFromCraftingMenu === 'function') {
+            Alchemy.openFromCraftingMenu();
+        }
+    },
+
+    openMagicCommunicationGuildBoard: () => {
+        if (typeof App !== 'undefined' && typeof App.requireFeatureUnlocked === 'function' && !App.requireFeatureUnlocked('craftingMenu')) return;
+        if (typeof Guild === 'undefined' || typeof Guild.openBoard !== 'function') {
+            Menu.msg('ギルド通信を利用できません。');
+            return;
+        }
+        Menu.closeAll();
+        Guild.openBoard({ returnMode: 'magicCommunication' });
     },
 
     // --- メインメニュー制御 ---
@@ -411,7 +446,7 @@ const Menu = {
                 <button class="menu-btn" onclick="Menu.openSubScreen('skills')">スキル</button>
 
                 <button class="menu-btn" onclick="Menu.openSubScreen('achievements')">実績${hasUnclaimedAchievement ? badge : ''}</button>
-                ${Menu.featureButton('blacksmith', '鍛冶屋', 'smith')}
+                ${Menu.featureButton('crafting', '魔道通信', 'craftingMenu')}
 
                 <button class="menu-btn" onclick="Menu.openSubScreen('status')">戦歴</button>
                 ${Menu.featureButton('dungeon', 'ダンジョン', 'dungeonMenu', 'background:#400040;')}
@@ -633,6 +668,15 @@ const Menu = {
         return '#fff';
     },
 
+	getStatusEffectLabel: (key) => {
+        const labels = {
+            Poison: '毒', ToxicPoison: '猛毒', Shock: '感電', Fear: '怯え',
+            Debuff: '弱体', InstantDeath: '即死', Seal: '封印',
+            SkillSeal: '特技封印', SpellSeal: '呪文封印', HealSeal: '回復封印'
+        };
+        return (typeof Battle !== 'undefined' && Battle.statNames && Battle.statNames[key]) || labels[key] || key;
+    },
+
 	getEquipDetailHTML: (equip, showName = true) => {
         let html = '';
         const rarity = equip.rarity || 'N';
@@ -662,10 +706,10 @@ const Menu = {
             // 耐性・状態異常付与 (Battle.statNames がある前提)
             for (let key in equip.data) {
                 if (key.startsWith('resists_')) {
-                    const label = (typeof Battle !== 'undefined' && Battle.statNames) ? (Battle.statNames[key.replace('resists_', '')] || key) : key;
+                    const label = Menu.getStatusEffectLabel ? Menu.getStatusEffectLabel(key.replace('resists_', '')) : key.replace('resists_', '');
                     baseStats.push(`${label}耐${fV(equip.data[key])}%`);
                 } else if (key.startsWith('attack_')) {
-                    const label = (typeof Battle !== 'undefined' && Battle.statNames) ? (Battle.statNames[key.replace('attack_', '')] || key) : key;
+                    const label = Menu.getStatusEffectLabel ? Menu.getStatusEffectLabel(key.replace('attack_', '')) : key.replace('attack_', '');
                     baseStats.push(`攻撃時${equip.data[key]}%で${label}`);
                 }
             }
@@ -706,6 +750,18 @@ const Menu = {
             optsHTML = `<div style="font-size:10px; color:#aaa; margin-top:2px;">${optsList}</div>`;
         }
 
+        // 装備に最初から付与されている特性を表示
+        let traitsHTML = '';
+        if (equip.traits && Array.isArray(equip.traits) && equip.traits.length > 0) {
+            const traitList = equip.traits.map(t => {
+                const traitId = Number(t?.id ?? t);
+                const lv = Number(t?.level || t?.lv || 1);
+                const master = (typeof PassiveSkill !== 'undefined' && PassiveSkill.MASTER) ? PassiveSkill.MASTER[traitId] : null;
+                return `${master?.name || `特性${traitId}`}Lv${Number.isFinite(lv) ? lv : 1}`;
+            }).filter(Boolean);
+            if (traitList.length > 0) traitsHTML = `<div style="font-size:10px; color:#ffd27a; margin-top:2px;">特性: ${traitList.join('・')}</div>`;
+        }
+
         // シナジー表示 (既存維持)
         let synergyHTML = '';
         if (typeof App !== 'undefined' && typeof App.checkSynergy === 'function') {
@@ -731,6 +787,7 @@ const Menu = {
                 ${baseNameHTML}${baseEffect}${skillHTML}
             </div>
             ${optsHTML}
+            ${traitsHTML}
             ${synergyHTML}
         `;
         return html;

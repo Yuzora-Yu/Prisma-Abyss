@@ -28,6 +28,46 @@ const MenuAllies = {
 		'"': '&quot;',
 		"'": '&#39;'
 	}[ch])),
+
+    getSkillTreeStepSkillIds: (step) => {
+        const ids = [];
+        const append = (value) => {
+            if (Array.isArray(value)) {
+                value.forEach(append);
+                return;
+            }
+            const id = Number(value);
+            if (Number.isFinite(id) && id > 0 && !ids.includes(id)) ids.push(id);
+        };
+
+        append(step?.skillId);
+        append(step?.skillIds);
+        return ids;
+    },
+
+    getSkillTreeStepDescription: (step) => {
+        const rawDescription = String(step?.desc || '').trim();
+        const skillIds = MenuAllies.getSkillTreeStepSkillIds(step);
+        if (skillIds.length === 0) return rawDescription;
+
+        const skillMaster = (typeof DB !== 'undefined' && Array.isArray(DB.SKILLS))
+            ? DB.SKILLS
+            : ((typeof window !== 'undefined' && Array.isArray(window.SKILLS_DATA)) ? window.SKILLS_DATA : []);
+        const skillNames = skillIds.map(skillId => {
+            const skill = skillMaster.find(entry => Number(entry?.id) === skillId);
+            return skill?.name || `不明なスキル(ID:${skillId})`;
+        });
+
+        // desc に残っている旧スキル名は表示に使用せず、能力補正部分だけを残す。
+        const baseDescription = rawDescription
+            .replace(/\s*\/\s*[^/]*習得\s*$/u, '')
+            .replace(/^[^/]*習得\s*$/u, '')
+            .replace(/\s*\/\s*$/u, '')
+            .trim();
+        const learnDescription = `${skillNames.join('・')}習得`;
+
+        return baseDescription ? `${baseDescription} / ${learnDescription}` : learnDescription;
+    },
 	
     setHeaderButton: (label, handler) => {
         const btn = document.getElementById('allies-header-back-btn')
@@ -405,26 +445,68 @@ const MenuAllies = {
     getEquipPreviewStatsHTML: (c, partLabel, item) => {
         const preview = MenuAllies.buildEquipPreviewStats(c, partLabel, item);
         if (!preview) return '';
-        const rows = [
-            [['攻', 'atk'], ['魔', 'mag'], ['防', 'def'], ['魔防', 'mdef'], ['速', 'spd']],
-            [['会心', 'cri', '%'], ['命中', 'hit', '%'], ['回避', 'eva', '%'], ['与ダメ', 'finDmg', '%'], ['被ダメ', 'finRed', '%']]
+        const stats = [
+            ['HP', 'maxHp'], ['MP', 'maxMp'],
+            ['攻', 'atk'], ['魔', 'mag'], ['防', 'def'], ['魔防', 'mdef'], ['速', 'spd'],
+            ['会心', 'cri', '%'], ['命中', 'hit', '%'], ['回避', 'eva', '%'], ['与ダメ', 'finDmg', '%'], ['被ダメ', 'finRed', '%']
         ];
         const chip = ([label, key, unit]) => {
             const before = Number(preview.before[key] || 0);
             const after = Number(preview.after[key] || 0);
             const diff = after - before;
-            const color = diff > 0 ? '#62ff82' : (diff < 0 ? '#ff6464' : '#9a8a76');
+            if (diff === 0) return null;
+            const color = diff > 0 ? '#62ff82' : '#ff6464';
             const sign = diff > 0 ? '+' : '';
             const value = Math.abs(diff) % 1 ? diff.toFixed(1) : String(diff);
-            return `<span style="color:${color}; white-space:nowrap;">${label}${sign}${value}${unit || ''}</span>`;
+            return { diff, html: `<span style="color:${color}; white-space:nowrap;">${label}${sign}${value}${unit || ''}</span>` };
         };
+        const chips = stats.map(chip).filter(Boolean);
+        if (chips.length === 0) return '';
+        const incHtml = chips.filter(chip => chip.diff > 0).map(chip => chip.html).join('');
+        const decHtml = chips.filter(chip => chip.diff < 0).map(chip => chip.html).join('');
+        const row = html => html ? `<div style="display:flex; flex-wrap:wrap; gap:4px 8px;">${html}</div>` : '';
         return `
             <div style="display:flex; flex-direction:column; gap:2px; width:100%; box-sizing:border-box; margin-top:5px; padding-top:5px; border-top:1px dashed rgba(232,178,91,0.30); font-size:10px; line-height:1.35;">
-                ${rows.map(row => `<div style="display:flex; flex-wrap:wrap; gap:4px 8px;">${row.map(chip).join('')}</div>`).join('')}
+                ${row(incHtml)}
+                ${row(decHtml)}
             </div>
         `;
     },
 	
+    confirmReleaseMonster: () => {
+        const char = MenuAllies.getSelectedChar();
+        if (!char || !App.isMonsterAlly?.(char)) return;
+        const equippedCount = char.equips && typeof char.equips === 'object'
+            ? new Set(Object.values(char.equips).filter(Boolean)).size
+            : 0;
+        const partyText = Array.isArray(App.data?.party) && App.data.party.includes(char.uid)
+            ? '\n現在のパーティ編成からも外れます。'
+            : '';
+        const equipText = equippedCount > 0
+            ? `\n装備中の${equippedCount}個は装備袋へ戻します。`
+            : '';
+        Menu.confirm(
+            `${char.name}を逃がしますか？${partyText}${equipText}\nこの操作は取り消せません。`,
+            () => {
+                const result = App.releaseMonsterAlly?.(char.uid);
+                if (!result?.ok) {
+                    Menu.msg(result?.message || '仲間を逃がせませんでした。');
+                    return;
+                }
+                MenuAllies.selectedChar = null;
+                MenuAllies.selectedUid = null;
+                MenuAllies.targetPart = null;
+                MenuAllies.selectedEquip = null;
+                Menu.renderPartyBar?.();
+                MenuAllies.renderList();
+                const returned = Number(result.returnedEquipCount || 0) > 0
+                    ? `（装備${result.returnedEquipCount}個を袋へ戻しました）`
+                    : '';
+                Menu.msg(`${result.name}を野へ帰しました。${returned}`);
+            }
+        );
+    },
+
     renderDetail: () => {
         const c = MenuAllies.getSelectedChar();
         if (!c) {
@@ -442,8 +524,9 @@ const MenuAllies = {
 
         if (!c.equips) c.equips = { '武器':null, '盾':null, '頭':null, '体':null, '足':null };
         if (typeof App !== 'undefined' && App.ensureCharacterBattleConfig) App.ensureCharacterBattleConfig(c);
-        else if (!c.config) c.config = { fullAuto: false, hiddenSkills: [], strategy: 'balanced' };
+        else if (!c.config) c.config = { fullAuto: false, hiddenSkills: [], autoDisabledSkills: [], skillUsageConfigVersion: 2, strategy: 'balanced' };
         if (!c.disabledTraits) c.disabledTraits = [];
+        if (PS && typeof PS.normalizeDisabledTraits === 'function') PS.normalizeDisabledTraits(c);
 
         const imgUrl = App.getCharacterDisplayImage ? App.getCharacterDisplayImage(c) : c.img;
         const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(c) : '';
@@ -520,10 +603,29 @@ const MenuAllies = {
             const allocBtn = (c.uid === 'p1') ? `<button class="btn" style="width:100%; margin-top:5px; background:#444400; font-size:11px;" onclick="MenuAllies.openAllocModal()">ボーナスPt振分 (残:${freeAllocPt})</button>` : '';
             const treeBtn = `<button class="btn" style="width:100%; margin-top:5px; background:#004444; font-size:11px;" onclick="MenuAllies.openTreeView()">スキル習得画面へ (SP:${c.sp||0})</button>`;
             const archiveBtn = `<button class="btn" style="width:100%; margin-top:5px; background:#602060; font-size:11px;" onclick="MenuAllyDetail.init(MenuAllies.getSelectedChar())">キャラクター詳細を見る</button>`;
+            const releaseBtn = App.isMonsterAlly?.(c)
+                ? `<button class="btn" style="width:100%; margin-top:10px; background:#5a2020; border-color:#b85a5a; color:#ffd6d6; font-size:11px;" onclick="MenuAllies.confirmReleaseMonster()">この仲間モンスターを逃がす</button>`
+                : '';
             
             const ailmentLabels = { Poison:'毒', ToxicPoison:'猛毒', Shock:'感電', Fear:'怯え', Debuff:'弱体', InstantDeath:'即死', SkillSeal:'技封', SpellSeal:'魔封', HealSeal:'癒封' };
+            const environmentalElmRes = s.environmentalElmRes || {};
+            const environmentEntries = CONST.ELEMENTS
+                .map(element => [element, Number(environmentalElmRes[element] || 0)])
+                .filter(([, value]) => value !== 0);
+            const environmentSummary = environmentEntries.length
+                ? `<div style="margin-bottom:7px; padding:6px; border:1px solid #8a5a79; border-radius:4px; background:#2a1825; font-size:10px; color:#f0c7e5;">環境による属性耐性補正：${environmentEntries.map(([element,value]) => `${element}${value > 0 ? '+' : ''}${value}%`).join(' / ')}</div>`
+                : '';
+            const resistanceDisplay = element => {
+                const total = Number(s.elmRes?.[element] || 0);
+                const modifier = Number(environmentalElmRes[element] || 0);
+                const modifierHtml = modifier === 0
+                    ? ''
+                    : `<span style="margin-left:3px; color:${modifier < 0 ? '#ff8aa8' : '#8cffb0'}; font-size:8px;">(${modifier > 0 ? '+' : ''}${modifier})</span>`;
+                return `${total}%${modifierHtml}`;
+            };
 
             contentHtml = `
+                ${environmentSummary}
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom:8px;">
                     <div style="background:#332222; border:1px solid #554444; border-radius:4px; padding:4px; text-align:center; font-size:11px;">
                         <div style="color:#aaa; font-size:9px;">与ダメージ</div><div style="color:#f88; font-weight:bold;">+${s.finDmg}%</div>
@@ -540,9 +642,9 @@ const MenuAllies = {
                         </div>
                     </div>
                     <div style="background:#222; border:1px solid #444; border-radius:4px; padding:4px;">
-                        <div style="font-size:9px; color:#88f; margin-bottom:3px; text-align:center; border-bottom:1px solid #333;">属性耐性</div>
+                        <div style="font-size:9px; color:#88f; margin-bottom:3px; text-align:center; border-bottom:1px solid #333;">属性耐性（環境込み）</div>
                         <div style="display:flex; flex-direction:column; gap:1px;">
-                            ${CONST.ELEMENTS.map(e => `<div style="display:flex; justify-content:space-between; background:#2a2a2a; padding:1px 3px; border-radius:2px; font-size:9px;"><span style="color:#aaa;">${e}</span><span>${s.elmRes[e]||0}%</span></div>`).join('')}
+                            ${CONST.ELEMENTS.map(e => `<div style="display:flex; justify-content:space-between; background:#2a2a2a; padding:1px 3px; border-radius:2px; font-size:9px;"><span style="color:#aaa;">${e}</span><span>${resistanceDisplay(e)}</span></div>`).join('')}
                         </div>
                     </div>
                     <div style="background:#222; border:1px solid #444; border-radius:4px; padding:4px;">
@@ -559,6 +661,7 @@ const MenuAllies = {
                     ${treeBtn}
                     ${allocBtn}
                     ${archiveBtn}
+                    ${releaseBtn}
                 </div>`;
         } else if (MenuAllies.currentTab === 2) {
 			// --- 装備タブ (堅牢化 + 精度統一 + 属性比較完全版) ---
@@ -751,21 +854,28 @@ const MenuAllies = {
             }
         } else if (MenuAllies.currentTab === 3) {
             const playerObj = new Player(c);
-            let skillHtml = (!playerObj.skills || playerObj.skills.length === 0) 
+            const orderedSkills = [...(playerObj.skills || [])]
+                .filter(sk => sk && Number(sk.id) !== 1)
+                .sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+            const skillPayload = JSON.stringify(orderedSkills).replace(/"/g, '&quot;');
+            let skillHtml = orderedSkills.length === 0
                 ? '<div style="padding:20px; text-align:center; color:#555;">習得スキルなし</div>'
-                : playerObj.skills.map(sk => {
-                    if (sk.id === 1) return '';
-                    const isHidden = c.config.hiddenSkills.includes(Number(sk.id));
+                : orderedSkills.map(sk => {
+                    const isHidden = (c.config?.hiddenSkills || []).includes(Number(sk.id));
+                    const isAutoDisabled = (c.config?.autoDisabledSkills || []).includes(Number(sk.id));
                     let elmHtml = sk.elm ? `<span style="color:${{'火':'#f88','水':'#88f','雷':'#ff0','風':'#8f8','光':'#ffc','闇':'#a8f','混沌':'#d4d'}[sk.elm]||'#ccc'}; margin-right:3px;">[${sk.elm}]</span>` : '';
                     return `
                         <div style="background:${isHidden ? 'rgba(0,0,0,0.2)' : '#252525'}; border:1px solid #444; border-radius:4px; padding:6px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-                            <div style="flex:1; cursor:pointer;" onclick="MenuSkillDetail.open(${sk.id}, ${JSON.stringify(playerObj.skills).replace(/"/g, '&quot;')})">
+                            <div style="flex:1; cursor:pointer;" onclick="MenuSkillDetail.open(${sk.id}, ${skillPayload})">
                                 <div style="font-size:12px; font-weight:bold; color:${isHidden ? '#666' : '#ddd'};">${sk.name} <span style="font-size:10px; color:#888;">(${sk.type})</span></div>
                                 <div style="font-size:10px; color:#aaa;">${elmHtml}${sk.desc || ''}</div>
                             </div>
-                            <div style="text-align:right; min-width:80px;">
+                            <div style="text-align:right; min-width:116px; margin-left:6px;">
                                 <div style="font-size:11px; color:#88f; margin-bottom:4px;">MP:${sk.mp}</div>
-                                <button class="btn" style="padding:2px 8px; font-size:10px; background:${isHidden ? '#555' : '#3a3'};" onclick="event.stopPropagation(); MenuAllies.toggleSkillVisibility(${sk.id})">${isHidden ? '封印中' : '使用許可'}</button>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px;">
+                                    <button class="btn skill-usage-toggle ${isAutoDisabled ? 'is-disabled' : 'is-enabled'}" title="オート戦闘でこの技を使用するか" style="background:${isAutoDisabled ? '#444' : '#ffd700'} !important; color:${isAutoDisabled ? '#bbb' : '#000'} !important;" onclick="event.stopPropagation(); MenuAllies.toggleSkillAutoUsage(${sk.id})">オート<br>${isAutoDisabled ? '使用否' : '使用可'}</button>
+                                    <button class="btn skill-usage-toggle ${isHidden ? 'is-disabled' : 'is-enabled'}" title="手動の戦闘・回復メニューに表示するか" style="background:${isHidden ? '#444' : '#ffd700'} !important; color:${isHidden ? '#bbb' : '#000'} !important;" onclick="event.stopPropagation(); MenuAllies.toggleSkillVisibility(${sk.id})">メニュー<br>${isHidden ? '非表示' : '表示'}</button>
+                                </div>
                             </div>
                         </div>`;
                 }).join('');
@@ -833,8 +943,9 @@ const MenuAllies = {
 			MenuAllies.currentTraitListData = listData;
 
 			const traitListHtml = listData.map((t, index) => {
-				// 自力習得分のみ無効化判定
-				const isDisabled = !t.isEquip && c.disabledTraits.includes(t.id);
+				// 自力習得分のみ無効化判定（キャラ固有の大器晩成は固定ON）
+				const isLocked = !t.isEquip && PS && typeof PS.isTraitToggleLocked === 'function' && PS.isTraitToggleLocked(c, t.id);
+				const isDisabled = !t.isEquip && !isLocked && c.disabledTraits.includes(t.id);
 				
 				// 装備由来は常にON（固定）扱い。合算されている場合はシアン色
 				const statusColor = t.isEquip ? '#00ffff' : (isDisabled ? '#666' : '#ffd700');
@@ -844,6 +955,9 @@ const MenuAllies = {
 				if (t.isEquip) {
 					// 装備由来は「装備固定」として表示し、クリック不可
 					buttonHtml = `<div style="padding:2px 10px; font-size:10px; background:#222; border:1px solid #00ffff; color:#00ffff; border-radius:3px; opacity:0.8;">装備固定</div>`;
+				} else if (isLocked) {
+					// キャラ固有の大器晩成は無効化不可
+					buttonHtml = `<div style="padding:2px 10px; font-size:10px; background:#222; border:1px solid #ffd700; color:#ffd700; border-radius:3px; opacity:0.8;">固定ON</div>`;
 				} else {
 					// 自力習得はトグル可能
 					buttonHtml = `
@@ -951,6 +1065,13 @@ const MenuAllies = {
     toggleTrait: (traitId) => {
         const c = MenuAllies.selectedChar;
         if (!c) return;
+        const PS = (typeof PassiveSkill !== 'undefined') ? PassiveSkill : null;
+        if (PS && typeof PS.isTraitToggleLocked === 'function' && PS.isTraitToggleLocked(c, traitId)) {
+            if (typeof PS.normalizeDisabledTraits === 'function') PS.normalizeDisabledTraits(c);
+            if (typeof App !== 'undefined' && App.save) App.save();
+            MenuAllies.renderDetail();
+            return;
+        }
 
         // ★保存：スキルの実装と同じセレクタを使用
         const selector = '#allies-detail-view .scroll-container-inner';
@@ -964,7 +1085,6 @@ const MenuAllies = {
         else c.disabledTraits.push(traitId);
 
         // 特性変更に伴う装備の強制解除ロジック（最新の状態を反映）
-        const PS = (typeof PassiveSkill !== 'undefined') ? PassiveSkill : null;
         if (PS) {
             const hasDualWield = PS.getSumValue(c, 'dual_dmg_base') > 0;
             const hasTwoHanded = PS.getSumValue(c, 'two_handed') > 0;
@@ -1325,37 +1445,35 @@ const MenuAllies = {
         Menu.renderPartyBar();
     },
 
-    toggleFullAuto: () => {
-        const c = MenuAllies.selectedChar;
-        if (!c) return;
-        const container = document.querySelector('#allies-detail-view .scroll-container-inner');
-        const scrollPos = container ? container.scrollTop : 0;
-        if (typeof App !== 'undefined' && App.ensureCharacterBattleConfig) App.ensureCharacterBattleConfig(c);
-        else if (!c.config) c.config = { fullAuto: false, hiddenSkills: [], strategy: 'balanced' };
-        c.config.fullAuto = !c.config.fullAuto;
-        MenuAllies.renderDetail();
-        const newContainer = document.querySelector('#allies-detail-view .scroll-container-inner');
-        if (newContainer) newContainer.scrollTop = scrollPos;
-    },
-
     toggleSkillVisibility: (skillId) => {
         const c = MenuAllies.selectedChar;
         if (!c) return;
         const container = document.querySelector('#allies-detail-view .scroll-container-inner');
         const scrollPos = container ? container.scrollTop : 0;
         if (typeof App !== 'undefined' && App.ensureCharacterBattleConfig) App.ensureCharacterBattleConfig(c);
-        else if (!c.config) c.config = { fullAuto: false, hiddenSkills: [], strategy: 'balanced' };
+        else if (!c.config) c.config = { fullAuto: false, hiddenSkills: [], autoDisabledSkills: [], skillUsageConfigVersion: 2, strategy: 'balanced' };
         const idx = c.config.hiddenSkills.indexOf(Number(skillId));
         if (idx >= 0) c.config.hiddenSkills.splice(idx, 1);
         else c.config.hiddenSkills.push(Number(skillId));
+        App.save();
         MenuAllies.renderDetail();
         const newContainer = document.querySelector('#allies-detail-view .scroll-container-inner');
         if (newContainer) newContainer.scrollTop = scrollPos;
     },
 
-    refreshDetailScroll: () => {
+    toggleSkillAutoUsage: (skillId) => {
+        const c = MenuAllies.selectedChar;
+        if (!c) return;
         const container = document.querySelector('#allies-detail-view .scroll-container-inner');
         const scrollPos = container ? container.scrollTop : 0;
+        if (typeof App !== 'undefined' && App.ensureCharacterBattleConfig) App.ensureCharacterBattleConfig(c);
+        else if (!c.config) c.config = { fullAuto: false, hiddenSkills: [], autoDisabledSkills: [], skillUsageConfigVersion: 2, strategy: 'balanced' };
+        if (!Array.isArray(c.config.autoDisabledSkills)) c.config.autoDisabledSkills = [];
+        const id = Number(skillId);
+        const idx = c.config.autoDisabledSkills.indexOf(id);
+        if (idx >= 0) c.config.autoDisabledSkills.splice(idx, 1);
+        else c.config.autoDisabledSkills.push(id);
+        App.save();
         MenuAllies.renderDetail();
         const newContainer = document.querySelector('#allies-detail-view .scroll-container-inner');
         if (newContainer) newContainer.scrollTop = scrollPos;
@@ -1667,8 +1785,12 @@ const MenuAllies = {
             : ((typeof window !== 'undefined' && Array.isArray(window.MONSTERS_DATA)) ? window.MONSTERS_DATA : []);
         const monster = monsters.find(m => String(m?.name || '').trim() === name);
         if (!monster) return null;
+        const byId = (typeof MonsterData !== 'undefined' && typeof MonsterData.getImagePath === 'function')
+            ? MonsterData.getImagePath(monster)
+            : window.PRISMA_ASSETS?.getMonsterImagePath?.(monster);
+        if (byId) return byId;
         const map = (typeof window !== 'undefined' && window.MonsterImageMap) ? window.MonsterImageMap : {};
-        return monster.image || monster.img || map[Number(monster.id)] || null;
+        return map[Number(monster.id)] || monster.image || monster.img || null;
     },
 
     getCharacterDefaultImageForReset: (char) => {
@@ -1757,42 +1879,21 @@ const MenuAllies = {
         MenuAllies.renderDetail();
     },
 
-    switchTreeChar: (dir) => {
-        const current = MenuAllies.getSelectedChar ? MenuAllies.getSelectedChar() : MenuAllies.selectedChar;
-        if (!current || !Array.isArray(App.data.characters) || App.data.characters.length === 0) return;
-
-        const rarityVal = { N:1, R:2, SR:3, SSR:4, UR:5, EX:6 };
-        const chars = [...App.data.characters].sort((a, b) => {
-            const aInParty = App.data.party.includes(a.uid);
-            const bInParty = App.data.party.includes(b.uid);
-            if (aInParty !== bInParty) return bInParty - aInParty;
-            if (a.uid === 'p1') return -1;
-            if (b.uid === 'p1') return 1;
-            const rA = rarityVal[a.rarity] || 0;
-            const rB = rarityVal[b.rarity] || 0;
-            if (rA !== rB) return rB - rA;
-            if (b.level !== a.level) return b.level - a.level;
-            return a.charId - b.charId;
-        });
-
-        let idx = chars.findIndex(c => c.uid === current.uid);
-        if (idx === -1) idx = 0;
-        const nextChar = chars[(idx + dir + chars.length) % chars.length];
-
-        MenuAllies.selectedChar = nextChar;
-        MenuAllies.selectedUid = nextChar.uid;
-        MenuAllies.targetPart = null;
-        MenuAllies.selectedEquip = null;
-
-        // スキル習得画面内の移動では、アーカイブ詳細の描画処理を呼ばない。
-        MenuAllies.renderTreeView();
-    },
-
     renderTreeView: () => {
         const c = MenuAllies.selectedChar;
         const sp = c.sp || 0;
         const header = document.getElementById('tree-header');
-        header.innerHTML = `<div class="allies-tree-header-main"><span>${c.name} (SP:${sp})</span><button class="btn" onclick="MenuAllies.resetTree()">RESET</button></div>`;
+        header.textContent = '';
+        const headerMain = document.createElement('div');
+        headerMain.className = 'allies-tree-header-main';
+        const headerLabel = document.createElement('span');
+        headerLabel.textContent = `${c.name} (SP:${sp})`;
+        const resetButton = document.createElement('button');
+        resetButton.className = 'btn';
+        resetButton.textContent = 'RESET';
+        resetButton.onclick = () => MenuAllies.resetTree();
+        headerMain.append(headerLabel, resetButton);
+        header.appendChild(headerMain);
         const list = document.getElementById('tree-content');
         list.innerHTML = '';
         if (!c.tree) c.tree = { ATK:0, MAG:0, SPD:0, HP:0, MP:0 };
@@ -1816,7 +1917,8 @@ const MenuAllies = {
                 const reqTotal = treeDef.costs[currentLevel];
                 const cost = reqTotal - ((currentLevel > 0) ? treeDef.costs[currentLevel-1] : 0);
                 const canAfford = (sp >= cost);
-                html += `<div style="display:flex; justify-content:space-between; align-items:center;"><div style="font-size:12px;">次: <span style="color:#fff;">${nextStep.desc}</span></div><button class="btn" style="font-size:11px; padding:4px 8px; background:${canAfford?'#d00':'#333'};" onclick="MenuAllies.unlockTree('${key}', ${cost})" ${canAfford?'':'disabled'}>習得 SP:${cost}</button></div>`;
+                const nextStepDescription = MenuAllies.escapeHtml(MenuAllies.getSkillTreeStepDescription(nextStep));
+                html += `<div style="display:flex; justify-content:space-between; align-items:center;"><div style="font-size:12px;">次: <span style="color:#fff;">${nextStepDescription}</span></div><button class="btn" style="font-size:11px; padding:4px 8px; background:${canAfford?'#d00':'#333'};" onclick="MenuAllies.unlockTree('${key}', ${cost})" ${canAfford?'':'disabled'}>習得 SP:${cost}</button></div>`;
             } else { html += `<div style="font-size:12px; text-align:center; color:#4f4;">MASTER!</div>`; }
             div.innerHTML = html; list.appendChild(div);
         }

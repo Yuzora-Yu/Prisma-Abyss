@@ -84,6 +84,116 @@ const PassiveSkill = {
     }
 };
 
+PassiveSkill.LATE_BLOOMER_TRAIT_ID = 58;
+
+PassiveSkill.hasLearnedLateBloomer = function(char) {
+    return !!(char && Array.isArray(char.traits) && char.traits.some(t => Number(t?.id) === PassiveSkill.LATE_BLOOMER_TRAIT_ID));
+};
+
+PassiveSkill.normalizeDisabledTraits = function(char) {
+    if (!char) return;
+    const normalized = Array.isArray(char.disabledTraits)
+        ? [...new Set(char.disabledTraits.map(Number).filter(id => Number.isInteger(id) && id > 0))]
+        : [];
+    if (PassiveSkill.hasLearnedLateBloomer(char)) {
+        char.disabledTraits = normalized.filter(id => id !== PassiveSkill.LATE_BLOOMER_TRAIT_ID);
+        return;
+    }
+    char.disabledTraits = normalized;
+};
+
+// 特性書は、特性マスターへ登録済みの特性をすべて交換対象にする。
+// 交換所にない希少な特性書も報酬として出現するため、マスター登録済みなのに
+// 使用不能となる二重管理を避ける。
+PassiveSkill.TRAIT_BOOK_TRAIT_IDS = Object.freeze(
+    Object.keys(PassiveSkill.MASTER).map(Number).filter(Number.isInteger).sort((a, b) => a - b)
+);
+
+PassiveSkill.isHeroCharacter = function(char) {
+    if (!char) return false;
+    if (typeof App !== 'undefined' && typeof App.getHeroCharacter === 'function') {
+        const hero = App.getHeroCharacter();
+        if (hero && hero === char) return true;
+        if (hero?.uid && char.uid && hero.uid === char.uid) return true;
+    }
+    return char.uid === 'p1' || char.isHero === true || Number(char.charId) === 301;
+};
+
+PassiveSkill.isMonsterAllyCharacter = function(char) {
+    if (!char) return false;
+    if (typeof App !== 'undefined' && typeof App.isMonsterAlly === 'function') return !!App.isMonsterAlly(char);
+    return char.isMonsterAlly === true;
+};
+
+PassiveSkill.getTraitBookCharacterTypeLabel = function(char) {
+    if (PassiveSkill.isHeroCharacter(char)) return '主人公';
+    if (PassiveSkill.isMonsterAllyCharacter(char)) return '魔物';
+    return '仲間';
+};
+
+PassiveSkill.getTraitBookReplaceableSlots = function(char) {
+    const traits = Array.isArray(char?.traits) ? char.traits : [];
+    const maxIndex = Math.min(5, traits.length - 1);
+    if (maxIndex < 0) return [];
+    let startIndex = 4;
+    if (PassiveSkill.isMonsterAllyCharacter(char)) startIndex = 0;
+    else if (PassiveSkill.isHeroCharacter(char)) startIndex = 1;
+    const slots = [];
+    for (let index = startIndex; index <= maxIndex; index++) {
+        if (traits[index] && Number(traits[index].id) > 0) slots.push(index);
+    }
+    return slots;
+};
+
+PassiveSkill.canReplaceTraitWithBook = function(char, slotIndex, traitId) {
+    const normalizedTraitId = Number(traitId);
+    const index = Number(slotIndex);
+    if (!char || !Array.isArray(char.traits)) return { ok: false, reason: '特性データがありません。' };
+    if (!PassiveSkill.TRAIT_BOOK_TRAIT_IDS.includes(normalizedTraitId) || !PassiveSkill.MASTER[normalizedTraitId]) {
+        return { ok: false, reason: 'この特性書は使用できません。' };
+    }
+    if (!PassiveSkill.getTraitBookReplaceableSlots(char).includes(index)) {
+        return { ok: false, reason: 'この特性枠は交換できません。' };
+    }
+    if (char.traits.some((trait, currentIndex) => currentIndex !== index && Number(trait?.id) === normalizedTraitId)) {
+        return { ok: false, reason: '同じ特性をすでに所持しています。' };
+    }
+    const current = char.traits[index];
+    if (!current || Number(current.id) <= 0) return { ok: false, reason: '交換元の特性がありません。' };
+    if (Number(current.id) === normalizedTraitId) return { ok: false, reason: 'すでに同じ特性です。' };
+    return { ok: true, current };
+};
+
+PassiveSkill.replaceTraitWithBook = function(char, slotIndex, traitId) {
+    const check = PassiveSkill.canReplaceTraitWithBook(char, slotIndex, traitId);
+    if (!check.ok) return { success: false, message: check.reason };
+    const index = Number(slotIndex);
+    const normalizedTraitId = Number(traitId);
+    const oldTrait = char.traits[index];
+    const oldMaster = PassiveSkill.MASTER[Number(oldTrait.id)];
+    const newMaster = PassiveSkill.MASTER[normalizedTraitId];
+    const inheritedLevel = Math.max(1, Math.floor(Number(oldTrait.level || oldTrait.lv || 1)));
+    char.traits[index] = {
+        id: normalizedTraitId,
+        level: inheritedLevel,
+        battleCount: 0
+    };
+    const disabled = Array.isArray(char.disabledTraits) ? char.disabledTraits.map(Number) : [];
+    char.disabledTraits = disabled.filter(id => id !== Number(oldTrait.id) && id !== normalizedTraitId);
+    PassiveSkill.normalizeDisabledTraits(char);
+    return {
+        success: true,
+        oldTraitId: Number(oldTrait.id),
+        newTraitId: normalizedTraitId,
+        level: inheritedLevel,
+        message: `${char.name || '対象'}の「${oldMaster?.name || '特性'}」Lv${inheritedLevel}を「${newMaster?.name || '特性'}」Lv${inheritedLevel}へ交換した！`
+    };
+};
+
+PassiveSkill.isTraitToggleLocked = function(char, traitId) {
+    return Number(traitId) === PassiveSkill.LATE_BLOOMER_TRAIT_ID && PassiveSkill.hasLearnedLateBloomer(char);
+};
+
 /**
  * キャラクターが新しい特性を習得できるかチェックし、習得させる
  * @param {Object} char - App.data.characters内のキャラデータ
@@ -221,6 +331,30 @@ PassiveSkill.generateEquipmentTraits = function(opt = null) {
   return traits;
 };
 
+/**
+ * 互換スロットが同じ装備実体を重複参照していても、特性を二重集計しない。
+ * 別オブジェクトとして所持する同型装備（二刀流など）は別装備として残す。
+ */
+PassiveSkill.getUniqueEquips = function(entity) {
+    if (!entity || !entity.equips) return [];
+    const result = [];
+    const seenObjects = new WeakSet();
+    const seenIds = new Set();
+    Object.values(entity.equips).forEach(eq => {
+        if (!eq || typeof eq !== 'object') return;
+        if (seenObjects.has(eq)) return;
+        seenObjects.add(eq);
+        const stableId = eq.uid ?? eq.guid ?? eq.uniqueId;
+        if (stableId !== undefined && stableId !== null && stableId !== '') {
+            const key = String(stableId);
+            if (seenIds.has(key)) return;
+            seenIds.add(key);
+        }
+        result.push(eq);
+    });
+    return result;
+};
+
 
 /**
  * 特定の補正項目の合計値を算出する
@@ -229,7 +363,8 @@ PassiveSkill.generateEquipmentTraits = function(opt = null) {
  * @returns {number} 合算された補正値
  */
 PassiveSkill.getSumValue = function(entity, key, ignoreWeapon) {
-	// 【簡単修正のポイント】
+    PassiveSkill.normalizeDisabledTraits(entity);
+    // 【簡単修正のポイント】
     // ignoreWeapon（第3引数）が渡されていない場合、
     // entity が Monster クラスのインスタンスであれば自動的に ignoreWeapon を true にする
     if (ignoreWeapon === undefined) {
@@ -241,12 +376,12 @@ PassiveSkill.getSumValue = function(entity, key, ignoreWeapon) {
 
     if (entity.traits) {
         entity.traits.forEach(t => {
-            if (entity.disabledTraits && entity.disabledTraits.includes(t.id)) return;
+            if (entity.disabledTraits && entity.disabledTraits.includes(Number(t.id))) return;
             traitLvlMap[t.id] = (traitLvlMap[t.id] || 0) + (t.level || 0);
         });
     }
     if (entity.equips) {
-        Object.values(entity.equips).forEach(eq => {
+        PassiveSkill.getUniqueEquips(entity).forEach(eq => {
             if (eq && eq.traits) {
                 eq.traits.forEach(t => {
                     traitLvlMap[t.id] = (traitLvlMap[t.id] || 0) + (t.level || 0);
@@ -290,58 +425,25 @@ PassiveSkill.getSumValue = function(entity, key, ignoreWeapon) {
         }
 
         // ID 18: 根性
-        if ((key === 'guts_mult' || key === 'guts_rate') && Number(id) === 18) {
+        if (key === 'guts_mult' && Number(id) === 18) {
             total += (p.guts_rate * lv) + p.guts_base;
         }
         // ID 31: 呪い体質
-        if ((key === 'proc_curse_bonus' || key === 'proc_curse_add') && Number(id) === 31) {
+        if (key === 'proc_curse_bonus' && Number(id) === 31) {
             total += (p.proc_curse_add * lv) + p.proc_curse_base;
         }
         // ID 32: 人体知識
-        if ((key === 'proc_body_bonus' || key === 'proc_body_add') && Number(id) === 32) {
+        if (key === 'proc_body_bonus' && Number(id) === 32) {
             total += (p.proc_body_add * lv) + p.proc_body_base;
         }
 		// ID 61: 暗殺術
-		if ((key === 'proc_instantdeath_bonus' || key === 'proc_instantdeath_add') && Number(id) === 61) {
+		if (key === 'proc_instantdeath_bonus' && Number(id) === 61) {
 			total += (p.proc_instantdeath_add * lv) + p.proc_instantdeath_base;
 		}
     }
     return total;
 };
 
-
-PassiveSkill.getPartySumValue = function(key) {
-    let total = 0;
-    if (!App.data || !App.data.party) return 0;
-    const partyMembers = App.data.party.map(uid => App.data.characters.find(c => c.uid === uid)).filter(c => c);
-
-    partyMembers.forEach(c => {
-        const traitLvlMap = {};
-        if (c.traits) {
-            c.traits.forEach(t => {
-                if (c.disabledTraits && c.disabledTraits.includes(t.id)) return;
-                traitLvlMap[t.id] = (traitLvlMap[t.id] || 0) + (t.level || 0);
-            });
-        }
-        if (c.equips) {
-            Object.values(c.equips).forEach(eq => {
-                if (eq && eq.traits) {
-                    eq.traits.forEach(t => {
-                        traitLvlMap[t.id] = (traitLvlMap[t.id] || 0) + (t.level || 0);
-                    });
-                }
-            });
-        }
-        for (let id in traitLvlMap) {
-            const lv = traitLvlMap[id];
-            const master = PassiveSkill.MASTER[id];
-            if (master && master.params && master.params[key] !== undefined) {
-                total += master.params[key] * lv;
-            }
-        }
-    });
-    return total;
-};
 
 /**
  * 編成中のパーティメンバーから、特定の特性キーの合計値を算出する
@@ -359,11 +461,12 @@ PassiveSkill.getPartySumValue = function(key) {
         .filter(c => c); // 存在するキャラのみ
 
     partyMembers.forEach(c => {
+        PassiveSkill.normalizeDisabledTraits(c);
         // --- 習得済みの特性 ---
         if (c.traits) {
             c.traits.forEach(t => {
                 // ★重要: OFFにされている特性は除外
-                if (c.disabledTraits && c.disabledTraits.includes(t.id)) return;
+                if (c.disabledTraits && c.disabledTraits.includes(Number(t.id))) return;
                 
                 const master = PassiveSkill.MASTER[t.id];
                 // マスタの params 内に指定されたキーが存在するかチェック
@@ -375,7 +478,7 @@ PassiveSkill.getPartySumValue = function(key) {
 
         // --- 装備品に付与されている特性 ---
         if (c.equips) {
-            Object.values(c.equips).forEach(eq => {
+            PassiveSkill.getUniqueEquips(c).forEach(eq => {
                 if (eq && eq.traits) {
                     eq.traits.forEach(t => {
                         const master = PassiveSkill.MASTER[t.id];
@@ -389,30 +492,4 @@ PassiveSkill.getPartySumValue = function(key) {
     });
 
     return total;
-};
-
-/**
- * 表示用の全特性リストを取得 (習得済み -> 装備品の順)
- */
-PassiveSkill.getFullTraitList = function(char) {
-    let list = [];
-
-    // 1. 本人が習得している特性 (習得順)
-    if (char.traits) {
-        char.traits.forEach(t => {
-            list.push({ ...t, source: 'learned' });
-        });
-    }
-
-    // 2. 装備品についている特性
-    if (char.equips) {
-        Object.values(char.equips).forEach(eq => {
-            if (eq && eq.traits) {
-                eq.traits.forEach(t => {
-                    list.push({ ...t, source: 'equipment', fromName: eq.name });
-                });
-            }
-        });
-    }
-    return list;
 };

@@ -1,20 +1,42 @@
 # PRISMA ABYSS Development Policy
 
-Last updated: 2026-05-15
+Last updated: 2026-07-14
 
 This document records the current long-term development direction. Treat it as a product/design policy, not just an implementation TODO.
 
 Story, character relationship, and hidden-setting references are archived under `docs/story-bible/`.
 
+All implemented story regions, including the Abyss and post-surface chapters, must be stored in `story.js`. Region-specific runtime append files must not make the editor and game load different scenario sets.
+
+The current non-negotiable directives are recorded in `docs/CURRENT_PRODUCT_DIRECTIVES_20260714.md`. They supersede older notes about dialogue length, tutorial timing, cache confirmation, and future gacha use.
+
+Opening asset delivery is staged: before play begins, preload Lumina Village, the opening Jelly battle, and the complete pre-opening first-cave battle set (map tiles, regular enemies, boss, and field/dungeon battle backgrounds). Play the paper-theater opening after the first-cave clear report `PROLOGUE3` advances the save to `storyStep: 2 / subStep: 1`, then present the full-image download choice.
+
 ## Core Intent
 
 The game has become feature-rich, but the next direction is to reorganize it as an RPG where features open naturally through story progression.
 
-The game should not begin with every major system available. Gacha, blacksmithing, the abyss, boat travel, wing flight, dungeon transfer, and other systems should become available as the player explores the field, clears regional fixed maps, gains allies, and expands the world.
+## Maintainable Implementation Rule
 
-Existing code already has `progress.unlocked.smith` and `progress.unlocked.gacha`. Future work should expand this structure so menus, facilities, travel tools, and dungeon systems are connected to story progress.
+### Map rendering authority
 
-Travel and key items such as `Magic Boat`, `Light Wing`, and `Sky Prism` should be treated as story rewards rather than ordinary inventory entries.
+- `phaser-field.js` is the production field/map renderer and must be implemented and verified first for every map visual, overlay, animation, depth, shadow, and atmosphere change.
+- The legacy `Field.render()` 2D Canvas path in `main.js` exists only as an automatic safety fallback when Phaser initialization or synchronization fails. It is not the primary implementation target.
+- Phaser itself currently uses its Canvas backend for asset compatibility. This is separate from the legacy Canvas fallback above; “Phaser-first” still applies.
+- After the Phaser implementation is complete, mirror the minimum equivalent behavior into the legacy Canvas path so a renderer failure does not break movement or essential readability.
+- A map-editor preview or a passing legacy-Canvas check does not prove the production renderer is correct. Visual changes must be checked in the active Phaser game view, and validation must assert both paths when fallback parity matters.
+
+手抜き作業と、その場しのぎのつぎはぎ修正を禁止する。症状だけを局所的に隠すのではなく、描画・移動・イベント・データ参照の正本を確認し、同種の挙動が一つの共有ロジックへ収束するよう修正すること。
+
+新しいデータやアセットは、後から由来・用途・再生成方法を追跡できる状態で格納する。既存ファイルの配置が保守を妨げている場合は、参照元・全量キャッシュ・検証スクリプトを同時に更新したうえで適切なフォルダへ整理する。生成原画、ゲーム用加工物、マニフェスト、加工スクリプトを分離し、無名の上書きや用途不明ファイルを増やさない。
+
+変更時は少なくとも、既存セーブ互換、入口と帰還先、通行可能性、画像の全量キャッシュ登録、描画欠けの同期フォールバック、データ検証を確認する。短期的に動くことより、再現可能で管理しやすい構成を優先する。
+
+The game should not begin with every major system available. Blacksmithing, the abyss, boat travel, wing flight, dungeon transfer, and other systems should become available as the player explores the field, clears regional fixed maps, gains allies, and expands the world. Gacha-related code and assets may remain as dormant legacy/internal implementation, but gacha is not planned as a player-facing feature and must not receive an unlock route.
+
+Existing code uses `progress.unlocked` for story-gated systems. Field blacksmith access is gated by `smith`, while the main-menu **Magic Communication** route to blacksmithing, alchemy, and guild quest reception is independently gated by `craftingMenu`. Dungeon menu access keeps its own unlock check; gacha is not shown in the main menu route.
+
+`Magic Boat` and `Light Wing` are progression-linked travel items. `Light Wing` is a unique Final Altar reward from Lycion. `Sky Prism` is intentionally an ordinary consumable sold by normal item shops; its destination list is limited by discovered-map records rather than by an acquisition event.
 
 ## Main Game Scope
 
@@ -24,7 +46,7 @@ During this period:
 
 - Field travel and fixed maps should be the main experience.
 - Story allies should carry the party experience.
-- Gacha and abyss farming should not be the main route to power.
+- Abyss farming should not be the main route to power during the main story.
 - Fixed story dungeons should be hand-authored rather than randomly generated.
 - Random/deep farming systems should become stronger after the main story opens them.
 
@@ -81,41 +103,42 @@ Proposed unlock route:
 
 - Beginning Village clear:
   - Gaile and Sara join.
-  - Basic controls, battle, and item tutorial.
+  - Record future tutorial requirements only; implementation waits until all target screens are complete.
 
 - Fire Village clear:
   - Xiao joins.
-  - Blacksmith opens.
-  - Blacksmith tutorial.
+  - The local Fire Village blacksmith facility opens.
+  - Main-menu Magic Communication access to blacksmithing, alchemy, and guild quest reception remains locked until a future dedicated quest unlocks `craftingMenu`.
+  - Record the future blacksmith tutorial requirement, but do not implement it before the blacksmith UI is final.
 
 - Wind Settlement clear:
   - Elise joins.
   - Wind area progression.
-  - Status ailment and speed-focused combat tutorial.
+  - Reserve status-ailment and speed teaching goals for the post-UI-completion tutorial pass.
 
 - Water City clear:
   - Kate joins.
   - Magic Boat obtained.
   - Sea movement opens.
-  - Casino is placed in Water City.
+  - Casino is placed in Water City as a map facility.
 
 - Thunder Fortress clear:
   - Joseph joins.
-  - Medal King becomes available.
-  - Small medal exchange route opens.
+  - Medal King remains a reachable map facility with no story-clear prerequisite; the fortress may still explain small medals.
 
 - Light Palace clear:
-  - Layla joins.
+  - The prison rescue route opens. Layla does not join at the altar.
+  - Returning to the prison and giving Layla one World Tree Leaf restores and recruits her.
   - Abyss and reincarnation foreshadowing.
-  - Light/dark element tutorial.
+  - Reserve light/dark teaching goals for the post-UI-completion tutorial pass.
 
 - Demon Castle arrival event battle:
   - Shanny joins.
 
 - Demon Castle clear:
   - Main story reaches a major ending point.
-  - Gacha opens.
-  - Main postgame/farming systems open.
+  - Gacha remains unused dormant legacy/internal code; no player-facing unlock is planned.
+  - Main postgame/farming systems open through their implemented story gates.
 
 - Six regions and Demon Castle clear:
   - Abyss opens.
@@ -125,15 +148,17 @@ Proposed unlock route:
   - Additional Light Palace event opens.
   - One Reincarnation Fruit is granted.
 
-- Light Palace post-floor-40 event viewed:
-  - Abyss floor 41+ opens.
-  - Inn dungeon-transfer service opens.
-  - Endless exploration opens for fixed regional dungeons.
+- Light Palace clear:
+  - The prison rescue route opens. Layla joins only after the party returns to the prison and gives her one World Tree Leaf.
 
-- Abyss floor 100 clear:
-  - Light Wing opens.
+- Final Altar / Azelgarag clear:
+  - Lycion grants the Light Wing. It is not a Medal King reward.
 
-Inn transfer logic already exists. It should eventually be gated by something like `progress.unlocked.teleport`.
+- Postgame Final Altar crack event:
+  - Random Abyss and the dungeon menu open.
+  - The inn dungeon-transfer door becomes visible and usable at the same time.
+
+Inn transfer visibility and use are both gated by `progress.flags.abyssRandomUnlocked` / `progress.unlocked.teleport`. `abyssFirstEntered` is history only and must not reveal the door. Older saves that already own the legacy random-Abyss clear state may preserve access through migration.
 
 ## Unlock State Shape
 
@@ -141,15 +166,15 @@ Future `progress.unlocked` should move toward this shape:
 
 ```js
 progress.unlocked = {
-  smith: false,
-  gacha: false,
-  abyss: false,
-  teleport: false,
-  casino: false,
-  medalKing: false,
+  smith: false, // local Fire Village blacksmith facility
+  craftingMenu: false, // future quest reward: Magic Communication access to blacksmithing, alchemy, and guild quest reception
+  gacha: false, // legacy/internal; no current main-menu player route
+  abyss: true,
+  dungeonMenu: false,
+  teleport: true,
   boat: false,
-  wing: false,
-  fixedDungeonEndless: false
+  wing: true,
+  fixedDungeonEndless: true
 };
 ```
 
@@ -162,7 +187,7 @@ Implementation rule:
 
 ## Story Ally Policy
 
-During the main story, party growth should center on story allies. Gacha should not be open during the main route.
+During the main story, party growth should center on story allies. Gacha is not exposed as a current player-facing progression route.
 
 Planned story joins:
 
@@ -182,8 +207,8 @@ Planned story joins:
 - Thunder Fortress clear:
   - Joseph
 
-- Light Palace clear:
-  - Layla
+- Light Palace prison rescue after clear:
+  - Layla (give one World Tree Leaf)
 
 - Demon Castle arrival event battle victory:
   - Shanny
@@ -232,21 +257,21 @@ Water City:
 
 Thunder Fortress:
 
-- Medal King
+- Medal King facility tile; no story-clear prerequisite
 
 Light Palace:
 
-- Post-Abyss-floor-40 event
-- Reincarnation Fruit reward
-- Abyss floor 41+ unlock event
+- Final battle and prison rescue route
+- Layla recovery by World Tree Leaf
+- Abyss and reincarnation foreshadowing
 
 Demon Castle:
 
 - Demon King defeat
-- Gacha unlock
 - Transition from main story to postgame
+- Gacha code may remain in the repository, but it is not documented as a current in-game unlock.
 
-Menu and facility display should follow unlock state. Unreleased systems can be hidden, or shown as `???` with a clear note such as "unlocks through story progress" if hiding them makes the UI confusing.
+Menu and facility display should follow their respective unlock states. Local facility access and remote menu access must not share a flag when they are intended as different rewards. Unreleased systems can be hidden, or shown as `???` with a clear note such as "unlocks through story progress" if hiding them makes the UI confusing.
 
 ## Abyss Positioning
 
@@ -262,16 +287,19 @@ Proposed Abyss stages:
   - Light Palace event opens.
   - One Reincarnation Fruit is granted.
 
-- After Light Palace event:
-  - Abyss floor 41+ opens.
-  - Inn transfer service opens.
-  - Regional endless exploration opens.
+- After Light Palace clear:
+  - The party must return to the prison and spend one World Tree Leaf to restore and recruit Layla.
+  - Regional endless exploration remains a separate system decision and is not an inn-transfer visibility condition.
 
-- Floor 100 clear:
-  - Light Wing opens.
+- Final Altar / Azelgarag clear:
+  - Lycion grants the Light Wing.
 
-- Floor 150+:
-  - High-difficulty bosses assuming reincarnation.
+- Final Altar postgame crack:
+  - Random Abyss opens.
+  - The inn transfer door appears and becomes usable.
+
+- Random Abyss high floors:
+  - High-difficulty bosses may assume reincarnation.
 
 ## Regional Endless Exploration
 
@@ -496,42 +524,20 @@ Examples:
   - Boat acquisition event and sea travel explanation.
 
 - Thunder Fortress soldier:
-  - Medal King and small medal explanation.
+  - Medal King and small medal explanation. The explanation is not an unlock gate.
 
 - Light Palace priestess:
-  - Abyss, reincarnation, and floor 41+ explanation.
+  - Layla's prison condition, Abyss foreshadowing, and reincarnation explanation.
 
 ## Tutorial Policy
 
-Tutorials should be embedded into story events and NPC conversations instead of isolated explanation screens.
+Tutorial implementation is deferred until every target screen and interaction flow is complete. Tutorials built against obsolete screens create incorrect guidance and rework.
 
-Tutorial placement:
+Before the UI completion gate, only maintain a tutorial-requirement ledger: what must be taught, the intended story timing, prerequisites, and measurable success conditions. Do not finalize tutorial copy, screenshots, pointer coordinates, or forced input sequences.
 
-- Battle tutorial:
-  - First battle around Beginning Village.
+After the UI completion gate, build and validate tutorials against the final screens. Prefer teaching through current gameplay and story context rather than detached explanation screens.
 
-- Item tutorial:
-  - During Beginning Village progress.
-
-- Blacksmith tutorial:
-  - After Fire Village.
-
-- Boat tutorial:
-  - After Water City.
-
-- Medal tutorial:
-  - After Thunder Fortress arrival.
-
-- Abyss tutorial:
-  - After Demon Castle clear or first Abyss entry.
-
-- Reincarnation tutorial:
-  - After Abyss floor 40 boss and Light Palace event.
-
-- Gacha tutorial:
-  - After Demon King defeat.
-
-The player should learn naturally through the story rather than feel forced to read detached instructions.
+There is no gacha tutorial because gacha is not planned for player use.
 
 ## Implementation Phases
 
@@ -548,8 +554,8 @@ Priority: build the foundation for "when systems can be used" before adding more
 Current status on 2026-05-15:
 
 - `progress.unlocked` now migrates toward the full planned key set.
-- Main menu access for blacksmith, Abyss/dungeon, and gacha is routed through shared unlock checks.
-- Casino, Medal King, Abyss entry, inn teleport, Magic Boat, and Light Wing access now use the same unlock foundation or legacy key-item compatibility.
+- Main menu access for blacksmith and dungeon systems is routed through shared unlock checks. Gacha has no current main-menu button.
+- Abyss entry, inn teleport, Magic Boat, and Light Wing access now use the unlock foundation or legacy key-item compatibility. Casino and Medal exchange remain map-facility routes in the current implementation.
 - Future story events should call `App.unlockFeature(key)` at the planned unlock moments instead of directly opening systems.
 
 ### Phase 2: Story Progress And Ally Joins
@@ -568,14 +574,14 @@ Main story should be playable with story allies.
 - Place fixed dungeon entrances.
 - Connect `Sky Prism` to discovered/undiscovered fixed-map records.
 
-Keep the current policy that `Sky Prism` moves to the world-map coordinate near a fixed map, not directly inside that fixed map.
+`Sky Prism` normally moves to the world-map entrance. When a fixed dungeon's actual entrance is authored inside another fixed map, resolve that `mapActions` entrance through the shared map registry and land on the entrance tile inside the parent fixed map instead of dropping the player on the world map.
 
 ### Phase 4: Facility Unlocks
 
 - Fire Village clear opens blacksmith.
-- Water City clear opens boat and casino.
-- Thunder Fortress opens Medal King.
-- Demon King defeat opens gacha.
+- Water City / Seabed Temple progression grants the Magic Boat and opens sea travel through `boat`, item `108`, and `hasShip` compatibility.
+- Casino and Medal exchange are current map-facility routes rather than separately documented `progress.unlocked` gates.
+- Demon King defeat does not currently open gacha through the player-facing menu route.
 - Abyss/Light Palace event opens transfer service.
 - Abyss floor 100 opens Light Wing.
 
@@ -611,6 +617,6 @@ The core progression should feel like:
 
 Do not give everything to the player immediately. The player should feel the world expanding through adventure.
 
-During the main story, the player should struggle forward with story allies. The intended RPG identity is not "use gacha and abyss farming to brute-force everything", but "travel through fire, wind, water, thunder, light, and dark regions while gathering allies, tools, and systems."
+During the main story, the player should struggle forward with story allies. The intended RPG identity is not "use farming to brute-force everything", but "travel through fire, wind, water, thunder, light, and dark regions while gathering allies, tools, and systems."
 
-After Demon King defeat, unlock gacha, Abyss, reincarnation, endless exploration, and attribute equipment farming, then expand the game as a long-term postgame RPG.
+After Demon King defeat and the later Abyss gates, expand the game as a long-term postgame RPG through the implemented Abyss, travel, and fixed-dungeon systems. Gacha is not part of the current player-facing unlock route.

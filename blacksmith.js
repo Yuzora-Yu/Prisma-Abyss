@@ -12,10 +12,32 @@ const MenuBlacksmith = {
         target: null, material: null, materials: [], targetOptIdx: -1, requiredCount: 0
     },
 
-    init: () => {
+    // menu: 魔道通信から開いた導線 / facility: 炎の里の施設画面から開いた導線
+    entryContext: 'menu',
+    returnContext: 'main',
+
+    playStartSeAndWait: async () => {
+        if (typeof AudioManager === 'undefined') return false;
+        if (typeof AudioManager.playSeAndWait === 'function') {
+            return AudioManager.playSeAndWait('ui_blacksmith_start');
+        }
+        AudioManager.playSe?.('ui_blacksmith_start');
+        return false;
+    },
+
+    init: (options = {}) => {
         const sub = document.getElementById('sub-screen-blacksmith');
         if(!sub) return;
+        MenuBlacksmith.entryContext = options.source === 'facility' ? 'facility' : 'menu';
+        MenuBlacksmith.returnContext = options.returnTo === 'crafting' ? 'crafting' : 'main';
+        MenuBlacksmith.setFacilityTopExitVisible(MenuBlacksmith.entryContext !== 'facility');
         sub.style.display = 'flex';
+
+        if (typeof Menu !== 'undefined') {
+            Menu.installKeyboardNavigation?.();
+            Menu.installBackGuard?.();
+            Menu.ensureBackGuard?.();
+        }
         
         if(!document.getElementById('smith-ctrls')) {
             const ctrlDiv = document.createElement('div');
@@ -27,7 +49,87 @@ const MenuBlacksmith = {
 
         MenuBlacksmith.setupContainers(sub);
         MenuBlacksmith.resetState();
-        MenuBlacksmith.changeScreen('main');
+        if (options.mode) MenuBlacksmith.selectMode(options.mode);
+        else MenuBlacksmith.changeScreen('main');
+        Menu.refreshKeyboardNavigation?.(sub);
+    },
+
+    openFromField: () => {
+        if (typeof App !== 'undefined' && typeof App.requireFeatureUnlocked === 'function' && !App.requireFeatureUnlocked('smith')) return;
+        App.changeScene('blacksmith');
+    },
+
+    initFacility: () => {
+        MenuBlacksmith.entryContext = 'facility';
+        MenuBlacksmith.returnContext = 'main';
+        MenuBlacksmith.setFacilityTopExitVisible(true);
+        const commands = `
+            <button class="menu-btn" style="background:#2b160f;border:1px solid #ff8a55;height:40px;color:#fff;" onclick="MenuBlacksmith.openFacilityMode('synthesis')">装備合成</button>
+            <button class="menu-btn" style="background:#111a32;border:1px solid #87a8ff;height:40px;color:#fff;" onclick="MenuBlacksmith.openFacilityMode('refine')">装備精錬</button>
+            <button class="menu-btn" style="background:#102619;border:1px solid #79d99a;height:40px;color:#fff;" onclick="MenuBlacksmith.openFacilityMode('enhance')">装備強化</button>`;
+        Facilities.setupBaseLayout('blacksmith-scene', '炎の里イグニシア 鍛冶屋', 'facility_bg_blacksmith', commands, "App.changeScene('field')");
+        MenuBlacksmith.renderFacilityHome();
+    },
+
+    renderFacilityHome: () => {
+        const body = document.getElementById('blacksmith-scene-msg-content');
+        if (!body) return;
+        const smith = App.data.blacksmith || { level: 1, exp: 0 };
+        const nextExp = Math.max(1, smith.level * 100);
+        const progress = Math.max(0, Math.min(100, (Number(smith.exp || 0) / nextExp) * 100));
+        body.innerHTML = `
+            <div style="color:#ffc27a;margin-bottom:10px;">「聞こえるか。炉が、また飯を食い始めた。」</div>
+            <div style="border:1px solid #6c4936;background:rgba(43,22,15,0.72);padding:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <div><span style="color:#aaa;font-size:11px;">鍛冶レベル</span><br><b style="color:#ffd86a;font-size:22px;">Lv.${smith.level}</b></div>
+                    <button class="btn" style="height:34px;background:#24150f;border:1px solid #d28a54;color:#fff;" onclick="MenuBlacksmith.showLevelInfo()">上昇効果</button>
+                </div>
+                <div style="display:flex;justify-content:space-between;color:#bbb;font-size:10px;margin-top:10px;"><span>熟練度</span><span>${smith.exp} / ${nextExp} EXP</span></div>
+                <div style="height:7px;background:#080808;border:1px solid #4b3428;margin-top:4px;overflow:hidden;"><div style="height:100%;width:${progress}%;background:linear-gradient(90deg,#b94d24,#ffd86a);"></div></div>
+                <div style="color:#aaa;font-size:11px;margin-top:9px;">下のコマンドから鍛冶内容を選択してください。</div>
+            </div>`;
+    },
+
+    openFacilityMode: (mode) => {
+        MenuBlacksmith.init({ source: 'facility', mode });
+    },
+
+    setFacilityTopExitVisible: (visible) => {
+        const button = document.getElementById('blacksmith-scene-top-exit-btn');
+        if (button) button.style.display = visible ? '' : 'none';
+    },
+
+    exitWorkspace: () => {
+        const sub = document.getElementById('sub-screen-blacksmith');
+        if (MenuBlacksmith.entryContext === 'facility') {
+            if (sub) sub.style.display = 'none';
+            MenuBlacksmith.setFacilityTopExitVisible(true);
+            MenuBlacksmith.resetState();
+            MenuBlacksmith.renderFacilityHome();
+            return;
+        }
+        if (MenuBlacksmith.returnContext === 'crafting' && typeof Menu !== 'undefined' && typeof Menu.openSubScreen === 'function') {
+            if (sub) sub.style.display = 'none';
+            MenuBlacksmith.resetState();
+            Menu.openSubScreen('crafting');
+            return;
+        }
+        if (typeof Menu !== 'undefined' && typeof Menu.closeSubScreen === 'function') {
+            Menu.closeSubScreen('blacksmith');
+        } else if (sub) {
+            sub.style.display = 'none';
+        }
+    },
+
+    exitToField: () => {
+        MenuBlacksmith.setFacilityTopExitVisible(true);
+        MenuBlacksmith.resetState();
+        if (typeof App !== 'undefined' && typeof App.changeScene === 'function') {
+            App.changeScene('field');
+        } else {
+            const sub = document.getElementById('sub-screen-blacksmith');
+            if (sub) sub.style.display = 'none';
+        }
     },
 
     setupContainers: (parent) => {
@@ -75,6 +177,10 @@ const MenuBlacksmith = {
     },
 
     changeScreen: (screenId) => {
+        if (screenId === 'main' && MenuBlacksmith.entryContext === 'facility') {
+            MenuBlacksmith.exitWorkspace();
+            return;
+        }
         ['main', 'select', 'option'].forEach(id => {
             const el = document.getElementById(`smith-screen-${id}`);
             if(el) el.style.display = (id === screenId) ? 'flex' : 'none';
@@ -85,6 +191,8 @@ const MenuBlacksmith = {
             MenuBlacksmith.renderMain();
             MenuBlacksmith.updateTitle("⚒️ 鍛冶屋");
         }
+        const sub = document.getElementById('sub-screen-blacksmith');
+        if (sub) Menu.refreshKeyboardNavigation?.(sub);
     },
 	
 	handleBottomBack: () => {
@@ -93,7 +201,7 @@ const MenuBlacksmith = {
 		const optionScreen = document.getElementById('smith-screen-option');
 
 		if (mainScreen && mainScreen.style.display === 'flex') {
-			Menu.closeSubScreen('blacksmith');
+			MenuBlacksmith.exitWorkspace();
 			return;
 		}
 
@@ -156,7 +264,7 @@ const MenuBlacksmith = {
                 </div>
             </div>
 			<div class="sub-screen-bottom-panel">
-				<button class="btn sub-screen-back-btn" onclick="Menu.closeSubScreen('blacksmith')">もどる</button>
+				<button class="btn sub-screen-back-btn" onclick="MenuBlacksmith.exitWorkspace()">もどる</button>
 			</div>
         `;
     },
@@ -274,24 +382,12 @@ const MenuBlacksmith = {
             div.className = 'list-item'; 
             div.style.cssText = 'flex-direction:column; align-items:flex-start; background:rgba(255,255,255,0.02); margin-bottom:4px; border:1px solid #333;';
             
-            // --- 特性表示用のHTML生成 ---
-            let traitHtml = '';
-            if (item.traits && item.traits.length > 0) {
-                traitHtml = `<div style="display:flex; flex-wrap:wrap; gap:2px 6px; margin-top:2px; border-top:1px dashed #444; padding-top:2px; width:100%;">` +
-                    item.traits.map(t => {
-                        const m = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.MASTER[t.id] : null;
-                        return m ? `<span style="color:#00ffff; font-size:9px;">★${m.name} Lv${t.level}</span>` : '';
-                    }).join('') + 
-                `</div>`;
-            }
-
             div.innerHTML = `
                 <div style="font-weight:bold; color:${Menu.getRarityColor(item.rarity)}; border-bottom:1px solid #333; width:100%; padding-bottom:4px; margin-bottom:4px; display:flex; justify-content:space-between;">
                     <span>${item.name} ${item.locked?'🔒':''}</span>
                     ${c.owner ? `<span style="color:#f88; font-size:10px;">[${c.owner}]</span>` : ''}
                 </div>
                 ${Menu.getEquipDetailHTML(item, false)}
-                ${traitHtml}
             `;
             div.onclick = () => { MenuBlacksmith.state.target = item; if (MenuBlacksmith.mode === 'synthesis') MenuBlacksmith.renderMaterialList_Synthesis(true); else if (MenuBlacksmith.mode === 'refine') MenuBlacksmith.renderOptionList_Refine(); else MenuBlacksmith.renderOptionList_Enhance(); };
             list.appendChild(div);
@@ -312,20 +408,9 @@ const MenuBlacksmith = {
             sorted.forEach(item => {
                 const div = document.createElement('div'); div.className = 'list-item'; div.style.cssText = 'flex-direction:column; align-items:flex-start;';
                 
-                let traitHtml = '';
-                if (item.traits && item.traits.length > 0) {
-                    traitHtml = `<div style="display:flex; flex-wrap:wrap; gap:2px 6px; margin-top:2px; border-top:1px dashed #444; padding-top:2px; width:100%;">` +
-                        item.traits.map(t => {
-                            const m = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.MASTER[t.id] : null;
-                            return m ? `<span style="color:#00ffff; font-size:9px;">★${m.name} Lv${t.level}</span>` : '';
-                        }).join('') + 
-                    `</div>`;
-                }
-
                 div.innerHTML = `
                     <div style="font-weight:bold; color:${Menu.getRarityColor(item.rarity)}; border-bottom:1px solid #333; width:100%; margin-bottom:4px;">${item.name}</div>
                     ${Menu.getEquipDetailHTML(item, false)}
-                    ${traitHtml}
                 `;
                 div.onclick = () => { MenuBlacksmith.state.material = item; MenuBlacksmith.renderOptionList_Synthesis(); };
                 list.appendChild(div);
@@ -395,7 +480,8 @@ const MenuBlacksmith = {
         const rateObj = MenuBlacksmith.getRateObj(lv);
         const rarities = ['N', 'R', 'SR', 'SSR', 'UR', 'EX'];
 
-        Menu.confirm(`【装備合成】＋４へ進化させ、新たな能力を継承します。`, () => {
+        Menu.confirm(`【装備合成】＋４へ進化させ、新たな能力を継承します。`, async () => {
+            await MenuBlacksmith.playStartSeAndWait();
             // 1. 合成品質の抽選 (newR)
             let r = Math.random()*100, current = 0, newR = 'R';
             for(let k in rateObj){ if(r < current+rateObj[k]){ newR=k; break; } current+=rateObj[k]; }
@@ -441,7 +527,9 @@ const MenuBlacksmith = {
             const matIdx = App.data.inventory.findIndex(i => i.id === MenuBlacksmith.state.material.id);
             if (matIdx > -1) App.data.inventory.splice(matIdx, 1);
             
-            App.refreshAllSynergies(); 
+            App.refreshAllSynergies();
+            App.incrementLifetimeStat?.('totalBlacksmithActions', 1, { save: false });
+            App.incrementLifetimeStat?.('blacksmithSynthesisCount', 1, { save: false });
             MenuBlacksmith.gainExp(50); 
             App.save();
             
@@ -486,11 +574,15 @@ const MenuBlacksmith = {
 
     confirmRefine: (gem, rate, nextR, rule) => {
         if ((App.data.gems || 0) < gem) return Menu.msg("GEMが足りません");
-        Menu.confirm(`【精錬】費用: ${gem} GEM / 成功率: ${rate}%\n成功するとランクアップし数値が${nextR}の下限値へリセットされます。`, () => {
+        Menu.confirm(`【精錬】費用: ${gem} GEM / 成功率: ${rate}%\n成功するとランクアップし数値が${nextR}の下限値へリセットされます。`, async () => {
+            await MenuBlacksmith.playStartSeAndWait();
             App.data.gems -= gem;
+            App.incrementLifetimeStat?.('totalBlacksmithActions', 1, { save: false });
+            App.incrementLifetimeStat?.('blacksmithRefineAttempts', 1, { save: false });
             if (Math.random()*100 < rate) {
                 const opt = MenuBlacksmith.state.target.opts[MenuBlacksmith.state.targetOptIdx];
                 opt.rarity = nextR; opt.val = rule ? rule.min[nextR] : opt.val;
+                App.incrementLifetimeStat?.('blacksmithRefineSuccesses', 1, { save: false });
                 MenuBlacksmith.gainExp(60); App.save(); Menu.msg("精錬成功！", () => MenuBlacksmith.renderOptionList_Refine());
             } else { MenuBlacksmith.gainExp(15); App.save(); Menu.msg("精錬失敗...", () => MenuBlacksmith.renderOptionList_Refine()); }
         });
@@ -543,20 +635,9 @@ const MenuBlacksmith = {
                 const refresh = () => { div.style.background = MenuBlacksmith.state.materials.includes(item.id) ? 'rgba(0,255,255,0.1)' : 'transparent'; div.style.border = MenuBlacksmith.state.materials.includes(item.id) ? '1px solid #0ff' : '1px solid #333'; };
                 refresh();
 
-                let traitHtml = '';
-                if (item.traits && item.traits.length > 0) {
-                    traitHtml = `<div style="display:flex; flex-wrap:wrap; gap:2px 6px; margin-top:2px; border-top:1px dashed #444; padding-top:2px; width:100%;">` +
-                        item.traits.map(t => {
-                            const m = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.MASTER[t.id] : null;
-                            return m ? `<span style="color:#00ffff; font-size:9px;">★${m.name} Lv${t.level}</span>` : '';
-                        }).join('') + 
-                    `</div>`;
-                }
-
                 div.innerHTML = `
                     <div style="font-weight:bold; color:${Menu.getRarityColor(item.rarity)};">${item.name}</div>
                     ${Menu.getEquipDetailHTML(item, false)}
-                    ${traitHtml}
                 `;
                 div.onclick = () => { const idx = MenuBlacksmith.state.materials.indexOf(item.id); if(idx > -1) MenuBlacksmith.state.materials.splice(idx,1); else if(MenuBlacksmith.state.materials.length < req) MenuBlacksmith.state.materials.push(item.id); refresh(); updateFooter(); };
                 list.appendChild(div);
@@ -570,7 +651,8 @@ const MenuBlacksmith = {
         const successRate = Math.min(95, 50 + (App.data.blacksmith.level * 5));
         let inc = rule ? Math.max(1, Math.floor((rule.max[opt.rarity] - rule.min[opt.rarity]) * 0.1)) : 1;
 
-        Menu.confirm(`【能力強化】成功率: ${successRate}% / 成功すると数値が ${inc} 上昇します。`, () => {
+        Menu.confirm(`【能力強化】成功率: ${successRate}% / 成功すると数値が ${inc} 上昇します。`, async () => {
+            await MenuBlacksmith.playStartSeAndWait();
             // ★修正：素材消費の安全化と事後処理
             MenuBlacksmith.state.materials.forEach(mid => {
                 const invIdx = App.data.inventory.findIndex(i => i.id === mid);
@@ -581,7 +663,10 @@ const MenuBlacksmith = {
             // ★重要：使用した素材リストを完全に空にする
             MenuBlacksmith.state.materials = []; 
 
+            App.incrementLifetimeStat?.('totalBlacksmithActions', 1, { save: false });
+            App.incrementLifetimeStat?.('blacksmithEnhanceAttempts', 1, { save: false });
             if (Math.random() * 100 < successRate) {
+                App.incrementLifetimeStat?.('blacksmithEnhanceSuccesses', 1, { save: false });
                 opt.val += inc; 
                 if (rule && opt.val > rule.max[opt.rarity]) opt.val = rule.max[opt.rarity];
                 MenuBlacksmith.gainExp(25); 

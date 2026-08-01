@@ -136,7 +136,7 @@ class Player extends Entity {
         
         // ★最重要修正: コンフィグの参照をインスタンスに引き継ぐ
         // これにより、MenuAlliesで書き換えた内容が戦闘中のactorからも見えるようになります
-        this.config = data.config || { fullAuto: false, hiddenSkills: [], strategy: 'balanced' };
+        this.config = data.config || { fullAuto: false, hiddenSkills: [], autoDisabledSkills: [], skillUsageConfigVersion: 2, strategy: 'balanced' };
         
         // 万が一データ側にconfigがなければ、初期値をデータ側にもセットして参照を同期させる
         if (!data.config) data.config = this.config;
@@ -242,15 +242,20 @@ class Monster extends Entity {
 
         this.hp = Math.floor((data.hp || 100) * scale * hpMod);
         this.baseMaxHp = this.hp;
+        this.mp = Math.floor((data.mp || 0) * scale);
+        this.baseMaxMp = this.mp;
         
         // 攻撃力等は少し高くして、戦闘のテンポを上げる（受けるダメ増、敵すぐ死ぬ）
         this.baseStats.atk = Math.floor((data.atk || 10) * scale * statMod);
         this.baseStats.def = Math.floor((data.def || 10) * scale); 
         this.baseStats.spd = Math.floor((data.spd || 10) * scale);
         this.baseStats.mag = Math.floor((data.mag || 10) * scale * statMod);
+        this.baseStats.mdef = Math.floor((data.mdef || 0) * scale);
         
         this.acts = data.acts || [1];
         this.baseId = data.id;
+        // 表示用画像IDは昇格試験など、戦闘用IDと画像アセットIDが異なる敵で必須。
+        this.imageId = data.imageId ?? data.baseImageId ?? null;
         this.actCount = data.actCount || 1;
         this.isBoss = data.isBoss || false;
         this.isRare = data.isRare || false;
@@ -338,17 +343,19 @@ const App = {
 
     unlockDefaults: {
         smith: false,
+        craftingMenu: false,
         gacha: false,
         abyss: true,
         dungeonMenu: false,
-        teleport: true,
+        teleport: false,
         boat: false,
-        wing: true,
+        wing: false,
         fixedDungeonEndless: true
     },
 
     unlockLabels: {
         smith: '鍛冶屋',
+        craftingMenu: '魔道通信',
         gacha: 'ガチャ',
         abyss: '深淵の魔窟',
         dungeonMenu: 'ダンジョン',
@@ -368,7 +375,7 @@ const App = {
         106: 15, // エリーゼ
         104: 21, // ケイト
         101: 28, // ジョセフ
-        204: 40, // レイラ（光の宮殿クリア後）
+        204: 40, // レイラ（光の宮殿クリア後、地下牢で世界樹の葉を渡して加入）
         306: 49,  // シャニー（魔王城クリア後）
         
         //サブクエスト加入キャラクター
@@ -387,8 +394,8 @@ const App = {
         
         205: 43,  // バロン（光の宮殿クリア後⇒雷の要塞深部）
         302: 43,  // フリーダ（光の宮殿クリア後⇒雷の要塞深部）
-        306: 47,  // クロード（光の宮殿クリア後⇒闇の神殿跡地）
-        306: 46,  // レオン（光の宮殿クリア後⇒闇の神殿跡地）
+        304: 47,  // クロード（光の宮殿クリア後⇒闇の神殿跡地）
+        305: 46,  // レオン（光の宮殿クリア後⇒闇の神殿跡地）
 
         208: 45,  // リン（レイラ加入後⇒雷の要塞）
 
@@ -433,9 +440,10 @@ const App = {
         // 段階開放導入前はsmith/abyssが常時trueだったため、一度だけ実進行から再構築する。
         if (!App.data.progress.flags.menuUnlockMigrationV1) {
             App.data.progress.unlocked.smith = !!App.data.progress.flags.fireVillageCleared;
-            App.data.progress.unlocked.dungeonMenu = Number(App.data.dungeon?.tryCount || 0) > 0 ||
-                Number(App.data.dungeon?.maxFloor || 0) > 0 ||
-                App.data.location?.area === 'ABYSS';
+            App.data.progress.unlocked.dungeonMenu = !!(
+                App.data.progress.flags.abyssDungeonMenuUnlocked ||
+                App.data.progress.flags.abyssRandomUnlocked
+            );
             App.data.progress.flags.menuUnlockMigrationV1 = true;
         }
 
@@ -446,12 +454,65 @@ const App = {
             App.data.progress.flags.menuUnlockMigrationV2 = true;
         }
 
+        // 旧セーブの初回深淵進入履歴だけを復元する。
+        // 追憶の魔境は内部的にarea=ABYSSを共用するが、本編深淵の進入履歴には含めない。
+        // 転送の扉はランダム深淵解放まで表示しないため、進入履歴とは分離する。
+        if (!App.data.progress.flags.menuUnlockMigrationV3) {
+            const activeMode = globalThis.ABYSS_FLOOR_RULES?.getMode?.(App.data)
+                || App.data.dungeon?.abyssMode
+                || '';
+            const isMemoryRealmActive = globalThis.ABYSS_FLOOR_RULES?.isMemoryMode?.(activeMode) === true;
+            const enteredAbyss = !!App.data.progress.flags.abyssFirstEntered ||
+                Number(App.data.dungeon?.storyTryCount || 0) > 0 ||
+                Number(App.data.dungeon?.randomTryCount || 0) > 0 ||
+                Number(App.data.dungeon?.maxFloor || 0) > 0 ||
+                Number(App.data.dungeon?.storyMaxFloor || 0) > 0 ||
+                (!isMemoryRealmActive && App.data.location?.area === 'ABYSS');
+            App.data.progress.flags.abyssFirstEntered = enteredAbyss;
+            App.data.progress.flags.menuUnlockMigrationV3 = true;
+        }
+
+        // 追憶の魔境追加直後の版ではmemoryTryCountと同時に深淵通算tryCountも増えていた。
+        // 一度だけ追憶分を差し引き、深淵の挑戦回数・RUN実績・進入推定を汚染しないよう補正する。
+        if (!App.data.progress.flags.memoryRealmIsolationMigrationV1) {
+            const memoryRuns = Math.max(0, Number(App.data.dungeon?.memoryTryCount || 0));
+            if (memoryRuns > 0) {
+                App.data.dungeon.tryCount = Math.max(0, Number(App.data.dungeon?.tryCount || 0) - memoryRuns);
+            }
+            App.data.progress.flags.memoryRealmIsolationMigrationV1 = true;
+        }
+
+        // v5: 旧版で「初回深淵進入」と同時に開いていた宿屋の転送扉を、
+        // ランダム深淵解放フラグへ一本化する。既存セーブも一度だけ補正する。
+        if (!App.data.progress.flags.menuUnlockMigrationV5) {
+            App.data.progress.unlocked.teleport = !!App.data.progress.flags.abyssRandomUnlocked;
+            App.data.progress.flags.menuUnlockMigrationV5 = true;
+        }
+
+        // 鍛冶屋そのものの解放(smith)と、どこからでも施設へ接続できる魔道通信権限を分離する。
+        // 魔道通信は貴重品「星詠みの触媒器」(ID:111)の所持状態から判定する。
+        if (!App.data.progress.flags.menuUnlockMigrationV4) {
+            App.data.progress.unlocked.craftingMenu = App.hasItem(111);
+            App.data.progress.flags.menuUnlockMigrationV4 = true;
+        }
+        // 所持品・物語フラグを正本とし、ロード時にも表示用のunlock状態を同期する。
+        App.data.progress.unlocked.craftingMenu = App.hasItem(111);
+        App.data.progress.unlocked.teleport = !!App.data.progress.flags.abyssRandomUnlocked;
+
         return App.data.progress.unlocked;
     },
 
     defaultSettings: {
         battleSpeed: 'normal',
-        battleAutoStart: false
+        battleAutoStart: false,
+        fieldBgmVolume: 30,
+        battleBgmVolume: 30,
+        uiSeVolume: 5,
+        battleSeVolume: 5,
+        fieldSeVolume: 5,
+        // 旧バージョンとの互換用。新規処理は上記5項目を参照する。
+        bgmVolume: 30,
+        seVolume: 5
     },
 
     battleSpeedLabels: {
@@ -468,6 +529,17 @@ const App = {
             App.data.settings = {};
         }
         const defaults = App.getDefaultSettings();
+        const clampSetting = (value, fallback) => Math.max(0, Math.min(100, Math.round(Number(value ?? fallback) || 0)));
+        const legacyBgm = clampSetting(App.data.settings.bgmVolume, defaults.fieldBgmVolume);
+        const legacySe = clampSetting(App.data.settings.seVolume, defaults.uiSeVolume);
+
+        // 旧セーブのBGM/SE各1本設定を、初回ロード時に新しい5系統へ展開する。
+        if (App.data.settings.fieldBgmVolume === undefined) App.data.settings.fieldBgmVolume = legacyBgm;
+        if (App.data.settings.battleBgmVolume === undefined) App.data.settings.battleBgmVolume = legacyBgm;
+        if (App.data.settings.uiSeVolume === undefined) App.data.settings.uiSeVolume = legacySe;
+        if (App.data.settings.battleSeVolume === undefined) App.data.settings.battleSeVolume = legacySe;
+        if (App.data.settings.fieldSeVolume === undefined) App.data.settings.fieldSeVolume = legacySe;
+
         Object.keys(defaults).forEach(key => {
             if (App.data.settings[key] === undefined) App.data.settings[key] = defaults[key];
         });
@@ -475,7 +547,77 @@ const App = {
             App.data.settings.battleSpeed = defaults.battleSpeed;
         }
         App.data.settings.battleAutoStart = App.data.settings.battleAutoStart === true;
+        App.data.settings.fieldBgmVolume = clampSetting(App.data.settings.fieldBgmVolume, defaults.fieldBgmVolume);
+        App.data.settings.battleBgmVolume = clampSetting(App.data.settings.battleBgmVolume, defaults.battleBgmVolume);
+        App.data.settings.uiSeVolume = clampSetting(App.data.settings.uiSeVolume, defaults.uiSeVolume);
+        App.data.settings.battleSeVolume = clampSetting(App.data.settings.battleSeVolume, defaults.battleSeVolume);
+        App.data.settings.fieldSeVolume = clampSetting(App.data.settings.fieldSeVolume, defaults.fieldSeVolume);
+        // 旧API参照用の代表値を維持する。
+        App.data.settings.bgmVolume = App.data.settings.fieldBgmVolume;
+        App.data.settings.seVolume = App.data.settings.uiSeVolume;
         return App.data.settings;
+    },
+
+    audioSettingKeys: {
+        fieldBgm: 'fieldBgmVolume',
+        battleBgm: 'battleBgmVolume',
+        uiSe: 'uiSeVolume',
+        battleSe: 'battleSeVolume',
+        fieldSe: 'fieldSeVolume'
+    },
+
+    getAudioVolumeSetting: (kind) => {
+        const key = App.audioSettingKeys[kind];
+        const settings = App.ensureSettings();
+        return key ? settings[key] : 0;
+    },
+
+    setAudioVolumeSetting: (kind, value) => {
+        const key = App.audioSettingKeys[kind];
+        if (!key) return 0;
+        const normalized = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+        const settings = App.ensureSettings();
+        settings[key] = normalized;
+        if (kind === 'fieldBgm') settings.bgmVolume = normalized;
+        if (kind === 'uiSe') settings.seVolume = normalized;
+
+        if (typeof AudioManager !== 'undefined') {
+            if (kind === 'fieldBgm') AudioManager.setBgmCategoryVolume?.('field', normalized);
+            else if (kind === 'battleBgm') AudioManager.setBgmCategoryVolume?.('battle', normalized);
+            else if (kind === 'uiSe') AudioManager.setSeCategoryVolume?.('ui', normalized);
+            else if (kind === 'battleSe') AudioManager.setSeCategoryVolume?.('battle', normalized);
+            else if (kind === 'fieldSe') AudioManager.setSeCategoryVolume?.('field', normalized);
+        } else if (typeof App.save === 'function') {
+            App.save();
+        }
+        return normalized;
+    },
+
+    getBgmVolumeSetting: () => App.ensureSettings().fieldBgmVolume,
+
+    setBgmVolumeSetting: (value) => {
+        const normalized = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+        const settings = App.ensureSettings();
+        settings.fieldBgmVolume = normalized;
+        settings.battleBgmVolume = normalized;
+        settings.bgmVolume = normalized;
+        if (typeof AudioManager !== 'undefined' && AudioManager.setBgmVolume) AudioManager.setBgmVolume(normalized);
+        else if (typeof App.save === 'function') App.save();
+        return normalized;
+    },
+
+    getSeVolumeSetting: () => App.ensureSettings().uiSeVolume,
+
+    setSeVolumeSetting: (value) => {
+        const normalized = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+        const settings = App.ensureSettings();
+        settings.uiSeVolume = normalized;
+        settings.battleSeVolume = normalized;
+        settings.fieldSeVolume = normalized;
+        settings.seVolume = normalized;
+        if (typeof AudioManager !== 'undefined' && AudioManager.setSeVolume) AudioManager.setSeVolume(normalized);
+        else if (typeof App.save === 'function') App.save();
+        return normalized;
     },
 
     getBattleSpeedSetting: () => {
@@ -508,12 +650,39 @@ const App = {
         if (!char.config || typeof char.config !== 'object' || Array.isArray(char.config)) {
             char.config = {};
         }
-        if (!Array.isArray(char.config.hiddenSkills)) char.config.hiddenSkills = [];
+        const normalizeSkillIds = (ids) => Array.from(new Set((Array.isArray(ids) ? ids : [])
+            .map(id => Number(id))
+            .filter(id => Number.isInteger(id) && id > 0)));
+        char.config.hiddenSkills = normalizeSkillIds(char.config.hiddenSkills);
+        // v1の「封印」は手動メニューとオート戦闘の両方を無効化していた。
+        // 旧セーブでは同じ意味を維持したまま、v2の独立設定へ一度だけ移行する。
+        if (!Array.isArray(char.config.autoDisabledSkills)) {
+            char.config.autoDisabledSkills = [...char.config.hiddenSkills];
+        } else {
+            char.config.autoDisabledSkills = normalizeSkillIds(char.config.autoDisabledSkills);
+        }
+        char.config.skillUsageConfigVersion = 2;
         if (typeof char.config.fullAuto !== 'boolean') char.config.fullAuto = false;
         if (!App.battleStrategies[char.config.strategy]) {
             char.config.strategy = App.defaultBattleStrategy;
         }
         return char.config;
+    },
+
+    remapCharacterSkillConfig: (char, fromSkillId, toSkillId = null) => {
+        const config = App.ensureCharacterBattleConfig(char);
+        const fromId = Math.floor(Number(fromSkillId));
+        const toId = toSkillId == null ? null : Math.floor(Number(toSkillId));
+        if (!config || !Number.isInteger(fromId) || fromId <= 0) return config;
+
+        const remap = values => Array.from(new Set((Array.isArray(values) ? values : [])
+            .map(value => Math.floor(Number(value)))
+            .filter(value => Number.isInteger(value) && value > 0)
+            .map(value => value === fromId ? toId : value)
+            .filter(value => Number.isInteger(value) && value > 0)));
+        config.hiddenSkills = remap(config.hiddenSkills);
+        config.autoDisabledSkills = remap(config.autoDisabledSkills);
+        return config;
     },
 
     getBattleStrategy: (char) => {
@@ -539,22 +708,25 @@ const App = {
     // セーブデータが全くない場合や、マイグレーション時のデフォルト参照用
     getInitialData: () => {
         return {
-            location: { area: 'START_VILLAGE', x: 6, y: 4 },
+            location: { area: 'START_VILLAGE', x: 6, y: 5 },
             settings: App.getDefaultSettings(),
+            system: { monsterIdSchemaVersion: 4, abyssFloorSchemaVersion: 2, monsterAllySkillPointSchemaVersion: 1, monsterAllyGrowthSchemaVersion: 1 },
             progress: { 
                 floor: 0, 
                 storyStep: 0, 
-                flags: { hasShip: false }, 
+                flags: { hasShip: false, luminaVillageTopWallRowV1: true }, 
                 unlocked: { ...App.getDefaultUnlockState(), boat: false },
                 clearedDungeons: [],
                 openedChests: {},  
                 defeatedBosses: {},
-                visitedFixedMaps: {} 
+                visitedFixedMaps: {},
+                quests: {},
+                guild: { rank: 'G', exp: 0, points: 0, offers: [], questStates: {}, completionCounts: {}, refreshCount: 0 }
             },
             inventory: [],
             items: { "1": 3 }, 
             characters: [
-                { uid: 'p1', charId: 301, name: 'アルス', job: '勇者', level: 1, exp: 0, hp: 50, mp: 20, atk: 15, def: 10, mag: 10, spd: 10, equips: { '武器':null, '盾':null, '頭':null, '体':null, '足':null }, sp: 0, tree: {}, config: { fullAuto: false, hiddenSkills: [], strategy: 'balanced' } }
+                { uid: 'p1', charId: 301, name: 'アルス', job: '勇者', level: 1, exp: 0, hp: 50, mp: 20, atk: 15, def: 10, mag: 10, spd: 10, equips: { '武器':null, '盾':null, '頭':null, '体':null, '足':null }, sp: 0, tree: {}, skillBookSkills: [], config: { fullAuto: false, hiddenSkills: [], autoDisabledSkills: [], skillUsageConfigVersion: 2, strategy: 'balanced' } }
             ],
             party: ['p1', null, null, null],
             gold: 500,
@@ -565,15 +737,25 @@ const App = {
                 exp: 0 
             },
             dungeon: { 
-                maxFloor: 0, 
-                tryCount: 0, 
+                maxFloor: 0,
+                storyMaxFloor: 0,
+                tryCount: 0,
+                storyTryCount: 0,
+                randomTryCount: 0,
+                abyssMode: 'story', 
                 returnPoint: null,
                 map: null,
                 width: 30,
                 height: 30
             },
             stats: { 
-                wipeoutCount: 0, 
+                wipeoutCount: 0,
+                totalSteps: 0, totalBattles: 0, totalChestsOpened: 0, totalMedals: 0,
+                totalQuestCompletions: 0, totalGuildQuestCompletions: 0,
+                totalAlchemyCrafts: 0, totalAlchemyItemsCrafted: 0,
+                totalBlacksmithActions: 0, blacksmithSynthesisCount: 0,
+                blacksmithRefineAttempts: 0, blacksmithRefineSuccesses: 0,
+                blacksmithEnhanceAttempts: 0, blacksmithEnhanceSuccesses: 0,
                 maxGold: 0, 
                 maxGems: 0, 
                 maxDamage: { val: 0, actor: '未記録', skill: '-' } 
@@ -593,6 +775,7 @@ const App = {
         // --- 修正点1: 読み込み失敗時に自動でデータを作成しない ---
         // これにより startGameLogic 内の判定が機能し、セーブがない場合はタイトル(main.html)へ飛びます
         if (!App.data) return;
+        App.data = App.migrateImportedSaveData(App.data);
 
         const initial = App.getInitialData();
         if (typeof App.purgeInitialInventoryEquipment === 'function') {
@@ -606,7 +789,8 @@ const App = {
             const area = loc.area;
             
             // 現在のビルドに存在するエリアか判定
-            const isWorld = (area === 'WORLD');
+            const worldDef = (typeof WORLD_MAPS !== 'undefined' && WORLD_MAPS[area]) || null;
+            const isWorld = !!worldDef;
             const isAbyss = (area === 'ABYSS');
             const isFixed = (typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[area]);
             const isDungeonMap = (typeof FIXED_DUNGEON_MAPS !== 'undefined' && FIXED_DUNGEON_MAPS[area]);
@@ -615,6 +799,17 @@ const App = {
                 // エリア自体が存在しない（削除・改名された）場合は初期位置へ
                 console.warn(`[Recovery] 非存在エリア '${area}' を検知。初期位置へ復旧します。`);
                 App.data.location = JSON.parse(JSON.stringify(initial.location));
+            } else if (isWorld) {
+                const tiles = worldDef.tiles;
+                const width = Array.isArray(tiles) && tiles[0] ? tiles[0].length : 0;
+                const height = Array.isArray(tiles) ? tiles.length : 0;
+                if (!Number.isFinite(Number(loc.x)) || !Number.isFinite(Number(loc.y)) ||
+                    Number(loc.x) < 0 || Number(loc.y) < 0 || Number(loc.x) >= width || Number(loc.y) >= height) {
+                    const destination = worldDef.skyPrismDestination || { x: 0, y: 0 };
+                    loc.x = Number(destination.x);
+                    loc.y = Number(destination.y);
+                }
+                loc.worldKey = worldDef.key || area;
             } else if (isFixed || isDungeonMap) {
                 // 固定マップの場合、座標が現在のマップの範囲内か判定。
                 // 複数階固定ダンジョンは MapRegistry から現在階の実体を取得する。
@@ -650,7 +845,56 @@ const App = {
             if (!App.data.progress.visitedFixedMaps || typeof App.data.progress.visitedFixedMaps !== 'object' || Array.isArray(App.data.progress.visitedFixedMaps)) App.data.progress.visitedFixedMaps = {};
         }
 
+        // リュミナ村の上端へ壁行を追加した版への座標移行。
+        // 新規データは初期フラグ済み。旧セーブだけ、村内のY座標と保存済み座標キーを一度だけ+1する。
+        if (!App.data.progress.flags.luminaVillageTopWallRowV1) {
+            const shiftLuminaPoint = (point) => {
+                if (!point || String(point.areaKey || point.area || '') !== 'START_VILLAGE') return;
+                const y = Number(point.y);
+                if (Number.isFinite(y)) point.y = y + 1;
+                if (point.mapData && String(point.mapData.themeKey || point.mapData.areaKey || '') === 'START_VILLAGE'
+                    && typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS.START_VILLAGE) {
+                    point.mapData = {
+                        ...JSON.parse(JSON.stringify(FIXED_MAPS.START_VILLAGE)),
+                        isFixed: true,
+                        isDungeon: FIXED_MAPS.START_VILLAGE.isDungeon === true,
+                        areaKey: 'START_VILLAGE'
+                    };
+                }
+            };
+
+            if (App.data.location?.area === 'START_VILLAGE') {
+                const y = Number(App.data.location.y);
+                if (Number.isFinite(y)) App.data.location.y = y + 1;
+            }
+            shiftLuminaPoint(App.data.mapReturnPoint);
+            shiftLuminaPoint(App.data.dungeon?.returnPoint);
+            if (Array.isArray(App.data.dungeon?.returnStack)) {
+                App.data.dungeon.returnStack.forEach(shiftLuminaPoint);
+            }
+
+            const oldChanges = App.data.progress.mapChanges?.START_VILLAGE;
+            if (oldChanges && typeof oldChanges === 'object' && !Array.isArray(oldChanges)) {
+                const shiftedChanges = {};
+                Object.entries(oldChanges).forEach(([key, tile]) => {
+                    const match = /^(\-?\d+),(\-?\d+)$/.exec(String(key));
+                    if (!match) {
+                        shiftedChanges[key] = tile;
+                        return;
+                    }
+                    shiftedChanges[`${Number(match[1])},${Number(match[2]) + 1}`] = tile;
+                });
+                App.data.progress.mapChanges.START_VILLAGE = shiftedChanges;
+            }
+
+            App.data.progress.flags.luminaVillageTopWallRowV1 = true;
+        }
+
         App.ensureUnlockState();
+        if (typeof Guild !== 'undefined' && typeof Guild.ensureState === 'function') {
+            Guild.ensureState();
+            Guild.ensureOffers({ save: false });
+        }
 
         // 既存セーブ救済: 固有MAP内で再開した場合は、そのMAPを発見済みにする。
         if (App.data.location && App.data.progress && typeof App.discoverFixedMap === 'function') {
@@ -658,6 +902,10 @@ const App = {
             const isCurrentFixedMap = (typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[currentArea]) ||
                 (typeof FIXED_DUNGEON_MAPS !== 'undefined' && FIXED_DUNGEON_MAPS[currentArea]);
             if (isCurrentFixedMap) App.discoverFixedMap(currentArea, { save: false, silent: true });
+            const currentWorldKey = App.data.location.worldKey || STORY_DATA?.areas?.[currentArea]?.worldKey || currentArea;
+            if (typeof WORLD_MAPS !== 'undefined' && WORLD_MAPS[currentWorldKey]?.skyPrismEligible && currentWorldKey !== 'WORLD') {
+                App.discoverFixedMap(currentWorldKey, { save: false, silent: true });
+            }
         }
 
         // 3. stats の補完
@@ -680,6 +928,10 @@ const App = {
         if (!App.data.dungeon) App.data.dungeon = JSON.parse(JSON.stringify(initial.dungeon));
         if (App.data.transportMode === undefined) App.data.transportMode = null;
         if (App.data.mapReturnPoint === undefined) App.data.mapReturnPoint = null;
+        const loadedWorldDef = (typeof WORLD_MAPS !== 'undefined' && WORLD_MAPS[App.data.location?.worldKey || App.data.location?.area]) || null;
+        if (loadedWorldDef && loadedWorldDef.allowBoat === false && loadedWorldDef.allowFlight === false) {
+            App.data.transportMode = null;
+        }
 
         // 5.5. 設定の補完
         App.ensureSettings();
@@ -744,10 +996,12 @@ const App = {
 
 	// 全画像データの手動/初回ダウンロード用キャッシュ名。
 	// sw.js の RUNTIME_CACHE_NAME と揃えること。
-	fullDataCacheName: 'prisma-abyss-v3.44-full-data-runtime-assets',
+    fullDataCacheName: 'prisma-abyss-v17.20260801-runtime',
 
 
-	// 初回の「全データをダウンロードしますか？」で「いいえ」を選んだ記録。
+	// 初回起動時の「全データを今ダウンロードしますか？」で「いいえ」を選んだ記録。
+	// 「いいえ」は前景ダウンロードを待たない選択であり、起動後の全量バックグラウンド
+	// キャッシュを拒否するフラグではない。
 	// アプリ更新時に main.html 側からこの接頭辞の localStorage を削除する。
 	fullDataPromptDeclineKeyPrefix: 'prisma_abyss_full_data_prompt_declined_',
 
@@ -826,6 +1080,9 @@ const App = {
 				if (!response || !response.ok) throw new Error(`HTTP ${response ? response.status : 'ERR'}`);
 
 				const contentLength = response.headers.get('content-length');
+				if (contentLength == null || String(contentLength).trim() === '') {
+					throw new Error('content-length-missing');
+				}
 				const bytes = Number(contentLength);
 				if (!Number.isFinite(bytes) || bytes < 0) throw new Error('content-length-missing');
 
@@ -1041,6 +1298,26 @@ const App = {
 		}
 	}),
 
+	fetchAndCacheFullDataAsset: async (cache, request, options = {}) => {
+		const maxAttempts = Math.max(1, Number(options.maxAttempts || 3));
+		let lastError = null;
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			try {
+				const retryRequest = new Request(request, { cache: attempt === 1 ? 'reload' : 'no-cache' });
+				const response = await fetch(retryRequest);
+				if (!response || !response.ok) throw new Error(`HTTP ${response ? response.status : 'ERR'}`);
+				await cache.put(request, response.clone());
+				return { ok: true, attempts: attempt };
+			} catch (error) {
+				lastError = error;
+				if (attempt < maxAttempts) {
+					await new Promise(resolve => setTimeout(resolve, 180 * attempt));
+				}
+			}
+		}
+		return { ok: false, attempts: maxAttempts, error: lastError };
+	},
+
 	downloadFullDataCache: async (options = {}) => {
 		if (!App.isFullDataCacheSupported()) {
 			throw new Error(App.getFullDataCacheUnsupportedMessage());
@@ -1087,11 +1364,8 @@ const App = {
 						continue;
 					}
 
-					try {
-						const response = await fetch(request);
-						if (!response || !response.ok) throw new Error(`HTTP ${response ? response.status : 'ERR'}`);
-						await cache.put(request, response.clone());
-					} catch (e) {
+					const result = await App.fetchAndCacheFullDataAsset(cache, request, { maxAttempts: 3 });
+					if (!result.ok) {
 						failed++;
 						failedUrls.push(url);
 					}
@@ -1124,7 +1398,7 @@ const App = {
 		if (sizeLine) detailLines.push(sizeLine);
 
 		const yes = await App.showFullDataDialog(
-			`一部キャッシュ未ダウンロードのデータがあります。\n全データをダウンロードしますか？\n\n${detailLines.join('\n')}`
+			`画像データをすべて今ダウンロードしますか？\n\n「はい」：完了を待ってからゲームを開始します。\n「いいえ」：すぐにゲームを開始し、バックグラウンドで全データのキャッシュを進めます。\n\n${detailLines.join('\n')}`
 		);
 
 		if (yes) {
@@ -1137,11 +1411,16 @@ const App = {
 				);
 			}
 		} else {
-			// 起動前の全量ダウンロードを待たないだけで、起動後のウォームキャッシュは継続する。
-			// 次回以降は同じ確認を出さない。アプリ更新時にこのフラグは消す。
+			// 前景で待たない選択を記録する。全量バックグラウンドキャッシュは、
+			// ゲーム開始後に warmImageCache() が必ず開始する。
 			App.setDeclinedInitialFullDataPrompt(true);
-			await App.showFullDataDialog('（設定メニューからいつでも全データダウンロードが可能です）', { messageOnly: true });
 		}
+	},
+
+	// 旧シナリオデータとの互換用。全量確認は初回起動時に済ませるため、
+	// PROLOGUE3後にはモーダルを再表示せず、未取得分の裏キャッシュだけ再依頼する。
+	handlePostPrologueFullDataDownload: async () => {
+		App.warmImageCache();
 	},
 
 	downloadFullDataFromConfig: async () => {
@@ -1224,8 +1503,8 @@ const App = {
 	 * main.js / sw.js 側にモンスター画像や戦闘背景の全量リストを増やさないこと。
 	 *
 	 * 目的:
-	 * - 起動時は画像全量を待たずにゲームを開始する。
-	 * - ゲーム開始後、Service Worker に裏側キャッシュを依頼する。
+	 * - 初回確認で「はい」なら、画像全量の取得完了を待ってゲームを開始する。
+	 * - 「いいえ」でもゲーム開始後、Service Worker に全量の裏キャッシュを依頼する。
 	 * - 初戦闘や次回起動時に画像読み込み待ちが出にくくなる。
 	 */
 	warmImageCache: () => {
@@ -1252,20 +1531,22 @@ const App = {
 	},
 
 	initGameHub: () => {
-		const finishLoadingAndWarmCache = async () => {
-			// 初回描画で目立つ画像だけは、ローディング中に短時間先読みする。
-			// 画像全体の初回キャッシュは sw.js / 起動時モーダル / 設定メニューから実行する。
-			if (typeof App.preloadStartupImages === 'function') {
-				await App.preloadStartupImages();
+		const finishInitialLoading = async () => {
+			if (typeof Field !== 'undefined' && Field.ready) {
+				if (typeof Field.syncCanvasToWrapperSize === 'function') Field.syncCanvasToWrapperSize();
+				if (typeof Field.render === 'function') Field.render();
+				if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.resize === 'function') {
+					PhaserFieldRenderer.resize();
+				}
 			}
 
 			if (window.InitialLoading) {
 				await window.InitialLoading.finish();
 			}
-			// 「いいえ」を選んだ場合も、敵画像などの未表示リスクを下げるため裏側のウォームキャッシュは進める。
-			if (typeof App.warmImageCache === 'function') {
-				App.warmImageCache();
-			}
+
+			// 初回確認でどちらを選んでも、未取得画像は全量を裏でキャッシュする。
+			// 画像の遅延取得を基本方針にはしない。
+			App.warmImageCache();
 		};
 
 		const start = () => {
@@ -1274,9 +1555,9 @@ const App = {
 
 				// startGameLogic が Promise を返す場合にも対応
 				if (result && typeof result.then === 'function') {
-					result.finally(finishLoadingAndWarmCache);
+					result.finally(finishInitialLoading);
 				} else {
-					finishLoadingAndWarmCache();
+					finishInitialLoading();
 				}
 			} catch (e) {
 				console.error(e);
@@ -1289,9 +1570,22 @@ const App = {
 			}
 		};
 
-		const loadGraphicsAndStart = () => {
-			// assets.js があり、GRAPHICSが定義されていればロードしてからゲーム開始
-			// GRAPHICS.data は assets.js に統一済み。polish.js から画像一覧を注入しない。
+		const loadGraphicsAndStart = async () => {
+			// 全量取得を今行うか、起動後のバックグラウンドで行うかを最初に確認する。
+			// 「はい」はここで完了を待ち、「いいえ」は待たずに以降へ進む。
+			if (typeof App.handleInitialFullDataDownload === 'function') {
+				try {
+					await App.handleInitialFullDataDownload();
+				} catch (e) {
+					// キャッシュ確認や容量取得だけが失敗しても、必須画像の先読みは省略しない。
+					console.error(e);
+				}
+			}
+
+			// どちらの選択でも、初期画面と開幕戦に必要な画像はメモリへ先読みする。
+			if (typeof App.preloadStartupImages === 'function') {
+				await App.preloadStartupImages();
+			}
 			if (typeof GRAPHICS !== 'undefined' && typeof GRAPHICS.load === 'function') {
 				GRAPHICS.load(() => {
 					start();
@@ -1302,21 +1596,10 @@ const App = {
 			}
 		};
 
-		(async () => {
-			try {
-				if (typeof App.handleInitialFullDataDownload === 'function') {
-					await App.handleInitialFullDataDownload();
-				}
-			} catch (e) {
-				console.error(e);
-				await App.showFullDataDialog(
-					`全データダウンロード確認中にエラーが発生しました。\n設定メニューから再実行できます。\n\n${e.message || e}`,
-					{ messageOnly: true }
-				);
-			} finally {
-				loadGraphicsAndStart();
-			}
-		})();
+		loadGraphicsAndStart().catch((e) => {
+			console.error(e);
+			start();
+		});
 	},
 
     startGameLogic: () => {
@@ -1388,6 +1671,11 @@ const App = {
             }
         }
 		
+        // 勝敗表示中に終了したセーブは、フィールド初期化より先に確定済み結果を清掃する。
+        if (typeof Battle !== 'undefined' && typeof Battle.recoverCommittedBattleResult === 'function') {
+            Battle.recoverCommittedBattleResult();
+        }
+
 		// ★最重要修正: 戦闘復帰前にFieldを初期化してマップデータを復元する
         // これにより FIXED_DUNGEON_MAPS 等の背景設定が Battle.init 前に読み込まれます
         Field.init();
@@ -1403,12 +1691,8 @@ const App = {
                 Dungeon.map = App.data.dungeon.map;
                 Dungeon.width = App.data.dungeon.width;
                 Dungeon.height = App.data.dungeon.height;
-                Field.currentMapData = {
-                    width: Dungeon.width,
-                    height: Dungeon.height,
-                    tiles: Dungeon.map,
-                    isDungeon: true
-                };
+                // 再開時も生成時と同じ復元経路を使い、外観テーマと戦闘背景を欠落させない。
+                Field.currentMapData = Dungeon.createRandomFieldMapData();
             }
         }
 
@@ -1480,6 +1764,14 @@ const App = {
         };
 
         window.addEventListener('keydown', e => {
+            if ((e.key === 'Enter' || e.key === ' ') && typeof Battle !== 'undefined') {
+                const battleScene = document.getElementById('battle-scene');
+                if (battleScene && battleScene.style.display === 'flex' && Battle.phase === 'result' && typeof Battle.handleResultTap === 'function') {
+                    e.preventDefault();
+                    Battle.handleResultTap();
+                    return;
+                }
+            }
             if(document.getElementById('field-scene') && document.getElementById('field-scene').style.display === 'flex') {
                 if ((e.key === 'Enter' || e.key === ' ') && typeof StoryManager !== 'undefined') {
                     const storyOverlay = document.getElementById('story-ui-overlay');
@@ -1610,28 +1902,34 @@ const App = {
     getVirtualFloor: () => {
         const data = App.data;
         if (!data) return 1;
-        const areaKey = data.location.area;
-        
-        // 深淵の魔窟 100階以上の特別処理
-        if (areaKey === 'ABYSS' && data.progress.floor >= 100) {
-            return data.progress.floor;
-        }
+        const areaKey = data.location?.area;
 
-        // STORY_DATA から設定を読み込む (朽ちた祠なら 300 が返る)
-        const areaDef = STORY_DATA.areas[areaKey];
-        if (areaDef) {
-            // 深淵の魔窟（100階未満）の段階的ランクアップ
-            if (areaKey === 'ABYSS') {
-                const f = data.progress.floor;
-                if (f <= 20) return 70;
-                if (f <= 40) return 80;
-                if (f <= 75) return 90;
-                return 100;
+        // 深淵は「画面に表示する階層」と「報酬・装備品質に使う階層」を分離する。
+        // ランダム深淵1階は旧101階相当、ランダム深淵101階は旧201階相当。
+        if (areaKey === 'ABYSS') {
+            const displayFloor = Math.max(1, Math.floor(Number(data.progress?.floor) || 1));
+            const abyssMode = globalThis.ABYSS_FLOOR_RULES?.getMode?.(data)
+                || data.dungeon?.abyssMode
+                || 'story';
+
+            if (globalThis.ABYSS_FLOOR_RULES?.isRandomMode?.(abyssMode)
+                || globalThis.ABYSS_FLOOR_RULES?.isMemoryMode?.(abyssMode)) {
+                return Math.max(1, Number(
+                    globalThis.ABYSS_FLOOR_RULES.getBalanceFloor(displayFloor, abyssMode)
+                ) || displayFloor + (globalThis.ABYSS_FLOOR_RULES?.isMemoryMode?.(abyssMode) ? 90 : 100));
             }
-            return areaDef.rank;
+
+            // 物語深淵は従来の成長帯を維持する。
+            if (displayFloor >= 100) return displayFloor;
+            if (displayFloor <= 20) return 70;
+            if (displayFloor <= 40) return 80;
+            if (displayFloor <= 75) return 90;
+            return 100;
         }
 
-        return 1;
+        // STORY_DATA から設定を読み込む（朽ちた祠なら300が返る）。
+        const areaDef = STORY_DATA.areas[areaKey];
+        return areaDef ? areaDef.rank : 1;
     },
 
     purgeInitialInventoryEquipment: () => {
@@ -1663,6 +1961,9 @@ const App = {
     },
 
     getFeatureLockedMessage: (key) => {
+        if (key === 'craftingMenu') {
+            return `まだ解放されていません！\n光の宮殿クリア後、地下牢の国王の依頼を達成すると利用できます。`;
+        }
         return `まだ解放されていません！\nストーリーを進めると利用できるようになります。`;
     },
 
@@ -1671,7 +1972,22 @@ const App = {
         const unlocked = App.ensureUnlockState();
         if (key === 'boat') return !!unlocked.boat || App.hasItem(108) || !!App.data?.progress?.flags?.hasShip;
         if (key === 'wing') return !!unlocked.wing || App.hasItem(109);
+        if (key === 'craftingMenu') return App.hasItem(111);
         return !!unlocked[key];
+    },
+
+    hasEnteredAbyss: () => {
+        if (!App.data) return false;
+        const activeMode = globalThis.ABYSS_FLOOR_RULES?.getMode?.(App.data)
+            || App.data.dungeon?.abyssMode
+            || '';
+        const isMemoryRealmActive = globalThis.ABYSS_FLOOR_RULES?.isMemoryMode?.(activeMode) === true;
+        return !!App.data.progress?.flags?.abyssFirstEntered ||
+            Number(App.data.dungeon?.storyTryCount || 0) > 0 ||
+            Number(App.data.dungeon?.randomTryCount || 0) > 0 ||
+            Number(App.data.dungeon?.maxFloor || 0) > 0 ||
+            Number(App.data.dungeon?.storyMaxFloor || 0) > 0 ||
+            (!isMemoryRealmActive && App.data.location?.area === 'ABYSS');
     },
 
     requireFeatureUnlocked: (key) => {
@@ -1686,11 +2002,25 @@ const App = {
     },
 
     hasMagicBoat: () => {
+        const worldDef = (typeof MapRegistry !== 'undefined' && MapRegistry.getWorldDefinition)
+            ? MapRegistry.getWorldDefinition()
+            : null;
+        if (worldDef?.allowBoat === false) return false;
         return App.isFeatureUnlocked('boat') || App.hasItem(108) || !!App.data?.progress?.flags?.hasShip;
     },
 
-    isFlying: () => App.data?.transportMode === 'flying',
-    isBoating: () => App.data?.transportMode === 'boat',
+    isFlying: () => {
+        const worldDef = (typeof MapRegistry !== 'undefined' && MapRegistry.getWorldDefinition)
+            ? MapRegistry.getWorldDefinition()
+            : null;
+        return worldDef?.allowFlight !== false && App.data?.transportMode === 'flying';
+    },
+    isBoating: () => {
+        const worldDef = (typeof MapRegistry !== 'undefined' && MapRegistry.getWorldDefinition)
+            ? MapRegistry.getWorldDefinition()
+            : null;
+        return worldDef?.allowBoat !== false && App.data?.transportMode === 'boat';
+    },
 
     ensureFixedMapDiscoveryStore: () => {
         if (!App.data) return {};
@@ -1703,48 +2033,84 @@ const App = {
 
     getFixedMapDef: (areaKey) => {
         if (!areaKey) return null;
+        if (typeof WORLD_MAPS !== 'undefined' && WORLD_MAPS[areaKey] && areaKey !== 'WORLD') {
+            return { key: areaKey, def: WORLD_MAPS[areaKey], kind: 'world' };
+        }
         if (typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[areaKey]) {
             return { key: areaKey, def: FIXED_MAPS[areaKey], kind: 'field' };
         }
         if (typeof FIXED_DUNGEON_MAPS !== 'undefined' && FIXED_DUNGEON_MAPS[areaKey]) {
             return { key: areaKey, def: FIXED_DUNGEON_MAPS[areaKey], kind: 'dungeon' };
         }
+        const storyArea = (typeof STORY_DATA !== 'undefined' && STORY_DATA.areas) ? STORY_DATA.areas[areaKey] : null;
+        if (storyArea?.skyPrismVirtual) return { key:areaKey, def:storyArea, kind:'virtual' };
         return null;
     },
 
-    getFixedMapWorldDestination: (areaKey) => {
-        if (!areaKey || typeof STORY_DATA === 'undefined' || !STORY_DATA.areas) return null;
+    getFixedMapLocalEntranceDestination: (areaKey, visited = new Set()) => {
+        if (!areaKey || typeof MapRegistry === 'undefined' ||
+            typeof MapRegistry.findFixedMapEntranceForDungeon !== 'function') return null;
+        const entrance = MapRegistry.findFixedMapEntranceForDungeon(areaKey);
+        if (!entrance) return null;
+        const parentArea = (typeof STORY_DATA !== 'undefined' && STORY_DATA.areas)
+            ? STORY_DATA.areas[entrance.parentAreaKey]
+            : null;
+        let worldX = Number.isFinite(Number(parentArea?.centerX)) ? Number(parentArea.centerX) : null;
+        let worldY = Number.isFinite(Number(parentArea?.centerY)) ? Number(parentArea.centerY) : null;
+        if ((!Number.isFinite(worldX) || !Number.isFinite(worldY)) && !visited.has(entrance.parentAreaKey)) {
+            const nextVisited = new Set(visited);
+            nextVisited.add(areaKey);
+            const parentWorld = App.getFixedMapWorldDestination?.(entrance.parentAreaKey, nextVisited);
+            if (parentWorld) {
+                worldX = Number(parentWorld.x);
+                worldY = Number(parentWorld.y);
+            }
+        }
+        return {
+            areaKey,
+            parentAreaKey: entrance.parentAreaKey,
+            parentDef: entrance.parentDef,
+            parentMapDef: entrance.parentMapDef || entrance.parentDef,
+            parentKind: entrance.parentKind || 'field',
+            parentFloor: Math.max(0, Number(entrance.parentFloor || 0)),
+            x: entrance.x,
+            y: entrance.y,
+            worldX: Number.isFinite(worldX) ? worldX : null,
+            worldY: Number.isFinite(worldY) ? worldY : null
+        };
+    },
 
-        // 基本: 固有MAPキーと同名のワールドマップ座標へ移動する。
-        const area = STORY_DATA.areas[areaKey];
-        if (area && Number.isFinite(Number(area.centerX)) && Number.isFinite(Number(area.centerY))) {
+    getFixedMapWorldDestination: (areaKey, visited = new Set()) => {
+        if (!areaKey || visited.has(areaKey) || typeof STORY_DATA === 'undefined' || !STORY_DATA.areas) return null;
+        const nextVisited = new Set(visited);
+        nextVisited.add(areaKey);
+
+        const worldDef = (typeof WORLD_MAPS !== 'undefined' && WORLD_MAPS[areaKey]) || null;
+        if (worldDef?.skyPrismDestination) {
             return {
                 areaKey,
-                x: Number(area.centerX),
-                y: Number(area.centerY),
+                worldKey: worldDef.key || areaKey,
+                x: Number(worldDef.skyPrismDestination.x),
+                y: Number(worldDef.skyPrismDestination.y),
                 sourceAreaKey: areaKey
             };
         }
 
-        // 例外: START_CAVE のように固定街の中に入口がある固定ダンジョン。
-        // その場合は、親となる固定街のワールド座標へ移動する。
-        if (typeof FIXED_MAPS !== 'undefined') {
-            for (const [parentKey, parentDef] of Object.entries(FIXED_MAPS)) {
-                const actions = Array.isArray(parentDef.mapActions) ? parentDef.mapActions : [];
-                const found = actions.some(a => a && (a.target === areaKey || a.targetAreaKey === areaKey));
-                const parentArea = STORY_DATA.areas[parentKey];
-                if (found && parentArea && Number.isFinite(Number(parentArea.centerX)) && Number.isFinite(Number(parentArea.centerY))) {
-                    return {
-                        areaKey,
-                        x: Number(parentArea.centerX),
-                        y: Number(parentArea.centerY),
-                        sourceAreaKey: parentKey,
-                        parentAreaKey: parentKey
-                    };
-                }
-            }
+        const area = STORY_DATA.areas[areaKey];
+        if (area && Number.isFinite(Number(area.centerX)) && Number.isFinite(Number(area.centerY))) {
+            return { areaKey, x: Number(area.centerX), y: Number(area.centerY), sourceAreaKey: areaKey };
         }
 
+        const localEntrance = App.getFixedMapLocalEntranceDestination?.(areaKey, nextVisited);
+        if (localEntrance && Number.isFinite(localEntrance.worldX) && Number.isFinite(localEntrance.worldY)) {
+            return {
+                areaKey,
+                x: localEntrance.worldX,
+                y: localEntrance.worldY,
+                sourceAreaKey: localEntrance.parentAreaKey,
+                parentAreaKey: localEntrance.parentAreaKey
+            };
+        }
         return null;
     },
 
@@ -1752,18 +2118,64 @@ const App = {
         const entries = [];
         const seen = new Set();
         const visited = App.ensureFixedMapDiscoveryStore ? App.ensureFixedMapDiscoveryStore() : (App.data?.progress?.visitedFixedMaps || {});
+        // スカイプリズムの移動先正本。
+        // 町やダンジョンへ初めて到着した時点で発見済みになり、ここに記載した入口だけを記憶する。
+        // 同一施設内の地下・塔・回廊などは、固定MAPとして存在しても移動先には登録しない。
+        const skyPrismAreaOrder = Object.freeze([
+            'START_VILLAGE',
+            'START_CAVE',
+            'FOREST_WIND_HOLE',
+            'FIRE_VILLAGE',
+            'IGNIS_VOLCANO',
+            'WIND_VILLAGE',
+            'FORBIDDEN_FOREST',
+            'WIND_TEMPLE',
+            'WATER_CITY',
+            'CRENA_LIMESTONE_CAVE',
+            'SEABED_TEMPLE',
+            'THUNDER_FORT',
+            'BIG_TOWER',
+            'LIGHT_PALACE',
+            'DARK_SHRINE_RUINS',
+            'GALVANIA_CAVE',
+            'DARK_CASTLE',
+            'GREZELIA_FORBIDDEN',
+            'ABYSS_FIELD',
+            'MEMORY_REALM',
+            'TRIAL_ISLAND',
+            'CARMENA',
+            'THUNDER_DUNES',
+            'BLACK_ROPE_PYRAMID',
+            'SCREAMING_CEMETERY',
+            'MAGIC_WIND_MAUSOLEUM',
+            'VISTA',
+            'FROZEN_FOREST',
+            'ICE_PENANCE_ROAD',
+            'PURGATORY_MOUNTAINS',
+            'SCORCHING_OLD_CASTLE',
+            'LEGACION',
+            'RIDPALM_DREAM_CORRIDOR',
+            'JAGOREA_ROOT',
+            'CHRONO_ABYSS',
+            'FINAL_ALTAR',
+            'SUMMIT_TEMPLE',
+            'RUINED_SHRINE'
+        ]);
 
         const push = (areaKey) => {
             if (!areaKey || seen.has(areaKey)) return;
             const info = App.getFixedMapDef(areaKey);
             if (!info) return;
+            const storyArea = (typeof STORY_DATA !== 'undefined' && STORY_DATA.areas) ? STORY_DATA.areas[areaKey] : null;
             seen.add(areaKey);
 
-            const storyArea = (typeof STORY_DATA !== 'undefined' && STORY_DATA.areas) ? STORY_DATA.areas[areaKey] : null;
+            // ワールドマップそのものの移動可否と、その世界に属する町・ダンジョンの移動可否は別契約。
+            // 深淵世界は直接の移動先にしないが、発見済みのカルメナ等はスカイプリズムへ登録する。
+            if (info.kind === 'world' && info.def?.skyPrismEligible === false) return;
             const dest = App.getFixedMapWorldDestination(areaKey);
             const record = visited[areaKey] || null;
             const discovered = !!record;
-            const rank = Number(storyArea?.rank ?? info.def.rank ?? info.def.encounterRank ?? 9999);
+            const rank = skyPrismAreaOrder.indexOf(areaKey);
 
             entries.push({
                 areaKey,
@@ -1776,11 +2188,7 @@ const App = {
             });
         };
 
-        if (typeof STORY_DATA !== 'undefined' && STORY_DATA.areas) {
-            Object.keys(STORY_DATA.areas).forEach(push);
-        }
-        if (typeof FIXED_MAPS !== 'undefined') Object.keys(FIXED_MAPS).forEach(push);
-        if (typeof FIXED_DUNGEON_MAPS !== 'undefined') Object.keys(FIXED_DUNGEON_MAPS).forEach(push);
+        skyPrismAreaOrder.forEach(push);
 
         return entries.sort((a, b) => (a.rank - b.rank) || a.name.localeCompare(b.name, 'ja'));
     },
@@ -1798,6 +2206,7 @@ const App = {
             kind: info.kind,
             worldX: dest ? dest.x : null,
             worldY: dest ? dest.y : null,
+            worldKey: dest?.worldKey || STORY_DATA?.areas?.[areaKey]?.worldKey || (info.kind === 'world' ? areaKey : 'WORLD'),
             parentAreaKey: dest?.parentAreaKey || null,
             foundAt: current?.foundAt || Date.now()
         };
@@ -1807,6 +2216,7 @@ const App = {
             current.kind !== entry.kind ||
             Number(current.worldX) !== Number(entry.worldX) ||
             Number(current.worldY) !== Number(entry.worldY) ||
+            (current.worldKey || 'WORLD') !== entry.worldKey ||
             (current.parentAreaKey || null) !== entry.parentAreaKey;
 
         if (!changed) return false;
@@ -1838,14 +2248,40 @@ const App = {
 
     useSkyPrismTo: (areaKey) => {
         if (!App.hasItem(110)) return { ok: false, message: 'スカイプリズムを持っていません。' };
-        if (App.isInDungeonForSkyPrism()) return { ok: false, message: 'ダンジョン内ではスカイプリズムを使えない。' };
 
         const visited = App.ensureFixedMapDiscoveryStore();
         if (!visited[areaKey]) return { ok: false, message: 'まだ発見していない場所には移動できない。' };
 
         const info = App.getFixedMapDef(areaKey);
+        if (!info) return { ok: false, message: 'この場所の定義が見つかりません。' };
+        const targetWorldKey = info.kind === 'world'
+            ? areaKey
+            : ((typeof STORY_DATA !== 'undefined' && STORY_DATA.areas?.[areaKey]?.worldKey) || visited[areaKey]?.worldKey || 'WORLD');
+        const targetWorld = (typeof MapRegistry !== 'undefined' && MapRegistry.getWorldDefinition)
+            ? MapRegistry.getWorldDefinition(targetWorldKey)
+            : null;
+        if (info.kind === 'world' && targetWorld?.skyPrismEligible === false) {
+            return { ok: false, message: '深淵世界はスカイプリズムの座標に定着しない。' };
+        }
         const dest = App.getFixedMapWorldDestination(areaKey);
-        if (!info || !dest) return { ok: false, message: 'この場所のフィールド座標が見つかりません。' };
+        if (!dest) return { ok: false, message: 'この場所のフィールド座標が見つかりません。' };
+        const authoredEntry = info.kind === 'field' && info.def?.skyPrismEntryPoint
+            ? info.def.skyPrismEntryPoint
+            : null;
+        const localDest = authoredEntry
+            ? {
+                areaKey,
+                parentAreaKey: areaKey,
+                parentDef: info.def,
+                parentMapDef: info.def,
+                parentKind: 'field',
+                parentFloor: 0,
+                x: Number(authoredEntry.x),
+                y: Number(authoredEntry.y),
+                worldX: Number(dest.x),
+                worldY: Number(dest.y)
+            }
+            : (App.getFixedMapLocalEntranceDestination?.(areaKey) || null);
 
         App.data.items[110] = (Number(App.data.items[110]) || 0) - 1;
         if (App.data.items[110] <= 0) delete App.data.items[110];
@@ -1854,12 +2290,24 @@ const App = {
         if (typeof App.clearAction === 'function') App.clearAction();
 
         App.data.transportMode = null;
-        App.data.mapReturnPoint = null;
-        App.data.location.area = 'WORLD';
-        App.data.location.x = dest.x;
-        App.data.location.y = dest.y;
+        if (localDest) {
+            App.data.mapReturnPoint = Number.isFinite(localDest.worldX) && Number.isFinite(localDest.worldY)
+                ? { areaKey: targetWorldKey, worldKey: targetWorldKey, x: localDest.worldX, y: localDest.worldY }
+                : null;
+            App.data.location.area = localDest.parentAreaKey;
+            App.data.location.worldKey = targetWorldKey;
+            App.data.location.x = localDest.x;
+            App.data.location.y = localDest.y;
+        } else {
+            App.data.mapReturnPoint = null;
+            App.data.location.area = targetWorldKey;
+            App.data.location.worldKey = targetWorldKey;
+            App.data.location.x = dest.x;
+            App.data.location.y = dest.y;
+        }
         if (App.data.dungeon) {
             App.data.dungeon.returnPoint = null;
+            App.data.dungeon.returnStack = [];
             App.data.dungeon.map = null;
             App.data.dungeon.adventurer = null;
             App.data.dungeon.healSpring = null;
@@ -1867,11 +2315,22 @@ const App = {
             App.data.dungeon.pendingRiftReward = null;
             App.data.dungeon.visitedMap = null;
         }
-        if (App.data.progress) App.data.progress.floor = 0;
+        const localDungeon = !!(localDest && localDest.parentKind === 'dungeon');
+        if (App.data.progress) App.data.progress.floor = localDungeon ? Math.max(1, Number(localDest.parentFloor || 1)) : 0;
 
-        Field.currentMapData = null;
-        Field.x = dest.x;
-        Field.y = dest.y;
+        Field.currentMapData = localDest
+            ? (localDungeon
+                ? (MapRegistry.getFixedDungeonFloor(localDest.parentAreaKey, localDest.parentFloor || 1) || localDest.parentMapDef)
+                : {
+                    ...localDest.parentDef,
+                    isFixed: true,
+                    isDungeon: localDest.parentDef?.isDungeon === true,
+                    areaKey: localDest.parentAreaKey
+                })
+            : null;
+        if (localDungeon && typeof Dungeon !== 'undefined') Dungeon.floor = App.data.progress.floor;
+        Field.x = localDest ? localDest.x : dest.x;
+        Field.y = localDest ? localDest.y : dest.y;
 
         App.save();
         App.changeScene('field');
@@ -1880,7 +2339,7 @@ const App = {
         if (typeof Field.startIdleStep === 'function') Field.startIdleStep();
 
         const targetName = info.def.name || areaKey;
-        const suffix = dest.parentAreaKey && dest.parentAreaKey !== areaKey ? 'の入口付近' : 'の入口';
+        const suffix = localDest ? 'の入口' : (dest.parentAreaKey && dest.parentAreaKey !== areaKey ? 'の入口付近' : 'の入口');
         const message = `${targetName}${suffix}へ移動した！`;
         if (typeof App.log === 'function') App.log(message);
 
@@ -1889,13 +2348,128 @@ const App = {
         return { ok: true, message, silentSuccess: true };
     },
 
+    requestSkyPrismTravelTo: (areaKey, label = '') => {
+        if (!areaKey) return false;
+        const info = App.getFixedMapDef?.(areaKey);
+        const name = label || info?.def?.name || areaKey;
+        if (!App.hasItem(110)) {
+            Menu.msg('スカイプリズムを持っていません。');
+            return false;
+        }
+        const visited = App.ensureFixedMapDiscoveryStore?.() || {};
+        if (!visited[areaKey]) {
+            Menu.msg('まだ発見していない場所には移動できない。');
+            return false;
+        }
+        Menu.confirm(`${name}の入口へ移動しますか？
+スカイプリズムを1個消費します。`, () => {
+            const result = App.useSkyPrismTo(areaKey);
+            if (!result?.ok) {
+                Menu.msg(result?.message || '移動できません。');
+                return;
+            }
+            if (typeof Facilities !== 'undefined') Facilities.closeModal?.('guild-scene');
+            Menu.closeAll?.();
+        });
+        return true;
+    },
+
+    canTravelToGuildReception: () => {
+        if (!App.data) return false;
+        const flags = App.data.progress?.flags || {};
+        const visited = App.data.progress?.visitedFixedMaps || {};
+        return App.data.location?.area === 'THUNDER_FORT'
+            || flags.thunderFortCleared === true
+            || !!visited.THUNDER_FORT;
+    },
+
+    travelToGuildReception: () => {
+        if (!App.canTravelToGuildReception()) {
+            return { ok: false, message: 'ライザーク要塞の冒険者ギルドはまだ利用できません。' };
+        }
+        const areaKey = 'THUNDER_FORT';
+        const floorNo = 1;
+        const floorData = (typeof MapRegistry !== 'undefined' && typeof MapRegistry.getFixedDungeonFloor === 'function')
+            ? MapRegistry.getFixedDungeonFloor(areaKey, floorNo)
+            : (typeof FIXED_DUNGEON_MAPS !== 'undefined' && FIXED_DUNGEON_MAPS[areaKey]
+                ? { ...FIXED_DUNGEON_MAPS[areaKey], isDungeon: true, isFixed: true, areaKey, floor: floorNo }
+                : null);
+        if (!floorData) return { ok: false, message: 'ギルド受付のマップ情報を読み込めませんでした。' };
+
+        if (typeof Field !== 'undefined' && typeof Field.stopMove === 'function') Field.stopMove();
+        if (typeof App.clearAction === 'function') App.clearAction();
+        if (typeof Menu !== 'undefined' && typeof Menu.closeAll === 'function') Menu.closeAll();
+
+        App.data.transportMode = null;
+        const worldDest = App.getFixedMapWorldDestination?.(areaKey);
+        App.data.mapReturnPoint = worldDest
+            ? { areaKey: 'WORLD', x: Number(worldDest.x), y: Number(worldDest.y) }
+            : null;
+        App.data.location.area = areaKey;
+        App.data.location.x = 5;
+        App.data.location.y = 22;
+        if (App.data.progress) App.data.progress.floor = floorNo;
+        if (App.data.dungeon) {
+            App.data.dungeon.returnPoint = null;
+            App.data.dungeon.returnStack = [];
+            App.data.dungeon.map = null;
+            App.data.dungeon.adventurer = null;
+            App.data.dungeon.healSpring = null;
+            App.data.dungeon.abyssRift = null;
+            App.data.dungeon.pendingRiftReward = null;
+            App.data.dungeon.visitedMap = null;
+        }
+
+        Field.currentMapData = floorData;
+        Field.x = 5;
+        Field.y = 22;
+        Field.dir = 3;
+        if (typeof Dungeon !== 'undefined') Dungeon.floor = floorNo;
+
+        App.save();
+        App.changeScene('field');
+        Field.render?.();
+        Field.refreshCurrentAction?.({ silent: true });
+        Field.startIdleStep?.();
+        App.log?.('ライザーク要塞1階、冒険者ギルド受付前へ移動した！');
+        return { ok: true };
+    },
+
+    requestGuildReceptionTravel: () => {
+        if (!App.canTravelToGuildReception()) {
+            Menu.msg('ライザーク要塞の冒険者ギルドはまだ利用できません。');
+            return false;
+        }
+        Menu.confirm('ライザーク要塞1階のギルド受付前へ移動しますか？', () => {
+            const result = App.travelToGuildReception();
+            if (!result?.ok) Menu.msg(result?.message || 'ギルド受付へ移動できませんでした。');
+        });
+        return true;
+    },
+
+    resolveQuestTravelAreaKey: (quest) => {
+        if (!quest) return null;
+        const explicit = quest.travelTarget?.areaKey || quest.travelAreaKey;
+        if (explicit) return String(explicit);
+        const scopeAreas = Array.isArray(quest.huntScope?.areaKeys) ? quest.huntScope.areaKeys : [];
+        const first = scopeAreas[0] ? String(scopeAreas[0]) : '';
+        if (first === 'ABYSS') return 'ABYSS_FIELD';
+        if (first && App.getFixedMapDef?.(first)) return first;
+        const region = String(quest.regionKey || '');
+        if (region === 'ABYSS') return 'ABYSS_FIELD';
+        return region && App.getFixedMapDef?.(region) ? region : null;
+    },
+
     getWorldTileAt: (x, y) => {
-        if (typeof MAP_DATA === 'undefined' || !MAP_DATA[0]) return 'W';
-        const mapW = MAP_DATA[0].length;
-        const mapH = MAP_DATA.length;
+        const worldMap = (typeof MapRegistry !== 'undefined' && MapRegistry.getActiveWorldMap)
+            ? MapRegistry.getActiveWorldMap()
+            : (typeof SURFACE_WORLD_MAP_DATA !== 'undefined' ? SURFACE_WORLD_MAP_DATA : null);
+        if (!worldMap?.[0]) return 'W';
+        const mapW = worldMap[0].length;
+        const mapH = worldMap.length;
         const tx = ((Number(x) % mapW) + mapW) % mapW;
         const ty = ((Number(y) % mapH) + mapH) % mapH;
-        return String(MAP_DATA[ty][tx] || 'W').toUpperCase();
+        return String(worldMap[ty][tx] || 'W').toUpperCase();
     },
 
     isWorldLandingTile: (tile) => {
@@ -1908,7 +2482,14 @@ const App = {
             Menu.msg("光の翼を持っていません。");
             return false;
         }
-        if (Field.currentMapData || App.data.location.area !== 'WORLD') {
+        const worldDef = (typeof MapRegistry !== 'undefined' && MapRegistry.getWorldDefinition)
+            ? MapRegistry.getWorldDefinition()
+            : null;
+        if (worldDef?.allowFlight === false) {
+            Menu.msg("深淵の空間では、光の翼は力を失っている。");
+            return false;
+        }
+        if (Field.currentMapData || (MapRegistry?.getActiveWorldKey?.() || App.data.location.area) !== 'WORLD') {
             Menu.msg("光の翼はフィールドで使おう。");
             return false;
         }
@@ -1936,19 +2517,37 @@ const App = {
     /**
      * 機能を解放する (鍛冶屋・ガチャ等)
      */
-    unlockFeature: (key) => {
+    unlockFeature: (key, options = {}) => {
         const unlocked = App.ensureUnlockState();
         const already = !!unlocked[key];
         unlocked[key] = true;
-        App.save();
-        if (!already) App.log(`【システム解放】${App.getFeatureUnlockLabel(key)}が利用可能になった！`);
+        if (options.save !== false) App.save();
+        if (!already && options.silent !== true) App.log(`【システム解放】${App.getFeatureUnlockLabel(key)}が利用可能になった！`);
+        return !already;
+    },
+
+    reconcileDerivedProgressFlags: () => {
+        const flags = App.data?.progress?.flags;
+        const rules = (typeof DERIVED_PROGRESS_FLAGS !== 'undefined' && Array.isArray(DERIVED_PROGRESS_FLAGS))
+            ? DERIVED_PROGRESS_FLAGS
+            : [];
+        if (!flags || typeof flags !== 'object') return false;
+        let changed = false;
+        rules.forEach(rule => {
+            if (!rule?.flag || !Array.isArray(rule.requires)) return;
+            if (rule.requires.every(required => !!flags[required]) && !flags[rule.flag]) {
+                flags[rule.flag] = true;
+                changed = true;
+            }
+        });
+        return changed;
     },
 
     /**
      * ストーリー上の仲間を加入させる
      * ガチャ産キャラクターと同一のデータ構造で初期化する
      */
-    addStoryAlly: (charId) => {
+    addStoryAlly: (charId, options = {}) => {
         const master = window.CHARACTERS_DATA.find(c => c.id === charId);
         if (!master) return;
         const initialLevel = App.getStoryAllyInitialLevel(charId);
@@ -1964,11 +2563,11 @@ const App = {
                 if (emptyIndex >= 0) {
                     App.data.party[emptyIndex] = existing.uid;
                     changed = true;
-                    App.log(`【仲間加入】${existing.name}がパーティに加わった！`);
+                    if (!options.silent) App.log(`【仲間加入】${existing.name}がパーティに加わった！`);
                 }
             }
-            if (changed) App.save();
-            return;
+            if (changed && options.save !== false) App.save();
+            return existing;
         }
 
 
@@ -1995,11 +2594,12 @@ const App = {
             traits: [], 
             disabledTraits: [],
             tree: { ATK: 0, MAG: 0, SPD: 0, HP: 0, MP: 0, WARRIOR: 0, MAGE: 0, PRIEST: 0, M_KNIGHT: 0 },
-            config: { fullAuto: false, hiddenSkills: [], strategy: 'balanced' },
+            skillBookSkills: [],
+            config: { fullAuto: false, hiddenSkills: [], autoDisabledSkills: [], skillUsageConfigVersion: 2, strategy: 'balanced' },
             limitBreak: 0,
             lbProgress: {
                 counters: { battleWins: 0 },
-                sources: { story: 0, battle: 0, dungeon: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, trial: 0, legacy: 0 },
+                sources: { story: 0, battle: 0, dungeon: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, monster: 0, trial: 0, item: 0, legacy: 0 },
                 trials: { mid: false, final: false, midClearedAt: null, finalClearedAt: null }
             },
             reincarnationCount: 0
@@ -2029,10 +2629,13 @@ const App = {
                 joinedParty = true;
             }
         }
-        App.save();
-        App.log(joinedParty
-            ? `なんと ${saveAlly.name}が仲間に加わった！`
-            : `なんと ${saveAlly.name}が仲間に加わった！`);
+        if (options.save !== false) App.save();
+        if (!options.silent) {
+            App.log(joinedParty
+                ? `なんと ${saveAlly.name}が仲間に加わった！`
+                : `なんと ${saveAlly.name}が仲間に加わった！`);
+        }
+        return saveAlly;
     },
 
     monsterRecruitConfig: {
@@ -2042,6 +2645,270 @@ const App = {
     },
 
     isMonsterAlly: (char) => !!(char && char.isMonsterAlly === true),
+
+    // 仲間モンスターの成長係数は、加入時の実ステータスそのものを使わない。
+    // 高Rank個体の数百～数千という値をそのまま growthBase にすると、通常仲間の数倍～数十倍成長するため、
+    // 通常仲間の growthBase 中央値を総量の基準にし、モンスター固有の得意・苦手だけを比率として残す。
+    monsterAllyGrowthConfig: Object.freeze({
+        schemaVersion: 1,
+        stats: Object.freeze(['hp', 'mp', 'atk', 'def', 'mag', 'mdef', 'spd']),
+        labels: Object.freeze({ hp:'HP', mp:'MP', atk:'攻撃', def:'防御', mag:'魔力', mdef:'魔防', spd:'速さ' }),
+        minMultiplier: 0.62,
+        maxMultiplier: 1.42
+    }),
+
+    getMedianNumber: (values, fallback = 1) => {
+        const sorted = (Array.isArray(values) ? values : [])
+            .map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+        if (!sorted.length) return Number(fallback) || 1;
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    },
+
+    getMonsterAllyGrowthBenchmarks: () => {
+        if (App._monsterAllyGrowthBenchmarks) return App._monsterAllyGrowthBenchmarks;
+        const keys = App.monsterAllyGrowthConfig.stats;
+        const fallbackGrowth = { hp:43, mp:17, atk:42, def:27, mag:38, mdef:34, spd:32 };
+        const fallbackInitial = { hp:35, mp:12, atk:20, def:18, mag:20, mdef:19, spd:18 };
+        const masters = (window.CHARACTERS_DATA || []).filter(master => master && master.growthBase);
+        const growthBase = {};
+        const initialBase = {};
+        keys.forEach(key => {
+            growthBase[key] = Math.max(1, Math.round(App.getMedianNumber(
+                masters.map(master => master.growthBase?.[key]), fallbackGrowth[key]
+            )));
+            initialBase[key] = Math.max(key === 'mp' ? 0 : 1, Math.round(App.getMedianNumber(
+                masters.map(master => master[key]), fallbackInitial[key]
+            )));
+        });
+        App._monsterAllyGrowthBenchmarks = Object.freeze({
+            growthBase: Object.freeze(growthBase),
+            initialBase: Object.freeze(initialBase)
+        });
+        return App._monsterAllyGrowthBenchmarks;
+    },
+
+    // 同レベルの通常仲間が持つ、おおよその素ステータス中央値を決定論的に求める。
+    // 実キャラクターをランダム成長させて比較しないため、セーブ移行時にも同じ結果になる。
+    getMonsterAllyGrowthReferenceStats: (level = 1) => {
+        const lv = Math.max(1, Math.min(100, Math.floor(Number(level) || 1)));
+        const keys = App.monsterAllyGrowthConfig.stats;
+        const benchmarks = App.getMonsterAllyGrowthBenchmarks();
+        const masters = (window.CHARACTERS_DATA || []).filter(master => master && master.growthBase);
+        const result = {};
+        keys.forEach(key => {
+            const statMult = (key === 'hp' || key === 'mp') ? 2.0 : 1.0;
+            const flatAverage = (key === 'hp' || key === 'mp') ? 3.0 : 1.0;
+            const estimates = masters.map(master => {
+                const initial = Math.max(key === 'mp' ? 0 : 1, Number(master[key] ?? benchmarks.initialBase[key]) || 0);
+                const growth = Math.max(1, Number(master.growthBase?.[key] ?? benchmarks.growthBase[key]) || 1);
+                return initial + (lv - 1) * (growth * 0.06 * statMult + flatAverage);
+            });
+            const fallback = benchmarks.initialBase[key] + (lv - 1) * (benchmarks.growthBase[key] * 0.06 * statMult + flatAverage);
+            result[key] = Math.max(key === 'mp' ? 1 : 1, App.getMedianNumber(estimates, fallback));
+        });
+        return result;
+    },
+
+    buildMonsterAllyGrowthProfile: (sourceStats = {}, level = 1) => {
+        const keys = App.monsterAllyGrowthConfig.stats;
+        const benchmarks = App.getMonsterAllyGrowthBenchmarks();
+        const reference = App.getMonsterAllyGrowthReferenceStats(level);
+        const ratios = {};
+        keys.forEach(key => {
+            const value = Math.max(0, Number(sourceStats[key]) || 0);
+            ratios[key] = Math.max(0.03, value / Math.max(1, Number(reference[key]) || 1));
+        });
+
+        // 全体的に強い／弱いという加入時パワー差は初期値へ残し、成長総量には持ち込まない。
+        // 幾何平均からの相対比だけを使うことで、モンスターらしい能力配分を成長へ写す。
+        const geometricMean = Math.exp(keys.reduce((sum, key) => sum + Math.log(ratios[key]), 0) / keys.length);
+        const relative = {};
+        keys.forEach(key => { relative[key] = ratios[key] / Math.max(0.0001, geometricMean); });
+
+        const ordered = [...keys].sort((a, b) => relative[b] - relative[a]);
+        const strengths = ordered.slice(0, 2);
+        const weaknesses = ordered.slice(-2).reverse();
+        const multipliers = {};
+        keys.forEach(key => {
+            multipliers[key] = Math.max(0.68, Math.min(1.32, Math.pow(relative[key], 0.72)));
+        });
+
+        // 上位2項目と下位2項目には最低限の差を保証し、得意・苦手が成長結果で埋もれないようにする。
+        if (strengths[0]) multipliers[strengths[0]] = Math.max(multipliers[strengths[0]], 1.30);
+        if (strengths[1]) multipliers[strengths[1]] = Math.max(multipliers[strengths[1]], 1.17);
+        if (weaknesses[0]) multipliers[weaknesses[0]] = Math.min(multipliers[weaknesses[0]], 0.70);
+        if (weaknesses[1]) multipliers[weaknesses[1]] = Math.min(multipliers[weaknesses[1]], 0.84);
+
+        // 通常仲間の中央値と総成長量を揃えた後、個性の範囲だけを残す。
+        const baseTotal = keys.reduce((sum, key) => sum + benchmarks.growthBase[key], 0);
+        const weightedTotal = keys.reduce((sum, key) => sum + benchmarks.growthBase[key] * multipliers[key], 0);
+        const normalize = weightedTotal > 0 ? baseTotal / weightedTotal : 1;
+        keys.forEach(key => {
+            multipliers[key] = Math.max(
+                App.monsterAllyGrowthConfig.minMultiplier,
+                Math.min(App.monsterAllyGrowthConfig.maxMultiplier, multipliers[key] * normalize)
+            );
+        });
+
+        const growthBase = {};
+        keys.forEach(key => {
+            growthBase[key] = Math.max(1, Math.round(benchmarks.growthBase[key] * multipliers[key]));
+        });
+        return { growthBase, strengths, weaknesses, multipliers, reference };
+    },
+
+    applyMonsterAllyGrowthProfile: (char, options = {}) => {
+        if (!App.isMonsterAlly(char)) return { changed:false, profile:null };
+        const level = Math.max(1, Math.min(100, Math.floor(Number(char.level) || 1)));
+        const source = options.sourceStats || {
+            hp: char.hp, mp: char.mp, atk: char.atk, def: char.def,
+            mag: char.mag, mdef: char.mdef, spd: char.spd
+        };
+        const profile = App.buildMonsterAllyGrowthProfile(source, level);
+        char.growthBase = { ...profile.growthBase };
+        if (!char.monsterAllyMeta || typeof char.monsterAllyMeta !== 'object' || Array.isArray(char.monsterAllyMeta)) {
+            char.monsterAllyMeta = {};
+        }
+        char.monsterAllyMeta.growthProfileVersion = App.monsterAllyGrowthConfig.schemaVersion;
+        char.monsterAllyMeta.growthStrengths = [...profile.strengths];
+        char.monsterAllyMeta.growthWeaknesses = [...profile.weaknesses];
+        char.monsterAllyMeta.growthMultipliers = Object.fromEntries(
+            Object.entries(profile.multipliers).map(([key, value]) => [key, Number(value.toFixed(4))])
+        );
+        return { changed:true, profile };
+    },
+
+    migrateMonsterAllyGrowthV1: (data = App.data) => {
+        if (!data || typeof data !== 'object') return { changed:false, count:0 };
+        if (!data.system || typeof data.system !== 'object' || Array.isArray(data.system)) data.system = {};
+        if (Number(data.system.monsterAllyGrowthSchemaVersion || 0) >= App.monsterAllyGrowthConfig.schemaVersion) {
+            return { changed:false, count:0 };
+        }
+        let count = 0;
+        if (Array.isArray(data.characters)) {
+            data.characters.forEach(char => {
+                if (!App.isMonsterAlly(char)) return;
+                App.applyMonsterAllyGrowthProfile(char);
+                count++;
+            });
+        }
+        data.system.monsterAllyGrowthSchemaVersion = App.monsterAllyGrowthConfig.schemaVersion;
+        return { changed:true, count };
+    },
+
+    releaseMonsterAlly: (uid) => {
+        if (!App.data || !Array.isArray(App.data.characters)) return { ok:false, message:'仲間データを確認できません。' };
+        const index = App.data.characters.findIndex(char => String(char?.uid) === String(uid));
+        if (index < 0) return { ok:false, message:'対象の仲間が見つかりません。' };
+        const char = App.data.characters[index];
+        if (!App.isMonsterAlly(char)) return { ok:false, message:'仲間モンスター以外は逃がせません。' };
+        if (App.data?.battle?.active) return { ok:false, message:'戦闘中は仲間を逃がせません。' };
+
+        if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+        const returnedEquips = [];
+        const seenEquips = new Set();
+        if (char.equips && typeof char.equips === 'object') {
+            Object.keys(char.equips).forEach(part => {
+                const equip = char.equips[part];
+                if (equip && typeof equip === 'object' && !seenEquips.has(equip)) {
+                    seenEquips.add(equip);
+                    App.data.inventory.push(equip);
+                    returnedEquips.push(equip);
+                }
+                char.equips[part] = null;
+            });
+        }
+
+        if (Array.isArray(App.data.party)) {
+            App.data.party = App.data.party.map(memberUid => String(memberUid) === String(char.uid) ? null : memberUid);
+        }
+        App.data.characters.splice(index, 1);
+        App.save();
+        return {
+            ok:true,
+            name:char.name || char.job || '仲間モンスター',
+            returnedEquipCount:returnedEquips.length
+        };
+    },
+
+    // 現在スキルツリーへ消費済みのSP総数を、各ツリーの累積コストから復元する。
+    // 未使用SPだけを見て互換補填すると、既に習得へ使った分を二重に失うため、総獲得SPで判定する。
+    getCharacterSpentSkillPoints: (char) => {
+        if (!char || !char.tree || typeof char.tree !== 'object') return 0;
+        const skillTrees = (typeof CONST !== 'undefined' && CONST.SKILL_TREES)
+            ? CONST.SKILL_TREES
+            : globalThis.CONST?.SKILL_TREES;
+        if (!skillTrees) return 0;
+
+        return Object.entries(char.tree).reduce((total, [key, rawLevel]) => {
+            const treeDef = skillTrees[key];
+            if (!treeDef || !Array.isArray(treeDef.costs) || treeDef.costs.length === 0) return total;
+            const level = Math.max(0, Math.min(treeDef.costs.length, Math.floor(Number(rawLevel) || 0)));
+            if (level <= 0) return total;
+            return total + Math.max(0, Math.floor(Number(treeDef.costs[level - 1]) || 0));
+        }, 0);
+    },
+
+    // 仲間モンスターは通常加入時にも、Lv2以降のレベルアップ分に相当するSPを持つ。
+    // 既存セーブでは「未使用SP + 消費済みSP」が Lv-1 未満の場合だけ不足分を補填する。
+    ensureMonsterAllyLevelSkillPoints: (char, options = {}) => {
+        if (!App.isMonsterAlly(char)) return { changed: false, granted: 0, target: 0, total: 0 };
+
+        const level = Math.max(1, Math.floor(Number(char.level) || 1));
+        const target = Math.max(0, level - 1);
+        const currentSp = Math.max(0, Math.floor(Number(char.sp) || 0));
+        const spentSp = App.getCharacterSpentSkillPoints(char);
+        const currentTotal = currentSp + spentSp;
+        const granted = Math.max(0, target - currentTotal);
+
+        char.sp = currentSp + granted;
+        if (!char.monsterAllyMeta || typeof char.monsterAllyMeta !== 'object' || Array.isArray(char.monsterAllyMeta)) {
+            char.monsterAllyMeta = {};
+        }
+        if (options.mark !== false) {
+            char.monsterAllyMeta.skillPointGrantVersion = 1;
+            char.monsterAllyMeta.skillPointLevelTarget = target;
+            if (granted > 0) {
+                char.monsterAllyMeta.skillPointCompatGranted = Math.max(
+                    0,
+                    Math.floor(Number(char.monsterAllyMeta.skillPointCompatGranted) || 0)
+                ) + granted;
+            }
+        }
+
+        return {
+            changed: granted > 0 || currentSp !== Number(char.sp),
+            granted,
+            target,
+            spent: spentSp,
+            total: currentTotal + granted
+        };
+    },
+
+    // 追憶・深淵で既に加入済みの仲間モンスターへ一度だけSPを補填する。
+    // system側のスキーマ番号を正本にするため、ロードを繰り返しても再配布されない。
+    migrateMonsterAllySkillPointsV1: (data = App.data) => {
+        if (!data || typeof data !== 'object') return { changed: false, granted: 0, count: 0 };
+        if (!data.system || typeof data.system !== 'object' || Array.isArray(data.system)) data.system = {};
+        if (Number(data.system.monsterAllySkillPointSchemaVersion || 0) >= 1) {
+            return { changed: false, granted: 0, count: 0 };
+        }
+
+        let granted = 0;
+        let count = 0;
+        if (Array.isArray(data.characters)) {
+            data.characters.forEach(char => {
+                const result = App.ensureMonsterAllyLevelSkillPoints(char, { mark: true });
+                if (result.granted > 0) {
+                    granted += result.granted;
+                    count++;
+                }
+            });
+        }
+        data.system.monsterAllySkillPointSchemaVersion = 1;
+        return { changed: true, granted, count };
+    },
 
     getHeroCharacter: () => {
         if (!App.data || !Array.isArray(App.data.characters)) return null;
@@ -2057,10 +2924,38 @@ const App = {
         }).length;
     },
 
+    getMonsterAllyPartyLimit: () => {
+        const flags = App.data?.progress?.flags || {};
+        return (flags.monsterArenaSRankFirstClear === true || flags.monsterArenaSFirstClear === true) ? 2 : 1;
+    },
+
+    completeMonsterArenaRank: (rank) => {
+        const normalized = String(rank || '').toUpperCase();
+        if (!normalized) return { ok: false, message: '格闘場ランクを確認できません。' };
+        if (!App.data.progress) App.data.progress = {};
+        if (!App.data.progress.flags) App.data.progress.flags = {};
+        const flags = App.data.progress.flags;
+        if (!flags.monsterArenaClearedRanks || typeof flags.monsterArenaClearedRanks !== 'object') flags.monsterArenaClearedRanks = {};
+        const firstClear = flags.monsterArenaClearedRanks[normalized] !== true;
+        flags.monsterArenaClearedRanks[normalized] = true;
+        let potGranted = false;
+        let partyLimitUnlocked = false;
+        if (normalized === 'S' && firstClear) {
+            flags.monsterArenaSRankFirstClear = true;
+            partyLimitUnlocked = true;
+            const potId = Number(window.PRISMA_SYNTHESIS_POT_ITEM_ID || 599999);
+            if (!App.data.items || typeof App.data.items !== 'object') App.data.items = {};
+            App.data.items[potId] = Number(App.data.items[potId] || 0) + 1;
+            potGranted = true;
+        }
+        App.save();
+        return { ok: true, rank: normalized, firstClear, potGranted, partyLimitUnlocked, monsterPartyLimit: App.getMonsterAllyPartyLimit() };
+    },
+
     canAddMonsterAllyToParty: (uid = null) => {
         const target = uid ? App.getChar(uid) : null;
         if (target && !App.isMonsterAlly(target)) return true;
-        return App.getMonsterAllyInPartyCount(uid) <= 0;
+        return App.getMonsterAllyInPartyCount(uid) < App.getMonsterAllyPartyLimit();
     },
 
     getMonsterRecruitCurrentFloor: (enemy = null, baseMonster = null) => {
@@ -2118,7 +3013,7 @@ const App = {
             disabledTraits: [],
             tree: {},
             alloc: {},
-            config: { fullAuto: false, hiddenSkills: [], strategy: 'balanced' },
+            config: { fullAuto: false, hiddenSkills: [], autoDisabledSkills: [], skillUsageConfigVersion: 2, strategy: 'balanced' },
             limitBreak: 0,
             reincarnationCount: 0,
             skills: []
@@ -2215,9 +3110,14 @@ const App = {
     },
 
     getMonsterRecruitImagePath: (baseMonster = null, enemy = null) => {
+        const source = baseMonster || enemy;
+        const byId = (typeof MonsterData !== 'undefined' && typeof MonsterData.getImagePath === 'function')
+            ? MonsterData.getImagePath(source)
+            : window.PRISMA_ASSETS?.getMonsterImagePath?.(source);
+        if (byId) return byId;
         const monsterId = Number(baseMonster?.id ?? enemy?.baseId ?? enemy?.id);
         const map = (typeof window !== 'undefined' && window.MonsterImageMap) ? window.MonsterImageMap : {};
-        return baseMonster?.image || baseMonster?.img || enemy?.image || enemy?.img || map[monsterId] || null;
+        return map[monsterId] || baseMonster?.image || baseMonster?.img || enemy?.image || enemy?.img || null;
     },
 
     getMonsterRecruitRarity: (baseMonster = null, enemy = null) => {
@@ -2318,6 +3218,10 @@ const App = {
 
         const traits = App.generateMonsterRecruitTraitsForLevel(joinLevel, base, enemy);
         const monsterImage = App.getMonsterRecruitImagePath(base, enemy);
+        const growthProfile = App.buildMonsterAllyGrowthProfile({
+            hp: hpMp.hp, mp: hpMp.mp, atk: atkMag.atk, def: defMdef.def,
+            mag: atkMag.mag, mdef: defMdef.mdef, spd
+        }, joinLevel);
 
         const saveAlly = {
             uid,
@@ -2330,7 +3234,8 @@ const App = {
             rarity: App.getMonsterRecruitRarity(base, enemy),
             level: joinLevel,
             exp: 0,
-            sp: 0,
+            // 新規加入時点で、そのレベルまで通常育成した場合と同じ Lv-1 SP を所持する。
+            sp: Math.max(0, joinLevel - 1),
             hp: hpMp.hp,
             mp: hpMp.mp,
             atk: atkMag.atk,
@@ -2344,12 +3249,13 @@ const App = {
             actCount: 1,
             resists: {},
             elmRes: {},
-            skills: skillIds,
+            skills: skillIds.slice(0, 8),
+            skillBookSkills: [],
             equips: { '武器': null, '盾': null, '頭': null, '体': null, '足': null },
             traits,
             disabledTraits: [],
             tree: { ATK: 0, MAG: 0, SPD: 0, HP: 0, MP: 0, WARRIOR: 0, MAGE: 0, PRIEST: 0, M_KNIGHT: 0 },
-            config: { fullAuto: false, hiddenSkills: [], strategy: 'balanced' },
+            config: { fullAuto: false, hiddenSkills: [], autoDisabledSkills: [], skillUsageConfigVersion: 2, strategy: 'balanced' },
             limitBreak: 0,
             lbProgress: {
                 counters: { battleWins: 0 },
@@ -2361,16 +3267,22 @@ const App = {
             img: monsterImage,
             image: monsterImage,
             race: base.race || enemy.race || '魔物',
-            growthBase: {
-                hp: hpMp.hp, mp: hpMp.mp, atk: atkMag.atk, def: defMdef.def,
-                mag: atkMag.mag, mdef: defMdef.mdef, spd
-            },
+            growthBase: { ...growthProfile.growthBase },
             monsterAllyMeta: {
                 joinedAt: Date.now(),
                 originalName: base.name || enemy.name || '',
                 originalRank: base.rank || base.generatedFloor || base.minF || enemy.rank || null,
                 originalIsBoss: !!(base.isBoss || enemy.isBoss),
-                originalIsSpecialBoss: !!(base.isSpecialBoss || base.isEstark || enemy.isSpecialBoss || enemy.isEstark)
+                originalIsSpecialBoss: !!(base.isSpecialBoss || base.isEstark || enemy.isSpecialBoss || enemy.isEstark),
+                skillPointGrantVersion: 1,
+                skillPointLevelTarget: Math.max(0, joinLevel - 1),
+                joinLevel,
+                growthProfileVersion: App.monsterAllyGrowthConfig.schemaVersion,
+                growthStrengths: [...growthProfile.strengths],
+                growthWeaknesses: [...growthProfile.weaknesses],
+                growthMultipliers: Object.fromEntries(
+                    Object.entries(growthProfile.multipliers).map(([key, value]) => [key, Number(value.toFixed(4))])
+                )
             }
         };
 
@@ -2388,17 +3300,34 @@ const App = {
 
         const existing = App.data.characters.find(c => App.isMonsterAlly(c) && Number(c.monsterId || c.sourceMonsterId) === monsterId);
         if (existing) {
-            let before = Math.floor(Number(existing.limitBreak) || 0);
-            if (typeof App.addLimitBreak === 'function') {
-                App.addLimitBreak(existing, 1, 'monster');
+            App.backfillLimitBreakLegacy?.(existing);
+            App.applyLimitBreakCap?.(existing);
+            const before = Math.max(0, Math.floor(Number(existing.limitBreak) || 0));
+            const max = Math.max(1, Math.floor(Number(App.limitBreakConfig?.max) || 99));
+            const trialCap = typeof App.getLimitBreakTrialCap === 'function'
+                ? Math.max(0, Math.floor(Number(App.getLimitBreakTrialCap(existing)) || 0))
+                : max;
+
+            let message = `【仲間モンスター】${existing.name}との絆が深まった！`;
+            let lbChanged = false;
+            if (before >= max) {
+                message = `【仲間モンスター】${existing.name}のLBはすでに最大だ。`;
+            } else if (before >= trialCap) {
+                const gateName = trialCap < 50 ? '中間試練' : '最終試練';
+                message = `【仲間モンスター】${existing.name}は${gateName}を越えるまで、これ以上LBを増やせない。`;
+            } else if (typeof App.addLimitBreak === 'function') {
+                const result = App.addLimitBreak(existing, 1, 'monster');
+                lbChanged = result.after > before;
+                message = lbChanged
+                    ? `【仲間モンスター】${existing.name}のLBが上がった！`
+                    : `【仲間モンスター】${existing.name}との絆が深まった！`;
             } else {
-                existing.limitBreak = Math.min(99, before + 1);
-            }
-            if (Math.floor(Number(existing.limitBreak) || 0) <= before) {
-                existing.limitBreak = Math.min(99, before + 1);
+                existing.limitBreak = Math.min(trialCap, max, before + 1);
+                lbChanged = existing.limitBreak > before;
+                if (lbChanged) message = `【仲間モンスター】${existing.name}のLBが上がった！`;
             }
             App.ensureCharacterBattleConfig(existing);
-            return { ok: true, existing: true, char: existing, message: `【仲間モンスター】${existing.name}のLBが上がった！` };
+            return { ok: true, existing: true, char: existing, lbChanged, message };
         }
 
         const saveAlly = App.createMonsterAllyData(enemy, base);
@@ -2406,7 +3335,7 @@ const App = {
         App.data.characters.push(saveAlly);
 
         let joinedParty = false;
-        if (Array.isArray(App.data.party) && App.getMonsterAllyInPartyCount() === 0) {
+        if (Array.isArray(App.data.party) && App.getMonsterAllyInPartyCount() < App.getMonsterAllyPartyLimit()) {
             const emptyIndex = App.data.party.findIndex(uid => !uid);
             if (emptyIndex >= 0) {
                 App.data.party[emptyIndex] = saveAlly.uid;
@@ -2427,25 +3356,52 @@ const App = {
 
     isMonsterRecruitBattleAllowed: () => {
         if (!App.data) return false;
-        const area = App.data.location?.area;
-        return area === 'ABYSS';
+        const area = (typeof Field !== 'undefined' && typeof Field.getCurrentAreaKey === 'function')
+            ? Field.getCurrentAreaKey()
+            : App.data.location?.area;
+        if (String(area || '') === 'ABYSS') return true;
+        const worldKey = (typeof MapRegistry !== 'undefined' && MapRegistry.getActiveWorldKey)
+            ? MapRegistry.getActiveWorldKey()
+            : App.data.location?.worldKey;
+        return worldKey === 'ABYSS_WORLD';
     },
 
     tryRecruitMonsterAfterBattle: (enemies) => {
         if (!App.isMonsterRecruitBattleAllowed()) return null;
         if (!Array.isArray(enemies) || enemies.length === 0) return null;
-        const candidates = enemies.filter(e => e && e.isDead && !e.isFled && (e.baseId || e.id));
+        const candidates = enemies.filter(enemy => {
+            if (!enemy || !enemy.isDead || enemy.isFled || !(enemy.baseId || enemy.id)) return false;
+            const base = (typeof Battle !== 'undefined' && Battle.getMonsterBaseById)
+                ? Battle.getMonsterBaseById(enemy.baseId || enemy.id)
+                : null;
+            if (!base || base.abyssRecruitable === false) return false;
+            const memoryMode = globalThis.ABYSS_FLOOR_RULES?.isMemoryMode?.(App.data?.battle?.abyssMode || App.data?.dungeon?.abyssMode) === true;
+            const allowedMemoryBoss = memoryMode && typeof Dungeon !== 'undefined' && Dungeon.isMemoryRealmBossId?.(base.id || enemy.baseId || enemy.id);
+            if (allowedMemoryBoss) return !base.isRare && !base.isSpecialBoss && !base.isEstark && !enemy.isRare && !enemy.isSpecialBoss && !enemy.isEstark;
+            return !base.isBoss && !base.isRare && !base.isSpecialBoss && !base.isEstark
+                && !enemy.isBoss && !enemy.isRare && !enemy.isSpecialBoss && !enemy.isEstark;
+        });
         if (candidates.length === 0) return null;
-        if (Math.random() >= App.monsterRecruitConfig.chance) return null;
 
-        const enemy = candidates[Math.floor(Math.random() * candidates.length)];
-        const base = (typeof Battle !== 'undefined' && Battle.getMonsterBaseById) ? Battle.getMonsterBaseById(enemy.baseId || enemy.id) : null;
-        const result = App.addOrLimitBreakMonsterAlly(enemy, base);
-        if (result && result.ok) {
-            if (typeof App.save === 'function') App.save();
-            return result;
-        }
-        return null;
+        // 戦闘単位の1回抽選ではなく、撃破した加入可能個体ごとに独立して1%抽選する。
+        // 同種が複数成功した場合も各個体を処理し、2体目以降は既存仲間のLB判定になる。
+        const results = [];
+        candidates.forEach(enemy => {
+            if (Math.random() >= App.monsterRecruitConfig.chance) return;
+            const base = (typeof Battle !== 'undefined' && Battle.getMonsterBaseById)
+                ? Battle.getMonsterBaseById(enemy.baseId || enemy.id)
+                : null;
+            const result = App.addOrLimitBreakMonsterAlly(enemy, base);
+            if (result && result.ok) results.push(result);
+        });
+        if (results.length === 0) return null;
+
+        if (typeof App.save === 'function') App.save();
+        return {
+            ok: true,
+            results,
+            message: results.map(result => result.message).filter(Boolean).join('<br>')
+        };
     },
 
     ensureQuestState: () => {
@@ -2496,34 +3452,203 @@ const App = {
             && !alreadyRewarded;
     },
 
+    escapeHtml: (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[ch])),
+
+    getQuestKindLabel: (kind) => ({
+        hunt: '討伐依頼',
+        boss: '強敵討伐',
+        conversation: '相談',
+        travel: '探索',
+        collection: '収集依頼'
+    }[kind] || '依頼'),
+
+    getQuestMonsterName: (monsterId) => {
+        const id = Number(monsterId);
+        const monster = (typeof DB !== 'undefined' && Array.isArray(DB.MONSTERS))
+            ? DB.MONSTERS.find(m => Number(m.id) === id)
+            : null;
+        return monster?.name || `モンスター${id}`;
+    },
+
+    getQuestTargetSummary: (questId) => {
+        const quest = App.getQuestDefinition(questId);
+        const state = App.getQuestState(questId);
+        if (!quest) return '';
+        if (quest.kind === 'hunt' && Array.isArray(quest.targetMonsterIds) && quest.targetMonsterIds.length > 0) {
+            const names = quest.targetMonsterIds.map(App.getQuestMonsterName).join(' / ');
+            const total = Math.max(1, Number(quest.targetCount || 1));
+            const current = state.state === 'completed'
+                ? total
+                : Math.min(total, Number(state.progress?.kills || 0));
+            return `討伐対象: ${names}\n討伐数: ${current}/${total}`;
+        }
+        if (Array.isArray(quest.itemRequirements) && quest.itemRequirements.length > 0) {
+            const lines = quest.itemRequirements.map(requirement => {
+                const itemId = Number(requirement.id ?? requirement.itemId);
+                const required = Math.max(1, Math.floor(Number(requirement.count) || 1));
+                const owned = state.state === 'completed'
+                    ? required
+                    : Math.min(required, Number(App.data?.items?.[itemId] || 0));
+                const item = (typeof DB !== 'undefined' && Array.isArray(DB.ITEMS))
+                    ? DB.ITEMS.find(i => Number(i.id) === itemId)
+                    : null;
+                return `${item?.name || `アイテム${itemId}`}: ${owned}/${required}`;
+            });
+            return lines.join('\n');
+        }
+        if (quest.kind === 'boss') {
+            return state.state === 'accepted' && state.progress?.bossDefeated
+                ? (quest.reportText || '依頼人へ報告しよう。')
+                : '目的地の強敵を倒す。';
+        }
+        return '';
+    },
+
+    getQuestRewardSummary: (quest) => {
+        if (!quest) return '';
+        const lines = [];
+        if (Array.isArray(quest.rewardItems)) {
+            quest.rewardItems.forEach(reward => {
+                const itemId = Number(reward.id || reward.itemId);
+                const count = Math.max(1, Number(reward.count || 1));
+                const item = (typeof DB !== 'undefined' && Array.isArray(DB.ITEMS))
+                    ? DB.ITEMS.find(i => Number(i.id) === itemId)
+                    : null;
+                lines.push(`${item?.name || `アイテム${itemId}`} x${count}`);
+            });
+        }
+        if (Array.isArray(quest.rewardAllies)) {
+            quest.rewardAllies.forEach(charId => {
+                const ally = (typeof window !== 'undefined' && Array.isArray(window.CHARACTERS_DATA))
+                    ? window.CHARACTERS_DATA.find(c => Number(c.id) === Number(charId))
+                    : null;
+                lines.push(`${ally?.name || `仲間${charId}`} 加入`);
+            });
+        }
+        if (Array.isArray(quest.rewardFlags) && quest.rewardFlags.length && lines.length === 0) lines.push('物語進行');
+        return lines.join('\n') || 'なし';
+    },
+
+    buildQuestModalHtml: (questId, options = {}) => {
+        const quest = App.getQuestDefinition(questId);
+        const state = App.getQuestState(questId);
+        if (!quest) return '';
+        const esc = App.escapeHtml;
+        const status = options.statusLabel || ({
+            available: '紹介中',
+            accepted: App.isQuestObjectiveComplete?.(questId) ? '報告できます' : '受注中',
+            completed: 'クリア'
+        }[state.state || 'available'] || '紹介中');
+        const target = App.getQuestTargetSummary(questId);
+        const reward = App.getQuestRewardSummary(quest);
+        const bodyText = options.bodyText || quest.startText || quest.objective || '';
+        const progressText = state.state === 'accepted'
+            ? (App.getQuestProgressText ? App.getQuestProgressText(questId) : quest.progressText || quest.objective || '')
+            : (quest.objective || quest.progressText || '');
+        return `
+            <div style="width:min(420px, calc(100vw - 24px)); max-height:calc(100vh - 30px); overflow:auto; color:#f6ead2; font-family:inherit; background:#2a1b11; border:2px solid #b88a4c; box-shadow:0 18px 60px rgba(0,0,0,.72), inset 0 0 0 2px rgba(255,230,170,.18); border-radius:8px;">
+                <div style="padding:12px 14px 10px; background:linear-gradient(180deg,#6b4421,#3c2515); border-bottom:1px solid rgba(255,220,150,.35);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                        <div style="font-size:12px; color:#ffe2a4;">クエスト</div>
+                        <div style="font-size:11px; color:#2a1608; background:#f1d184; border:1px solid #fff0bc; border-radius:10px; padding:2px 8px; font-weight:bold;">${esc(status)}</div>
+                    </div>
+                    <div style="font-size:18px; color:#fff7dc; font-weight:bold; margin-top:3px; line-height:1.25;">${esc(quest.name)}</div>
+                    <div style="font-size:11px; color:#d8b982; margin-top:4px;">${esc(quest.area || '-')} / ${esc(App.getQuestKindLabel(quest.kind))}</div>
+                </div>
+                <div style="padding:12px 14px;">
+                    <div style="font-size:13px; color:#f7ead0; line-height:1.65; white-space:pre-wrap;">${esc(bodyText)}</div>
+                    <div style="margin-top:12px; padding:10px; background:rgba(0,0,0,.22); border:1px solid rgba(255,225,160,.2); border-radius:6px;">
+                        <div style="font-size:11px; color:#e6c27c; margin-bottom:4px;">目的</div>
+                        <div style="font-size:12px; line-height:1.55; white-space:pre-wrap;">${esc(progressText)}</div>
+                    </div>
+                    ${target ? `<div style="margin-top:8px; padding:10px; background:rgba(0,0,0,.18); border:1px solid rgba(255,225,160,.16); border-radius:6px;"><div style="font-size:11px; color:#e6c27c; margin-bottom:4px;">対象</div><div style="font-size:12px; line-height:1.55; white-space:pre-wrap;">${esc(target)}</div></div>` : ''}
+                    <div style="margin-top:8px; padding:10px; background:rgba(82,54,25,.38); border:1px solid rgba(255,225,160,.18); border-radius:6px;">
+                        <div style="font-size:11px; color:#e6c27c; margin-bottom:4px;">報酬</div>
+                        <div style="font-size:12px; line-height:1.55; white-space:pre-wrap;">${esc(reward)}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    showQuestModal: (questId, options = {}) => new Promise(resolve => {
+        const quest = App.getQuestDefinition(questId);
+        if (!quest || typeof document === 'undefined') {
+            resolve(options.defaultValue ?? false);
+            return;
+        }
+        const old = document.getElementById('quest-detail-modal');
+        if (old) old.remove();
+        const overlay = document.createElement('div');
+        overlay.id = 'quest-detail-modal';
+        overlay.style.cssText = 'position:fixed; inset:0; z-index:7000; background:rgba(0,0,0,.72); display:flex; align-items:center; justify-content:center; padding:12px; box-sizing:border-box;';
+        const travelButton = (!options.offer && options.travelAreaKey)
+            ? `<button id="quest-modal-travel" class="btn" style="flex:1; border-color:#8fd7ff; color:#eaf8ff; background:#23485f;">入口へ移動</button>`
+            : '';
+        const buttons = options.offer ? `
+            <div style="display:flex; gap:8px; padding:0 14px 14px;">
+                <button id="quest-modal-accept" class="btn" style="flex:1; border-color:#ffd56b; color:#fff7dc; background:#6f4b1f;">受ける</button>
+                <button id="quest-modal-decline" class="btn" style="flex:1; background:#2f2f2f;">やめる</button>
+            </div>
+        ` : `
+            <div style="display:flex; gap:8px; padding:0 14px 14px;">
+                ${travelButton}
+                <button id="quest-modal-close" class="btn" style="flex:1; border-color:#ffd56b; color:#fff7dc; background:#6f4b1f;">閉じる</button>
+            </div>
+        `;
+        overlay.innerHTML = `<div onclick="event.stopPropagation()">${App.buildQuestModalHtml(questId, options)}${buttons}</div>`;
+        document.body.appendChild(overlay);
+        const close = (value) => {
+            overlay.remove();
+            resolve(value);
+        };
+        overlay.onclick = () => {
+            if (!options.offer) close(options.defaultValue ?? true);
+        };
+        const accept = document.getElementById('quest-modal-accept');
+        const decline = document.getElementById('quest-modal-decline');
+        const closeBtn = document.getElementById('quest-modal-close');
+        const travelBtn = document.getElementById('quest-modal-travel');
+        if (accept) accept.onclick = () => close(true);
+        if (decline) decline.onclick = () => close(false);
+        if (closeBtn) closeBtn.onclick = () => close(true);
+        if (travelBtn) travelBtn.onclick = () => {
+            const areaKey = String(options.travelAreaKey || '');
+            const label = options.travelLabel || quest.area || quest.name || areaKey;
+            close(true);
+            setTimeout(() => App.requestSkyPrismTravelTo?.(areaKey, label), 0);
+        };
+    }),
+
     acceptQuest: (questId, options = {}) => {
         const quest = App.getQuestDefinition(questId);
         if (!quest) return false;
         const quests = App.ensureQuestState();
         const current = quests[questId];
         if (current && current.state === 'completed') {
-            if (!options.silent) App.log(`【クエスト完了済】${quest.name}`);
             return true;
         }
         if (current && current.state === 'accepted') {
-            if (!options.silent) App.log(`【クエスト進行中】${quest.progressText || quest.objective || quest.name}`);
             return true;
         }
         if (!App.isQuestUnlocked(questId)) {
-            if (!options.silent) App.log(options.lockedText || '今はまだ、この依頼を受ける時ではないようだ。');
             return false;
         }
         quests[questId] = {
+            ...(current && typeof current === 'object' ? current : {}),
             state: 'accepted',
             startedAt: Date.now(),
             completedAt: null,
             progress: {}
         };
-        App.save();
-        if (!options.silent) {
-            App.log(`【クエスト受注】${quest.name}`);
-            if (quest.startText) App.log(quest.startText);
-        }
+        if (options.save !== false) App.save();
+        if (typeof MenuStatus !== 'undefined' && typeof MenuStatus.render === 'function') MenuStatus.render();
         return true;
     },
 
@@ -2533,12 +3658,20 @@ const App = {
         const quests = App.ensureQuestState();
         const current = quests[questId];
         if (current && current.state === 'completed') {
-            if (!options.silent) App.log(`【クエスト完了済】${quest.name}`);
             return true;
         }
         if (!App.isQuestUnlocked(questId)) {
-            if (!options.silent) App.log(options.lockedText || 'この依頼を完了するための条件が整っていない。');
             return false;
+        }
+
+        const itemRequirements = Array.isArray(quest.itemRequirements) ? quest.itemRequirements : [];
+        if (quest.consumeItemsOnComplete === true && itemRequirements.length > 0) {
+            const canConsume = itemRequirements.every(requirement => {
+                const itemId = Number(requirement.id ?? requirement.itemId);
+                const count = Math.max(1, Math.floor(Number(requirement.count) || 1));
+                return Number(App.data?.items?.[itemId] || 0) >= count;
+            });
+            if (!canConsume) return false;
         }
 
         quests[questId] = {
@@ -2546,6 +3679,17 @@ const App = {
             startedAt: current?.startedAt || Date.now(),
             completedAt: Date.now()
         };
+        App.incrementLifetimeStat('totalQuestCompletions', 1, { save: false });
+
+        if (quest.consumeItemsOnComplete === true && itemRequirements.length > 0) {
+            itemRequirements.forEach(requirement => {
+                const itemId = Number(requirement.id ?? requirement.itemId);
+                const count = Math.max(1, Math.floor(Number(requirement.count) || 1));
+                const remain = Number(App.data.items?.[itemId] || 0) - count;
+                if (remain > 0) App.data.items[itemId] = remain;
+                else delete App.data.items[itemId];
+            });
+        }
 
         if (Array.isArray(quest.rewardFlags)) {
             if (!App.data.progress.flags) App.data.progress.flags = {};
@@ -2558,24 +3702,18 @@ const App = {
                 const count = Math.max(1, Number(reward.count || 1));
                 if (!Number.isFinite(itemId)) return;
                 App.data.items[itemId] = Number(App.data.items[itemId] || 0) + count;
-                const item = (DB.ITEMS || []).find(i => Number(i.id) === itemId);
-                if (!options.silent) App.log(`${item?.name || `アイテム${itemId}`}を手に入れた！`);
             });
         }
         if (Array.isArray(quest.rewardAllies)) {
-            quest.rewardAllies.forEach(charId => App.addStoryAlly(charId));
+            quest.rewardAllies.forEach(charId => App.addStoryAlly(charId, { silent: true, save: false }));
         }
 
-        App.save();
-        if (!options.silent) {
-            App.log(`【クエスト完了】${quest.name}`);
-            if (quest.completeText) App.log(quest.completeText);
-        }
+        if (options.save !== false) App.save();
         if (typeof MenuStatus !== 'undefined' && typeof MenuStatus.render === 'function') MenuStatus.render();
         return true;
     },
 
-    noteQuestKills: (monsterIds = []) => {
+    noteQuestKills: (monsterIds = [], battleContext = {}, options = {}) => {
         if (!Array.isArray(monsterIds) || monsterIds.length === 0) return [];
         const quests = App.ensureQuestState();
         const updated = [];
@@ -2590,19 +3728,21 @@ const App = {
             state.progress.kills = Math.min(Number(quest.targetCount || 1), Number(state.progress.kills || 0) + gained);
             updated.push(questId);
         });
-        if (updated.length) App.save();
-        return updated;
+        const guildUpdated = (typeof Guild !== 'undefined' && typeof Guild.noteQuestKills === 'function')
+            ? Guild.noteQuestKills(monsterIds, battleContext, { save: false })
+            : [];
+        if ((updated.length || guildUpdated.length) && options.save !== false) App.save();
+        return [...updated, ...guildUpdated];
     },
 
-    markQuestBossDefeated: (questId) => {
+    markQuestBossDefeated: (questId, options = {}) => {
         const quest = App.getQuestDefinition(questId);
         const state = App.getQuestState(questId);
         if (!quest || quest.kind !== 'boss' || state.state !== 'accepted') return false;
         if (!state.progress || typeof state.progress !== 'object') state.progress = {};
         state.progress.bossDefeated = true;
         state.progress.bossDefeatedAt = Date.now();
-        App.save();
-        if (quest.reportText) App.log(quest.reportText);
+        if (options.save !== false) App.save();
         return true;
     },
 
@@ -2612,6 +3752,13 @@ const App = {
         if (!quest || state.state !== 'accepted') return false;
         if (quest.kind === 'hunt') {
             return Number(state.progress?.kills || 0) >= Math.max(1, Number(quest.targetCount || 1));
+        }
+        if (Array.isArray(quest.itemRequirements) && quest.itemRequirements.length > 0) {
+            return quest.itemRequirements.every(requirement => {
+                const itemId = Number(requirement.id ?? requirement.itemId);
+                const required = Math.max(1, Math.floor(Number(requirement.count) || 1));
+                return Number(App.data?.items?.[itemId] || 0) >= required;
+            });
         }
         if (quest.kind === 'boss') return !!state.progress?.bossDefeated;
         return false;
@@ -2625,6 +3772,10 @@ const App = {
             const current = Math.min(Number(quest.targetCount || 1), Number(state.progress?.kills || 0));
             return `${quest.progressText || quest.objective || quest.name}\n討伐数 ${current}/${Math.max(1, Number(quest.targetCount || 1))}`;
         }
+        if (Array.isArray(quest.itemRequirements) && quest.itemRequirements.length > 0 && state.state === 'accepted') {
+            const summary = App.getQuestTargetSummary(questId);
+            return `${quest.progressText || quest.objective || quest.name}${summary ? `\n${summary}` : ''}`;
+        }
         if (quest.kind === 'boss' && state.state === 'accepted' && state.progress?.bossDefeated) {
             return quest.reportText || '依頼人のもとへ戻り、勝利を伝えよう。';
         }
@@ -2634,38 +3785,139 @@ const App = {
     runQuestAction: async (questId, options = {}) => {
         const quest = App.getQuestDefinition(questId);
         if (!quest) {
-            App.log('今は何も起こらないようだ。');
             return false;
         }
         if (!App.isQuestUnlocked(questId)) {
-            App.log(options.lockedText || '今はまだ、この依頼を進める時ではないようだ。');
+            await App.showQuestModal(questId, {
+                statusLabel: 'まだ受けられません',
+                bodyText: options.lockedText || '今はまだ、この依頼を進める時ではないようだ。'
+            });
             return false;
         }
         const state = App.getQuestState(questId).state;
         if (state === 'completed') {
-            App.log(`【クエスト完了済】${quest.name}`);
+            await App.showQuestModal(questId, {
+                statusLabel: 'クリア',
+                bodyText: quest.completeText || quest.objective || quest.name
+            });
             return true;
         }
         if (state !== 'accepted') {
-            if (quest.startEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
+            const storedState = App.ensureQuestState()[questId] || {};
+            // 仲間加入などの依頼は、依頼内容を機械的に先出しせず、まず当人との会話を見せる。
+            if (quest.startEventId && !storedState.introSeen && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
                 await StoryManager.executeEvent(quest.startEventId);
+                App.ensureQuestState()[questId] = {
+                    ...storedState,
+                    state: 'available',
+                    introSeen: true,
+                    introSeenAt: Date.now(),
+                    progress: storedState.progress || {}
+                };
+                App.save();
             }
-            App.acceptQuest(questId);
-            if (options.complete || quest.initialComplete || quest.kind === 'conversation') App.completeQuest(questId);
+            const accepted = await App.showQuestModal(questId, {
+                offer: true,
+                statusLabel: '依頼を受けますか？',
+                bodyText: quest.startText || quest.objective || quest.name,
+                defaultValue: false
+            });
+            if (!accepted) return false;
+            App.acceptQuest(questId, { silent: true });
+            if (App.isQuestObjectiveComplete(questId) && Array.isArray(quest.itemRequirements) && quest.itemRequirements.length > 0) {
+                if (quest.reportEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
+                    await StoryManager.executeEvent(quest.reportEventId);
+                }
+                App.completeQuest(questId, { silent: true });
+                await App.showQuestModal(questId, {
+                    statusLabel: 'クリア',
+                    bodyText: quest.completeText || quest.objective || quest.name
+                });
+                return true;
+            }
+            if (options.complete || quest.initialComplete || quest.kind === 'conversation') {
+                App.completeQuest(questId, { silent: true });
+                await App.showQuestModal(questId, {
+                    statusLabel: 'クリア',
+                    bodyText: quest.completeText || quest.objective || quest.name
+                });
+            }
             return true;
         }
         if (App.isQuestObjectiveComplete(questId)) {
             if (quest.reportEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
                 await StoryManager.executeEvent(quest.reportEventId);
             }
-            App.completeQuest(questId);
+            App.completeQuest(questId, { silent: true });
+            await App.showQuestModal(questId, {
+                statusLabel: 'クリア',
+                bodyText: quest.completeText || quest.objective || quest.name
+            });
             return true;
         }
         if (options.complete || quest.initialComplete || quest.kind === 'conversation') {
-            App.completeQuest(questId);
+            App.completeQuest(questId, { silent: true });
+            await App.showQuestModal(questId, {
+                statusLabel: 'クリア',
+                bodyText: quest.completeText || quest.objective || quest.name
+            });
             return true;
         }
-        App.log(`【クエスト進行中】${App.getQuestProgressText(questId)}`);
+        await App.showQuestModal(questId, {
+            statusLabel: App.isQuestObjectiveComplete?.(questId) ? '報告できます' : '受注中',
+            bodyText: quest.progressText || quest.objective || quest.name
+        });
+        return true;
+    },
+
+
+    showQuestBoardModal: (action = {}) => new Promise(resolve => {
+        const questIds = Array.isArray(action.questIds) ? action.questIds.filter(id => App.getQuestDefinition(id)) : [];
+        if (!questIds.length || typeof document === 'undefined') {
+            resolve(null);
+            return;
+        }
+        document.getElementById('quest-board-modal')?.remove();
+        const overlay = document.createElement('div');
+        overlay.id = 'quest-board-modal';
+        overlay.style.cssText = 'position:fixed; inset:0; z-index:6990; background:rgba(0,0,0,.76); display:flex; align-items:center; justify-content:center; padding:12px; box-sizing:border-box;';
+        const rows = questIds.map(id => {
+            const quest = App.getQuestDefinition(id);
+            const state = App.getQuestState(id);
+            const unlocked = App.isQuestUnlocked(id);
+            const objectiveReady = state.state === 'accepted' && App.isQuestObjectiveComplete(id);
+            const status = !unlocked ? '未解放' : state.state === 'completed' ? '達成済み' : objectiveReady ? '報告可能' : state.state === 'accepted' ? '受注中' : '受注可能';
+            const disabled = unlocked ? '' : 'disabled';
+            return `<button class="quest-board-entry btn" data-quest-id="${App.escapeHtml(id)}" ${disabled} style="display:block; width:100%; text-align:left; padding:11px 12px; margin-top:8px; background:${objectiveReady ? '#5c4517' : '#241b16'}; border:1px solid ${objectiveReady ? '#ffd56b' : '#76593a'}; color:#fff3d1; border-radius:6px;">
+                <span style="display:flex; justify-content:space-between; gap:10px; align-items:center;"><strong>${App.escapeHtml(quest.name)}</strong><small style="color:#e7c77d; white-space:nowrap;">${status}</small></span>
+                <span style="display:block; color:#c9b99d; font-size:11px; line-height:1.45; margin-top:5px;">${App.escapeHtml(quest.objective || '')}</span>
+                <span style="display:block; color:#98d9a8; font-size:11px; margin-top:5px; white-space:pre-wrap;">報酬: ${App.escapeHtml(App.getQuestRewardSummary(quest))}</span>
+            </button>`;
+        }).join('');
+        overlay.innerHTML = `<div style="width:min(460px,calc(100vw - 24px)); max-height:calc(100vh - 30px); overflow:auto; background:#17110d; border:2px solid #b88a4c; border-radius:8px; box-shadow:0 18px 60px rgba(0,0,0,.75); padding:14px; box-sizing:border-box;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid #5c432a; padding-bottom:10px;">
+                <div><div style="font-size:18px; color:#fff2c6; font-weight:bold;">依頼掲示板</div><div style="font-size:11px; color:#bfa77f; margin-top:3px;">討伐・素材交換依頼</div></div>
+                <button id="quest-board-close" class="btn" style="min-width:72px;">閉じる</button>
+            </div>${rows}
+        </div>`;
+        document.body.appendChild(overlay);
+        const close = value => { overlay.remove(); resolve(value); };
+        overlay.onclick = event => { if (event.target === overlay) close(null); };
+        overlay.querySelector('#quest-board-close').onclick = () => close(null);
+        overlay.querySelectorAll('.quest-board-entry:not([disabled])').forEach(button => {
+            button.onclick = () => close(button.dataset.questId || null);
+        });
+        if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('dialogue');
+    }),
+
+    runQuestBoard: async (action = {}) => {
+        const questId = await App.showQuestBoardModal(action);
+        if (!questId) return false;
+        await App.runQuestAction(questId, { lockedText: action.lockedText });
+        if (typeof Field !== 'undefined') {
+            Field.refreshVisualState?.();
+            Field.refreshCurrentAction?.({ silent: true });
+        }
         return true;
     },
 
@@ -2674,8 +3926,8 @@ const App = {
         midGate: 49,
         finalGate: 98,
         heroStoryMax: 20,
-        heroBattleMax: 20,
-        allyBattleMax: 20,
+        heroBattleMax: 70,
+        allyBattleMax: 70,
         randomBattleChance: 0.002,
         midTrialBossId: 401120,
         finalTrialBossId: 401130
@@ -2687,7 +3939,7 @@ const App = {
 
     getBattleLimitBreakSteps: (battleWins) => {
         const wins = Math.max(0, Math.floor(Number(battleWins) || 0));
-        const max = App.limitBreakConfig.heroBattleMax || 20;
+        const max = App.limitBreakConfig.heroBattleMax || 70;
         if (wins < 20) return 0;
 
         let steps = 1;
@@ -2696,6 +3948,7 @@ const App = {
             { count: 4, interval: 50 },   // +2〜+5
             { count: 5, interval: 100 },  // +6〜+10
             { count: 10, interval: 200 }, // +11〜+20
+            { count: 50, interval: 200 }, // +21〜+70（後半の既存ペースを維持）
         ];
 
         for (const tier of tiers) {
@@ -2720,7 +3973,7 @@ const App = {
         if (!p.sources || typeof p.sources !== 'object' || Array.isArray(p.sources)) p.sources = {};
         if (!p.trials || typeof p.trials !== 'object' || Array.isArray(p.trials)) p.trials = {};
 
-        const sourceKeys = ['story', 'battle', 'dungeon', 'quest', 'boss', 'prism', 'random', 'gacha', 'monster', 'trial', 'legacy'];
+        const sourceKeys = ['story', 'battle', 'dungeon', 'quest', 'boss', 'prism', 'random', 'gacha', 'monster', 'trial', 'item', 'legacy'];
         sourceKeys.forEach(key => {
             p.sources[key] = Math.max(0, Math.floor(Number(p.sources[key]) || 0));
         });
@@ -2812,7 +4065,7 @@ const App = {
 
             if (isHero) {
                 const storyStep = App.data.progress ? Number(App.data.progress.storyStep || 0) : 0;
-                const maxFloor = App.data.dungeon ? Number(App.data.dungeon.maxFloor || 0) : 0;
+                const maxFloor = App.getAbyssLegacyProgressFloor ? App.getAbyssLegacyProgressFloor() : (App.data.dungeon ? Number(App.data.dungeon.maxFloor || 0) : 0);
                 p.sources.story = App.clampLimitBreakPart(storyStep, cfg.heroStoryMax);
                 p.sources.battle = App.clampLimitBreakPart(battleSteps, cfg.heroBattleMax);
                 p.sources.dungeon = Math.max(0, Math.floor(Math.max(0, maxFloor - 1) / 10) * 5);
@@ -3051,6 +4304,11 @@ const App = {
         if(!btn) return;
         btn.innerText = label;
         btn.style.display = 'block';
+        const okBtn = document.getElementById('btn-ok');
+        if (okBtn) {
+            okBtn.textContent = 'OK';
+            okBtn.classList.add('has-field-action');
+        }
         App.pendingAction = callback;
     },
 
@@ -3095,6 +4353,11 @@ const App = {
     clearAction: () => {
         const btn = document.getElementById('action-indicator');
         if(btn) btn.style.display = 'none';
+        const okBtn = document.getElementById('btn-ok');
+        if (okBtn) {
+            okBtn.textContent = 'OK';
+            okBtn.classList.remove('has-field-action');
+        }
         App.pendingAction = null;
     },
 
@@ -3116,6 +4379,7 @@ const App = {
      */
     isFieldControlBlocked: () => {
         if (typeof App.isFieldInputLocked === 'function' && App.isFieldInputLocked()) return true;
+        if (typeof Field !== 'undefined' && Field._visualCutsceneActive) return true;
         if (App.encounterTransitioning) return true;
         if (App.limitBreakTrialPromptOpen) return true;
         if (App.data?.battle?.active) return true;
@@ -3166,8 +4430,178 @@ const App = {
                 const c = App.data.characters.find(ch => ch.uid === App.data.party[0]);
                 if(c) { name = c.name; lv = c.level; }
             }
-            btn.innerHTML = `続きから<br><span style="font-size:12px">(${name} Lv.${lv})</span>`;
+            btn.textContent = '続きから';
+            const detail = document.createElement('span');
+            detail.style.fontSize = '12px';
+            detail.textContent = `(${name} Lv.${lv})`;
+            btn.appendChild(document.createElement('br'));
+            btn.appendChild(detail);
         } 
+    },
+
+    migrateAbyssRegionSave: () => {
+        if (!App.data) return;
+        App.data.location = App.data.location || { area: 'WORLD', x: 58, y: 65, worldKey: 'WORLD' };
+        App.data.progress = App.data.progress || {};
+        App.data.progress.flags = App.data.progress.flags || {};
+        App.data.progress.unlocked = App.data.progress.unlocked || {};
+        App.data.dungeon = App.data.dungeon || {};
+        App.data.system = App.data.system || {};
+        if (!App.data.progress.fixedProceduralFloors || typeof App.data.progress.fixedProceduralFloors !== 'object') {
+            App.data.progress.fixedProceduralFloors = {};
+        }
+        if (!App.data.progress.fixedProceduralRunIds || typeof App.data.progress.fixedProceduralRunIds !== 'object') {
+            App.data.progress.fixedProceduralRunIds = {};
+        }
+        if (!App.data.progress.abyssSpiritBlessings || typeof App.data.progress.abyssSpiritBlessings !== 'object') {
+            App.data.progress.abyssSpiritBlessings = {};
+        }
+
+        const currentArea = String(App.data.location.area || 'WORLD');
+        const master = globalThis.ABYSS_REGION_MASTER;
+        const isAbyssArea = Array.isArray(master?.areaKeys) && master.areaKeys.includes(currentArea);
+        const activeAbyssMode = globalThis.ABYSS_FLOOR_RULES?.getMode?.(App.data)
+            || App.data.dungeon?.abyssMode
+            || '';
+        const isMemoryRealmActive = globalThis.ABYSS_FLOOR_RULES?.isMemoryMode?.(activeAbyssMode) === true;
+        // タイトル画面では map.js 読込前にもセーブ移行が走る。
+        // 未宣言の STORY_DATA を直接参照せず、読込済みの場合だけ正本を参照する。
+        const declaredWorld = globalThis.STORY_DATA?.areas?.[currentArea]?.worldKey;
+        // 追憶の魔境は地上世界上の入口から入る独立コンテンツ。内部areaがABYSSでも
+        // セーブ再開時にABYSS_WORLDへ矯正せず、帰還元の世界を維持する。
+        App.data.location.worldKey = isMemoryRealmActive
+            ? (App.data.dungeon?.returnPoint?.worldKey || App.data.location.worldKey || 'WORLD')
+            : (currentArea === 'ABYSS_WORLD' || declaredWorld === 'ABYSS_WORLD' || isAbyssArea
+                ? 'ABYSS_WORLD'
+                : 'WORLD');
+
+        Object.keys(App.data.progress.fixedProceduralFloors).forEach(key => {
+            if (typeof Dungeon !== 'undefined' && !Dungeon.isValidFixedProceduralFloor(App.data.progress.fixedProceduralFloors[key])) {
+                delete App.data.progress.fixedProceduralFloors[key];
+            }
+        });
+
+        const version = Number(App.data.system.abyssRegionSchemaVersion || 0);
+        if (version < 4) {
+            const flags = App.data.progress.flags;
+            const oldComplete = !!(flags.abyssAzelgaragDefeated || flags.abyssEpilogueSeen || flags.abyssCleared
+                || flags.abyssStoryCleared || Number(App.data.dungeon.storyMaxFloor || 0) >= 100);
+            if (oldComplete) {
+                [
+                    'abyssFirstEntered', 'abyssCarmenaGateCleared', 'abyssLeonardDefeated', 'abyssEliciaDefeated',
+                    'abyssFirstBarrierCleared', 'abyssSyrisDefeated', 'abyssGradDefeated', 'abyssSecondBarrierCleared',
+                    'abyssLegacionNorthGateOpen', 'abyssVeldDefeated', 'abyssJasperDefeated', 'abyssIlluminaciaDefeated',
+                    'abyssVegnasisDefeated', 'abyssAzelgaragDefeated', 'abyssEpilogueSeen', 'abyssRandomUnlocked',
+                    'abyssDungeonMenuUnlocked'
+                ].forEach(flag => { flags[flag] = true; });
+                App.data.progress.unlocked.dungeonMenu = true;
+                App.data.dungeon.abyssMode = 'random';
+            } else if (currentArea === 'ABYSS' && !isMemoryRealmActive) {
+                flags.abyssFirstEntered = true;
+                App.data.location = { area: 'CARMENA', worldKey: 'ABYSS_WORLD', x: 19, y: 25 };
+                App.data.progress.floor = 0;
+                App.data.dungeon.map = null;
+            }
+            // 旧追加モジュールの可変階キャッシュは契約が異なるため、安全に再生成する。
+            delete App.data.progress.abyssProceduralFloors;
+            delete App.data.progress.abyssRegionRunIds;
+            App.data.system.abyssRegionSchemaVersion = 4;
+        }
+        if (version < 5) {
+            const flags = App.data.progress.flags;
+            // 旧版は前半ダンジョンから後半へ直結していたため、後半ボス到達済みのセーブには
+            // 新しい「横断済み」を補完し、世界地図へ戻っても進行を失わないようにする。
+            if (flags.abyssLeonardDefeated) flags.abyssThunderDunesCrossed = true;
+            if (flags.abyssEliciaDefeated) flags.abyssScreamingCemeteryCrossed = true;
+            if (flags.abyssSyrisDefeated) flags.abyssFrozenForestCrossed = true;
+            if (flags.abyssGradDefeated) flags.abyssPurgatoryMountainsCrossed = true;
+
+            const safeAbyssWorldPoint = () => {
+                if (flags.abyssLegacionNorthGateOpen) return { x: 40, y: 12 };
+                if (flags.abyssSecondBarrierCleared || flags.abyssSyrisDefeated || flags.abyssGradDefeated) return { x: 38, y: 16 };
+                if (flags.abyssFirstBarrierCleared || flags.abyssLeonardDefeated || flags.abyssEliciaDefeated) return { x: 40, y: 34 };
+                return { x: 38, y: 58 };
+            };
+            const repairAbyssWorldPoint = point => {
+                if (!point || String(point.areaKey || point.area || '') !== 'ABYSS_WORLD') return;
+                const tiles = globalThis.WORLD_MAPS?.ABYSS_WORLD?.tiles;
+                const tile = String(tiles?.[Number(point.y)]?.[Number(point.x)] || 'W').toUpperCase();
+                if (!['W', 'M'].includes(tile)) return;
+                Object.assign(point, safeAbyssWorldPoint(), { worldKey: 'ABYSS_WORLD' });
+            };
+            if (currentArea === 'ABYSS_WORLD') {
+                const tile = String(globalThis.WORLD_MAPS?.ABYSS_WORLD?.tiles?.[Number(App.data.location.y)]?.[Number(App.data.location.x)] || 'W').toUpperCase();
+                if (['W', 'M'].includes(tile)) Object.assign(App.data.location, safeAbyssWorldPoint());
+            }
+            repairAbyssWorldPoint(App.data.mapReturnPoint);
+            repairAbyssWorldPoint(App.data.dungeon.returnPoint);
+            if (Array.isArray(App.data.dungeon.returnStack)) App.data.dungeon.returnStack.forEach(repairAbyssWorldPoint);
+            App.data.system.abyssRegionSchemaVersion = 5;
+        }
+        if (version < 6) {
+            // v5の深淵世界は、誤った五層地形と旧座標を使用していた。
+            // 既知の拠点座標は新しい主大陸・独立区画へ対応づけ、不明な世界座標はカルメナ前へ退避する。
+            const abyssWorldPointMigration = new Map([
+                ['38,58', { x: 24, y: 58 }],
+                ['12,48', { x: 16, y: 51 }],
+                ['64,49', { x: 54, y: 53 }],
+                ['38,37', { x: 37, y: 40 }],
+                ['40,34', { x: 40, y: 37 }],
+                ['22,28', { x: 24, y: 31 }],
+                ['56,28', { x: 58, y: 32 }],
+                ['38,16', { x: 42, y: 21 }],
+                ['40,12', { x: 43, y: 19 }],
+                ['40,6', { x: 45, y: 12 }],
+                ['8,41', { x: 6, y: 44 }],
+                ['12,39', { x: 8, y: 40 }],
+                ['70,41', { x: 72, y: 54 }],
+                ['66,39', { x: 71, y: 48 }],
+                ['8,18', { x: 6, y: 27 }],
+                ['12,17', { x: 8, y: 24 }],
+                ['70,18', { x: 71, y: 28 }],
+                ['66,17', { x: 70, y: 24 }]
+            ]);
+            const migrateAbyssWorldPoint = point => {
+                if (!point || String(point.areaKey || point.area || '') !== 'ABYSS_WORLD') return;
+                const migrated = abyssWorldPointMigration.get(`${Number(point.x)},${Number(point.y)}`) || { x: 24, y: 58 };
+                Object.assign(point, migrated, { worldKey: 'ABYSS_WORLD' });
+            };
+            if (currentArea === 'ABYSS_WORLD') {
+                const migrated = abyssWorldPointMigration.get(`${Number(App.data.location.x)},${Number(App.data.location.y)}`) || { x: 24, y: 58 };
+                Object.assign(App.data.location, migrated, { area: 'ABYSS_WORLD', worldKey: 'ABYSS_WORLD' });
+            }
+            migrateAbyssWorldPoint(App.data.mapReturnPoint);
+            migrateAbyssWorldPoint(App.data.dungeon.returnPoint);
+            if (Array.isArray(App.data.dungeon.returnStack)) App.data.dungeon.returnStack.forEach(migrateAbyssWorldPoint);
+            App.data.system.abyssRegionSchemaVersion = 6;
+        }
+        if (version < 7) {
+            // v6の楕円状地形から、ビスタ・レガシオンを正式な関門とする作図済み地形へ移行する。
+            const v6AnchorMigration = new Map([
+                ['6,46', { x: 6, y: 44 }],
+                ['8,43', { x: 8, y: 40 }],
+                ['71,53', { x: 72, y: 54 }],
+                ['69,49', { x: 71, y: 48 }]
+            ]);
+            const repairConceptWorldPoint = point => {
+                if (!point || String(point.areaKey || point.area || '') !== 'ABYSS_WORLD') return;
+                const migrated = v6AnchorMigration.get(`${Number(point.x)},${Number(point.y)}`);
+                if (migrated) Object.assign(point, migrated, { worldKey: 'ABYSS_WORLD' });
+                const tile = String(globalThis.WORLD_MAPS?.ABYSS_WORLD?.tiles?.[Number(point.y)]?.[Number(point.x)] || 'W').toUpperCase();
+                if (['W', 'M'].includes(tile)) Object.assign(point, { x: 24, y: 58, worldKey: 'ABYSS_WORLD' });
+            };
+            if (currentArea === 'ABYSS_WORLD') {
+                const migrated = v6AnchorMigration.get(`${Number(App.data.location.x)},${Number(App.data.location.y)}`);
+                if (migrated) Object.assign(App.data.location, migrated);
+                const tile = String(globalThis.WORLD_MAPS?.ABYSS_WORLD?.tiles?.[Number(App.data.location.y)]?.[Number(App.data.location.x)] || 'W').toUpperCase();
+                if (['W', 'M'].includes(tile)) Object.assign(App.data.location, { x: 24, y: 58 });
+            }
+            repairConceptWorldPoint(App.data.mapReturnPoint);
+            repairConceptWorldPoint(App.data.dungeon.returnPoint);
+            if (Array.isArray(App.data.dungeon.returnStack)) App.data.dungeon.returnStack.forEach(repairConceptWorldPoint);
+            App.data.system.abyssRegionSchemaVersion = 7;
+        }
+        if (typeof App.reconcileDerivedProgressFlags === 'function') App.reconcileDerivedProgressFlags();
     },
 
 load: () => { 
@@ -3193,6 +4627,7 @@ load: () => {
             if(!App.data.book) App.data.book = { monsters: [] }; 
             if(!App.data.book.killCounts) App.data.book.killCounts = {}; 
             if(!App.data.battle) App.data.battle = { active: false }; 
+            if (typeof App.migrateMonsterIdReferences === 'function') App.migrateMonsterIdReferences();
             if (typeof App.ensureSettings === 'function') App.ensureSettings();
             
             if(!App.data.stats) {
@@ -3206,28 +4641,73 @@ load: () => {
             if (typeof App.syncDerivedLimitBreaks === 'function') {
                 App.syncDerivedLimitBreaks();
             }
+            App.migrateAbyssRegionSave();
         } 
     } catch(e) { console.error(e); } 
 },
 
 	
-    save: () => { 
-        if(App.data && Field.ready) { 
-            App.data.location.x=Field.x; 
-            App.data.location.y=Field.y; 
-        } 
-		
-		// ★追加: 最大所持記録の更新
-		if(!App.data.stats) App.data.stats = { maxGold: 0, maxGems: 0 };
-		if(App.data.gold > (App.data.stats.maxGold || 0)) App.data.stats.maxGold = App.data.gold;
-		if(App.data.gems > (App.data.stats.maxGems || 0)) App.data.stats.maxGems = App.data.gems;
-		
+    saveJsonReplacer: function(key, value) {
+        // Character画像の旧互換キーが同じData URLを指す場合、保存時だけ重複を除く。
+        // 読込側は img/image のどちらにも対応しているため、既存セーブ互換性は維持される。
+        if (key === 'image' && typeof value === 'string' && this && this.img === value) return undefined;
+        return value;
+    },
+
+    serializeSaveData: (data) => JSON.stringify(data, App.saveJsonReplacer),
+
+    beginSaveTransaction: () => {
+        App.saveTransactionDepth = Math.max(0, Number(App.saveTransactionDepth || 0)) + 1;
+        return App.saveTransactionDepth;
+    },
+
+    commitSaveTransaction: () => {
+        App.saveTransactionDepth = Math.max(0, Number(App.saveTransactionDepth || 0) - 1);
+        if (App.saveTransactionDepth > 0) return true;
+        const shouldSave = App.saveTransactionPending === true;
+        App.saveTransactionPending = false;
+        return shouldSave ? App.save() : true;
+    },
+
+    cancelSaveTransaction: () => {
+        App.saveTransactionDepth = 0;
+        App.saveTransactionPending = false;
+    },
+
+    save: () => {
+        if (!App.data) return false;
+        if (Number(App.saveTransactionDepth || 0) > 0) {
+            App.saveTransactionPending = true;
+            return true;
+        }
+        let saved = false;
         try {
-            localStorage.setItem(CONST.SAVE_KEY, JSON.stringify(App.data));
-        } catch(e) { console.error(e); }
-		
-		// ★追加
-		if (typeof App.updateHUD === 'function') App.updateHUD();
+            if (Field.ready) {
+                App.data.location.x = Field.x;
+                App.data.location.y = Field.y;
+            }
+
+            if (!App.data.stats) App.data.stats = { maxGold: 0, maxGems: 0 };
+            if (App.data.gold > (App.data.stats.maxGold || 0)) App.data.stats.maxGold = App.data.gold;
+            if (App.data.gems > (App.data.stats.maxGems || 0)) App.data.stats.maxGems = App.data.gems;
+
+            localStorage.setItem(CONST.SAVE_KEY, App.serializeSaveData(App.data));
+            App.saveFailureNotified = false;
+            App.lastSaveError = null;
+            saved = true;
+        } catch (e) {
+            App.lastSaveError = e;
+            console.error('[SAVE] セーブデータを保存できませんでした。', e);
+            if (!App.saveFailureNotified) {
+                App.saveFailureNotified = true;
+                App.showMessage(
+                    'セーブデータを保存できませんでした。\nブラウザの保存領域が不足している可能性があります。ゲームを閉じる前に「セーブデータ出力」でバックアップしてください。'
+                );
+            }
+        }
+
+        if (typeof App.updateHUD === 'function') App.updateHUD();
+        return saved;
     },
 
 	updateHUD: () => {
@@ -3385,6 +4865,53 @@ load: () => {
     main.js - App.calcStats (オーラ系特性反映版)
     ========================================================================== */
 
+    ensureAbyssRegionProgress: () => {
+        if (!App.data.progress) App.data.progress = {};
+        if (!App.data.progress.abyssSpiritBlessings || typeof App.data.progress.abyssSpiritBlessings !== 'object') {
+            App.data.progress.abyssSpiritBlessings = {};
+        }
+        return App.data.progress;
+    },
+
+    getEnvironmentalElementModifiers: (char) => {
+        const master = globalThis.ABYSS_REGION_MASTER;
+        const result = {};
+        const elements = Array.isArray(master?.elements) ? master.elements : (CONST.ELEMENTS || []);
+        elements.forEach(element => { result[element] = 0; });
+        if (!master) return result;
+
+        const currentArea = typeof Field !== 'undefined' && typeof Field.getCurrentAreaKey === 'function'
+            ? Field.getCurrentAreaKey()
+            : App.data?.location?.area;
+        const flags = App.data?.progress?.flags || {};
+        if (currentArea === 'CARMENA' && !flags.abyssCarmenaGateCleared
+            && !master.protectedCarmenaCharacterIds.includes(Number(char?.charId))) {
+            elements.forEach(element => { result[element] -= 100; });
+        }
+
+        const mapPenalty = (typeof Field !== 'undefined' ? Field.currentMapData?.elementPenalty : null)
+            || (typeof FIXED_DUNGEON_MAPS !== 'undefined' ? FIXED_DUNGEON_MAPS[currentArea]?.elementPenalty : null)
+            || null;
+        if (mapPenalty) Object.entries(mapPenalty).forEach(([element, value]) => {
+            result[element] = (result[element] || 0) + Number(value || 0);
+        });
+
+        const battleActive = globalThis.Battle?.active === true;
+        const spiritElement = battleActive ? App.data?.battle?.abyssSpiritElement : null;
+        if (spiritElement) result[spiritElement] = (result[spiritElement] || 0) - 50;
+
+        const blessings = App.ensureAbyssRegionProgress().abyssSpiritBlessings;
+        Object.keys(blessings).filter(element => blessings[element]).forEach(element => {
+            result[element] = (result[element] || 0) + 20;
+        });
+        if (battleActive && App.data?.battle?.abyssSpiritFinalBlessing) {
+            Object.keys(blessings).filter(element => blessings[element]).forEach(element => {
+                result[element] = (result[element] || 0) + 30;
+            });
+        }
+        return result;
+    },
+
     calcStats: (char) => {
     // DBのマスタデータを取得 (基礎ステータス参照用)
     const base = (window.CHARACTERS_DATA || []).find(c => c.id === char.charId) || char;
@@ -3518,12 +5045,19 @@ load: () => {
 	// --- 追加：装備を「全スロット」から集める（重複キー対策付き） ---
 	const allEquips = [];
 	const seen = new Set();
+	const seenEquipObjects = new WeakSet();
 	// ★新規追加：集約用スキルSet
     const allSkillIds = new Set(char.skills || []);
 
 	if (char.equips) {
 		for (const [slotKey, eq] of Object.entries(char.equips)) {
 			if (!eq || !eq.data) continue;
+			// 旧互換キーが同じ装備オブジェクトを指す場合だけ確実に除外する。
+			// 別オブジェクトとして所持する同型武器は、二刀流で両方加算するため除外しない。
+			if (typeof eq === 'object') {
+				if (seenEquipObjects.has(eq)) continue;
+				seenEquipObjects.add(eq);
+			}
 
 			// 「同一装備が複数キーに入ってる」ケースの二重加算を避けるための署名
 			// ※プロジェクト側にユニークIDがあるならそれを最優先で使ってください
@@ -3745,16 +5279,19 @@ load: () => {
 	// --- calcStats の内部、オーラ判定の直前に配置 ---
 	const getAuraVal = (entity, traitId, key) => {
 		let totalLevel = 0;
+		if (PassiveSkill && typeof PassiveSkill.normalizeDisabledTraits === 'function') {
+			PassiveSkill.normalizeDisabledTraits(entity);
+		}
 
 		// 1. 本人が習得している特性 (disabledTraitsによるOFF設定を反映)
-		const learned = entity.traits ? entity.traits.find(t => t.id === traitId) : null;
+		const learned = entity.traits ? entity.traits.find(t => Number(t.id) === Number(traitId)) : null;
 		if (learned && !(entity.disabledTraits && entity.disabledTraits.includes(traitId))) {
 			totalLevel += (learned.level || 1);
 		}
 
 		// 2. 装備品に付いている特性 (常にON)
 		if (entity.equips) {
-			Object.values(entity.equips).forEach(eq => {
+			PassiveSkill.getUniqueEquips(entity).forEach(eq => {
 				if (eq && eq.traits) {
 					eq.traits.forEach(t => {
 						if (t.id === traitId) totalLevel += (t.level || 1);
@@ -3774,7 +5311,9 @@ load: () => {
 
 			App.data.party.forEach(uid => {
 				const other = App.data.characters.find(c => c.uid === uid);
-				if (!other || other.hp <= 0) return; // 生存チェック
+				if (!other) return;
+				const otherCurrentHp = Number(other.currentHp ?? other.hp ?? 0);
+				if (otherCurrentHp <= 0) return; // 戦闘不能者の隊列オーラは無効
 
 				const otherPos = other.formation || 'front';
 
@@ -3819,6 +5358,15 @@ load: () => {
 	
 	// ★新規追加：習得スキルの書き戻し
     s.skills = Array.from(allSkillIds);
+
+    // 地域・戦闘環境の補正は最終値へ一度だけ合成し、表示用の内訳も同じ計算結果から渡す。
+    const environmentalModifiers = App.getEnvironmentalElementModifiers(char);
+    s.environmentalElmRes = {};
+    Object.entries(environmentalModifiers).forEach(([element, value]) => {
+        if (!Number(value)) return;
+        s.elmRes[element] = (s.elmRes[element] || 0) + Number(value);
+        s.environmentalElmRes[element] = Number(value);
+    });
 
     return s;
 },
@@ -3898,13 +5446,13 @@ load: () => {
                 if (key === 'spd') incSpd = Math.max(1, Math.floor(incSpd * mult));
                 if (key === 'mag') incMag = Math.max(1, Math.floor(incMag * mult));
             });
-            if (!silent && bonusOptions.log !== false) {
+            if (!silent && bonusOptions.log !== false && label) {
                 growthBonusLogs.push(`${label} x${mult.toFixed(1)} (${keys.join(', ')})`);
             }
         };
 
         if (charData.level === 50 || charData.level === 100) {
-            applyGrowthBonus(['hp', 'mp', 'atk', 'def', 'mdef', 'spd', 'mag'], 5 + Math.random(), ''); //50レベル・100レベル成長ボーナス
+            applyGrowthBonus(['hp', 'mp', 'atk', 'def', 'mdef', 'spd', 'mag'], 5 + Math.random(), '', { log: false }); //50レベル・100レベル成長ボーナス（倍率は非表示）
         } else if (Math.random() < 0.12) {
             const keys = ['hp', 'mp', 'atk', 'def', 'mdef', 'spd', 'mag'].sort(() => Math.random() - 0.5).slice(0, Math.random() < 0.25 ? 2 : 1);
             applyGrowthBonus(keys, 2 + Math.random(), '', { log: false }); //ひらめき成長
@@ -3950,7 +5498,7 @@ load: () => {
         }
 
         // 3. スキル習得
-        const newSkill = App.checkNewSkill(charData);
+        const newSkill = App.isMonsterAlly(charData) ? null : App.checkNewSkill(charData);
         if (newSkill) {
             if(!charData.skills) charData.skills = [];
             if(!charData.skills.includes(newSkill.id)) {
@@ -3973,7 +5521,7 @@ load: () => {
     /**
      * レベルアップ処理
      */
-    gainExp: (charData, expGain) => {
+    gainExp: (charData, expGain, options = {}) => {
         if (!charData.exp) charData.exp = 0;
         charData.exp += expGain;
         let logs = [];
@@ -3987,8 +5535,39 @@ load: () => {
                 logs.push(...App.applyLevelUpGrowth(charData));
             } else { break; }
         }
-        App.save();
+        if (options.save !== false) App.save();
         return logs;
+    },
+
+    getCurrentAbyssEquipOptionElements: () => {
+        const mapData = (typeof Field !== 'undefined') ? Field.currentMapData : null;
+        const mapId = String(mapData?.mapId || '');
+        const abyssDungeonMapIds = new Set([
+            'MAP000038', 'MAP000039', 'MAP000040', 'MAP000041',
+            'MAP000043', 'MAP000044', 'MAP000045', 'MAP000046',
+            'MAP000048', 'MAP000049', 'MAP000050'
+        ]);
+        if (!mapData?.isDungeon || !abyssDungeonMapIds.has(mapId)) return [];
+        return Object.entries(mapData.elementPenalty || {})
+            .filter(([, value]) => Number(value) < 0)
+            .map(([element]) => String(element));
+    },
+
+    pickEquipOptionRule: (allowedKeys) => {
+        let candidates = DB.OPT_RULES.filter(rule => allowedKeys.includes(rule.key));
+        if (candidates.length === 0) candidates = DB.OPT_RULES.slice();
+
+        // 深淵の属性ダンジョンでは、その攻略属性の攻撃・耐性オプションを3倍重みで抽選する。
+        // 取得装備そのものへ通常オプションとして記録し、戦闘時の後付け補正にはしない。
+        const preferredElements = new Set(App.getCurrentAbyssEquipOptionElements());
+        const weighted = [];
+        candidates.forEach(rule => {
+            const isPreferredElement = preferredElements.has(String(rule.elm || ''))
+                && (rule.key === 'elmAtk' || rule.key === 'elmRes');
+            const weight = isPreferredElement ? 3 : 1;
+            for (let i = 0; i < weight; i++) weighted.push(rule);
+        });
+        return weighted[Math.floor(Math.random() * weighted.length)];
     },
 
 	/* main.js: App.createEquipByFloor 関数 */
@@ -4108,9 +5687,7 @@ load: () => {
 			let allowedKeys = [...new Set([...baseDefaults, ...masterOpts])];
 
 			for(let i=0; i<plus; i++) {
-				let optCandidates = DB.OPT_RULES.filter(rule => allowedKeys.includes(rule.key));
-				if (optCandidates.length === 0) optCandidates = DB.OPT_RULES;
-				const rule = optCandidates[Math.floor(Math.random() * optCandidates.length)];
+				const rule = App.pickEquipOptionRule(allowedKeys);
 				let rarity = 'N';
 				const tierRatio = Math.min(1, targetFloor / 200);
 				const rarRnd = Math.random() + (tierRatio * 0.15);
@@ -4221,9 +5798,7 @@ load: () => {
 			};
 			let allowedKeys = [...new Set([...(BASE_OPTS_MAP[eq.baseName] || []), ...(base.possibleOpts || [])])];
 			for(let i=0; i<plus; i++) {
-				let optCandidates = DB.OPT_RULES.filter(rule => allowedKeys.includes(rule.key));
-				if (optCandidates.length === 0) optCandidates = DB.OPT_RULES;
-				const rule = optCandidates[Math.floor(Math.random() * optCandidates.length)];
+				const rule = App.pickEquipOptionRule(allowedKeys);
 				let rarity = 'N';
 				const tierRatio = Math.min(1, targetFloor / 200);
 				const rarRnd = Math.random() + (tierRatio * 0.15);
@@ -4300,13 +5875,25 @@ load: () => {
 
     log: (msg) => {
         const e = document.getElementById('msg-text');
-        if(e) e.innerHTML = msg; 
+        if(e) {
+            if (App._fieldToastTimer) clearTimeout(App._fieldToastTimer);
+            e.innerHTML = msg;
+            e.classList.remove('is-visible');
+            void e.offsetWidth;
+            e.classList.add('is-visible');
+            App._fieldToastTimer = setTimeout(() => {
+                e.classList.remove('is-visible');
+            }, 2000);
+        }
         console.log(`[App] ${msg}`);
     },
 
     resetFieldLog: () => {
         const e = document.getElementById('msg-text');
-        if (e) e.innerHTML = '';
+        if (e) {
+            e.innerHTML = '';
+            e.classList.remove('is-visible');
+        }
     },
     
     createCharHTML: (c) => {
@@ -4501,6 +6088,370 @@ load: () => {
         return null;
     },
 
+    getSkillBookItemId: (skillId) => {
+        const id = Math.floor(Number(skillId));
+        if (!Number.isFinite(id) || id < 100) return null;
+        return Number(window.PRISMA_SKILL_BOOK_ITEM_BASE || 600000) + id;
+    },
+
+    getSkillBookSkill: (itemOrId) => {
+        const item = (itemOrId && typeof itemOrId === 'object')
+            ? itemOrId
+            : (typeof DB !== 'undefined' ? DB.ITEMS.find(entry => Number(entry.id) === Number(itemOrId)) : null);
+        const skillId = Math.floor(Number(item?.skillId));
+        if (!Number.isFinite(skillId) || skillId < 100) return null;
+        return typeof DB !== 'undefined' ? DB.SKILLS.find(skill => Number(skill.id) === skillId) || null : null;
+    },
+
+    getSkillBookCapacity: (character) => App.isMonsterAlly(character) ? 8 : 2,
+
+    getSkillBookReplacementIds: (character) => {
+        if (!character) return [];
+        const unique = values => Array.from(new Set((Array.isArray(values) ? values : [])
+            .map(Number).filter(id => Number.isFinite(id) && id >= 100)));
+        return App.isMonsterAlly(character)
+            ? unique(character.skills)
+            : unique(character.skillBookSkills).filter(id => Array.isArray(character.skills) && character.skills.map(Number).includes(id));
+    },
+
+    learnSkillFromBook: (characterOrUid, skillId, replaceSkillId = null, options = {}) => {
+        const character = typeof characterOrUid === 'string' ? App.getChar(characterOrUid) : characterOrUid;
+        const id = Math.floor(Number(skillId));
+        const skill = typeof DB !== 'undefined' ? DB.SKILLS.find(entry => Number(entry.id) === id) : null;
+        if (!character || !skill || id < 100) return { ok: false, reason: 'invalid', message: 'スキルデータを確認できません。' };
+
+        const uniqueSkills = values => Array.from(new Set((Array.isArray(values) ? values : [])
+            .map(Number).filter(value => Number.isFinite(value) && value > 0)));
+        const uniqueBookSkills = values => uniqueSkills(values).filter(value => value >= 100);
+        character.skills = uniqueSkills(character.skills);
+        if (character.skills.includes(id)) {
+            return { ok: false, reason: 'known', message: `${character.name}はすでに${skill.name}を覚えている。` };
+        }
+
+        const isMonster = App.isMonsterAlly(character);
+        const capacity = App.getSkillBookCapacity(character);
+        const tracked = isMonster ? character.skills.filter(value => value >= 100) : uniqueBookSkills(character.skillBookSkills);
+        const replacement = replaceSkillId == null ? null : Math.floor(Number(replaceSkillId));
+        if (tracked.length >= capacity) {
+            if (!Number.isFinite(replacement) || !tracked.includes(replacement)) {
+                return { ok: false, reason: 'needsReplacement', replacementIds: tracked.slice(), capacity };
+            }
+            character.skills = character.skills.filter(value => Number(value) !== replacement);
+            if (!isMonster) character.skillBookSkills = tracked.filter(value => value !== replacement);
+        }
+
+        character.skills.push(id);
+        character.skills = uniqueSkills(character.skills);
+        if (Number.isFinite(replacement)) App.remapCharacterSkillConfig(character, replacement, id);
+        if (isMonster) character.skills = character.skills.slice(0, 8);
+        if (!isMonster) {
+            character.skillBookSkills = uniqueBookSkills([...(character.skillBookSkills || []), id]).slice(-2);
+        } else {
+            character.skillBookSkills = [];
+        }
+        App.ensureCharacterBattleConfig?.(character);
+        if (options.save !== false) App.save();
+        return { ok: true, skill, replacedSkillId: replacement, character };
+    },
+
+    monsterSkillEvolutionChains: Object.freeze([
+        // 物理系：名称・用途が明確に連続するものだけを成長対象にする。
+        Object.freeze([102, 132]),                    // 二段斬り → クアドリア
+        Object.freeze([112, 151]),                    // 羅刹斬り → 羅刹一文字
+        Object.freeze([117, 144]),                    // 刃砕き → 力脈断ち
+        Object.freeze([125, 147]),                    // 道化の刃 → アルレッキーノ
+        Object.freeze([131, 154]),                    // 虎爪 → レグルスの五爪
+
+        // 属性呪文系。
+        Object.freeze([200, 207, 213, 224, 233]),     // 炎・単体魔法系
+        Object.freeze([201, 210, 217, 221, 235]),     // 水・単体魔法系
+        Object.freeze([202, 211, 215, 222, 236]),     // 風・単体魔法系
+        Object.freeze([203, 208, 214, 225, 234]),     // 闇・単体魔法系
+        Object.freeze([204, 209, 216, 223]),          // 炎・全体魔法系
+        Object.freeze([205, 212, 218, 227, 232]),     // 光・全体魔法系
+        Object.freeze([206, 226, 237]),               // 雷魔法系
+        Object.freeze([219, 231]),                    // 星魔法系
+
+        // ブレス・回復・状態異常系。
+        Object.freeze([300, 302, 306, 310]),          // 炎ブレス系
+        Object.freeze([301, 305, 307, 309]),          // 氷ブレス系
+        Object.freeze([303, 313, 314]),               // 闇ブレス系
+        Object.freeze([400, 401, 412, 417]),          // 単体回復系
+        Object.freeze([404, 413, 418]),               // 全体回復系
+        Object.freeze([407, 414, 419]),               // 蘇生系
+        Object.freeze([600, 602]),                    // 守備低下系
+        Object.freeze([700, 702]),                    // 毒息系
+        Object.freeze([701, 711, 712, 714]),          // 咆哮系
+        Object.freeze([706, 708, 709]),               // 即死呪文系
+        Object.freeze([707, 710])                     // 死の踊り系
+    ]),
+
+    getMonsterSkillEvolution: (skillId) => {
+        const currentId = Math.floor(Number(skillId));
+        if (!Number.isFinite(currentId) || currentId < 100 || typeof DB === 'undefined') return null;
+        const chain = App.monsterSkillEvolutionChains.find(ids => ids.includes(currentId));
+        if (!chain) return null;
+        const index = chain.indexOf(currentId);
+        if (index < 0 || index >= chain.length - 1) return null;
+        const current = DB.SKILLS.find(skill => Number(skill.id) === currentId);
+        const next = DB.SKILLS.find(skill => Number(skill.id) === Number(chain[index + 1]));
+        if (!current || !next) return null;
+        // データ編集で系統が崩れた場合は誤変化させない。
+        if (String(current.type || '') !== String(next.type || '')) return null;
+        if (String(current.elm || '無') !== String(next.elm || '無')) return null;
+        return next;
+    },
+
+    getMonsterFusionPreview: (primaryUid, materialUid, selectedSkillIds = null) => {
+        const primary = App.getChar(primaryUid);
+        const material = App.getChar(materialUid);
+        if (!primary || !material || primary.uid === material.uid || !App.isMonsterAlly(primary) || !App.isMonsterAlly(material)) {
+            return { ok: false, message: '合成する仲間モンスターを確認できません。' };
+        }
+        const allSkills = Array.from(new Set([...(primary.skills || []), ...(material.skills || [])]
+            .map(Number).filter(id => Number.isFinite(id) && id >= 100)));
+        let skills = allSkills.length <= 8
+            ? allSkills.slice()
+            : (Array.isArray(selectedSkillIds)
+                ? Array.from(new Set(selectedSkillIds.map(Number).filter(id => allSkills.includes(id))))
+                : []);
+        if (skills.length > 8) skills = skills.slice(0, 8);
+        const stats = {};
+        ['hp', 'mp', 'atk', 'def', 'mag', 'mdef', 'spd'].forEach(key => {
+            const minimum = key === 'mp' ? 0 : 1;
+            stats[key] = Math.max(minimum, Math.floor((Number(primary[key] || 0) + Number(material[key] || 0)) / 4));
+        });
+        return { ok: true, primary, material, allSkills, skills, stats, requiresSkillSelection: allSkills.length > 8 };
+    },
+
+    fuseMonsterAllies: (primaryUid, materialUid, selectedSkillIds = null) => {
+        const preview = App.getMonsterFusionPreview(primaryUid, materialUid, selectedSkillIds);
+        if (!preview.ok) return preview;
+        if (preview.requiresSkillSelection && (!Array.isArray(selectedSkillIds) || preview.skills.length !== 8)) {
+            return { ...preview, ok: false, reason: 'needsSkillSelection', message: '引き継ぐスキルを8個選んでください。' };
+        }
+        const potId = Number(window.PRISMA_SYNTHESIS_POT_ITEM_ID || 599999);
+        if (Number(App.data?.items?.[potId] || 0) <= 0) return { ok: false, reason: 'noPot', message: '合成の壺を持っていません。' };
+
+        const { primary, material, skills, stats } = preview;
+        const returnedEquipment = Array.from(new Set(Object.values(material.equips || {}).filter(Boolean)));
+        if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+        returnedEquipment.forEach(equip => App.data.inventory.push(equip));
+
+        const retainedSkillSet = new Set(skills.map(Number));
+        const oldConfig = (primary.config && typeof primary.config === 'object') ? primary.config : {};
+        Object.assign(primary, stats, {
+            level: 1,
+            exp: 0,
+            sp: 0,
+            currentHp: stats.hp,
+            currentMp: stats.mp,
+            skills: skills.slice(0, 8),
+            skillBookSkills: [],
+            limitBreak: 0,
+            lbProgress: {
+                counters: { battleWins: 0 },
+                sources: { story: 0, battle: 0, dungeon: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, monster: 0, trial: 0, item: 0, legacy: 0 },
+                trials: { mid: false, final: false, midClearedAt: null, finalClearedAt: null }
+            },
+            reincarnationCount: 0,
+            growthBase: { ...stats },
+            config: {
+                ...oldConfig,
+                hiddenSkills: (oldConfig.hiddenSkills || []).map(Number).filter(id => retainedSkillSet.has(id)),
+                autoDisabledSkills: (oldConfig.autoDisabledSkills || []).map(Number).filter(id => retainedSkillSet.has(id))
+            },
+            monsterFusionCount: Math.max(0, Number(primary.monsterFusionCount || 0)) + 1
+        });
+        primary.monsterAllyMeta = {
+            ...(primary.monsterAllyMeta || {}),
+            fusedAt: Date.now(),
+            absorbedMonsterId: material.monsterId || material.sourceMonsterId || null,
+            absorbedName: material.name || ''
+        };
+        App.data.characters = (App.data.characters || []).filter(character => character && character.uid !== material.uid);
+        if (Array.isArray(App.data.party)) {
+            App.data.party = App.data.party.map(uid => uid === material.uid ? null : uid);
+        }
+        App.data.items[potId]--;
+        if (App.data.items[potId] <= 0) delete App.data.items[potId];
+        App.ensureCharacterBattleConfig?.(primary);
+        App.save();
+        return {
+            ok: true,
+            character: primary,
+            consumedUid: material.uid,
+            returnedEquipmentCount: returnedEquipment.length,
+            message: `${primary.name}は新たな力を得てレベル1になった！`
+        };
+    },
+
+    getLifetimeStatDefaults: () => ({
+        totalSteps: 0, totalBattles: 0, totalChestsOpened: 0, totalMedals: 0,
+        totalQuestCompletions: 0, totalGuildQuestCompletions: 0,
+        totalAlchemyCrafts: 0, totalAlchemyItemsCrafted: 0,
+        totalBlacksmithActions: 0, blacksmithSynthesisCount: 0,
+        blacksmithRefineAttempts: 0, blacksmithRefineSuccesses: 0,
+        blacksmithEnhanceAttempts: 0, blacksmithEnhanceSuccesses: 0
+    }),
+
+    ensureLifetimeStats: (data = App.data) => {
+        if (!data) return null;
+        if (!data.stats || typeof data.stats !== 'object' || Array.isArray(data.stats)) data.stats = {};
+        Object.entries(App.getLifetimeStatDefaults()).forEach(([key, fallback]) => {
+            const value = Number(data.stats[key]);
+            data.stats[key] = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : fallback;
+        });
+        return data.stats;
+    },
+
+    incrementLifetimeStat: (key, amount = 1, options = {}) => {
+        const stats = App.ensureLifetimeStats();
+        if (!stats || !(key in App.getLifetimeStatDefaults())) return 0;
+        stats[key] = Math.max(0, Number(stats[key] || 0) + Number(amount || 0));
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return stats[key];
+    },
+
+    getAbyssLegacyProgressFloor: (data = App.data) => {
+        const dungeon = data?.dungeon || {};
+        const storyFloor = Math.max(0, Number(dungeon.storyMaxFloor || 0));
+        const randomFloor = Math.max(0, Number(dungeon.maxFloor || 0));
+        return Math.max(storyFloor, randomFloor > 0 ? randomFloor + 100 : 0);
+    },
+
+    getNormalQuestCompletionCount: (data = App.data) => {
+        const quests = data?.progress?.quests || {};
+        const derived = Object.values(quests).filter(entry => entry?.state === 'completed').length;
+        return Math.max(derived, Number(data?.stats?.totalQuestCompletions || 0));
+    },
+
+    getGuildQuestCompletionCount: (data = App.data) => {
+        const guild = data?.progress?.guild || {};
+        const staticTotal = Object.values(guild.completionCounts || {}).reduce((sum, value) => sum + Math.max(0, Number(value || 0)), 0);
+        const generated = Math.max(0, Number(guild.generatedCompletionTotal || 0));
+        return Math.max(staticTotal + generated, Number(data?.stats?.totalGuildQuestCompletions || 0));
+    },
+
+    migrateAbyssFloorSchemaData: (data) => {
+        if (!data || typeof data !== 'object') return data;
+        data.system = data.system && typeof data.system === 'object' ? data.system : {};
+        data.progress = data.progress && typeof data.progress === 'object' ? data.progress : {};
+        data.progress.flags = data.progress.flags && typeof data.progress.flags === 'object' ? data.progress.flags : {};
+        data.dungeon = data.dungeon && typeof data.dungeon === 'object' ? data.dungeon : {};
+        const targetVersion = Number(globalThis.ABYSS_FLOOR_RULES?.SCHEMA_VERSION || 2);
+        const fromVersion = Number(data.system.abyssFloorSchemaVersion || 1);
+        if (fromVersion >= targetVersion) {
+            data.dungeon.storyMaxFloor = Math.max(0, Number(data.dungeon.storyMaxFloor || 0));
+            data.dungeon.maxFloor = Math.max(0, Number(data.dungeon.maxFloor || 0));
+            data.dungeon.storyTryCount = Math.max(0, Number(data.dungeon.storyTryCount || 0));
+            data.dungeon.randomTryCount = Math.max(0, Number(data.dungeon.randomTryCount || 0));
+            data.dungeon.abyssMode = globalThis.ABYSS_FLOOR_RULES?.normalizeMode(data.dungeon.abyssMode, data.progress.flags.abyssRandomUnlocked ? 'random' : 'story') || 'story';
+            return data;
+        }
+
+        const legacyMax = Math.max(0, Math.floor(Number(data.dungeon.maxFloor || 0)));
+        const legacyTryCount = Math.max(0, Math.floor(Number(data.dungeon.tryCount || 0)));
+        data.dungeon.storyMaxFloor = Math.min(100, legacyMax);
+        data.dungeon.maxFloor = Math.max(0, legacyMax - 100);
+        data.dungeon.storyTryCount = legacyMax <= 100 ? legacyTryCount : 0;
+        data.dungeon.randomTryCount = 0;
+        // 旧仕様では物語・ランダムの挑戦回数を分けていなかったため、101階以降へ到達済みの履歴は推測せず未分類として保持する。
+        data.dungeon.legacyUnclassifiedAbyssTryCount = legacyMax > 100 ? legacyTryCount : 0;
+        if (data.progress.flags.abyssFloor100EpilogueCleared || legacyMax > 100) data.progress.flags.abyssRandomUnlocked = true;
+
+        const inAbyss = data.location?.area === 'ABYSS';
+        const activeLegacyFloor = Math.max(1, Number(data.progress.floor || 1));
+        const activeRandom = inAbyss && activeLegacyFloor >= 101;
+        data.dungeon.abyssMode = activeRandom ? 'random' : 'story';
+        const convertFloor = value => {
+            const floor = Number(value);
+            return Number.isFinite(floor) && floor >= 101 ? Math.max(1, Math.floor(floor) - 100) : value;
+        };
+        if (activeRandom) data.progress.floor = convertFloor(data.progress.floor);
+        ['abyssBossEncounter','adventurer','healSpring','abyssRift','trialAngel','keyGuardian'].forEach(key => {
+            const obj = data.dungeon[key];
+            if (!obj || typeof obj !== 'object') return;
+            if (activeRandom) {
+                if ('floor' in obj) obj.floor = convertFloor(obj.floor);
+                if ('targetFloor' in obj) obj.targetFloor = convertFloor(obj.targetFloor);
+                if (key === 'abyssBossEncounter') {
+                    obj.displayFloor = convertFloor(obj.displayFloor ?? obj.floor);
+                    obj.floor = obj.displayFloor;
+                    obj.mode = 'random';
+                    obj.balanceFloor = Math.max(101, Number(obj.balanceFloor || (Number(obj.displayFloor || 1) + 100)));
+                }
+            }
+        });
+        ['keyChests','floorKeys'].forEach(key => {
+            if (activeRandom && Array.isArray(data.dungeon[key])) data.dungeon[key].forEach(entry => { if (entry && 'floor' in entry) entry.floor = convertFloor(entry.floor); });
+        });
+        if (activeRandom && data.dungeon.visitedMap && typeof data.dungeon.visitedMap === 'object' && 'floor' in data.dungeon.visitedMap) {
+            data.dungeon.visitedMap.floor = convertFloor(data.dungeon.visitedMap.floor);
+        }
+        if (activeRandom && data.dungeon.visualThemeAudit && typeof data.dungeon.visualThemeAudit === 'object' && 'floor' in data.dungeon.visualThemeAudit) {
+            data.dungeon.visualThemeAudit.floor = convertFloor(data.dungeon.visualThemeAudit.floor);
+        }
+
+        // 旧形式の乱数状態キー（ABYSS:F101）を、モードを含む新形式
+        // （ABYSS:random:F1 / ABYSS:story:F1）へ全件移行する。
+        if (data.dungeon.randomKeys && typeof data.dungeon.randomKeys === 'object' && !Array.isArray(data.dungeon.randomKeys)) {
+            const migratedRandomKeys = {};
+            const mergeKeyState = (current, incoming) => {
+                if (!current) return incoming;
+                if (!incoming || typeof incoming !== 'object') return current;
+                const merged = { ...current, ...incoming };
+                const order = [
+                    ...(Array.isArray(current._order) ? current._order : []),
+                    ...(Array.isArray(incoming._order) ? incoming._order : [])
+                ];
+                if (order.length > 0) merged._order = Array.from(new Set(order));
+                return merged;
+            };
+            Object.entries(data.dungeon.randomKeys).forEach(([scope, state]) => {
+                const match = /^ABYSS:F(\d+)$/.exec(String(scope));
+                let targetScope = scope;
+                if (match) {
+                    const legacyFloor = Math.max(1, Number(match[1]) || 1);
+                    const mode = legacyFloor >= 101 ? 'random' : 'story';
+                    const displayFloor = mode === 'random' ? legacyFloor - 100 : legacyFloor;
+                    targetScope = `ABYSS:${mode}:F${displayFloor}`;
+                }
+                migratedRandomKeys[targetScope] = mergeKeyState(migratedRandomKeys[targetScope], state);
+            });
+            data.dungeon.randomKeys = migratedRandomKeys;
+        }
+
+        // 戦闘中セーブも、表示階層だけを新仕様へ移し、生成済み個体の能力・報酬階層は維持する。
+        const battle = data.battle && typeof data.battle === 'object' ? data.battle : null;
+        if (battle && inAbyss) {
+            battle.abyssMode = activeRandom ? 'random' : 'story';
+            const legacyBattleFloor = Math.max(1, Number(battle.abyssFloor || activeLegacyFloor || 1));
+            battle.abyssFloor = activeRandom ? convertFloor(legacyBattleFloor) : legacyBattleFloor;
+            battle.abyssBalanceFloor = activeRandom
+                ? Math.max(101, Number(battle.abyssBalanceFloor || legacyBattleFloor))
+                : Math.max(1, Number(battle.abyssBalanceFloor || battle.abyssFloor));
+            if (battle.abyssBossEncounter && typeof battle.abyssBossEncounter === 'object') {
+                const encounter = battle.abyssBossEncounter;
+                const legacyEncounterFloor = Math.max(1, Number(encounter.displayFloor ?? encounter.floor ?? legacyBattleFloor));
+                encounter.displayFloor = activeRandom ? convertFloor(legacyEncounterFloor) : legacyEncounterFloor;
+                encounter.floor = encounter.displayFloor;
+                encounter.mode = battle.abyssMode;
+                encounter.balanceFloor = activeRandom
+                    ? Math.max(101, Number(encounter.balanceFloor || legacyEncounterFloor))
+                    : Math.max(1, Number(encounter.balanceFloor || encounter.displayFloor));
+            }
+            if (battle.abyssBossPosition && typeof battle.abyssBossPosition === 'object' && 'floor' in battle.abyssBossPosition) {
+                battle.abyssBossPosition.floor = activeRandom ? convertFloor(battle.abyssBossPosition.floor) : battle.abyssBossPosition.floor;
+            }
+            if (activeRandom && 'riftDisplayFloor' in battle) battle.riftDisplayFloor = convertFloor(battle.riftDisplayFloor);
+        }
+        // 旧ランダム深淵で生成済みの地形・宝箱・特殊イベントは、旧表示階層がそのまま
+        // 新しいバランス階層に相当するため保持する。表示用の階層値だけを上で移行する。
+        data.system.abyssFloorSchemaVersion = targetVersion;
+        return data;
+    },
+
     migrateImportedSaveData: (loadedData) => {
         if (!loadedData || typeof loadedData !== 'object' || Array.isArray(loadedData)) return loadedData;
 
@@ -4515,8 +6466,27 @@ load: () => {
                 if (typeof App.ensureLimitBreakProgress === 'function') {
                     App.ensureLimitBreakProgress(char);
                 }
+                const uniqueCharacterSkills = values => Array.from(new Set((Array.isArray(values) ? values : [])
+                    .map(Number).filter(id => Number.isFinite(id) && id > 0)));
+                const uniqueBookSkills = values => uniqueCharacterSkills(values).filter(id => id >= 100);
+                if (char.isMonsterAlly === true) {
+                    char.skills = uniqueCharacterSkills(char.skills).filter(id => id >= 100).slice(0, 8);
+                    char.skillBookSkills = [];
+                    char.reincarnationCount = 0;
+                } else {
+                    char.skills = uniqueCharacterSkills(char.skills);
+                    char.skillBookSkills = uniqueBookSkills(char.skillBookSkills)
+                        .filter(id => char.skills.includes(id)).slice(0, 2);
+                }
             });
         }
+
+        // 仲間モンスターの加入時SP仕様導入前のセーブへ、一度だけ Lv-1 相当まで補填する。
+        App.migrateMonsterAllySkillPointsV1(data);
+
+        // 高Rank時の実ステータスを growthBase に保存していた旧セーブを一度だけ補正する。
+        // 現在値・レベル・習得内容は変えず、以後のレベルアップ係数だけを通常仲間相当に正規化する。
+        App.migrateMonsterAllyGrowthV1(data);
 
         if (!data.book || typeof data.book !== 'object' || Array.isArray(data.book)) data.book = { monsters: [] };
         if (!Array.isArray(data.book.monsters)) data.book.monsters = [];
@@ -4544,11 +6514,25 @@ load: () => {
         if (typeof data.stats.totalSteps !== 'number') data.stats.totalSteps = 0;
         if (typeof data.stats.totalBattles !== 'number') data.stats.totalBattles = 0;
         if (typeof data.stats.startTime !== 'number') data.stats.startTime = Date.now();
+        App.ensureLifetimeStats(data);
+        data.stats.totalQuestCompletions = Math.max(Number(data.stats.totalQuestCompletions || 0), Object.values(data.progress?.quests || {}).filter(entry => entry?.state === 'completed').length);
+        data.stats.totalGuildQuestCompletions = Math.max(Number(data.stats.totalGuildQuestCompletions || 0), App.getGuildQuestCompletionCount(data));
 
         if (!data.settings || typeof data.settings !== 'object' || Array.isArray(data.settings)) data.settings = {};
         if (!['normal', 'fast', 'fastest'].includes(data.settings.battleSpeed)) data.settings.battleSpeed = 'normal';
         data.settings.battleAutoStart = data.settings.battleAutoStart === true;
+        const clampAudioSetting = (value, fallback) => Math.max(0, Math.min(100, Math.round(Number(value ?? fallback) || 0)));
+        const legacyBgmVolume = clampAudioSetting(data.settings.bgmVolume, 30);
+        const legacySeVolume = clampAudioSetting(data.settings.seVolume, 5);
+        data.settings.fieldBgmVolume = clampAudioSetting(data.settings.fieldBgmVolume, legacyBgmVolume);
+        data.settings.battleBgmVolume = clampAudioSetting(data.settings.battleBgmVolume, legacyBgmVolume);
+        data.settings.uiSeVolume = clampAudioSetting(data.settings.uiSeVolume, legacySeVolume);
+        data.settings.battleSeVolume = clampAudioSetting(data.settings.battleSeVolume, legacySeVolume);
+        data.settings.fieldSeVolume = clampAudioSetting(data.settings.fieldSeVolume, legacySeVolume);
+        data.settings.bgmVolume = data.settings.fieldBgmVolume;
+        data.settings.seVolume = data.settings.uiSeVolume;
 
+        App.migrateAbyssFloorSchemaData(data);
         return data;
     },
 
@@ -4671,60 +6655,66 @@ load: () => {
 		return { isAmbushed, isPreemptive };
 	},
 
-	playEncounterTransition: (callback, options = {}) => {
-		let layer = document.getElementById('encounter-transition');
-		const isEventBattle = !!options.eventBattle;
-
-		if (!layer) {
-			layer = document.createElement('div');
-			layer.id = 'encounter-transition';
-			layer.setAttribute('aria-hidden', 'true');
-			layer.innerHTML = `
-				<div class="encounter-crack crack-1"></div>
-				<div class="encounter-crack crack-2"></div>
-				<div class="encounter-crack crack-3"></div>
-				<div class="encounter-crack crack-4"></div>
-				<div class="encounter-flash-core"></div>
-			`;
-			(document.getElementById('game-container') || document.body).appendChild(layer);
-		}
-
-		const clearEventExtras = () => {
-			layer.classList.remove('is-event-battle');
-			layer.style.filter = '';
-			layer.querySelectorAll('.encounter-event-extra').forEach(el => el.remove());
+	runAfterScenePaint: (callback) => {
+		const run = () => {
+			try { callback(); } catch (e) { console.error(e); }
 		};
-
-		clearEventExtras();
-
-		if (isEventBattle) {
-			layer.classList.add('is-event-battle');
-			layer.style.filter = 'contrast(1.35) brightness(1.15) saturate(1.2)';
-			const angles = [-34, 48, 104, 168, 236, 296];
-			angles.forEach((angle, i) => {
-				const crack = document.createElement('div');
-				crack.className = 'encounter-crack encounter-event-extra';
-				crack.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
-				crack.style.height = `${190 + (i % 3) * 28}px`;
-				crack.style.width = i % 2 === 0 ? '3px' : '2px';
-				layer.appendChild(crack);
-			});
+		if (typeof requestAnimationFrame === 'function') {
+			requestAnimationFrame(() => requestAnimationFrame(run));
+		} else {
+			setTimeout(run, 0);
 		}
-
-		layer.classList.remove('is-active');
-		void layer.offsetWidth;
-		layer.classList.add('is-active');
-
-		setTimeout(() => {
-			callback();
-
-			setTimeout(() => {
-				layer.classList.remove('is-active');
-				clearEventExtras();
-			}, isEventBattle ? 420 : 300);
-		}, isEventBattle ? 820 : 680);
 	},
 
+	playEncounterTransition: (callback, options = {}) => {
+        let layer = document.getElementById('encounter-transition');
+        const isEventBattle = !!options.eventBattle;
+        const patterns = isEventBattle ? ['shatter', 'shutter'] : ['shatter', 'spiral', 'shutter'];
+        const pattern = options.pattern || patterns[Math.floor(Math.random() * patterns.length)];
+
+        if (!layer) {
+            layer = document.createElement('div');
+            layer.id = 'encounter-transition';
+            layer.setAttribute('aria-hidden', 'true');
+            (document.getElementById('game-container') || document.body).appendChild(layer);
+        }
+        layer.innerHTML = `
+            <div class="encounter-backdrop"></div>
+            <div class="encounter-vignette"></div>
+            <div class="encounter-ring ring-a"></div>
+            <div class="encounter-ring ring-b"></div>
+            <div class="encounter-crack-network">
+                ${Array.from({ length: isEventBattle ? 12 : 8 }, (_, i) => `<i class="encounter-crack-branch branch-${i + 1}"></i>`).join('')}
+            </div>
+            <div class="encounter-shutter shutter-top"></div>
+            <div class="encounter-shutter shutter-bottom"></div>
+            <div class="encounter-flash-core"></div>
+            <div class="encounter-shards"></div>
+        `;
+        const shardLayer = layer.querySelector('.encounter-shards');
+        const shardCount = isEventBattle ? 22 : 14;
+        for (let i = 0; i < shardCount; i++) {
+            const shard = document.createElement('i');
+            shard.className = 'encounter-shard';
+            shard.style.setProperty('--angle', `${(360 / shardCount) * i + (Math.random() * 18 - 9)}deg`);
+            shard.style.setProperty('--distance', `${40 + Math.random() * 58}vmax`);
+            shard.style.setProperty('--delay', `${Math.random() * 90}ms`);
+            shard.style.setProperty('--size', `${22 + Math.random() * 56}px`);
+            shardLayer.appendChild(shard);
+        }
+
+        layer.className = `encounter-pattern-${pattern}${isEventBattle ? ' is-event-battle' : ''}`;
+        if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('encounter_start');
+        void layer.offsetWidth;
+        layer.classList.add('is-active');
+
+        const switchDelay = isEventBattle ? 760 : 610;
+        const releaseDelay = isEventBattle ? 460 : 340;
+        setTimeout(() => {
+            callback();
+            setTimeout(() => layer.classList.remove('is-active'), releaseDelay);
+        }, switchDelay);
+    },
 
     isWorldEncounterLandTile: (tile) => {
         const upper = String(tile || '').toUpperCase();
@@ -4732,16 +6722,19 @@ load: () => {
     },
 
     isWorldEncounterConnected: (fromX, fromY, toX, toY, maxSteps = 80) => {
-        if (typeof MAP_DATA === 'undefined' || !Array.isArray(MAP_DATA) || !MAP_DATA[0]) return true;
-        const mapH = MAP_DATA.length;
-        const mapW = MAP_DATA[0].length;
+        const worldMap = (typeof MapRegistry !== 'undefined' && MapRegistry.getActiveWorldMap)
+            ? MapRegistry.getActiveWorldMap()
+            : (typeof SURFACE_WORLD_MAP_DATA !== 'undefined' ? SURFACE_WORLD_MAP_DATA : null);
+        if (!Array.isArray(worldMap) || !worldMap[0]) return true;
+        const mapH = worldMap.length;
+        const mapW = worldMap[0].length;
         const sx = ((Number(fromX) % mapW) + mapW) % mapW;
         const sy = ((Number(fromY) % mapH) + mapH) % mapH;
         const tx = ((Number(toX) % mapW) + mapW) % mapW;
         const ty = ((Number(toY) % mapH) + mapH) % mapH;
         if (sx === tx && sy === ty) return true;
-        if (!App.isWorldEncounterLandTile(MAP_DATA[sy]?.[sx])) return false;
-        if (!App.isWorldEncounterLandTile(MAP_DATA[ty]?.[tx])) return false;
+        if (!App.isWorldEncounterLandTile(worldMap[sy]?.[sx])) return false;
+        if (!App.isWorldEncounterLandTile(worldMap[ty]?.[tx])) return false;
 
         const limit = Math.max(1, Number(maxSteps || 80));
         const queue = [{ x: sx, y: sy, d: 0 }];
@@ -4754,7 +6747,7 @@ load: () => {
                 const ny = ((p.y + dy) % mapH + mapH) % mapH;
                 const key = `${nx},${ny}`;
                 if (seen.has(key)) continue;
-                if (!App.isWorldEncounterLandTile(MAP_DATA[ny]?.[nx])) continue;
+                if (!App.isWorldEncounterLandTile(worldMap[ny]?.[nx])) continue;
                 if (nx === tx && ny === ty) return true;
                 seen.add(key);
                 queue.push({ x: nx, y: ny, d: p.d + 1 });
@@ -4763,12 +6756,92 @@ load: () => {
         return false;
     },
 
+
+    migrateMonsterIdReferences: () => {
+        if (!App.data || !globalThis.MonsterData?.migrateId) return false;
+        const currentVersion = Number(globalThis.MonsterData.idSchemaVersion || 4);
+        const fromVersion = Number(App.data.system?.monsterIdSchemaVersion || 2);
+        const migrate = (value) => {
+            const id = globalThis.MonsterData.migrateId(value, fromVersion);
+            return id === null ? value : id;
+        };
+        const singularKeys = new Set([
+            'monsterId', 'fixedBossId', 'chestTrapMonsterId', 'displayMonsterId',
+            'targetMonsterId', 'bossMonsterId', 'guardianMonsterId', 'trialMonsterId',
+            'trapMonsterId', 'mapSpriteMonsterId', 'sourceMonsterId', 'absorbedMonsterId'
+        ]);
+        const arrayKeys = new Set([
+            'monsters', 'monsterIds', 'fixedEnemyIds', 'normalMonsterIds', 'rareMonsterIds',
+            'bossMonsterIds', 'targetMonsterIds', 'candidateMonsterIds'
+        ]);
+        const keyedIdMaps = new Set(['killCounts', 'defeatedBosses']);
+        let changed = fromVersion !== currentVersion;
+        const walk = (value, parentKey = '') => {
+            if (Array.isArray(value)) {
+                if (arrayKeys.has(parentKey)) {
+                    const mapped = value.map((entry) => {
+                        if (Number.isFinite(Number(entry))) {
+                            const next = migrate(entry);
+                            if (Number(next) !== Number(entry)) changed = true;
+                            return next;
+                        }
+                        return walk(entry, parentKey);
+                    });
+                    return Array.from(new Set(mapped));
+                }
+                return value.map((entry) => walk(entry, parentKey));
+            }
+            if (!value || typeof value !== 'object') return value;
+            if (keyedIdMaps.has(parentKey)) {
+                const remapped = {};
+                Object.entries(value).forEach(([key, entryValue]) => {
+                    const numeric = Number(key);
+                    const nextKey = Number.isFinite(numeric) ? String(migrate(numeric)) : key;
+                    if (nextKey !== key) changed = true;
+                    if (parentKey === 'killCounts') {
+                        remapped[nextKey] = Number(remapped[nextKey] || 0) + Number(entryValue || 0);
+                    } else if (!(nextKey in remapped)) {
+                        remapped[nextKey] = entryValue;
+                    } else {
+                        remapped[nextKey] = remapped[nextKey] || entryValue;
+                    }
+                });
+                return remapped;
+            }
+            Object.keys(value).forEach((key) => {
+                const current = value[key];
+                if (singularKeys.has(key) && Number.isFinite(Number(current))) {
+                    const next = migrate(current);
+                    if (Number(next) !== Number(current)) changed = true;
+                    value[key] = next;
+                } else if (['enemies', 'monsters'].includes(parentKey) && ['id', 'baseId', 'imageId'].includes(key) && Number.isFinite(Number(current))) {
+                    const next = migrate(current);
+                    if (Number(next) !== Number(current)) changed = true;
+                    value[key] = next;
+                } else {
+                    value[key] = walk(current, key);
+                }
+            });
+            return value;
+        };
+        App.data = walk(App.data, 'root');
+        App.data.system = (App.data.system && typeof App.data.system === 'object') ? App.data.system : {};
+        App.data.system.monsterIdSchemaVersion = currentVersion;
+        return changed;
+    },
+
     getWorldEncounterProfile: () => {
         if (typeof Field === 'undefined' || Field.currentMapData) return null;
         if (typeof App.isFlying === 'function' && App.isFlying()) return null;
-        if (typeof App.isBoating === 'function' && App.isBoating()) return null;
+        const surface = typeof MapRegistry !== 'undefined' && MapRegistry.getWorldSurfaceAt
+            ? MapRegistry.getWorldSurfaceAt(Field.x, Field.y)
+            : null;
+        if (surface?.isSea) return null;
+        const activeWorldKey = (typeof MapRegistry !== 'undefined' && MapRegistry.getActiveWorldKey)
+            ? MapRegistry.getActiveWorldKey()
+            : 'WORLD';
         const zones = (typeof window !== 'undefined' && Array.isArray(window.FIELD_ENCOUNTER_ZONES))
-            ? window.FIELD_ENCOUNTER_ZONES
+            ? window.FIELD_ENCOUNTER_ZONES.filter(zone => String(zone.worldKey || 'WORLD') === activeWorldKey)
             : [];
         if (zones.length === 0) return null;
         const x = Number(Field.x || 0);
@@ -4801,15 +6874,16 @@ load: () => {
         if (!best) return null;
         return {
             id: best.id || null,
+            mapId: best.mapId || null,
             name: best.name || 'フィールド',
             rank: Math.max(1, Number(best.rank || best.encounterRank || 1) || 1),
-            monsters: Array.isArray(best.monsters) ? best.monsters.slice() : null,
-            rareMonsters: Array.isArray(best.rareMonsters) ? best.rareMonsters.map(entry => ({ ...entry })) : null
+            monsters: null
         };
     },
 
 	tryRandomEncounter: (rate = null) => {
 		if (!App.data) return false;
+        if (Field.currentMapData?.randomEncounterDisabled) return false;
 		if (App.encounterTransitioning) return true;
 		if (App.data.battle && App.data.battle.active) return true;
 
@@ -4832,11 +6906,14 @@ load: () => {
 		App.log("敵だ！");
 
 		const flags = App.getEncounterFlags();
-		const isSeaEncounter = !Field.currentMapData && (
-			(typeof App.isBoating === 'function' && App.isBoating()) ||
-			(typeof App.getWorldTileAt === 'function' && App.getWorldTileAt(Field.x, Field.y) === 'W')
-		);
+        const worldSurface = !Field.currentMapData && typeof MapRegistry !== 'undefined' && MapRegistry.getWorldSurfaceAt
+            ? MapRegistry.getWorldSurfaceAt(Field.x, Field.y)
+            : null;
+		const isSeaEncounter = !Field.currentMapData && (worldSurface
+            ? worldSurface.isSea
+            : (typeof App.getWorldTileAt === 'function' && App.getWorldTileAt(Field.x, Field.y) === 'W'));
         const worldEncounter = isSeaEncounter ? null : App.getWorldEncounterProfile();
+        const mapEncounter = Field.currentMapData?.isDungeon ? Field.currentMapData : null;
 
 		App.data.battle = {
 			active: false,
@@ -4848,9 +6925,21 @@ load: () => {
 			encounterType: isSeaEncounter ? 'sea' : (worldEncounter ? 'field' : null),
             encounterZoneId: worldEncounter ? worldEncounter.id : null,
             encounterZoneName: worldEncounter ? worldEncounter.name : null,
-            encounterRank: worldEncounter ? worldEncounter.rank : null,
-			monsters: isSeaEncounter && Array.isArray(window.SEA_ENCOUNTER_MONSTERS) ? [...window.SEA_ENCOUNTER_MONSTERS] : (worldEncounter ? worldEncounter.monsters : null),
-            rareMonsters: worldEncounter ? worldEncounter.rareMonsters : null,
+            encounterMapId: mapEncounter?.mapId || (isSeaEncounter ? window.MAP_IDS?.SEA : worldEncounter?.mapId) || null,
+            encounterFloorId: mapEncounter?.floorId || null,
+            encounterFloor: Math.max(0, Number(mapEncounter?.floor || 0) || 0),
+            abyssFloor: mapEncounter?.mapId === window.MAP_IDS?.ABYSS && mapEncounter?.useHabitatEncounters ? Math.max(1, Number(App.data.progress?.floor || 1)) : null,
+            abyssMode: mapEncounter?.abyssMode || null,
+            abyssBalanceFloor: mapEncounter?.balanceFloor || null,
+            useHabitatEncounters: !!(mapEncounter?.useHabitatEncounters || isSeaEncounter || worldEncounter?.mapId),
+            encounterRank: mapEncounter?.encounterRank || (worldEncounter ? worldEncounter.rank : null),
+			monsters: Array.isArray(mapEncounter?.monsters) ? [...mapEncounter.monsters] : null,
+            exactMonsters: !!mapEncounter?.exactMonsters,
+            memoryRealm: !!mapEncounter?.memoryRealm,
+            memoryElements: Array.isArray(mapEncounter?.memoryElements) ? [...mapEncounter.memoryElements] : [],
+            guildQuestChallengeId: mapEncounter?.guildQuestId || null,
+            guildChallengeEnemyBoost: mapEncounter?.enemyBoost ? JSON.parse(JSON.stringify(mapEncounter.enemyBoost)) : null,
+            guildChallengeAllyAilments: Array.isArray(mapEncounter?.allyAilments) ? [...mapEncounter.allyAilments] : [],
 			isAmbushed: flags.isAmbushed,
 			isPreemptive: flags.isPreemptive
 		};
@@ -4884,19 +6973,32 @@ load: () => {
             Field.stopIdleStep();
         }
 
-        document.querySelectorAll('.scene-layer').forEach(e => e.style.display = 'none');
+        document.querySelectorAll('.scene-layer').forEach(e => {
+            e.style.display = 'none';
+            e.style.visibility = '';
+        });
         const target = document.getElementById(sceneId + '-scene');
-        if(target) target.style.display = 'flex';
-
-        if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.setActive === 'function') {
-            PhaserFieldRenderer.setActive(sceneId === 'field');
+        // フィールドはレイアウト寸法を確保したまま不可視で構築する。
+        // 表示後にPhaserを再構築すると、最短でも1フレームだけ空の静的層が露出するため。
+        if(target) {
+            target.style.display = 'flex';
+            if (sceneId === 'field') target.style.visibility = 'hidden';
         }
         
         if(typeof Menu !== 'undefined') Menu.closeAll();
         App.clearAction();
+        if (typeof AudioManager !== 'undefined' && typeof AudioManager.syncForScene === 'function') {
+            AudioManager.syncForScene(sceneId);
+        }
 
         if(sceneId === 'field') {
             Field.init();
+
+            if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.setActive === 'function') {
+                PhaserFieldRenderer.setActive(true);
+            }
+            if (typeof Field.refreshVisualState === 'function') Field.refreshVisualState();
+            if (target) target.style.visibility = '';
 
             if (typeof StoryManager !== 'undefined') {
                 // 画面描画（Field.init）との競合を避けるため、一瞬待ってから実行
@@ -4908,14 +7010,15 @@ load: () => {
                         resumed = StoryManager.resumeActiveConversation();
                     }
 
-                    // 2. 新規予約されている通常イベント
-                    if (!resumed && typeof StoryManager.resumePendingEvent === 'function') {
+                    // 2. token付き予約キューを、種別に関係なく登録順で1件ずつ再開する。
+                    if (!resumed && typeof StoryManager.resumePendingStoryEvent === 'function') {
+                        resumed = StoryManager.resumePendingStoryEvent();
+                    } else if (!resumed && typeof StoryManager.resumePendingEvent === 'function') {
+                        // 旧StoryManagerとの互換経路。
                         resumed = StoryManager.resumePendingEvent();
-                    }
-
-                    // 3. バトル勝利後の報酬・後日談イベント
-                    if (!resumed && typeof StoryManager.resumePendingBattleWinEvent === 'function') {
-                        resumed = StoryManager.resumePendingBattleWinEvent();
+                        if (!resumed && typeof StoryManager.resumePendingBattleWinEvent === 'function') {
+                            resumed = StoryManager.resumePendingBattleWinEvent();
+                        }
                     }
 
                     // 深淵の裂け目戦の勝利後報酬。
@@ -4923,6 +7026,12 @@ load: () => {
                     if (!resumed && App.data?.dungeon?.pendingRiftReward?.active &&
                         typeof Dungeon !== 'undefined' && typeof Dungeon.resumePendingRiftReward === 'function') {
                         resumed = Dungeon.resumePendingRiftReward();
+                    }
+
+                    // リザルト表示中断で保留されたモンスター仲間のスキル成長確認。
+                    if (!resumed && App.data?.progress?.pendingMonsterSkillEvolution &&
+                        typeof Battle !== 'undefined' && typeof Battle.resumePendingMonsterSkillEvolution === 'function') {
+                        resumed = Battle.resumePendingMonsterSkillEvolution();
                     }
 
                     // 現在地タイルのアクション再評価。
@@ -4941,11 +7050,26 @@ load: () => {
         }
 
 		
-        if(sceneId === 'battle') Battle.init();
+        if(sceneId === 'battle' && typeof Battle !== 'undefined') {
+            const sceneToken = (App.sceneChangeToken = (App.sceneChangeToken || 0) + 1);
+            const startBattleAfterPaint = () => {
+                const battleScene = document.getElementById('battle-scene');
+                if (App.sceneChangeToken !== sceneToken) return;
+                if (!battleScene || battleScene.style.display === 'none') return;
+                Battle.init();
+            };
+            if (typeof App.runAfterScenePaint === 'function') App.runAfterScenePaint(startBattleAfterPaint);
+            else setTimeout(startBattleAfterPaint, 0);
+        } else {
+            App.sceneChangeToken = (App.sceneChangeToken || 0) + 1;
+        }
         if(sceneId === 'inn') Facilities.initInn();
         if(sceneId === 'medal') Facilities.initMedal();
         if(sceneId === 'casino') Casino.init();
         if(sceneId === 'shop') Facilities.initShop();
+        if(sceneId === 'alchemy' && typeof Alchemy !== 'undefined') Alchemy.init();
+        if(sceneId === 'blacksmith' && typeof MenuBlacksmith !== 'undefined' && typeof MenuBlacksmith.initFacility === 'function') MenuBlacksmith.initFacility();
+        if(sceneId === 'guild' && typeof Guild !== 'undefined' && typeof Guild.initFacility === 'function') Guild.initFacility();
     }
 };
 
@@ -4972,6 +7096,32 @@ const Field = {
     // Field側で床の上に重ねる。既存の宝箱/階段/壁判定に影響させないため。
     directImageCache: {},
 
+    // Fixed and generated maps share one rectangular tile contract. Saved procedural
+    // floors from older builds can contain sparse rows, so every renderer/movement
+    // path reads through this accessor instead of indexing a row blindly.
+    getMapTileAt: (mapData, x, y, fallback = 'W') => {
+        const tx = Number(x);
+        const ty = Number(y);
+        if (!mapData || !Number.isInteger(tx) || !Number.isInteger(ty) || tx < 0 || ty < 0) return fallback;
+        const row = Array.isArray(mapData.tiles) ? mapData.tiles[ty] : null;
+        let tile;
+        if (typeof row === 'string') tile = row.charAt(tx);
+        else if (Array.isArray(row)) tile = row[tx];
+        return tile === undefined || tile === null || tile === '' ? fallback : tile;
+    },
+
+    // マップ遷移・会話完了・遅延画像読込後に、背景とオブジェクトを含む静的層を即時再構築する。
+    // 通常の render() だけではPhaserが同一署名と判断し、主人公しか更新しない場合がある。
+    refreshVisualState: () => {
+        if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.refresh === 'function') {
+            PhaserFieldRenderer.refresh();
+            return;
+        } else if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.setActive === 'function') {
+            PhaserFieldRenderer.setActive(false);
+        }
+        if (typeof Field.render === 'function') Field.render();
+    },
+
     getDirectImage: (src) => {
         if (!src) return null;
         if (!Field.directImageCache[src]) {
@@ -4983,6 +7133,50 @@ const Field = {
             Field.directImageCache[src] = img;
         }
         return Field.directImageCache[src];
+    },
+
+    syncCanvasToWrapperSize: () => {
+        const canvas = document.getElementById('field-canvas');
+        const wrapper = document.getElementById('canvas-wrapper');
+        if (!canvas || !wrapper || !wrapper.getBoundingClientRect) return false;
+        const rect = wrapper.getBoundingClientRect();
+        const width = Math.max(320, Math.round(rect.width || wrapper.clientWidth || 0));
+        const height = Math.max(320, Math.round(rect.height || wrapper.clientHeight || 0));
+        if (!width || !height) return false;
+        if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
+            if (typeof Field.updateMinimapHotspotBounds === 'function') {
+                window.requestAnimationFrame(() => Field.updateMinimapHotspotBounds());
+            }
+            return true;
+        }
+        return false;
+    },
+
+    bindViewportResizeObserver: () => {
+        if (Field._viewportResizeObserverBound) return;
+        const wrapper = document.getElementById('canvas-wrapper');
+        if (!wrapper || !window.ResizeObserver) return;
+        Field._viewportResizeObserverBound = true;
+        let scheduled = false;
+        Field._viewportResizeObserver = new ResizeObserver(() => {
+            if (scheduled) return;
+            scheduled = true;
+            window.requestAnimationFrame(() => {
+                scheduled = false;
+                const resized = typeof Field.syncCanvasToWrapperSize === 'function'
+                    ? Field.syncCanvasToWrapperSize()
+                    : false;
+                if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.resize === 'function') {
+                    PhaserFieldRenderer.resize();
+                }
+                if (resized && Field.ready && typeof Field.render === 'function') {
+                    Field.render();
+                }
+            });
+        });
+        Field._viewportResizeObserver.observe(wrapper);
     },
 	
 	// ★追加：移動を強制停止するメソッド
@@ -5044,25 +7238,34 @@ const Field = {
                 if(typeof Dungeon !== 'undefined') Dungeon.floor = App.data.progress.floor || fixedFloor.floor || 1;
             }
             else if (typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[areaKey]) {
+                const fixedMapDef = FIXED_MAPS[areaKey];
                 Field.currentMapData = {
-                    ...FIXED_MAPS[areaKey],
+                    ...fixedMapDef,
                     isFixed: true,
-                    isDungeon: false,
+                    isDungeon: fixedMapDef.isDungeon === true,
                     areaKey
                 };
+                // 内部固定MAPの旧セーブで worldKey が地上へ落ちていても、
+                // MAP定義を正本として所属世界を復元する。
+                const fixedWorldKey = fixedMapDef.worldKey || STORY_DATA?.areas?.[areaKey]?.worldKey;
+                if (fixedWorldKey) App.data.location.worldKey = fixedWorldKey;
             }
             else if (areaKey === 'ABYSS') {
                 if (App.data.dungeon && App.data.dungeon.map) {
-                    Field.currentMapData = {
-                        name: STORY_DATA.areas['ABYSS'].name,
-                        width: App.data.dungeon.width,
-                        height: App.data.dungeon.height,
-                        tiles: App.data.dungeon.map,
-                        isDungeon: true
-                    };
-                    if(typeof Dungeon !== 'undefined') Dungeon.floor = App.data.progress.floor;
+                    // App.start()後にField.init()が再度走る経路でも、ランダムダンジョンの
+                    // 外観テーマ・戦闘背景・検証フラグを欠落させない。ここで旧形式の
+                    // mapDataを組み直すと、直前に復元したテーマを深淵表示で上書きしてしまう。
+                    if (typeof Dungeon !== 'undefined') {
+                        Dungeon.floor = App.data.progress.floor;
+                        Dungeon.map = App.data.dungeon.map;
+                        Dungeon.width = App.data.dungeon.width;
+                        Dungeon.height = App.data.dungeon.height;
+                        Field.currentMapData = Dungeon.createRandomFieldMapData();
+                    }
                 } else {
-                    App.data.location.area = 'WORLD';
+                    // 深淵セーブで生成済みマップが欠落していても、現在地をワールドへ
+                    // 書き換えない。起動シーケンス側の Dungeon.loadFloor() に再生成を任せる。
+                    if (typeof Dungeon !== 'undefined') Dungeon.floor = App.data.progress.floor || 1;
                     Field.currentMapData = null;
                 }
             } else {
@@ -5074,14 +7277,17 @@ const Field = {
             Field.y = App.data.location.y;
 
             if (!Field.currentMapData) {
-                const mapW = (typeof MAP_DATA !== 'undefined' && MAP_DATA[0]) ? MAP_DATA[0].length : 100;
-                const mapH = (typeof MAP_DATA !== 'undefined') ? MAP_DATA.length : 100;
+                const worldMap = Field.getActiveWorldMap();
+                const mapW = worldMap?.[0]?.length || 100;
+                const mapH = worldMap?.length || 100;
                 Field.x = (Field.x % mapW + mapW) % mapW;
                 Field.y = (Field.y % mapH + mapH) % mapH;
             }
         }
 
         Field.ready = true;
+        if (typeof Field.bindViewportResizeObserver === 'function') Field.bindViewportResizeObserver();
+        if (typeof Field.syncCanvasToWrapperSize === 'function') Field.syncCanvasToWrapperSize();
         Field.render();
         
         // ★修正：直接代入を App.updateHUD() の呼び出しに変更
@@ -5104,34 +7310,74 @@ const Field = {
         }
     },
 
-    enterFixedMap: (targetAreaKey) => {
-        if (!targetAreaKey || typeof FIXED_MAPS === 'undefined' || !FIXED_MAPS[targetAreaKey]) return;
+    isFixedMapAreaKey: (areaKey) => !!(areaKey && typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[areaKey]),
+
+    getFixedMapWorldKey: (areaKey, fallback = null) => {
+        if (!Field.isFixedMapAreaKey(areaKey)) return fallback || 'WORLD';
+        return FIXED_MAPS[areaKey]?.worldKey
+            || STORY_DATA?.areas?.[areaKey]?.worldKey
+            || fallback
+            || App.data?.location?.worldKey
+            || App.data?.mapReturnPoint?.worldKey
+            || 'WORLD';
+    },
+
+    enterFixedMap: (targetAreaKey, options = {}) => {
+        if (!targetAreaKey || !Field.isFixedMapAreaKey(targetAreaKey)) return false;
+        if (targetAreaKey === 'ABYSS_FIELD' && !App.data?.progress?.flags?.darkCastleCleared) {
+            App.log('属性が不均質に混ざり合っている…');
+            if (typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
+                StoryManager.executeEvent('locked_abyss_field');
+            } else if (typeof App.showMessage === 'function') {
+                App.showMessage('ケイト「魔力汚染がひどすぎます…入ったら、正気ではいられない。\n入る方法を探すしかなさそうです」');
+            }
+            return false;
+        }
+
         const areaDef = FIXED_MAPS[targetAreaKey];
-        App.data.mapReturnPoint = {
-            areaKey: App.data.location.area || 'WORLD',
-            x: Field.x,
-            y: Field.y
-        };
+        const sourceIsFixedMap = !!Field.currentMapData?.isFixed && Field.isFixedMapAreaKey(App.data?.location?.area);
+        const shouldReplaceRootReturn = options.replaceReturnPoint === true || !sourceIsFixedMap || !App.data.mapReturnPoint;
+        if (shouldReplaceRootReturn) {
+            const supplied = options.returnPoint || {};
+            App.data.mapReturnPoint = {
+                areaKey: supplied.areaKey || App.data.location.area || 'WORLD',
+                worldKey: supplied.worldKey || App.data.location.worldKey || (MapRegistry?.getActiveWorldKey?.() || 'WORLD'),
+                x: Number.isFinite(Number(supplied.x)) ? Number(supplied.x) : Number(Field.x),
+                y: Number.isFinite(Number(supplied.y)) ? Number(supplied.y) : Number(Field.y),
+                mapData: supplied.mapData !== undefined
+                    ? supplied.mapData
+                    : (Field.currentMapData ? JSON.parse(JSON.stringify(Field.currentMapData)) : null)
+            };
+        }
+
+        const sourceWorldKey = App.data.location.worldKey || App.data.mapReturnPoint?.worldKey || 'WORLD';
         App.data.transportMode = null;
         App.data.location.area = targetAreaKey;
+        App.data.location.worldKey = Field.getFixedMapWorldKey(targetAreaKey, sourceWorldKey);
         Field.currentMapData = {
             ...areaDef,
             isFixed: true,
-            isDungeon: false,
+            isDungeon: areaDef.isDungeon === true,
             areaKey: targetAreaKey
         };
-        Field.x = areaDef.entryPoint ? areaDef.entryPoint.x : Math.floor(areaDef.width / 2);
-        Field.y = areaDef.entryPoint ? areaDef.entryPoint.y : areaDef.height - 3;
+        const requestedEntry = options.entryKey && areaDef.entryPoints ? areaDef.entryPoints[options.entryKey] : null;
+        const entryPoint = requestedEntry || areaDef.entryPoint || { x: Math.floor(areaDef.width / 2), y: areaDef.height - 3 };
+        Field.x = Number.isFinite(Number(options.targetX)) ? Number(options.targetX) : Number(entryPoint.x);
+        Field.y = Number.isFinite(Number(options.targetY)) ? Number(options.targetY) : Number(entryPoint.y);
         App.data.location.x = Field.x;
         App.data.location.y = Field.y;
         if (typeof App.discoverFixedMap === 'function') App.discoverFixedMap(targetAreaKey, { save: false });
-        App.log(`${areaDef.name}に入った`);
+        if (App.data.location.worldKey === 'ABYSS_WORLD' && typeof App.discoverFixedMap === 'function') {
+            App.discoverFixedMap('ABYSS_WORLD', { save: false, silent: true });
+        }
+        if (options.silentLog !== true) App.log(`${areaDef.name}に入った`);
         App.save();
         App.changeScene('field');
+        return true;
     },
 
     getCurrentAreaKey: () => {
-        if (!Field.currentMapData) return 'WORLD';
+        if (!Field.currentMapData) return MapRegistry?.getActiveWorldKey?.() || App.data?.location?.worldKey || 'WORLD';
         const locArea = App.data.location.area;
         if (locArea && (
             STORY_DATA.areas[locArea] ||
@@ -5147,6 +7393,12 @@ const Field = {
             if (dungeonEntry) return dungeonEntry[0];
         }
         return Field.currentMapData.isDungeon ? 'DEFAULT' : 'WORLD';
+    },
+
+    getActiveWorldMap: () => {
+        return (typeof MapRegistry !== 'undefined' && MapRegistry.getActiveWorldMap)
+            ? MapRegistry.getActiveWorldMap()
+            : (typeof SURFACE_WORLD_MAP_DATA !== 'undefined' ? SURFACE_WORLD_MAP_DATA : []);
     },
 
     getCurrentProgressMapKey: () => {
@@ -5212,6 +7464,7 @@ const Field = {
         const phaserRoot = document.getElementById('phaser-field-root');
         const wrapper = document.getElementById('canvas-wrapper');
         const hotspot = document.getElementById('field-minimap-hotspot');
+        const minimapCanvas = document.getElementById('field-minimap-canvas');
         const restore = document.getElementById('field-minimap-restore');
         if (!canvas || !wrapper || !hotspot) return;
 
@@ -5270,6 +7523,16 @@ const Field = {
             height: `${height}px`
         });
 
+        if (minimapCanvas) {
+            Object.assign(minimapCanvas.style, {
+                left: `${left}px`,
+                top: `${top}px`,
+                right: 'auto',
+                width: `${width}px`,
+                height: `${height}px`
+            });
+        }
+
         if (restore) {
             Object.assign(restore.style, {
                 left: `${left}px`,
@@ -5304,14 +7567,38 @@ const Field = {
         if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
     },
 
+    getFullMapLayout: (canvas, mapWidth, mapHeight, padding = 10) => {
+        const canvasWidth = Math.max(1, Number(canvas?.width || 1));
+        const canvasHeight = Math.max(1, Number(canvas?.height || 1));
+        const mapW = Math.max(1, Number(mapWidth || 1));
+        const mapH = Math.max(1, Number(mapHeight || 1));
+        const safePadding = Math.max(0, Math.min(Number(padding || 0), Math.floor(Math.min(canvasWidth, canvasHeight) / 4)));
+        const availableWidth = Math.max(1, canvasWidth - safePadding * 2);
+        const availableHeight = Math.max(1, canvasHeight - safePadding * 2);
+        // 横長・縦長のどちらでも全行全列が収まる小さい方の倍率を採用する。
+        const size = Math.min(availableWidth / mapW, availableHeight / mapH);
+        return {
+            size,
+            offsetX: (canvasWidth - mapW * size) / 2,
+            offsetY: (canvasHeight - mapH * size) / 2,
+            mapWidth: mapW,
+            mapHeight: mapH
+        };
+    },
+
     drawFullMap: (canvas) => {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        const mapW = Field.currentMapData ? Field.currentMapData.width : (typeof MAP_DATA !== 'undefined' ? MAP_DATA[0].length : 1);
-        const mapH = Field.currentMapData ? Field.currentMapData.height : (typeof MAP_DATA !== 'undefined' ? MAP_DATA.length : 1);
-        const size = Math.min(canvas.width / Math.max(1, mapW), canvas.height / Math.max(1, mapH));
-        const offsetX = Math.floor((canvas.width - mapW * size) / 2);
-        const offsetY = Math.floor((canvas.height - mapH * size) / 2);
+        const tileRows = Field.currentMapData?.tiles || Field.getActiveWorldMap();
+        const actualMapHeight = Array.isArray(tileRows) ? tileRows.length : 0;
+        const actualMapWidth = Array.isArray(tileRows)
+            ? tileRows.reduce((max, row) => Math.max(max, Array.isArray(row) ? row.length : String(row || '').length), 0)
+            : 0;
+        // 実タイル配列を寸法の正本とする。保存メタデータは配列が未設定の場合だけの後方互換用。
+        const mapW = Math.max(1, actualMapWidth || Number(Field.currentMapData?.width || 0));
+        const mapH = Math.max(1, actualMapHeight || Number(Field.currentMapData?.height || 0));
+        const layout = Field.getFullMapLayout(canvas, mapW, mapH, 10);
+        const { size, offsetX, offsetY } = layout;
         const areaKey = Field.getCurrentAreaKey();
 
         ctx.fillStyle = '#090502';
@@ -5320,6 +7607,10 @@ const Field = {
             && typeof Dungeon !== 'undefined'
             && typeof Dungeon.isMazeFloor === 'function'
             && Dungeon.isMazeFloor());
+        const revealLimitedFixedMap = !!(Field.currentMapData?.isDungeon && Field.currentMapData?.isFixed
+            && typeof Dungeon !== 'undefined'
+            && typeof Dungeon.isFixedRevealLimitedFloor === 'function'
+            && Dungeon.isFixedRevealLimitedFloor(Field.currentMapData));
 
         for (let y = 0; y < mapH; y++) {
             for (let x = 0; x < mapW; x++) {
@@ -5329,36 +7620,58 @@ const Field = {
                         tile = 'W';
                     }
                 }
+                if (revealLimitedFixedMap) {
+                    const visibleNow = Math.abs(x - Field.x) <= Number(Field.currentMapData?.revealRadius || 3)
+                        && Math.abs(y - Field.y) <= Number(Field.currentMapData?.revealRadius || 3);
+                    if (typeof Dungeon.isFixedVisitedForMap === 'function' && !Dungeon.isFixedVisitedForMap(x, y) && !visibleNow) {
+                        tile = 'W';
+                    }
+                }
                 const parts = Field.getMapDrawParts ? Field.getMapDrawParts(tile, x, y) : { baseTile: tile, overlayConfig: null };
                 const cfg = parts.worldOverlay
                     ? Field.getTileConfig(parts.baseTile)
                     : (Field.getTileConfigForDraw ? Field.getTileConfigForDraw(parts.baseTile, x, y) : Field.getTileConfig(parts.baseTile));
                 const drawX = offsetX + x * size;
                 const drawY = offsetY + y * size;
-                ctx.fillStyle = cfg.color || '#000';
+                ctx.fillStyle = Field.getMiniMapTileColor
+                    ? Field.getMiniMapTileColor(tile, x, y)
+                    : (cfg.color || '#000');
                 ctx.fillRect(drawX, drawY, Math.ceil(size), Math.ceil(size));
-                if (parts.overlayConfig && Field.drawMapOverlayMarker) {
+                // 拡大マップでは壁そのものを丸いオーバーレイにしない。
+                // 建物・入口・NPCなどはタイル内の四角い記号で示す。
+                if (parts.overlayConfig && String(parts.upper || tile || '').toUpperCase() !== 'W' && Field.drawMapOverlayMarker) {
                     Field.drawMapOverlayMarker(ctx, parts.overlayConfig, drawX, drawY, size);
                 }
                 const effectColor = Field.getTileEffectMarkerColor ? Field.getTileEffectMarkerColor(x, y) : null;
-                if (effectColor && Field.drawMiniMapTileMarker) {
-                    Field.drawMiniMapTileMarker(ctx, effectColor, drawX, drawY, size);
+                if (effectColor && Field.drawFullMapTileMarker) {
+                    Field.drawFullMapTileMarker(ctx, effectColor, drawX, drawY, size);
                 }
-                const markerColor = Field.getMiniMapMarkerColor ? Field.getMiniMapMarkerColor(tile, x, y) : null;
-                if (markerColor && Field.drawMiniMapTileMarker) {
-                    Field.drawMiniMapTileMarker(ctx, markerColor, drawX, drawY, size);
+                const markerInfo = Field.getMiniMapMarkerInfo ? Field.getMiniMapMarkerInfo(tile, x, y) : null;
+                if (markerInfo?.color && Field.drawFullMapTileMarker) {
+                    Field.drawFullMapTileMarker(ctx, markerInfo.color, drawX, drawY, size, markerInfo.connections);
                 }
             }
         }
 
-        if (Field.currentMapData?.isFixed && Field.getFixedHealSpringsForCurrentFloor && Field.drawMiniMapTileMarker) {
+        if (Field.currentMapData?.isFixed && Field.getFixedHealSpringsForCurrentFloor && Field.drawFullMapTileMarker) {
             Field.getFixedHealSpringsForCurrentFloor().forEach(s => {
-                Field.drawMiniMapTileMarker(ctx, '#80ffb0', offsetX + Number(s.x) * size, offsetY + Number(s.y) * size, size);
+                Field.drawFullMapTileMarker(ctx, '#80ffb0', offsetX + Number(s.x) * size, offsetY + Number(s.y) * size, size);
             });
         }
 
+        // 拡大マップでは主人公だけを白い「●」で表示する。
+        ctx.save();
         ctx.fillStyle = '#fff';
-        ctx.fillRect(offsetX + Field.x * size, offsetY + Field.y * size, Math.max(3, size), Math.max(3, size));
+        ctx.beginPath();
+        ctx.arc(
+            offsetX + (Number(Field.x) + 0.5) * size,
+            offsetY + (Number(Field.y) + 0.5) * size,
+            Math.max(2.5, Math.min(6, size * 0.34)),
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+        ctx.restore();
         ctx.strokeStyle = 'rgba(255,255,255,0.72)';
         ctx.lineWidth = 1;
         ctx.strokeRect(Math.floor(offsetX) + 0.5, Math.floor(offsetY) + 0.5, Math.floor(mapW * size) - 1, Math.floor(mapH * size) - 1);
@@ -5367,7 +7680,10 @@ const Field = {
     getCurrentTileTheme: (areaKey = null) => {
         const key = areaKey || Field.getCurrentAreaKey();
         const mapDef = Field.currentMapData || null;
-        const themeKey = mapDef?.themeKey || key;
+        const worldDef = !mapDef && typeof MapRegistry !== 'undefined' && MapRegistry.getWorldDefinition
+            ? MapRegistry.getWorldDefinition()
+            : null;
+        const themeKey = mapDef?.themeKey || worldDef?.themeKey || key;
 
         // 優先順位:
         // 1. DEFAULT: 足りない記号の保険
@@ -5376,6 +7692,7 @@ const Field = {
         return {
             ...(TILE_THEMES['DEFAULT'] || {}),
             ...(TILE_THEMES[themeKey] || TILE_THEMES[key] || {}),
+            ...(worldDef?.tileOverrides || {}),
             ...(mapDef?.tileOverrides || {})
         };
     },
@@ -5385,6 +7702,9 @@ const Field = {
         const theme = Field.getCurrentTileTheme();
         
         let config = theme[upper] || TILE_THEMES['DEFAULT'][upper] || { img: null, color: '#000' };
+        if (Field.currentMapData && Field.currentMapData.isDungeon && !Field.currentMapData.isFixed && upper === 'B' && Field.getCurrentAreaKey?.() === 'ABYSS') {
+            return theme.T || TILE_THEMES['DEFAULT'].T || { img: null, color: '#222' };
+        }
 
         // ランダム生成ダンジョン専用: 溶岩マス(M)。
         // WORLDのM(山)とは意味が違うため、map.jsではなくここでダンジョン時だけ上書きする。
@@ -5401,18 +7721,58 @@ const Field = {
     getTileConfigForDraw: (tileSign, tileX = null, tileY = null) => {
         const base = Field.getTileConfig(tileSign);
         if (Array.isArray(base?.variants) && base.variants.length && tileX !== null && tileY !== null) {
-            const x = Number(tileX) || 0;
-            const y = Number(tileY) || 0;
-            let hash = (Math.imul(x, 374761393) + Math.imul(y, 668265263)) | 0;
-            hash = Math.imul(hash ^ (hash >>> 13), 1274126177);
-            const index = ((hash ^ (hash >>> 16)) >>> 0) % base.variants.length;
-            return { ...base, img: base.variants[index] || base.img };
+            let variantX = Number(tileX);
+            let variantY = Number(tileY);
+            // Outside a fixed map, select the exact same image variant as the
+            // nearest edge cell, then repeat that image on the ordinary 32px grid.
+            if (Field.currentMapData?.isFixed) {
+                const mapW = Math.max(1, Number(Field.currentMapData.width || Field.currentMapData.tiles?.[0]?.length || 1));
+                const mapH = Math.max(1, Number(Field.currentMapData.height || Field.currentMapData.tiles?.length || 1));
+                variantX = Math.max(0, Math.min(mapW - 1, variantX));
+                variantY = Math.max(0, Math.min(mapH - 1, variantY));
+            }
+            return window.MapRenderShared.resolveTileVariant(base, variantX, variantY);
         }
         if (!Field.currentMapData && tileX !== null && tileY !== null && typeof MapRegistry !== 'undefined' && MapRegistry.getWorldTileConfig) {
-            const special = MapRegistry.getWorldTileConfig(tileX, tileY);
+            const point = MapRegistry.normalizeWorldPoint ? MapRegistry.normalizeWorldPoint(tileX, tileY) : { x: tileX, y: tileY };
+            const special = MapRegistry.getWorldTileConfig(point.x, point.y);
             if (special) return { ...base, ...special };
         }
         return base;
+    },
+
+    getRuntimeTileEffectAt: (tileX = null, tileY = null) => {
+        if (!Field.currentMapData?.isFixed || tileX === null || tileY === null) return null;
+        const authored = (typeof MapRegistry !== 'undefined' && MapRegistry.findTileEffect)
+            ? MapRegistry.findTileEffect(Field.currentMapData, tileX, tileY)
+            : null;
+        if (authored) return authored;
+
+        // A switch gate may replace a wall with a floor effect. The tile mutation
+        // is persisted in mapChanges; resolving the paired effect from the same
+        // open definition keeps rendering, minimaps, movement, and save reloads in sync.
+        const key = `${Number(tileX)},${Number(tileY)}`;
+        const areaKey = Field.getCurrentAreaKey?.();
+        const changeKey = Field.getCurrentMapChangeKey?.(areaKey) || areaKey;
+        const changedTile = App.data?.progress?.mapChanges?.[changeKey]?.[key]
+            || App.data?.progress?.mapChanges?.[areaKey]?.[key]
+            || null;
+        if (!changedTile) return null;
+        const open = (Field.currentMapData.mapActions || [])
+            .filter(action => action?.type === 'switchGate')
+            .flatMap(action => Array.isArray(action.opens) ? action.opens : [])
+            .find(definition => Number(definition?.x) === Number(tileX)
+                && Number(definition?.y) === Number(tileY)
+                && definition?.effectType);
+        if (!open || String(changedTile).toUpperCase() !== String(open.tile || 'T').toUpperCase()) return null;
+        return {
+            type: String(open.effectType),
+            x: Number(tileX),
+            y: Number(tileY),
+            maxSlide: Math.max(1, Number(open.maxSlide || 20)),
+            message: open.effectMessage || open.message || null,
+            switchGenerated: true
+        };
     },
 
     getTileEffectMarkerColor: (tileX = null, tileY = null) => {
@@ -5420,9 +7780,7 @@ const Field = {
         if (typeof Dungeon !== 'undefined' && typeof Dungeon.getFixedHunterAt === 'function' && Dungeon.getFixedHunterAt(tileX, tileY)) {
             return '#ff4d4d';
         }
-        const effect = (typeof MapRegistry !== 'undefined' && MapRegistry.findTileEffect)
-            ? MapRegistry.findTileEffect(Field.currentMapData, tileX, tileY)
-            : null;
+        const effect = Field.getRuntimeTileEffectAt(tileX, tileY);
         if (!effect) return null;
         if (effect.type === 'hunter') return null;
         const colors = {
@@ -5435,15 +7793,103 @@ const Field = {
         return colors[effect.type] || '#ffffff';
     },
 
+    getMiniMapTileColor: (tileSign, tileX = null, tileY = null) => {
+        const upper = String(tileSign || 'W').toUpperCase();
+        if (!Field.currentMapData && tileX !== null && tileY !== null
+            && typeof MapRegistry !== 'undefined' && typeof MapRegistry.getWorldSurfaceAt === 'function') {
+            const surface = MapRegistry.getWorldSurfaceAt(tileX, tileY);
+            if (surface?.isSea) return '#246f96';
+        }
+        if (upper === 'S' && Field.currentMapData?.autoExitOnPerimeter === true) {
+            return Field.currentMapData.perimeterExitMiniMapColor || '#766746';
+        }
+        if (Field.currentMapData?.isFixed && Field.getMinimapExitCellState?.(tileX, tileY) === 'inner') {
+            return '#000';
+        }
+        const cfg = Field.getTileConfigForDraw
+            ? Field.getTileConfigForDraw(upper, tileX, tileY)
+            : Field.getTileConfig(upper);
+        let color = cfg?.color || '#000';
+        if (upper === 'W') return '#000';
+        if (upper === 'M' && (!color || color === '#000' || color === '#000000')) color = '#54515b';
+
+        // Preserve the subdued field art while giving the schematic a clear floor/wall split.
+        const themeKey = String(Field.currentMapData?.themeKey || Field.getCurrentAreaKey?.() || '').toUpperCase();
+        if (themeKey === 'DARK_CASTLE' && (upper === 'T' || upper === 'G')) return '#465064';
+        return color;
+    },
+
+    _minimapExitCellCache: new WeakMap(),
+
+    getMinimapExitCells: () => {
+        const map = Field.currentMapData;
+        if (!map?.isFixed || !Array.isArray(map.tiles)) return { all: new Set(), edge: new Set() };
+        const cached = Field._minimapExitCellCache.get(map);
+        if (cached) return cached;
+
+        const width = Number(map.width || map.tiles[0]?.length || 0);
+        const height = Number(map.height || map.tiles.length || 0);
+        const all = new Set();
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (String(map.tiles[y]?.[x] || '').toUpperCase() === 'S') all.add(`${x},${y}`);
+            }
+        }
+        (map.floorLinks || []).forEach(link => {
+            if (link?.to === 'EXIT') all.add(`${Number(link.x)},${Number(link.y)}`);
+        });
+
+        const edge = new Set();
+        const visited = new Set();
+        const distanceToBoundary = (x, y) => Math.min(x, y, width - 1 - x, height - 1 - y);
+        all.forEach(startKey => {
+            if (visited.has(startKey)) return;
+            const queue = [startKey];
+            const component = [];
+            let minimum = Infinity;
+            visited.add(startKey);
+            while (queue.length) {
+                const key = queue.shift();
+                component.push(key);
+                const [x, y] = key.split(',').map(Number);
+                minimum = Math.min(minimum, distanceToBoundary(x, y));
+                [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].forEach(([nx, ny]) => {
+                    const nextKey = `${nx},${ny}`;
+                    if (all.has(nextKey) && !visited.has(nextKey)) {
+                        visited.add(nextKey);
+                        queue.push(nextKey);
+                    }
+                });
+            }
+            component.forEach(key => {
+                const [x, y] = key.split(',').map(Number);
+                if (distanceToBoundary(x, y) === minimum) edge.add(key);
+            });
+        });
+        const result = { all, edge };
+        Field._minimapExitCellCache.set(map, result);
+        return result;
+    },
+
+    getMinimapExitCellState: (tileX, tileY) => {
+        const map = Field.currentMapData;
+        const x = Number(tileX);
+        const y = Number(tileY);
+        if (!map?.isFixed || !Number.isInteger(x) || !Number.isInteger(y)
+            || x < 0 || y < 0 || x >= Number(map.width) || y >= Number(map.height)) return null;
+        const key = `${x},${y}`;
+        const cells = Field.getMinimapExitCells();
+        if (!cells.all.has(key)) return null;
+        return cells.edge.has(key) ? 'edge' : 'inner';
+    },
+
     getTileEffectGraphicKey: (tileX = null, tileY = null) => {
         if (!Field.currentMapData?.isFixed || tileX === null || tileY === null) return null;
         if (typeof Dungeon !== 'undefined' && typeof Dungeon.getFixedHunterAt === 'function') {
             const hunter = Dungeon.getFixedHunterAt(tileX, tileY);
             if (hunter) return hunter.imageKey || 'overlay_dungeon_hunter';
         }
-        const effect = (typeof MapRegistry !== 'undefined' && MapRegistry.findTileEffect)
-            ? MapRegistry.findTileEffect(Field.currentMapData, tileX, tileY)
-            : null;
+        const effect = Field.getRuntimeTileEffectAt(tileX, tileY);
         if (!effect) return null;
         return {
             poison: 'tile_poison_bog',
@@ -5475,24 +7921,51 @@ const Field = {
             : null;
         if (!config) return null;
 
-        if ((upper === 'C' || upper === 'R') && x !== null && y !== null &&
-            typeof Dungeon !== 'undefined' && Dungeon.isFixedChestOpenedAt(x, y)) {
-            config = {
-                ...config,
-                img: upper === 'R' ? 'overlay_dungeon_chest_rare_empty' : 'overlay_dungeon_chest_empty',
-                color: '#665b52'
-            };
+        if ((upper === 'C' || upper === 'R') && x !== null && y !== null) {
+            const chestDef = Field.getFixedChestAt ? Field.getFixedChestAt(x, y) : null;
+            const opened = typeof Dungeon !== 'undefined' && Dungeon.isFixedChestOpenedAt(x, y);
+            const presentation = typeof Dungeon !== 'undefined' && Dungeon.getContainerPresentation
+                ? Dungeon.getContainerPresentation(chestDef)
+                : { kind: 'chest' };
+            const isChest = presentation.kind === 'chest';
+
+            // 深淵固定ダンジョン内の自動生成階だけは、通常のランダム深淵と同様に
+            // 開封済み宝箱を完全に消す。空箱が通路を塞いで進行不能になるのを防ぐ。
+            if (opened && Dungeon.shouldRemoveOpenedFixedChest?.(Field.currentMapData)) return null;
+
+            // 固定マップ・固定ダンジョンの宝箱は、取得後も空箱として残す。
+            // ランダム生成ダンジョンは currentMapData.isFixed === false のため、
+            // この分岐へ入らず、開封時に従来どおり床タイルへ置換される。
+            if (opened && isChest) {
+                config = {
+                    ...config,
+                    img: chestDef?.openedImageKey
+                        || (upper === 'R' ? 'overlay_dungeon_chest_rare_empty' : 'overlay_dungeon_chest_empty'),
+                    color: chestDef?.color || '#665b52'
+                };
+            } else if (chestDef?.imageKey) {
+                config = {
+                    ...config,
+                    img: opened ? (chestDef.openedImageKey || chestDef.imageKey) : chestDef.imageKey,
+                    color: chestDef.color || config.color
+                };
+            }
         }
 
         // ボスマスは固定の汎用記号ではなく、配置されたモンスター原画由来のチップを使う。
         if (upper === 'B' && x !== null && y !== null && typeof MapRegistry !== 'undefined' && MapRegistry.findFixedBoss) {
             const bossDef = MapRegistry.findFixedBoss(Field.currentMapData, x, y);
             if (!Field.isFixedBossAvailable(bossDef)) return null;
-            const rawMonsterId = Array.isArray(bossDef?.monsterId) ? bossDef.monsterId[0] : bossDef?.monsterId;
-            const monsterId = Number(bossDef?.mapSpriteMonsterId || rawMonsterId);
-            const graphicKey = Number.isFinite(monsterId) ? `overlay_boss_${monsterId}` : '';
+            if (bossDef?.imageKey && typeof GRAPHICS !== 'undefined' && GRAPHICS.data?.[bossDef.imageKey]) {
+                config = { img: bossDef.imageKey, color: bossDef.color || config.color || '#db3b4d' };
+            } else {
+            const monsterId = Number(Field.resolveFixedBossMapSpriteMonsterId?.(bossDef));
+            const graphicKey = Number.isFinite(monsterId) && Field.getMonsterMapSpriteKey
+                ? Field.getMonsterMapSpriteKey(monsterId)
+                : (Number.isFinite(monsterId) ? `monster_${monsterId}` : '');
             if (graphicKey && typeof GRAPHICS !== 'undefined' && GRAPHICS.data?.[graphicKey]) {
                 config = { img: graphicKey, color: config.color || '#db3b4d' };
+            }
             }
         }
 
@@ -5521,23 +7994,128 @@ const Field = {
         return 'T';
     },
 
+    getFixedChestAt: (tileX = null, tileY = null) => {
+        if (!Field.currentMapData?.isFixed || tileX === null || tileY === null) return null;
+        if (typeof MapRegistry !== 'undefined' && MapRegistry.findFixedChest) {
+            return MapRegistry.findFixedChest(Field.currentMapData, tileX, tileY);
+        }
+        return Array.isArray(Field.currentMapData.chests)
+            ? Field.currentMapData.chests.find(chest => Number(chest.x) === Number(tileX) && Number(chest.y) === Number(tileY)) || null
+            : null;
+    },
+
+    getBlockingObjectAt: (tileX = null, tileY = null) => {
+        if (!Field.currentMapData?.isFixed || tileX === null || tileY === null) return null;
+        if (typeof MapRegistry !== 'undefined' && typeof MapRegistry.findBlockingObject === 'function') {
+            return MapRegistry.findBlockingObject(Field.currentMapData, tileX, tileY);
+        }
+        return Array.isArray(Field.currentMapData.blockingObjects)
+            ? Field.currentMapData.blockingObjects.find(object =>
+                object?.active !== false &&
+                Number(object.x) === Number(tileX) &&
+                Number(object.y) === Number(tileY)
+            ) || null
+            : null;
+    },
+
+    getFixedChestTileSign: (chestDef = null) => {
+        if (!chestDef) return null;
+        const opened = typeof Dungeon !== 'undefined'
+            && Dungeon.isFixedChestOpenedAt(Number(chestDef.x), Number(chestDef.y));
+        const presentation = typeof Dungeon !== 'undefined' && Dungeon.getContainerPresentation
+            ? Dungeon.getContainerPresentation(chestDef)
+            : { kind: 'chest' };
+        if (opened && Dungeon.shouldRemoveOpenedFixedChest?.(Field.currentMapData)) return null;
+        // 通常の固定MAPでは、開封後も残すのは宝箱だけ。ツボ・タルは既存の挙動を維持する。
+        if (opened && presentation.kind !== 'chest') return null;
+        const rare = chestDef.rare === true || chestDef.type === 'rare' || chestDef.chestType === 'rare';
+        return rare ? 'R' : 'C';
+    },
+
     getMapDrawParts: (tileSign, tileX = null, tileY = null) => {
         const upper = String(tileSign || 'W').toUpperCase();
+        // 固定マップの開封済み宝箱も C/R の論理タイルを維持し、
+        // getFixedTileOverlayConfig() で空箱オーバーレイへ差し替える。
+        // A perimeter auto-exit cell is logically S, but visually it is authored
+        // terrain. Rendering it as an S object would add lift/contact shadows to
+        // every repeated cell and expose seams outside the map.
+        if (upper === 'S' && Field.currentMapData?.autoExitOnPerimeter === true) {
+            return {
+                upper: 'G',
+                baseTile: 'G',
+                overlayConfig: null,
+                worldOverlay: false,
+                logicalUpper: 'S'
+            };
+        }
+        if (upper === 'B' && Field.currentMapData?.isDungeon && !Field.currentMapData?.isFixed && Field.getCurrentAreaKey?.() === 'ABYSS') {
+            return {
+                upper: 'T',
+                baseTile: 'T',
+                overlayConfig: null,
+                worldOverlay: false
+            };
+        }
         const fixedOverlayConfig = Field.getFixedTileOverlayConfig ? Field.getFixedTileOverlayConfig(upper, tileX, tileY) : null;
+        const fixedContainerDef = (fixedOverlayConfig && (upper === 'C' || upper === 'R') && Field.getFixedChestAt)
+            ? Field.getFixedChestAt(tileX, tileY)
+            : null;
         const actionOverlayConfig = Field.getMapActionOverlayConfig ? Field.getMapActionOverlayConfig(tileX, tileY) : null;
+        const blockingObject = Field.getBlockingObjectAt ? Field.getBlockingObjectAt(tileX, tileY) : null;
+        // blocking:true の floorDecorations は装飾描画側が正本。
+        // ここでも blockingObject として描くと、drawScale 適用済みの本体に加えて
+        // 32px版が重なり、台座などが大小二重に見えるためオーバーレイ化しない。
+        const blockingObjectIsFloorDecoration = !!blockingObject
+            && Array.isArray(Field.currentMapData?.floorDecorations)
+            && Field.currentMapData.floorDecorations.includes(blockingObject);
+        const blockingObjectOverlayConfig = blockingObject?.imageKey && !blockingObjectIsFloorDecoration
+            ? {
+                img: blockingObject.imageKey,
+                color: blockingObject.color || '#6f6252',
+                blockingObject: true,
+                drawWidth: Math.max(8, Number(blockingObject.drawWidth || 32)),
+                drawHeight: Math.max(8, Number(blockingObject.drawHeight || 32))
+            }
+            : null;
+        const randomDungeonChestOverlay = Field.currentMapData?.isDungeon && !Field.currentMapData?.isFixed && (upper === 'C' || upper === 'R')
+            ? {
+                img: upper === 'R' ? 'overlay_dungeon_chest_rare' : 'overlay_dungeon_chest',
+                color: upper === 'R' ? '#d65353' : '#d7b45a'
+            }
+            : null;
+        const randomDungeonStairsOverlay = Field.currentMapData?.isDungeon && !Field.currentMapData?.isFixed && upper === 'S'
+            ? { img: 'overlay_dungeon_stairs', color: '#d7b45a' }
+            : null;
 
         // ワールドマップ上の施設画像は、タイル記号が W でも G でも同じように上へ重ねる。
         // これにより、海底神殿の座標タイルを G にしても神殿チップを表示できる。
+        const worldPoint = (!Field.currentMapData && tileX !== null && tileY !== null && typeof MapRegistry !== 'undefined' && MapRegistry.normalizeWorldPoint)
+            ? MapRegistry.normalizeWorldPoint(tileX, tileY)
+            : { x: tileX, y: tileY };
         const worldOverlayConfig = (!Field.currentMapData && tileX !== null && tileY !== null && typeof MapRegistry !== 'undefined' && MapRegistry.getWorldTileConfig)
-            ? MapRegistry.getWorldTileConfig(tileX, tileY)
+            ? MapRegistry.getWorldTileConfig(worldPoint.x, worldPoint.y)
             : null;
 
-        const overlayConfig = actionOverlayConfig || fixedOverlayConfig || worldOverlayConfig;
-        const baseTile = actionOverlayConfig
+        const resolvedOverlayConfig = blockingObjectOverlayConfig || actionOverlayConfig || fixedOverlayConfig || randomDungeonChestOverlay || randomDungeonStairsOverlay || worldOverlayConfig;
+        // Chest/pot/barrel art already contains its own contact shading. Adding the
+        // generic actor ellipse underneath produces a dark rectangular-looking patch
+        // on bright facility floors, so containers explicitly suppress that pass.
+        const isContainerOverlay = (upper === 'C' || upper === 'R')
+            && !!(fixedContainerDef || randomDungeonChestOverlay);
+        const overlayConfig = isContainerOverlay && resolvedOverlayConfig
+            ? { ...resolvedOverlayConfig, suppressShadow: true }
+            : resolvedOverlayConfig;
+        const baseTile = blockingObjectOverlayConfig
+            ? (blockingObject.baseTile || upper)
+            : (actionOverlayConfig
             ? actionOverlayConfig.baseTile
-            : (fixedOverlayConfig && Field.getFixedTileOverlayBaseTile
+            : (fixedContainerDef?.baseTile
+                ? fixedContainerDef.baseTile
+                : (randomDungeonChestOverlay || randomDungeonStairsOverlay
+                ? 'T'
+                : (fixedOverlayConfig && Field.getFixedTileOverlayBaseTile
                 ? Field.getFixedTileOverlayBaseTile(upper)
-                : upper);
+                : upper))));
         return {
             upper,
             baseTile: baseTile || upper,
@@ -5582,7 +8160,11 @@ const Field = {
         for (let y = Math.max(0, centerY - radiusY); y <= Math.min(height - 1, centerY + radiusY); y++) {
             for (let x = Math.max(0, centerX - radiusX); x <= Math.min(width - 1, centerX + radiusX); x++) {
                 const tile = Field.getRenderedTileForDraw(x, y, width, height, areaKey);
-                const overlay = Field.getFixedTileOverlayConfig(tile, x, y);
+                // A map action may replace a generic house with a dedicated facility
+                // image at one coordinate.  Treat that visual anchor exactly like the
+                // ordinary shop/inn anchors for roof-depth movement rules.
+                const overlay = Field.getMapActionOverlayConfig?.(x, y)
+                    || Field.getFixedTileOverlayConfig(tile, x, y);
                 if (Field.isBuildingOverlayConfig(overlay)) anchors.push({ x, y, overlay });
             }
         }
@@ -5604,16 +8186,93 @@ const Field = {
         });
     },
 
+    // Raised stages remain walkable inside, while crossing their outline is restricted
+    // to explicitly authored gateways. This avoids filling stage cells with invisible
+    // blocking objects and keeps the rule reusable for future maps.
+    isMovementRegionCrossingBlocked: (fromX, fromY, toX, toY) => {
+        const regions = Field.currentMapData?.movementRegions;
+        if (!Array.isArray(regions)) return false;
+        return regions.some(region => {
+            const left = Number(region.x);
+            const top = Number(region.y);
+            const width = Math.max(1, Number(region.width) || 1);
+            const height = Math.max(1, Number(region.height) || 1);
+            if (!Number.isFinite(left) || !Number.isFinite(top)) return false;
+            const inside = (x, y) => x >= left && x < left + width && y >= top && y < top + height;
+            const fromInside = inside(Number(fromX), Number(fromY));
+            const toInside = inside(Number(toX), Number(toY));
+            if (fromInside === toInside) return false;
+            const gateways = Array.isArray(region.gateways) ? region.gateways : [];
+            const permitted = gateways.some(gateway => {
+                const a = gateway?.inside;
+                const b = gateway?.outside;
+                if (!a || !b) return false;
+                return (Number(fromX) === Number(a.x) && Number(fromY) === Number(a.y)
+                    && Number(toX) === Number(b.x) && Number(toY) === Number(b.y))
+                    || (Number(fromX) === Number(b.x) && Number(fromY) === Number(b.y)
+                        && Number(toX) === Number(a.x) && Number(toY) === Number(a.y));
+            });
+            return !permitted;
+        });
+    },
 
-    getMiniMapMarkerColor: (tileSign, tileX = null, tileY = null) => {
+    // Maps may author additional non-walkable terrain without borrowing a door,
+    // facility, or event sign. The Summit Temple uses this for open sky.
+    isTileImpassableForCurrentMap: (tileSign) => {
         const upper = String(tileSign || '').toUpperCase();
+        if (upper === 'W') return true;
+        const authored = Array.isArray(Field.currentMapData?.impassableTiles)
+            ? Field.currentMapData.impassableTiles
+            : [];
+        return authored.some(sign => String(sign || '').toUpperCase() === upper);
+    },
+
+
+    getMiniMapMarkerInfo: (tileSign, tileX = null, tileY = null) => {
+        const upper = String(tileSign || '').toUpperCase();
+        const emptyConnections = { left: false, right: false, up: false, down: false };
+        if (upper === 'S' && Field.currentMapData?.autoExitOnPerimeter === true) return null;
+        const exitState = Field.getMinimapExitCellState?.(tileX, tileY);
+        if (exitState === 'edge') return { color: '#f6d46a', connections: emptyConnections };
+        if (exitState === 'inner') return null;
+
+        // Multi-cell facilities may expose only their player-facing edge as an event strip.
+        // That strip is authored separately from the physical collision area and is rendered
+        // as one connected schematic marker instead of unrelated dots.
+        const minimapAction = tileX !== null && tileY !== null
+            && typeof MapRegistry !== 'undefined'
+            && typeof MapRegistry.findMapActionMinimapCell === 'function'
+            ? MapRegistry.findMapActionMinimapCell(Field.currentMapData, tileX, tileY)
+            : null;
+        if (minimapAction && Field.isMapActionAvailable(minimapAction)) {
+            const connections = typeof MapRegistry.getMapActionMinimapConnections === 'function'
+                ? MapRegistry.getMapActionMinimapConnections(minimapAction, tileX, tileY)
+                : emptyConnections;
+            return {
+                color: minimapAction.minimapAreaColor || minimapAction.minimapColor || '#3f245c',
+                connections,
+                action: minimapAction,
+                connectedArea: true
+            };
+        }
+
         const actionOverlay = Field.getMapActionOverlayConfig ? Field.getMapActionOverlayConfig(tileX, tileY) : null;
         if (actionOverlay) {
             const imageKey = String(actionOverlay.img || '');
-            if (imageKey.startsWith('overlay_npc_')) return actionOverlay.minimapColor || '#5bd6ff';
-            return actionOverlay.minimapColor || actionOverlay.color || '#8f7dff';
+            const color = imageKey.startsWith('overlay_npc_')
+                ? (actionOverlay.minimapColor || '#5bd6ff')
+                : (actionOverlay.minimapColor || actionOverlay.color || '#8f7dff');
+            return { color, connections: emptyConnections };
         }
-        if (!upper || upper === 'W' || upper === 'T' || upper === 'G' || upper === 'L' || upper === 'M') return null;
+
+        // Legacy maps without an explicit minimapArea retain their interaction-area markers.
+        const areaAction = tileX !== null && tileY !== null && typeof MapRegistry !== 'undefined' && MapRegistry.findMapActionInteractionCell
+            ? MapRegistry.findMapActionInteractionCell(Field.currentMapData, tileX, tileY)
+            : null;
+        if (areaAction?.interactionArea && Field.isMapActionAvailable(areaAction)) {
+            return { color: areaAction.minimapAreaColor || areaAction.minimapColor || '#3f245c', connections: emptyConnections };
+        }
+        if (!upper || upper === 'W' || upper === 'T' || upper === 'G' || upper === 'L' || upper === 'M' || upper === '~' || upper === '^') return null;
 
         if (Field.currentMapData?.isFixed && upper === 'B' && tileX !== null && tileY !== null && typeof MapRegistry !== 'undefined' && MapRegistry.findFixedBoss) {
             const bossDef = MapRegistry.findFixedBoss(Field.currentMapData, tileX, tileY);
@@ -5634,18 +8293,53 @@ const Field = {
             N: '#4aa0e6',
             O: '#e0b84a'
         };
-        return colors[upper] || null;
+        const color = colors[upper] || null;
+        return color ? { color, connections: emptyConnections } : null;
     },
 
-    drawMiniMapTileMarker: (ctx, color, x, y, size) => {
+    getMiniMapMarkerColor: (tileSign, tileX = null, tileY = null) => {
+        return Field.getMiniMapMarkerInfo?.(tileSign, tileX, tileY)?.color || null;
+    },
+
+    drawFullMapTileMarker: (ctx, color, x, y, size, connections = null) => {
+        if (!ctx || !color || size <= 0) return;
+        const marker = Math.max(2, Math.floor(size * 0.58));
+        const markerX = Math.floor(x + (size - marker) / 2);
+        const markerY = Math.floor(y + (size - marker) / 2);
+        const hasConnections = !!connections && Object.values(connections).some(Boolean);
+        ctx.save();
+        ctx.globalAlpha = 0.95;
+        ctx.fillStyle = color;
+        ctx.fillRect(markerX, markerY, marker, marker);
+        if (hasConnections) {
+            const centerX = x + size / 2;
+            const centerY = y + size / 2;
+            if (connections.left) ctx.fillRect(x, markerY, Math.ceil(centerX - x), marker);
+            if (connections.right) ctx.fillRect(Math.floor(centerX), markerY, Math.ceil(x + size - centerX), marker);
+            if (connections.up) ctx.fillRect(markerX, y, marker, Math.ceil(centerY - y));
+            if (connections.down) ctx.fillRect(markerX, Math.floor(centerY), marker, Math.ceil(y + size - centerY));
+        }
+        ctx.restore();
+    },
+
+    drawMiniMapTileMarker: (ctx, color, x, y, size, connections = null) => {
         if (!ctx || !color || size <= 0) return;
         const marker = Math.max(2, Math.ceil(size * 0.72));
         const markerX = Math.floor(x + (size - marker) / 2);
         const markerY = Math.floor(y + (size - marker) / 2);
+        const hasConnections = !!connections && Object.values(connections).some(Boolean);
         ctx.save();
         ctx.globalAlpha = 0.95;
         ctx.fillStyle = color;
-        if (size <= 4) {
+        if (hasConnections) {
+            const centerX = x + size / 2;
+            const centerY = y + size / 2;
+            ctx.fillRect(markerX, markerY, marker, marker);
+            if (connections.left) ctx.fillRect(x, markerY, Math.ceil(centerX - x), marker);
+            if (connections.right) ctx.fillRect(Math.floor(centerX), markerY, Math.ceil(x + size - centerX), marker);
+            if (connections.up) ctx.fillRect(markerX, y, marker, Math.ceil(centerY - y));
+            if (connections.down) ctx.fillRect(markerX, Math.floor(centerY), marker, Math.ceil(y + size - centerY));
+        } else if (size <= 4) {
             ctx.fillRect(markerX, markerY, marker, marker);
         } else {
             ctx.beginPath();
@@ -5655,6 +8349,161 @@ const Field = {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(markerX, markerY, Math.max(1, Math.floor(marker * 0.34)), Math.max(1, Math.floor(marker * 0.28)));
         }
+        ctx.restore();
+    },
+
+    updateHeldKeyHud: () => {
+        const hud = document.getElementById('field-key-hud');
+        if (!hud) return;
+        const canShow = Field.minimapMode !== 'minimized'
+            && !!Field.currentMapData?.isDungeon
+            && typeof Dungeon !== 'undefined'
+            && typeof Dungeon.getHeldKeyOrder === 'function';
+        const colors = canShow ? Dungeon.getHeldKeyOrder() : [];
+        const keyDefs = {
+            red: { key: 'item_key_red', label: '赤の鍵' },
+            blue: { key: 'item_key_blue', label: '青の鍵' },
+            gold: { key: 'item_key_gold', label: '金の鍵' }
+        };
+        const nodes = colors.map(color => {
+            const def = keyDefs[color];
+            const src = def ? window.GRAPHICS?.data?.[def.key] : null;
+            if (!def || !src) return null;
+            const image = document.createElement('img');
+            image.src = src;
+            image.alt = def.label;
+            image.title = def.label;
+            return image;
+        }).filter(Boolean);
+        hud.replaceChildren(...nodes);
+        hud.classList.toggle('is-visible', nodes.length > 0);
+    },
+
+    drawHudMinimap: () => {
+        const canvas = document.getElementById('field-minimap-canvas');
+        if (!canvas) return;
+        const size = 80;
+        if (canvas.width !== size) canvas.width = size;
+        if (canvas.height !== size) canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.clearRect(0, 0, size, size);
+        Field.updateHeldKeyHud();
+        if (Field.minimapMode === 'minimized') return;
+
+        const range = 7;
+        const cells = range * 2 + 1;
+        const cell = size / cells;
+        const tileRows = Field.currentMapData?.tiles;
+        const actualMapH = Array.isArray(tileRows) ? tileRows.length : 0;
+        const actualMapW = Array.isArray(tileRows)
+            ? tileRows.reduce((max, row) => Math.max(max, Array.isArray(row) ? row.length : String(row || '').length), 0)
+            : 0;
+        const mapW = Field.currentMapData
+            ? Math.max(1, actualMapW || Number(Field.currentMapData.width || 0))
+            : (Field.getActiveWorldMap()?.[0]?.length || 50);
+        const mapH = Field.currentMapData
+            ? Math.max(1, actualMapH || Number(Field.currentMapData.height || 0))
+            : (Field.getActiveWorldMap()?.length || 32);
+
+        ctx.save();
+        ctx.globalAlpha = 0.56;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, size, size);
+        ctx.globalAlpha = 1;
+
+        const miniTileColor = (tile, tx, ty) => Field.getMiniMapTileColor
+            ? Field.getMiniMapTileColor(tile, tx, ty)
+            : (Field.getTileConfig(tile)?.color || '#000');
+
+        const isRandomDungeonHidden = (relX, relY, tileX, tileY) => {
+            if (!Field.currentMapData?.isDungeon || Field.currentMapData?.isFixed) return false;
+            if (typeof Dungeon === 'undefined' || typeof Dungeon.isVisited !== 'function') return false;
+            const inCurrentSight = Math.abs(relX) <= 4 && Math.abs(relY) <= 4;
+            return !inCurrentSight && !Dungeon.isVisited(tileX, tileY);
+        };
+
+        for (let dy = -range; dy <= range; dy++) {
+            for (let dx = -range; dx <= range; dx++) {
+                let tx = Number(Field.x) + dx;
+                let ty = Number(Field.y) + dy;
+                let tile = 'W';
+                let visible = true;
+
+                if (Field.currentMapData) {
+                    const outOfBounds = tx < 0 || tx >= mapW || ty < 0 || ty >= mapH;
+                    // ミニマップは実タイル配列の範囲だけを描画する。
+                    // 固定MAPの端タイルを画面外へ延長すると、出口が連続して見えるため描かない。
+                    if (outOfBounds || isRandomDungeonHidden(dx, dy, tx, ty)) {
+                        visible = false;
+                    } else {
+                        const areaKey = Field.getCurrentAreaKey();
+                        const progressKey = Field.currentMapData?.isFixed && Field.getCurrentProgressMapKey
+                            ? Field.getCurrentProgressMapKey()
+                            : areaKey;
+                        const key = `${tx},${ty}`;
+                        tile = App.data.progress.mapChanges?.[progressKey]?.[key]
+                            || App.data.progress.mapChanges?.[areaKey]?.[key]
+                            || Field.getMapTileAt(Field.currentMapData, tx, ty);
+                        if (String(tile || '').toUpperCase() === 'B') {
+                            const bossDef = (typeof MapRegistry !== 'undefined' && MapRegistry.findFixedBoss)
+                                ? MapRegistry.findFixedBoss(Field.currentMapData, tx, ty)
+                                : null;
+                            if (Field.isFixedBossDefeatedAt(bossDef, tx, ty, progressKey)) tile = 'G';
+                        }
+                    }
+                } else {
+                    const worldMap = Field.getActiveWorldMap();
+                    tile = worldMap[((ty % mapH) + mapH) % mapH][((tx % mapW) + mapW) % mapW];
+                }
+
+                if (!visible) continue;
+                const x = (dx + range) * cell;
+                const y = (dy + range) * cell;
+                ctx.fillStyle = (dx === 0 && dy === 0) ? '#fff' : miniTileColor(tile, tx, ty);
+                ctx.fillRect(Math.floor(x), Math.floor(y), Math.ceil(cell), Math.ceil(cell));
+
+                if ((dx !== 0 || dy !== 0) && Field.getMiniMapMarkerInfo && Field.drawMiniMapTileMarker) {
+                    const markerInfo = Field.getMiniMapMarkerInfo(tile, tx, ty);
+                    if (markerInfo?.color) Field.drawMiniMapTileMarker(ctx, markerInfo.color, x, y, cell, markerInfo.connections);
+                }
+            }
+        }
+
+        const drawMarker = (relX, relY, color) => {
+            if (!color || relX === 0 && relY === 0) return;
+            if (relX < -range || relX > range || relY < -range || relY > range) return;
+            if (Field.drawMiniMapTileMarker) {
+                Field.drawMiniMapTileMarker(ctx, color, (relX + range) * cell, (relY + range) * cell, cell);
+            } else {
+                ctx.fillStyle = color;
+                ctx.fillRect((relX + range) * cell, (relY + range) * cell, Math.max(2, cell), Math.max(2, cell));
+            }
+        };
+
+        const drawDungeonObject = (obj, color) => {
+            if (!Field.currentMapData?.isDungeon || !obj || !obj.active || typeof Dungeon === 'undefined') return;
+            if (Number(obj.floor) !== Number(Dungeon.floor)) return;
+            const relX = Number(obj.x) - Number(Field.x);
+            const relY = Number(obj.y) - Number(Field.y);
+            if (isRandomDungeonHidden(relX, relY, Number(obj.x), Number(obj.y))) return;
+            drawMarker(relX, relY, color);
+        };
+
+        if (Field.currentMapData?.isFixed && Field.getFixedHealSpringsForCurrentFloor) {
+            Field.getFixedHealSpringsForCurrentFloor().forEach(spring => {
+                drawMarker(Number(spring.x) - Number(Field.x), Number(spring.y) - Number(Field.y), '#80ffb0');
+            });
+        }
+        drawDungeonObject(App.data?.dungeon?.healSpring, '#80ffb0');
+        drawDungeonObject(App.data?.dungeon?.abyssRift, '#a34cff');
+        drawDungeonObject(App.data?.dungeon?.adventurer, '#5bd6ff');
+        drawDungeonObject(App.data?.dungeon?.trialAngel, '#fff3a6');
+        drawDungeonObject(App.data?.dungeon?.keyGuardian, '#ffd78a');
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.72)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, size - 1, size - 1);
         ctx.restore();
     },
 
@@ -5669,38 +8518,49 @@ const Field = {
         const markerX = Math.floor(x + (size - marker) / 2);
         const markerY = Math.floor(y + (size - marker) / 2);
         ctx.save();
+        ctx.globalAlpha = 0.95;
         ctx.fillStyle = overlayConfig.color || '#fff';
-        if (size < 5) {
-            ctx.fillRect(markerX, markerY, Math.max(1, marker), Math.max(1, marker));
-        } else {
-            ctx.beginPath();
-            ctx.arc(x + size / 2, y + size / 2, Math.max(1, marker / 2), 0, Math.PI * 2);
-            ctx.fill();
-            ctx.globalAlpha = 0.35;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(markerX, markerY, Math.max(1, Math.floor(marker * 0.35)), Math.max(1, Math.floor(marker * 0.28)));
-        }
+        ctx.fillRect(markerX, markerY, marker, marker);
         ctx.restore();
     },
 
     getRenderedTileForDraw: (tileX, tileY, mapW, mapH, areaKey) => {
         let nextTile = 'W';
         if (Field.currentMapData) {
-            if (tileX >= 0 && tileX < mapW && tileY >= 0 && tileY < mapH) {
+            const inBounds = tileX >= 0 && tileX < mapW && tileY >= 0 && tileY < mapH;
+            const sourceX = Math.max(0, Math.min(mapW - 1, Number(tileX)));
+            const sourceY = Math.max(0, Math.min(mapH - 1, Number(tileY)));
+            nextTile = Field.getMapTileAt(Field.currentMapData, sourceX, sourceY, 'W');
+            if (inBounds) {
                 const posKey = `${tileX},${tileY}`;
                 const changeKey = Field.getCurrentMapChangeKey ? Field.getCurrentMapChangeKey(areaKey) : areaKey;
-                nextTile = App.data.progress.mapChanges?.[changeKey]?.[posKey] || App.data.progress.mapChanges?.[areaKey]?.[posKey] || Field.currentMapData.tiles[tileY][tileX];
+                nextTile = App.data.progress.mapChanges?.[changeKey]?.[posKey] || App.data.progress.mapChanges?.[areaKey]?.[posKey] || Field.getMapTileAt(Field.currentMapData, tileX, tileY);
                 if (Field.currentMapData.isFixed) {
                     const progressKey = Field.getCurrentProgressMapKey();
-                    if (nextTile === 'B' && App.data.progress.defeatedBosses?.[progressKey]?.includes(posKey)) nextTile = 'G';
                     if (nextTile === 'B' && typeof MapRegistry !== 'undefined' && MapRegistry.findFixedBoss) {
                         const bossDef = MapRegistry.findFixedBoss(Field.currentMapData, tileX, tileY);
-                        if (!Field.isFixedBossAvailable(bossDef)) nextTile = bossDef?.inactiveTile || 'G';
+                        if (Field.isFixedBossDefeatedAt(bossDef, tileX, tileY, progressKey)) nextTile = 'G';
+                        else if (!Field.isFixedBossAvailable(bossDef)) nextTile = bossDef?.inactiveTile || 'G';
+                    }
+
+                    // 固定MAP/固定ダンジョンの宝箱は、地形文字(C/R)だけでなく chests[] も正本として扱う。
+                    // 町の中では床タイル(G/Tなど)の上に宝箱レイヤーを置くため、
+                    // エディタが chests[] だけを出力してもゲーム内で表示・調査できるようにする。
+                    if (nextTile !== 'B') {
+                        const chestDef = Field.getFixedChestAt ? Field.getFixedChestAt(tileX, tileY) : null;
+                        const opened = chestDef && typeof Dungeon !== 'undefined' && Dungeon.isFixedChestOpenedAt(tileX, tileY);
+                        if (opened && Dungeon.shouldRemoveOpenedFixedChest?.(Field.currentMapData)) {
+                            nextTile = Dungeon.getOpenedFixedChestBaseTile?.(chestDef, Field.currentMapData) || 'T';
+                        } else {
+                            const chestTile = Field.getFixedChestTileSign ? Field.getFixedChestTileSign(chestDef) : null;
+                            if (chestTile) nextTile = chestTile;
+                        }
                     }
                 }
             }
         } else {
-            nextTile = MAP_DATA[((tileY % mapH) + mapH) % mapH][((tileX % mapW) + mapW) % mapW];
+            const worldMap = Field.getActiveWorldMap();
+            nextTile = worldMap[((tileY % mapH) + mapH) % mapH][((tileX % mapW) + mapW) % mapW];
         }
         return String(nextTile || 'W').toUpperCase();
     },
@@ -5724,30 +8584,46 @@ const Field = {
 
             const posKey = `${x},${y}`;
             const changeKey = Field.getCurrentMapChangeKey ? Field.getCurrentMapChangeKey(areaKey) : areaKey;
-            let tile = App.data.progress.mapChanges?.[changeKey]?.[posKey] || App.data.progress.mapChanges?.[areaKey]?.[posKey] || Field.currentMapData.tiles[y][x];
+            let tile = App.data.progress.mapChanges?.[changeKey]?.[posKey] || App.data.progress.mapChanges?.[areaKey]?.[posKey] || Field.getMapTileAt(Field.currentMapData, x, y);
             tile = String(tile || 'W').toUpperCase();
 
             if (Field.currentMapData.isFixed) {
                 const progressKey = Field.getCurrentProgressMapKey();
-                if (tile === 'B' && App.data.progress.defeatedBosses?.[progressKey]?.includes(posKey)) tile = 'G';
                 if (tile === 'B' && typeof MapRegistry !== 'undefined' && MapRegistry.findFixedBoss) {
                     const bossDef = MapRegistry.findFixedBoss(Field.currentMapData, x, y);
-                    if (!Field.isFixedBossAvailable(bossDef)) tile = bossDef?.inactiveTile || 'G';
+                    if (Field.isFixedBossDefeatedAt(bossDef, x, y, progressKey)) tile = 'G';
+                    else if (!Field.isFixedBossAvailable(bossDef)) tile = bossDef?.inactiveTile || 'G';
+                }
+                const chestDef = Field.getFixedChestAt ? Field.getFixedChestAt(x, y) : null;
+                if (chestDef && typeof Dungeon !== 'undefined' && Dungeon.isFixedChestOpenedAt(x, y)
+                    && Dungeon.shouldRemoveOpenedFixedChest?.(Field.currentMapData)) {
+                    tile = Dungeon.getOpenedFixedChestBaseTile?.(chestDef, Field.currentMapData) || 'T';
                 }
             }
 
             return { tile, x, y, areaKey, isWorld: false };
         }
 
-        if (typeof MAP_DATA === 'undefined' || !MAP_DATA[0]) return null;
-        const mapW = MAP_DATA[0].length;
-        const mapH = MAP_DATA.length;
+        const worldMap = Field.getActiveWorldMap();
+        if (!worldMap?.[0]) return null;
+        const mapW = worldMap[0].length;
+        const mapH = worldMap.length;
         const x = ((Number(Field.x) % mapW) + mapW) % mapW;
         const y = ((Number(Field.y) % mapH) + mapH) % mapH;
-        const tile = String(MAP_DATA[y][x] || 'W').toUpperCase();
+        const tile = String(worldMap[y][x] || 'W').toUpperCase();
 
-        return { tile, x, y, areaKey: 'WORLD', isWorld: true };
+        return { tile, x, y, areaKey: MapRegistry?.getActiveWorldKey?.() || 'WORLD', isWorld: true };
     },
+
+    // 水没フロアでも船に切り替えるのは水面上だけ。床・足場・階段では通常の主人公を描く。
+    isFloodedWaterAt: (x = Field.x, y = Field.y) => {
+        if (!Field.currentMapData?.isDungeon || Field.currentMapData?.isFixed || !App.data?.dungeon?.isFloodedFloor) return false;
+        const tile = String(Field.currentMapData.tiles?.[Number(y)]?.[Number(x)] || '').toUpperCase();
+        const waterTile = typeof Dungeon !== 'undefined' ? Dungeon.floodedTile : '~';
+        return tile === String(waterTile || '~').toUpperCase();
+    },
+
+    isPlayerOnFloodedWater: () => Field.isFloodedWaterAt(Field.x, Field.y),
 
     isFixedBossAvailable: (bossDef, options = {}) => {
         if (!bossDef) return false;
@@ -5771,6 +8647,35 @@ const Field = {
         if (!App.isQuestUnlocked(bossDef.questId)) return false;
         if (options.requireAccepted === false) return true;
         return App.getQuestState(bossDef.questId).state === 'accepted';
+    },
+
+    // 固定座標の討伐記録とクエスト進捗が食い違う旧セーブを補正する。
+    // クエスト受注中かつクエスト側のボス討伐が未達なら、座標側だけに残った
+    // defeatedBosses は古い記録とみなし、ボスを復帰させる。
+    isFixedBossDefeatedAt: (bossDef, x, y, progressKey = null, options = {}) => {
+        const flags = App.data?.progress?.flags || {};
+        const clearedFlags = Array.isArray(bossDef?.clearedFlags)
+            ? bossDef.clearedFlags
+            : (bossDef?.clearedFlag ? [bossDef.clearedFlag] : []);
+        if (clearedFlags.some(flag => !!flags[flag])) return true;
+        const key = progressKey || Field.getCurrentProgressMapKey?.();
+        const posKey = `${Number(x)},${Number(y)}`;
+        const defeated = !!(key && App.data?.progress?.defeatedBosses?.[key]?.includes(posKey));
+        if (!defeated) return false;
+
+        if (bossDef?.questId) {
+            const questState = App.getQuestState(bossDef.questId).state;
+            const objectiveComplete = App.isQuestObjectiveComplete(bossDef.questId);
+            if (questState === 'accepted' && !objectiveComplete) {
+                if (options.repair !== false) {
+                    App.data.progress.defeatedBosses[key] = App.data.progress.defeatedBosses[key]
+                        .filter(entry => entry !== posKey);
+                    App.save();
+                }
+                return false;
+            }
+        }
+        return true;
     },
 
     resolveMapActionEventId: (action) => {
@@ -5799,6 +8704,24 @@ const Field = {
         return match?.eventId || null;
     },
 
+    resolveCycledMapActionEventId: (action, advance = false) => {
+        const eventIds = Array.isArray(action?.cycleEventIds) ? action.cycleEventIds.filter(Boolean) : [];
+        if (!eventIds.length) return null;
+        const progress = App.data?.progress;
+        if (!progress) return eventIds[0];
+        if (!progress.npcTalkCounts || typeof progress.npcTalkCounts !== 'object' || Array.isArray(progress.npcTalkCounts)) {
+            progress.npcTalkCounts = {};
+        }
+        const areaKey = typeof Field.getCurrentAreaKey === 'function' ? Field.getCurrentAreaKey() : 'MAP';
+        const key = action.conversationKey || `${areaKey}:${Number(action.x)},${Number(action.y)}`;
+        const count = Math.max(0, Math.floor(Number(progress.npcTalkCounts[key]) || 0));
+        if (advance) {
+            progress.npcTalkCounts[key] = count + 1;
+            App.save();
+        }
+        return eventIds[count % eventIds.length];
+    },
+
     isMapActionAvailable: (action) => {
         if (!action) return false;
         const flags = App.data?.progress?.flags || {};
@@ -5809,6 +8732,18 @@ const Field = {
             ? action.missingFlags
             : (action.missingFlag ? [action.missingFlag] : []);
         if (!requiredFlags.every(flag => !!flags[flag]) || !missingFlags.every(flag => !flags[flag])) return false;
+        const normalizeItemRequirements = (value) => {
+            if (!value) return [];
+            const list = Array.isArray(value) ? value : [value];
+            return list.map(entry => {
+                if (typeof entry === 'number' || typeof entry === 'string') return { id: Number(entry), count: 1 };
+                return { id: Number(entry?.id ?? entry?.itemId), count: Math.max(1, Math.floor(Number(entry?.count) || 1)) };
+            }).filter(entry => Number.isFinite(entry.id));
+        };
+        const requiredItems = normalizeItemRequirements(action.requiredItems);
+        const missingItems = normalizeItemRequirements(action.missingItems);
+        if (!requiredItems.every(entry => Number(App.data?.items?.[entry.id] || 0) >= entry.count)) return false;
+        if (!missingItems.every(entry => Number(App.data?.items?.[entry.id] || 0) < entry.count)) return false;
         if (action.requiredStoryStep !== undefined) {
             const step = Number(App.data?.progress?.storyStep || 0);
             const sub = Number(App.data?.progress?.subStep || 0);
@@ -5818,14 +8753,20 @@ const Field = {
         }
         if (action.hideWhenNoEvent && !Field.resolveMapActionEventId(action)) return false;
         if (action.type === 'quest' && action.questId) {
-            if (App.getQuestState(action.questId).state === 'completed') return false;
+            const questState = App.getQuestState(action.questId).state;
+            if (questState === 'completed') return false;
+            if (action.hideWhenQuestAccepted && questState === 'accepted') return false;
             return App.isQuestUnlocked(action.questId);
+        }
+        if (action.type === 'questBoard') {
+            const questIds = Array.isArray(action.questIds) ? action.questIds : [];
+            return questIds.some(id => App.getQuestDefinition(id) && App.isQuestUnlocked(id));
         }
         return true;
     },
 
     isMapActionImageAvailable: (action) => {
-        if (!action?.imageKey || !Field.isMapActionAvailable(action)) return false;
+        if (!action || !Field.isMapActionAvailable(action)) return false;
         const flags = App.data?.progress?.flags || {};
         const requiredFlags = Array.isArray(action.imageRequiredFlags)
             ? action.imageRequiredFlags
@@ -5833,24 +8774,80 @@ const Field = {
         const missingFlags = Array.isArray(action.imageMissingFlags)
             ? action.imageMissingFlags
             : (action.imageMissingFlag ? [action.imageMissingFlag] : []);
-        return requiredFlags.every(flag => !!flags[flag]) && missingFlags.every(flag => !flags[flag]);
+        return requiredFlags.every(flag => !!flags[flag])
+            && missingFlags.every(flag => !flags[flag])
+            && !!Field.resolveMapActionImageKey(action);
+    },
+
+    resolveMapActionImageKey: (action) => {
+        if (!action) return null;
+        const flags = App.data?.progress?.flags || {};
+        const variants = Array.isArray(action.imageVariants) ? action.imageVariants : [];
+        const variant = variants.find(entry => {
+            if (!entry?.imageKey) return false;
+            const required = Array.isArray(entry.requiredFlags)
+                ? entry.requiredFlags
+                : (entry.requiredFlag ? [entry.requiredFlag] : []);
+            const missing = Array.isArray(entry.missingFlags)
+                ? entry.missingFlags
+                : (entry.missingFlag ? [entry.missingFlag] : []);
+            return required.every(flag => !!flags[flag]) && missing.every(flag => !flags[flag]);
+        });
+        return variant?.imageKey || action.imageKey || null;
     },
 
     getMapActionOverlayConfig: (tileX = null, tileY = null) => {
         if (!Field.currentMapData || tileX === null || tileY === null || typeof MapRegistry === 'undefined') return null;
         const action = MapRegistry.findMapAction?.(Field.currentMapData, tileX, tileY);
+        if (!action || !Field.isMapActionAvailable(action)) return null;
+        const hasExplicitImage = !!action.imageKey || (Array.isArray(action.imageVariants) && action.imageVariants.length > 0);
+        if (!hasExplicitImage) {
+            if (action.suppressEventMarker === true) return null;
+            const tileSign = String(Field.currentMapData.tiles?.[Number(tileY)] || '')[Number(tileX)] || 'T';
+            const hasPhysicalObject = !!Field.getBlockingObjectAt?.(tileX, tileY)
+                || !!Field.getFixedTileOverlayConfig?.(tileSign, tileX, tileY);
+            if (hasPhysicalObject) return null;
+            return {
+                img: 'overlay_event_blue_glimmer',
+                color: action.imageColor || '#62d7ff',
+                minimapColor: action.minimapColor || '#62d7ff',
+                baseTile: action.baseTile || 'T',
+                blockingObject: false,
+                eventMarker: true,
+                drawWidth: Math.max(9, Number(action.markerDrawWidth || 12)),
+                drawHeight: Math.max(9, Number(action.markerDrawHeight || 12)),
+                suppressShadow: true
+            };
+        }
+        // An explicitly configured image can have its own flag conditions. When
+        // those conditions are unmet, keep it hidden instead of substituting a marker.
         if (!Field.isMapActionImageAvailable(action)) return null;
+        const imageKey = Field.resolveMapActionImageKey(action);
         return {
-            img: action.imageKey,
+            img: imageKey,
             color: action.imageColor || '#d6c8a7',
             minimapColor: action.minimapColor || null,
-            baseTile: action.baseTile || 'T'
+            baseTile: action.baseTile || 'T',
+            blockingObject: action.renderAsBlockingObject === true,
+            drawWidth: Math.max(8, Number(action.drawWidth || 32)),
+            drawHeight: Math.max(8, Number(action.drawHeight || 32)),
+            drawOffsetX: Number(action.drawOffsetX || 0),
+            drawOffsetY: Number(action.drawOffsetY || 0),
+            buildingScale: Math.max(1, Number(action.buildingScale || 2.4)),
+            suppressShadow: action.suppressShadow === true
         };
     },
 
     isBlockingMapActor: (action) => {
-        if (!action?.imageKey || action.blocksMovement === false) return false;
+        if (!action || action.blocksMovement === false) return false;
         return Field.isMapActionImageAvailable(action);
+    },
+
+    isAdjacentInteractableMapAction: (action) => {
+        if (!action || !Field.isMapActionAvailable(action)) return false;
+        // Devices such as gate switches are operated from a neighbouring tile.
+        // Blocking map actors retain the same adjacent-interaction behaviour for compatibility.
+        return action.interactFromAdjacent === true || Field.isBlockingMapActor(action);
     },
 
     getAdjacentMapActor: () => {
@@ -5871,8 +8868,10 @@ const Field = {
             if (seen.has(posKey)) continue;
             seen.add(posKey);
             if (x < 0 || y < 0 || x >= Field.currentMapData.width || y >= Field.currentMapData.height) continue;
-            const action = MapRegistry.findMapAction?.(Field.currentMapData, x, y);
-            if (!Field.isBlockingMapActor(action)) continue;
+            const action = MapRegistry.findMapActionInteractionCell
+                ? MapRegistry.findMapActionInteractionCell(Field.currentMapData, x, y)
+                : MapRegistry.findMapAction?.(Field.currentMapData, x, y);
+            if (!Field.isAdjacentInteractableMapAction(action)) continue;
             return { x, y, action };
         }
         return null;
@@ -5881,9 +8880,33 @@ const Field = {
     prepareAdjacentMapActorAction: (options = {}) => {
         const actor = Field.getAdjacentMapActor();
         if (!actor) return false;
-        const silent = options.silent !== false;
-        if (!silent && actor.action.log) App.log(actor.action.log);
         App.setAction(actor.action.label || '話す', () => Field.executeMapAction(actor.action));
+        return true;
+    },
+
+    getAdjacentDungeonAdventurer: () => {
+        if (!Field.currentMapData?.isDungeon || typeof Dungeon === 'undefined' || typeof Dungeon.isAdventurerAt !== 'function') return null;
+        const directions = { 0: [0, 1], 1: [-1, 0], 2: [1, 0], 3: [0, -1] };
+        const facing = directions[Number(Field.dir)] || [0, 1];
+        const candidates = [facing, [0, -1], [1, 0], [0, 1], [-1, 0]];
+        const seen = new Set();
+        for (const [dx, dy] of candidates) {
+            const x = Number(Field.x) + dx;
+            const y = Number(Field.y) + dy;
+            const posKey = `${x},${y}`;
+            if (seen.has(posKey)) continue;
+            seen.add(posKey);
+            if (x < 0 || y < 0 || x >= Field.currentMapData.width || y >= Field.currentMapData.height) continue;
+            if (Dungeon.isAdventurerAt(x, y)) return { x, y };
+        }
+        return null;
+    },
+
+    prepareAdjacentDungeonAdventurerAction: (options = {}) => {
+        const adventurer = Field.getAdjacentDungeonAdventurer();
+        if (!adventurer || typeof Dungeon === 'undefined') return false;
+        if (options.silent === false) App.log('冒険者がこちらに気づいた。');
+        App.setAction('話す', () => Dungeon.encounterAdventurer({ auto: false }));
         return true;
     },
 
@@ -5904,7 +8927,9 @@ const Field = {
             seen.add(posKey);
             if (x < 0 || y < 0 || x >= mapW || y >= mapH) continue;
             const tile = Field.getRenderedTileForDraw(x, y, mapW, mapH, areaKey);
-            if (tile === 'C' || tile === 'R') return { x, y, tile };
+            if (tile === 'C' || tile === 'R') {
+                return { x, y, tile, definition: Field.getFixedChestAt ? Field.getFixedChestAt(x, y) : null };
+            }
         }
         return null;
     },
@@ -5913,17 +8938,20 @@ const Field = {
         const chest = Field.getAdjacentChest();
         if (!chest || typeof Dungeon === 'undefined') return false;
         const opened = Field.currentMapData?.isFixed && Dungeon.isFixedChestOpenedAt(chest.x, chest.y);
+        const container = Dungeon.getContainerPresentation
+            ? Dungeon.getContainerPresentation(chest.definition)
+            : { closed: '宝箱がある。', opened: '開いたままの空箱がある。', action: '調べる' };
         if (options.silent === false) {
             App.log(opened
-                ? '開いたままの空箱がある。'
-                : (chest.tile === 'R' ? '赤い宝箱がある。' : '宝箱がある。'));
+                ? container.opened
+                : (chest.tile === 'R' ? '赤い宝箱がある。' : container.closed));
         }
-        App.setAction('調べる', () => Dungeon.openChest(chest.x, chest.y, chest.tile === 'R' ? 'rare' : 'normal'));
+        App.setAction(container.action, () => Dungeon.openChest(chest.x, chest.y, chest.tile === 'R' ? 'rare' : 'normal'));
         return true;
     },
 
     getAdjacentFixedBoss: () => {
-        if (!Field.currentMapData?.isFixed || !Field.currentMapData?.isDungeon || typeof MapRegistry === 'undefined') return null;
+        if (!Field.currentMapData?.isFixed || typeof MapRegistry === 'undefined') return null;
         const directions = {
             0: [0, 1],
             1: [-1, 0],
@@ -5947,15 +8975,321 @@ const Field = {
             if (seen.has(posKey)) continue;
             seen.add(posKey);
             if (x < 0 || y < 0 || x >= Field.currentMapData.width || y >= Field.currentMapData.height) continue;
-            const tile = String(Field.currentMapData.tiles[y]?.[x] || '').toUpperCase();
+            const tile = String(Field.getMapTileAt(Field.currentMapData, x, y, '')).toUpperCase();
             if (tile !== 'B') continue;
-            if (App.data.progress.defeatedBosses?.[progressKey]?.includes(posKey)) continue;
             const bossDef = MapRegistry.findFixedBoss?.(Field.currentMapData, x, y);
+            if (Field.isFixedBossDefeatedAt(bossDef, x, y, progressKey)) continue;
             if (!Field.isFixedBossAvailable(bossDef)) continue;
             return { x, y, bossDef };
         }
         return null;
     },
+
+    getAdjacentAbyssBoss: () => {
+        if (!Field.currentMapData?.isDungeon || Field.currentMapData?.isFixed) return null;
+        if (Field.getCurrentAreaKey?.() !== 'ABYSS') return null;
+        if (typeof Dungeon === 'undefined' || typeof Dungeon.isAbyssBossAt !== 'function') return null;
+        const directions = {
+            0: [0, 1],
+            1: [-1, 0],
+            2: [1, 0],
+            3: [0, -1]
+        };
+        const [dx, dy] = directions[Number(Field.dir)] || [0, 1];
+        const x = Number(Field.x) + dx;
+        const y = Number(Field.y) + dy;
+        if (x < 0 || y < 0 || x >= Field.currentMapData.width || y >= Field.currentMapData.height) return null;
+        return Dungeon.isAbyssBossAt(x, y) ? { x, y } : null;
+    },
+
+    getSwitchGateActions: (gateId = null) => {
+        if (!Field.currentMapData?.isFixed) return [];
+        const actions = Array.isArray(Field.currentMapData.mapActions) ? Field.currentMapData.mapActions : [];
+        return actions.filter(action => action?.type === 'switchGate'
+            && (gateId === null || String(action.gateId || 'gate') === String(gateId)));
+    },
+
+    applyCompletedSwitchGateState: (gateId, gateState, options = {}) => {
+        if (!Field.currentMapData?.isFixed || !gateState?.completed) return false;
+        const progress = App.data.progress || (App.data.progress = {});
+        const areaKey = Field.getCurrentAreaKey ? Field.getCurrentAreaKey() : App.data?.location?.area;
+        const mapKey = Field.getCurrentProgressMapKey ? Field.getCurrentProgressMapKey() : areaKey;
+        const changeKey = Field.getCurrentMapChangeKey ? Field.getCurrentMapChangeKey(areaKey) : mapKey;
+        const actions = Field.getSwitchGateActions(gateId);
+        if (!actions.length) return false;
+        if (!progress.mapChanges) progress.mapChanges = {};
+        if (!progress.mapChanges[changeKey]) progress.mapChanges[changeKey] = {};
+        let changed = false;
+        const applied = [];
+        const seen = new Set();
+        actions.flatMap(action => Array.isArray(action.opens) ? action.opens : []).forEach(open => {
+            if (!open) return;
+            const x = Number(open.x);
+            const y = Number(open.y);
+            if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+            const key = `${x},${y}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            const tile = open.tile || 'T';
+            if (progress.mapChanges[changeKey][key] !== tile) {
+                progress.mapChanges[changeKey][key] = tile;
+                changed = true;
+            }
+            applied.push(key);
+        });
+        gateState.appliedMapChangeKey = changeKey;
+        gateState.appliedOpenKeys = applied;
+        gateState.lastRestoredAt = Date.now();
+        if (changed && options.save === true && typeof App.save === 'function') App.save();
+        return changed;
+    },
+
+    restoreCompletedSwitchGates: (options = {}) => {
+        if (!Field.currentMapData?.isFixed) return false;
+        const progress = App.data.progress || (App.data.progress = {});
+        if (!progress.mapSwitches || typeof progress.mapSwitches !== 'object') return false;
+        const areaKey = Field.getCurrentAreaKey ? Field.getCurrentAreaKey() : App.data?.location?.area;
+        const mapKey = Field.getCurrentProgressMapKey ? Field.getCurrentProgressMapKey() : areaKey;
+        const sourceKeys = [...new Set([mapKey, areaKey, Field.currentMapData?.areaKey, Field.currentMapData?.canonicalAreaKey].filter(Boolean))];
+        let changed = false;
+        let canonical = progress.mapSwitches[mapKey];
+        if (!canonical || typeof canonical !== 'object' || Array.isArray(canonical)) {
+            canonical = progress.mapSwitches[mapKey] = {};
+        }
+        sourceKeys.forEach(sourceKey => {
+            const source = progress.mapSwitches[sourceKey];
+            if (!source || typeof source !== 'object' || Array.isArray(source)) return;
+            Object.entries(source).forEach(([gateId, gateState]) => {
+                if (!gateState || typeof gateState !== 'object') return;
+                if (!canonical[gateId]) canonical[gateId] = gateState;
+                else if (canonical[gateId] !== gateState) {
+                    canonical[gateId].pressed = { ...(gateState.pressed || {}), ...(canonical[gateId].pressed || {}) };
+                    canonical[gateId].completed = !!(canonical[gateId].completed || gateState.completed);
+                }
+            });
+        });
+        Object.entries(canonical).forEach(([gateId, gateState]) => {
+            if (gateState?.completed) changed = Field.applyCompletedSwitchGateState(gateId, gateState) || changed;
+        });
+        if (changed && options.save === true && typeof App.save === 'function') App.save();
+        return changed;
+    },
+
+    activateSwitchGate: (action) => {
+        if (!action || !Field.currentMapData?.isFixed) return false;
+        const progress = App.data.progress || (App.data.progress = {});
+        const mapKey = Field.getCurrentProgressMapKey ? Field.getCurrentProgressMapKey() : Field.getCurrentAreaKey();
+        const gateId = action.gateId || 'gate';
+        const switchId = action.switchId || `${Number(action.x)},${Number(action.y)}`;
+        if (!progress.mapSwitches) progress.mapSwitches = {};
+        if (!progress.mapSwitches[mapKey]) progress.mapSwitches[mapKey] = {};
+        const gateState = progress.mapSwitches[mapKey][gateId] || (progress.mapSwitches[mapKey][gateId] = { pressed: {}, completed: false });
+        if (gateState.completed) {
+            Field.applyCompletedSwitchGateState(gateId, gateState, { save: true });
+            Field.refreshVisualState?.();
+            App.log(action.completedMessage || 'すでに仕掛けは作動している。');
+            return true;
+        }
+        if (gateState.pressed[switchId]) {
+            App.log(action.pressedMessage || 'このスイッチはすでに入っている。');
+            return true;
+        }
+
+        gateState.pressed[switchId] = true;
+        if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('switch');
+        const required = Array.isArray(action.requiredSwitches) && action.requiredSwitches.length
+            ? action.requiredSwitches.map(String)
+            : (Field.currentMapData.mapActions || [])
+                .filter(a => a && a.type === 'switchGate' && (a.gateId || 'gate') === gateId)
+                .map(a => String(a.switchId || `${Number(a.x)},${Number(a.y)}`));
+        const allPressed = required.length === 0 || required.every(id => !!gateState.pressed[id]);
+        if (!allPressed) {
+            App.log(action.partialMessage || 'どこかで仕掛けが動く音がした。');
+            App.save();
+            Field.render?.();
+            return true;
+        }
+
+        gateState.completed = true;
+        Field.applyCompletedSwitchGateState(gateId, gateState);
+        App.log(action.openMessage || '仕掛けが作動し、道が開いた。');
+        App.save();
+        Field.render?.();
+        Field.refreshCurrentAction?.({ silent: true });
+        return true;
+    },
+
+    getLastFixedBossEventPosition: () => {
+        const last = App.data?.progress?.lastFixedBossEvent || null;
+        const p = last?.position || null;
+        if (Number.isFinite(Number(p?.x)) && Number.isFinite(Number(p?.y))) return { x: Number(p.x), y: Number(p.y) };
+        return { x: Number(Field.x), y: Number(Field.y) - 1 };
+    },
+
+    getMonsterMapSpriteKey: (monsterId) => {
+        const id = Number(monsterId);
+        if (!Number.isFinite(id)) return null;
+        const directKey = window.PRISMA_ASSETS?.ensureMonsterGraphic?.(id)
+            || ((typeof MonsterData !== 'undefined' && typeof MonsterData.getImageKey === 'function')
+                ? MonsterData.getImageKey(id)
+                : (window.PRISMA_ASSETS?.getMonsterGraphicKey?.(id) || `monster_${id}`));
+        if (directKey && typeof GRAPHICS !== 'undefined' && GRAPHICS.data?.[directKey]) return directKey;
+        const compatKey = `overlay_boss_${id}`;
+        if (typeof GRAPHICS !== 'undefined' && GRAPHICS.data?.[compatKey]) return compatKey;
+        return directKey;
+    },
+
+    getMonsterMapSpriteSrc: (monsterId) => {
+        const byId = (typeof MonsterData !== 'undefined' && typeof MonsterData.getImagePath === 'function')
+            ? MonsterData.getImagePath(monsterId)
+            : window.PRISMA_ASSETS?.getMonsterImagePath?.(monsterId);
+        if (byId) return byId;
+        const key = Field.getMonsterMapSpriteKey ? Field.getMonsterMapSpriteKey(monsterId) : null;
+        return key && typeof GRAPHICS !== 'undefined' ? (GRAPHICS.data?.[key] || null) : null;
+    },
+
+    getPostBattleBossVisualContext: () => {
+        const pending = App.data?.progress?.pendingPostBattleBossVisual;
+        if (!pending || typeof StoryManager === 'undefined') return null;
+        const eventId = String(pending.eventId || '');
+        const event = StoryManager.events?.[eventId] || null;
+        if (!event || typeof StoryManager.getPostBattleBossVisualContext !== 'function') return null;
+        return StoryManager.getPostBattleBossVisualContext(eventId, event, pending.phase || 'actions');
+    },
+
+    resolveFixedBossMapSpriteMonsterId: (bossDef) => {
+        if (!bossDef) return null;
+        const flags = App.data?.progress?.flags || {};
+        const storyStep = Number(App.data?.progress?.storyStep || 0);
+        const subStep = Number(App.data?.progress?.subStep || 0);
+        const variants = Array.isArray(bossDef.mapSpriteVariants) ? bossDef.mapSpriteVariants : [];
+        const matchesVariant = (variant) => {
+            if (!variant) return false;
+            const requiredFlags = Array.isArray(variant.requiredFlags)
+                ? variant.requiredFlags
+                : (variant.requiredFlag ? [variant.requiredFlag] : []);
+            const missingFlags = Array.isArray(variant.missingFlags)
+                ? variant.missingFlags
+                : (variant.missingFlag ? [variant.missingFlag] : []);
+            const stepMin = variant.storyStepMin !== undefined ? Number(variant.storyStepMin) : -Infinity;
+            const stepMax = variant.storyStepMax !== undefined ? Number(variant.storyStepMax) : Infinity;
+            const subMin = variant.storySubMin !== undefined ? Number(variant.storySubMin) : -Infinity;
+            const subMax = variant.storySubMax !== undefined ? Number(variant.storySubMax) : Infinity;
+            return requiredFlags.every(flag => !!flags[flag]) &&
+                missingFlags.every(flag => !flags[flag]) &&
+                storyStep >= stepMin && storyStep <= stepMax &&
+                subStep >= subMin && subStep <= subMax;
+        };
+        const variant = variants.find(matchesVariant);
+        const configuredId = variant?.monsterId ?? variant?.mapSpriteMonsterId ?? bossDef.mapSpriteMonsterId;
+        if (Number.isFinite(Number(configuredId)) && Number(configuredId) > 0) return Number(configuredId);
+
+        const bossMonsterIds = (Array.isArray(bossDef.monsterId) ? bossDef.monsterId : [bossDef.monsterId])
+            .map(id => Number(id))
+            .filter(id => Number.isFinite(id) && id > 0);
+        // 3体編成は配置順の中央（2番目）を代表スプライトとして描画する。
+        return bossMonsterIds.length === 3 ? bossMonsterIds[1] : (bossMonsterIds[0] || null);
+    },
+
+    ensureFieldVisualLayer: () => {
+        let layer = document.getElementById('field-visual-cutscene-layer');
+        const wrapper = document.getElementById('canvas-wrapper') || document.getElementById('field-scene') || document.getElementById('game-container') || document.body;
+        if (!layer) {
+            layer = document.createElement('div');
+            layer.id = 'field-visual-cutscene-layer';
+            // フィールド演出用の表示レイヤー。
+            // 重要：レナード等の演出用スプライトは会話中も画面に残すが、
+            // レイヤー自体がタップを奪うと会話送りができなくなる。
+            // そのため通常時は pointer-events:none とし、実際に演出コマンドを
+            // 実行している短時間だけ story.js 側の演出実行処理で auto に切り替える。
+            layer.style.cssText = 'position:absolute; inset:0; pointer-events:none; z-index:2500; overflow:hidden; display:block;';
+            if (wrapper && wrapper.style && getComputedStyle(wrapper).position === 'static') wrapper.style.position = 'relative';
+            wrapper.appendChild(layer);
+        } else {
+            layer.style.pointerEvents = 'none';
+        }
+        return layer;
+    },
+
+    getFieldVisualTileStyle: (tile, sizeTiles = 2) => {
+        const wrapper = document.getElementById('canvas-wrapper') || document.getElementById('field-scene') || document.body;
+        const canvas = document.getElementById('field-canvas');
+        const wrapperRect = wrapper.getBoundingClientRect ? wrapper.getBoundingClientRect() : { left: 0, top: 0, width: 320, height: 320 };
+        const canvasRect = canvas?.getBoundingClientRect ? canvas.getBoundingClientRect() : wrapperRect;
+        const scaleX = canvas ? (canvasRect.width / Math.max(1, canvas.width || 320)) : 1;
+        const scaleY = canvas ? (canvasRect.height / Math.max(1, canvas.height || 320)) : 1;
+        const dx = (Number(tile.x) - Number(Field.x)) * 32 * scaleX;
+        const dy = (Number(tile.y) - Number(Field.y)) * 32 * scaleY;
+        const left = (canvasRect.left - wrapperRect.left) + (canvasRect.width / 2) + dx;
+        const top = (canvasRect.top - wrapperRect.top) + (canvasRect.height / 2) + dy;
+        const w = Math.max(32, 32 * Number(sizeTiles || 2) * scaleX);
+        const h = Math.max(32, 32 * Number(sizeTiles || 2) * scaleY);
+        return `position:absolute; left:${left}px; top:${top}px; width:${w}px; height:${h}px; transform:translate(-50%, -50%); image-rendering:pixelated; object-fit:contain;`;
+    },
+
+    putFieldVisualSprite: (id, src, tile, sizeTiles = 2, extraCss = '') => {
+        const layer = Field.ensureFieldVisualLayer();
+        let img = document.getElementById(id);
+        if (!img) {
+            img = document.createElement('img');
+            img.id = id;
+            img.draggable = false;
+            layer.appendChild(img);
+        }
+        img.src = src;
+        img.dataset.tileX = String(Number(tile.x));
+        img.dataset.tileY = String(Number(tile.y));
+        img.dataset.sizeTiles = String(Number(sizeTiles || 2));
+        img.style.cssText = Field.getFieldVisualTileStyle(tile, sizeTiles) + (extraCss || '');
+        return img;
+    },
+
+    setStoryUiCutsceneHidden: (hidden) => {
+        const overlay = document.getElementById('story-ui-overlay');
+        if (!overlay) return;
+        if (hidden) {
+            overlay.dataset.cutsceneDisplay = overlay.style.display || '';
+            overlay.style.display = 'none';
+        } else if (overlay.dataset.cutsceneDisplay !== undefined) {
+            overlay.style.display = overlay.dataset.cutsceneDisplay || 'flex';
+            delete overlay.dataset.cutsceneDisplay;
+        }
+    },
+
+    fadeFieldVisualBlackout: async (holdMs = 160) => {
+        const layer = Field.ensureFieldVisualLayer();
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        let blackout = document.getElementById('field-visual-blackout');
+        if (!blackout) {
+            blackout = document.createElement('div');
+            blackout.id = 'field-visual-blackout';
+            blackout.style.cssText = 'position:absolute; inset:0; background:#000; opacity:0; transition:opacity 90ms ease; pointer-events:none; z-index:1;';
+            layer.appendChild(blackout);
+        }
+        blackout.style.opacity = '1';
+        await wait(holdMs);
+        blackout.style.opacity = '0';
+        await wait(110);
+        blackout.remove();
+    },
+
+    resolveFieldCutsceneTile: (cmd, anchor) => {
+        const base = cmd?.base === 'player' ? { x: Field.x, y: Field.y } : (anchor || Field.getLastFixedBossEventPosition());
+        return {
+            x: Number(cmd?.x ?? base.x) + Number(cmd?.dx || 0),
+            y: Number(cmd?.y ?? base.y) + Number(cmd?.dy || 0)
+        };
+    },
+
+    resolveFieldCutsceneSrc: (cmd) => {
+        if (cmd?.src) return cmd.src;
+        if (cmd?.monsterId !== undefined) return Field.getMonsterMapSpriteSrc(cmd.monsterId);
+        if (cmd?.effect === 'slash') return 'assets/effect/fx_phys_neutral_slash.png';
+        return '';
+    },
+
+    // フィールド演出の「何を表示し、どう動かすか」は story.js 側で管理する。
+    // main.js には、表示レイヤー・画像配置・座標変換などの低レベル描画補助だけを残す。
 
     executeMapAction: (action) => {
         if (!action) return;
@@ -5995,7 +9329,45 @@ const Field = {
             }
         }
 
-        if (action.log) App.log(action.log);
+        if (action.type === 'switchGate') {
+            Field.activateSwitchGate(action);
+            return;
+        }
+
+        if (action.type === 'elementalTrialPrism') {
+            const progress = App.ensureAbyssRegionProgress();
+            const elements = Array.isArray(action.elements) ? action.elements : [];
+            const nextElement = elements.find(element => !progress.abyssSpiritBlessings[element]);
+            if (!nextElement) {
+                App.log(action.completedText || '六つのプリズムは、認めた者へ穏やかな光を返している。');
+                return;
+            }
+            const bossId = Number(action.bossByElement?.[nextElement]);
+            if (!bossId) {
+                App.log('プリズムは沈黙している。');
+                return;
+            }
+            App.data.battle = {
+                active: false,
+                isBossBattle: true,
+                isSpecialBoss: false,
+                isEstark: false,
+                fixedBossId: bossId,
+                abyssSpiritElement: nextElement,
+                fixedTrialElement: nextElement,
+                fixedTrialRewardItemId: Number(action.rewardItemByElement?.[nextElement] || 0),
+                fixedTrialCompletionItemId: Number(action.completionItemId || 0),
+                fixedTrialRequiredElements: (Array.isArray(action.requiredElements) ? action.requiredElements : elements).slice(),
+                bossStatMultiplier: Number(action.bossStatMultiplier || 1),
+                suppressFixedBossDefeat: true,
+                enemies: []
+            };
+            App.save();
+            App.changeScene('battle');
+            return;
+        }
+
+        if (action.log && action.type !== 'quest' && action.type !== 'questBoard' && action.type !== 'guildBoard') App.log(action.log);
 
         const progressEventId = Field.resolveMapActionEventId(action);
         if (progressEventId && typeof StoryManager !== 'undefined') {
@@ -6003,14 +9375,80 @@ const Field = {
             return;
         }
 
+        const cycledEventId = Field.resolveCycledMapActionEventId(action, true);
+        if (cycledEventId && typeof StoryManager !== 'undefined') {
+            StoryManager.executeEvent(cycledEventId);
+            return;
+        }
+
+        if (action.type === 'fixedMap' && action.target && typeof Field.enterFixedMap === 'function') {
+            Field.enterFixedMap(action.target, {
+                entryKey: action.entryKey || null,
+                targetX: action.targetX,
+                targetY: action.targetY,
+                // 固定MAP同士の移動ではワールド帰還点を上書きしない。
+                // returnX/returnY は既存データ互換用に残すが、接続先は entryKey/targetX/targetY を正本にする。
+                returnPoint: action.returnPoint || {
+                    areaKey: Field.getCurrentAreaKey?.() || App.data.location.area,
+                    worldKey: App.data.location.worldKey,
+                    x: Number(action.returnX ?? Field.x),
+                    y: Number(action.returnY ?? Field.y),
+                    mapData: Field.currentMapData ? JSON.parse(JSON.stringify(Field.currentMapData)) : null
+                }
+            });
+            return;
+        }
+
+        if (action.type === 'returnPortal') {
+            const fallbackAreaKey = action.fallbackAreaKey || 'WORLD';
+            const saved = action.useSavedReturnPoint === false ? null : App.data.mapReturnPoint;
+            const target = saved?.areaKey
+                ? saved
+                : {
+                    areaKey: fallbackAreaKey,
+                    worldKey: action.fallbackWorldKey || STORY_DATA?.areas?.[fallbackAreaKey]?.worldKey || 'WORLD',
+                    x: action.fallbackX,
+                    y: action.fallbackY
+                };
+            const fixedDef = target.mapData || (typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[target.areaKey]
+                ? { ...FIXED_MAPS[target.areaKey], isFixed: true, isDungeon: FIXED_MAPS[target.areaKey].isDungeon === true, areaKey: target.areaKey }
+                : null);
+            App.data.mapReturnPoint = null;
+            App.data.transportMode = null;
+            App.data.location.area = target.areaKey || 'WORLD';
+            App.data.location.worldKey = target.worldKey || STORY_DATA?.areas?.[target.areaKey]?.worldKey || 'WORLD';
+            Field.currentMapData = fixedDef;
+            const entryPoint = fixedDef?.entryPoint || { x: 0, y: 0 };
+            Field.x = Number.isFinite(Number(target.x)) ? Number(target.x) : Number(entryPoint.x);
+            Field.y = Number.isFinite(Number(target.y)) ? Number(target.y) : Number(entryPoint.y);
+            App.data.location.x = Field.x;
+            App.data.location.y = Field.y;
+            App.save();
+            App.changeScene('field');
+            Field.render?.();
+            Field.refreshCurrentAction?.({ silent: true });
+            return;
+        }
+
         if (action.type === 'fixedDungeon' && action.target && typeof Dungeon !== 'undefined' && Dungeon.startFixed) {
+            if (action.setFlagOnUse) {
+                App.data.progress = App.data.progress || {};
+                App.data.progress.flags = App.data.progress.flags || {};
+                App.data.progress.flags[action.setFlagOnUse] = true;
+            }
+            if (action.log) App.log(action.log);
+            App.save();
             Dungeon.startFixed(action.target);
             return;
         }
 
         if (action.type === 'abyssDungeon' && typeof Dungeon !== 'undefined') {
             if (!App.requireFeatureUnlocked('abyss')) return;
-            Dungeon.enter();
+            if (action.target && typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[action.target]) {
+                Field.enterFixedMap(action.target);
+            } else {
+                Dungeon.enter();
+            }
             return;
         }
 
@@ -6019,13 +9457,67 @@ const Field = {
             return;
         }
 
+        if (action.type === 'questBoard' && typeof App.runQuestBoard === 'function') {
+            if (action.log) App.log(action.log);
+            Promise.resolve(App.runQuestBoard(action)).finally(() => {
+                Field.refreshVisualState?.();
+                Field.refreshCurrentAction?.({ silent: true });
+            });
+            return;
+        }
+
         if (action.type === 'quest' && action.questId && typeof App.runQuestAction === 'function') {
-            App.runQuestAction(action.questId, { complete: !!action.complete, lockedText: action.lockedText });
+            Promise.resolve(App.runQuestAction(action.questId, { complete: !!action.complete, lockedText: action.lockedText }))
+                .finally(() => {
+                    // 受注を境に立ち去る同行NPCは、会話終了と同じフレームで
+                    // 画像・当たり判定・アクションをまとめて再評価する。
+                    // render() だけではPhaserの静的署名が変わらず、NPC画像が次の一歩まで
+                    // 残るため、静的オブジェクト層を明示的に再構築する。
+                    if (typeof Field.refreshVisualState === 'function') Field.refreshVisualState();
+                    else Field.render();
+                    Field.refreshCurrentAction?.({ silent: true });
+                });
+            return;
+        }
+
+        if (action.type === 'memoryInn' && typeof Dungeon !== 'undefined' && typeof Dungeon.useMemoryRealmInn === 'function') {
+            Dungeon.useMemoryRealmInn(action.cost);
+            return;
+        }
+
+        if (action.type === 'memoryExit' && typeof Dungeon !== 'undefined') {
+            Dungeon.exit(false);
             return;
         }
 
         if (action.type === 'shop' && typeof Facilities !== 'undefined' && typeof Facilities.openShopFromField === 'function') {
             Facilities.openShopFromField(action);
+            return;
+        }
+
+        if (action.type === 'alchemy' && typeof Alchemy !== 'undefined' && typeof Alchemy.openFromField === 'function') {
+            Alchemy.openFromField(action);
+            return;
+        }
+
+        if (action.type === 'blacksmith' && typeof MenuBlacksmith !== 'undefined' && typeof MenuBlacksmith.openFromField === 'function') {
+            MenuBlacksmith.openFromField(action);
+            return;
+        }
+
+        if (action.type === 'guild' && typeof Guild !== 'undefined') {
+            App.changeScene('guild');
+            return;
+        }
+
+        if (action.type === 'guildBoard' && typeof Guild !== 'undefined') {
+            if (action.log) App.log(action.log);
+            Guild.openBoard();
+            return;
+        }
+
+        if (action.type === 'freeRest' && typeof Guild !== 'undefined') {
+            Guild.freeRest();
             return;
         }
 
@@ -6040,21 +9532,28 @@ const Field = {
         }
 
         if (action.type === 'boss') {
-            const fixedBossId = action.monsterId !== undefined ? action.monsterId : null;
-            let isSpecialBoss = !!action.special;
-            if (!isSpecialBoss && fixedBossId !== null) {
-                const base = window.MonsterData?.getMonsterById?.(Number(fixedBossId));
-                isSpecialBoss = !!(base?.isSpecialBoss || base?.isEstark || Number(fixedBossId) === 902000);
-            }
-            App.data.battle = {
-                active: false,
-                isBossBattle: true,
-                fixedBossId,
-                isSpecialBoss,
-                isEstark: isSpecialBoss
+            const startBossBattle = () => {
+                const fixedBossId = action.monsterId !== undefined ? action.monsterId : null;
+                let isSpecialBoss = !!action.special;
+                if (!isSpecialBoss && fixedBossId !== null) {
+                    const base = window.MonsterData?.getMonsterById?.(Number(fixedBossId));
+                    isSpecialBoss = !!(base?.isSpecialBoss || base?.isEstark || Number(fixedBossId) === 902000);
+                }
+                App.data.battle = {
+                    active: false,
+                    isBossBattle: true,
+                    fixedBossId,
+                    isSpecialBoss,
+                    isEstark: isSpecialBoss
+                };
+                App.save();
+                App.changeScene('battle');
             };
-            App.save();
-            App.changeScene('battle');
+            if (action.confirmText && typeof Menu !== 'undefined' && typeof Menu.confirm === 'function') {
+                Menu.confirm(action.confirmText, startBossBattle);
+                return;
+            }
+            startBossBattle();
             return;
         }
     },
@@ -6083,20 +9582,23 @@ const Field = {
             if (!silent && message) App.log(message);
         };
         if (Field.currentMapData) {
-            if (tile === 'W') return false;
+            if (Field.isTileImpassableForCurrentMap(tile)) return false;
 
             const adjacentBoss = Field.getAdjacentFixedBoss();
             if (adjacentBoss && typeof Dungeon !== 'undefined' && typeof Dungeon.prepareFixedTileAction === 'function') {
                 return Dungeon.prepareFixedTileAction('B', adjacentBoss.x, adjacentBoss.y, { silent });
             }
+            const adjacentAbyssBoss = Field.getAdjacentAbyssBoss ? Field.getAdjacentAbyssBoss() : null;
+            if (adjacentAbyssBoss && typeof Dungeon !== 'undefined' && typeof Dungeon.prepareAbyssBossTileAction === 'function') {
+                return Dungeon.prepareAbyssBossTileAction(adjacentAbyssBoss.x, adjacentAbyssBoss.y, { silent });
+            }
             if (Field.prepareAdjacentMapActorAction({ silent })) return true;
+            if (Field.prepareAdjacentDungeonAdventurerAction({ silent })) return true;
             if (Field.prepareAdjacentChestAction({ silent })) return true;
 
             // 回復の泉。触れただけでは回復せず、ボタン押下で初めて回復する。
             // 床の上に重ねて表示しているため、通常タイルとは別に現在地座標で判定する。
-            if (typeof Dungeon !== 'undefined' && typeof Dungeon.isHealSpringAt === 'function' && Dungeon.isHealSpringAt(x, y)) {
-                logIfNeeded('清らかな泉が湧いている。');
-                App.setAction('泉で回復', () => Dungeon.useHealSpring());
+            if (typeof Dungeon !== 'undefined' && typeof Dungeon.prepareHealSpringActionAt === 'function' && Dungeon.prepareHealSpringActionAt(x, y, { silent })) {
                 return true;
             }
 
@@ -6159,9 +9661,7 @@ const Field = {
                     App.setAction(fixedMapAction.label || '調べる', () => Field.executeMapAction(fixedMapAction));
                     return true;
                 }
-                const effect = (typeof MapRegistry !== 'undefined' && MapRegistry.findTileEffect)
-                    ? MapRegistry.findTileEffect(Field.currentMapData, x, y)
-                    : null;
+                const effect = Field.getRuntimeTileEffectAt ? Field.getRuntimeTileEffectAt(x, y) : null;
                 if (effect && effect.type === 'angel' && typeof Dungeon !== 'undefined' && typeof Dungeon.startAngelTrial === 'function') {
                     logIfNeeded(effect.log || '淡い光をまとった天使がいる。');
                     App.setAction(effect.label || '試練に挑む', () => Dungeon.startAngelTrial(effect));
@@ -6169,6 +9669,11 @@ const Field = {
                 }
                 if (Dungeon.prepareFixedTileAction(tile, x, y, { silent })) return true;
             }
+
+            // 泉がイベント・階段・装飾と同じマスに置かれて通行不能でも、隣接マスから利用できる。
+            // 現在地固有のイベントを優先した後に評価し、通常の階段や会話ボタンを奪わない。
+            if (typeof Dungeon !== 'undefined' && typeof Dungeon.prepareAdjacentHealSpringAction === 'function' &&
+                Dungeon.prepareAdjacentHealSpringAction({ silent })) return true;
 
             if (tile === 'V' || tile === 'H' || tile === 'A' || tile === 'J' || tile === 'R' || tile === 'B') {
                 logIfNeeded('何か気になるものがある。');
@@ -6200,9 +9705,26 @@ const Field = {
             }
         }
 
-        if (targetAreaKey && typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[targetAreaKey]) {
+        if (targetAreaKey === 'MEMORY_REALM') {
+            App.setAction('追憶の魔境へ入る', () => {
+                if (typeof App.discoverFixedMap === 'function') App.discoverFixedMap('MEMORY_REALM', { save:false });
+                Dungeon.startMemoryRealm();
+            });
+        } else if (targetAreaKey && typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[targetAreaKey]) {
             const areaDef = FIXED_MAPS[targetAreaKey];
-            App.setAction(`${areaDef.name}に入る`, () => Field.enterFixedMap(targetAreaKey));
+            App.setAction(`${areaDef.name}に入る`, () => {
+                const flags = App.data?.progress?.flags || {};
+                const storyArea = (typeof STORY_DATA !== 'undefined' && STORY_DATA.areas) ? STORY_DATA.areas[targetAreaKey] : null;
+                const entranceDef = Array.isArray(storyArea?.entrances)
+                    ? storyArea.entrances.find(entry => (entry.entryKey || null) === (targetEntryKey || null))
+                    : null;
+                const requiredFlags = [storyArea?.entryRequiredFlag, entranceDef?.requiredFlag].filter(Boolean);
+                if (requiredFlags.some(flag => !flags[flag])) {
+                    App.log(entranceDef?.lockedText || storyArea?.entryLockedText || '結界に阻まれ、今は入れない。');
+                    return;
+                }
+                Field.enterFixedMap(targetAreaKey, { entryKey: targetEntryKey || null });
+            });
         } else if (targetAreaKey && typeof FIXED_DUNGEON_MAPS !== 'undefined' && FIXED_DUNGEON_MAPS[targetAreaKey]) {
             const areaDef = FIXED_DUNGEON_MAPS[targetAreaKey];
             const labelPrefix = targetEntryLabel ? `${areaDef.name}・${targetEntryLabel}` : areaDef.name;
@@ -6210,8 +9732,18 @@ const Field = {
                 const flags = App.data?.progress?.flags || {};
                 const bypassFlags = Array.isArray(areaDef.entryBypassFlags) ? areaDef.entryBypassFlags : [];
                 const bypassedEntryLock = bypassFlags.some(flag => !!flags[flag]);
-                if (areaDef.entryRequiredFlag && !flags[areaDef.entryRequiredFlag] && !bypassedEntryLock) {
-                    App.log(areaDef.entryLockedText || '今はまだ、この場所へ入る理由がない。');
+                const entryLockEntrances = Array.isArray(areaDef.entryRequiredEntrances) ? areaDef.entryRequiredEntrances : null;
+                const effectiveEntryKey = targetEntryKey || areaDef.defaultEntryKey || null;
+                const entryLockApplies = !entryLockEntrances || entryLockEntrances.includes(effectiveEntryKey);
+                const missingRequiredFlag = !!areaDef.entryRequiredFlag && !flags[areaDef.entryRequiredFlag];
+                const missingRequiredAlly = areaDef.entryRequiredAllyId !== undefined
+                    && !(typeof App.hasStoryAlly === 'function' && App.hasStoryAlly(areaDef.entryRequiredAllyId));
+                if (entryLockApplies && (missingRequiredFlag || missingRequiredAlly) && !bypassedEntryLock) {
+                    if (areaDef.entryLockedEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
+                        StoryManager.executeEvent(areaDef.entryLockedEventId);
+                    } else {
+                        App.log(areaDef.entryLockedText || '今はまだ、この場所へ入る理由がない。');
+                    }
                     return;
                 }
                 if (targetAreaKey === 'THUNDER_FORT' && targetEntryKey === 'east' && !flags.thunderFortCleared) {
@@ -6258,22 +9790,73 @@ const Field = {
         return !!App.pendingAction;
     },
 
+    getDungeonWallFaceThemeForDraw: () => {
+        const usesWallFaces = Field.currentMapData?.isDungeon || Field.currentMapData?.useDungeonWallFace === true;
+        if (!usesWallFaces || typeof DUNGEON_WALL_FACE_THEMES === 'undefined') return null;
+        const themeKey = String(Field.currentMapData.themeKey || 'DEFAULT').toUpperCase();
+        return DUNGEON_WALL_FACE_THEMES[themeKey] || null;
+    },
+
+    getDungeonWallFaceModeForDraw: () => {
+        const theme = Field.getDungeonWallFaceThemeForDraw();
+        return Field.currentMapData?.wallFaceMode || theme?.mode || 'replace';
+    },
+
     getDungeonWallGraphicForDraw: (tileX, tileY, upper, mapW, mapH, areaKey) => {
-        if (!Field.currentMapData?.isDungeon || upper !== 'W') return null;
+        const usesWallFaces = Field.currentMapData?.isDungeon || Field.currentMapData?.useDungeonWallFace === true;
+        if (!usesWallFaces || upper !== 'W') return null;
 
-        // 固定ダンジョンはMAPごとのW画像を優先する。
-        // 汎用の wall_face に差し替えると、大灯台/雷の要塞/光の宮殿/魔王城が同じ壁に見えるため。
-        // 例外的に汎用壁面を使いたいMAPだけ、map.js側で useDungeonWallFace: true を設定する。
-        if (Field.currentMapData.isFixed && !Field.currentMapData.useDungeonWallFace) return null;
+        const sharedWallTile = Field.getTileConfigForDraw
+            ? Field.getTileConfigForDraw('W', tileX, tileY)
+            : Field.getTileConfig('W');
+        const sharedWallFaceTheme = Field.getDungeonWallFaceThemeForDraw() || {};
+        return window.MapRenderShared.wallFacePlan({
+            map: { ...Field.currentMapData, wallFaceTheme: sharedWallFaceTheme },
+            theme: { W: sharedWallTile },
+            x: tileX,
+            y: tileY,
+            upper,
+            entityType: 'dungeon',
+            tileAtFn: (x, y) => Field.getRenderedTileForDraw(x, y, mapW, mapH, areaKey)
+        })?.key || null;
 
+        /* Legacy duplicated resolver retained only as migration context.
+
+        // 水系ダンジョンの W は壁ではなく、下層に敷くアニメーション水面。
+        const wallTile = Field.getTileConfigForDraw
+            ? Field.getTileConfigForDraw('W', tileX, tileY)
+            : Field.getTileConfig('W');
+        if (wallTile?.lowerLayer === true || wallTile?.animatedWater === true) return null;
+
+        const theme = Field.getDungeonWallFaceThemeForDraw();
+        if (theme?.disabled) return null;
+
+        const baseImg = Field.currentMapData.wallFaceImg || theme?.img || null;
+        if (!baseImg) return null;
+
+        // 通行面の直上にある W 列だけを露出壁面として描く。
         if (Field.getRenderedTileForDraw(tileX, tileY + 1, mapW, mapH, areaKey) === 'W') return null;
-        return (((tileX % 5) + 5) % 5) === 0 ? 'wall_face_torch' : 'wall_face';
+
+        const accentImg = Field.currentMapData.wallFaceTorchImg || theme?.accentImg || null;
+        const accentEvery = Math.max(1, Number(theme?.accentEvery || 5) || 5);
+        const useAccent = !!accentImg && (((tileX % accentEvery) + accentEvery) % accentEvery) === 0;
+        return useAccent ? accentImg : baseImg;
+        */
     },
     
     getBattleBg: () => {
-        if (App.data.battle && (App.data.battle.isSpecialBoss || App.data.battle.isEstark)) return 'battle_bg_lastboss';
-        if (App.data.battle?.encounterType === 'sea') return 'battle_bg_sea';
+        const battleData = App.data?.battle || {};
+        if (battleData.battleBg) return battleData.battleBg;
+        const currentFloor = Math.max(0, Number(App.data?.progress?.floor || 0));
+        const isMemoryRealmBattle = globalThis.ABYSS_FLOOR_RULES?.isMemoryMode?.(battleData.abyssMode || App.data?.dungeon?.abyssMode) === true;
+        const isAbyssBoss = App.data?.location?.area === 'ABYSS' && battleData.isBossBattle && !battleData.isRiftBattle && !isMemoryRealmBattle;
+        if (isAbyssBoss && globalThis.ABYSS_FLOOR_RULES?.getBalanceFloor?.(currentFloor, App.data?.battle?.abyssMode || App.data?.dungeon?.abyssMode) === 200) return 'battle_bg_abyss_floor_200';
+        if (isAbyssBoss) return 'battle_bg_abyss_boss';
+        if (battleData.isSpecialBoss || battleData.isEstark) return 'battle_bg_lastboss';
+        if (battleData.encounterType === 'sea') return 'battle_bg_sea';
         if (Field.currentMapData) {
+            if (Field.currentMapData.isDungeon && App.data?.dungeon?.isLavaFloor &&
+                !(typeof Dungeon !== 'undefined' && Dungeon.isRandomVisualThemeTestOverrideActive?.(Dungeon.floor))) return 'battle_bg_fire';
             if (Field.currentMapData.battleBg) return Field.currentMapData.battleBg;
             if (Field.currentMapData.isDungeon) {
                 const mapW = Field.currentMapData.width || 1;
@@ -6285,8 +9868,6 @@ const Field = {
 
                 // 溶岩フロアでは、溶岩マス上に限らず階層全体を炎背景にする。
                 // 「溶岩地帯に入った」というフロア体験を優先するため、現在地タイル判定には戻さないこと。
-                if (App.data?.dungeon?.isLavaFloor) return 'battle_bg_fire';
-
                 const floor = App.data.progress.floor || 0;
                 const genType = App.data.dungeon.genType;
                 if (floor % 10 === 0) return 'battle_bg_boss'; 
@@ -6295,11 +9876,18 @@ const Field = {
             }
             return 'battle_bg_field';
         }
-        const mapW = MAP_DATA[0].length, mapH = MAP_DATA.length;
+        const worldMap = Field.getActiveWorldMap();
+        const mapW = worldMap[0].length, mapH = worldMap.length;
         const tx = ((Field.x % mapW) + mapW) % mapW, ty = ((Field.y % mapH) + mapH) % mapH;
-        const tile = MAP_DATA[ty][tx].toUpperCase();
-        if (tile === 'W') return 'battle_bg_sea';
-        if (tile === 'F') return 'battle_bg_forest';
+        const surface = typeof MapRegistry !== 'undefined' && MapRegistry.getWorldSurfaceAt
+            ? MapRegistry.getWorldSurfaceAt(tx, ty)
+            : { tile: worldMap[ty][tx].toUpperCase(), isBridge: false, isSea: false };
+        const tile = surface.tile;
+        if (surface.isBridge) return 'battle_bg_field';
+        if (surface.isSea) return 'battle_bg_sea';
+        // World-map forest encounters use their own field background. Keep the
+        // fixed Forbidden Forest background isolated under battle_bg_forest.
+        if (tile === 'F') return 'battle_bg_field_forest';
         if (tile === 'L') return 'battle_bg_mountain';
         return 'battle_bg_field';
     },
@@ -6369,10 +9957,6 @@ const Field = {
         // ここでField.move()を疑似的に呼ぶ実装にはしないこと。足踏みはstep切替のみ。
         if (typeof Field.stopIdleStep === 'function') Field.stopIdleStep();
 
-		// ★追加: 一歩歩くごとにログを空欄にする処理
-        const logEl = document.getElementById('msg-text');
-        if (logEl) logEl.innerHTML = '';
-		
         if (dy > 0) Field.dir = 0; else if (dx < 0) Field.dir = 1; else if (dx > 0) Field.dir = 2; else if (dy < 0) Field.dir = 3;
         Field.step = (Field.step === 1) ? 2 : 1;
         let nx = Field.x + dx, ny = Field.y + dy;
@@ -6382,7 +9966,8 @@ const Field = {
         // 以前はここで App.clearAction() した後、壁/マップ外/海などで return していたため、
         // イベント・宿屋・ボス等のタイル上で移動できない方向へ入力するとボタンが消えていました。
         // 今後、移動不可 return を追加する場合も、この helper を通して現在地を再評価してください。
-        const keepCurrentTileAction = () => {
+        const keepCurrentTileAction = (options = {}) => {
+            if (options.bump && typeof AudioManager !== 'undefined') AudioManager.playSe?.('wall_bump');
             if (typeof Field.refreshCurrentAction === 'function') {
                 Field.refreshCurrentAction({ silent: true });
             }
@@ -6393,68 +9978,109 @@ const Field = {
         const areaKey = Field.getCurrentAreaKey();
 
         if (Field.currentMapData) {
-            if (nx < 0 || nx >= Field.currentMapData.width || ny < 0 || ny >= Field.currentMapData.height) { keepCurrentTileAction(); return; }
+            if (nx < 0 || nx >= Field.currentMapData.width || ny < 0 || ny >= Field.currentMapData.height) { keepCurrentTileAction({ bump: true }); Field.render(); return; }
+            if (Field.isMovementRegionCrossingBlocked(Field.x, Field.y, nx, ny)) {
+                keepCurrentTileAction({ bump: true });
+                Field.render();
+                return;
+            }
             
 			//let tile = Field.currentMapData.tiles[ny][nx].toUpperCase();
 			// ★修正: 書き換えられたタイルがあればそれを優先、なければ元のタイルを参照
             const changeKey = Field.getCurrentMapChangeKey ? Field.getCurrentMapChangeKey(areaKey) : areaKey;
-			let tile = (App.data.progress.mapChanges?.[changeKey]?.[`${nx},${ny}`] || App.data.progress.mapChanges?.[areaKey]?.[`${nx},${ny}`] || Field.currentMapData.tiles[ny][nx]).toUpperCase();
+			let tile = (App.data.progress.mapChanges?.[changeKey]?.[`${nx},${ny}`] || App.data.progress.mapChanges?.[areaKey]?.[`${nx},${ny}`] || Field.getMapTileAt(Field.currentMapData, nx, ny)).toUpperCase();
+            let chestDef = null;
 
             // ★追加: 固定宝箱/ボスの判定を移動前に行う (撃破・取得済みなら通り抜け可能にする)
             if (Field.currentMapData.isFixed) {
                 const ak = Field.getCurrentProgressMapKey();
                 const posStr = `${nx},${ny}`;
                 // ボスチェック
-                if (tile === 'B' && App.data.progress.defeatedBosses && App.data.progress.defeatedBosses[ak]?.includes(posStr)) {
-                    tile = 'G';
-                }
                 if (tile === 'B') {
                     const bossDef = typeof MapRegistry !== 'undefined' && MapRegistry.findFixedBoss
                         ? MapRegistry.findFixedBoss(Field.currentMapData, nx, ny)
                         : null;
-                    if (!Field.isFixedBossAvailable(bossDef)) {
+                    if (Field.isFixedBossDefeatedAt(bossDef, nx, ny, ak)) {
+                        tile = 'G';
+                    } else if (!Field.isFixedBossAvailable(bossDef)) {
                         tile = bossDef?.inactiveTile || 'G';
                     } else {
-                        App.log(bossDef?.inspectLog || '強敵が行く手を塞いでいる。');
-                        keepCurrentTileAction();
+                        if (bossDef?.inspectLog) App.log(bossDef.inspectLog);
+                        keepCurrentTileAction({ bump: true });
                         Field.render();
                         return;
                     }
                 }
+
+                chestDef = Field.getFixedChestAt ? Field.getFixedChestAt(nx, ny) : null;
+                const openedChest = chestDef && typeof Dungeon !== 'undefined' && Dungeon.isFixedChestOpenedAt(nx, ny);
+                if (openedChest && Dungeon.shouldRemoveOpenedFixedChest?.(Field.currentMapData)) {
+                    tile = Dungeon.getOpenedFixedChestBaseTile?.(chestDef, Field.currentMapData) || 'T';
+                } else {
+                    const chestTile = Field.getFixedChestTileSign ? Field.getFixedChestTileSign(chestDef) : null;
+                    if (chestTile) tile = chestTile;
+                }
+            } else if (tile === 'B' && areaKey === 'ABYSS' && typeof Dungeon !== 'undefined' && typeof Dungeon.prepareAbyssBossTileAction === 'function') {
+                Dungeon.prepareAbyssBossTileAction(nx, ny, { silent: false });
+                keepCurrentTileAction({ bump: true });
+                Field.render();
+                return;
             }
 
             const targetMapAction = typeof MapRegistry !== 'undefined' && MapRegistry.findMapAction
                 ? MapRegistry.findMapAction(Field.currentMapData, nx, ny)
                 : null;
+            if (Field.currentMapData.isDungeon && typeof Dungeon !== 'undefined' && typeof Dungeon.isAdventurerAt === 'function' && Dungeon.isAdventurerAt(nx, ny)) {
+                App.log('冒険者が立っている。');
+                keepCurrentTileAction({ bump: true });
+                Field.render();
+                return;
+            }
             if (Field.isBlockingMapActor(targetMapAction)) {
-                App.log(targetMapAction.log || '人が立っている。');
-                keepCurrentTileAction();
+                if (targetMapAction.log) App.log(targetMapAction.log);
+                keepCurrentTileAction({ bump: true });
+                Field.render();
+                return;
+            }
+            const targetBlockingObject = Field.getBlockingObjectAt ? Field.getBlockingObjectAt(nx, ny) : null;
+            if (targetBlockingObject) {
+                if (targetBlockingObject.log) App.log(targetBlockingObject.log);
+                keepCurrentTileAction({ bump: true });
                 Field.render();
                 return;
             }
             if (tile === 'C' || tile === 'R') {
                 const opened = Field.currentMapData.isFixed && typeof Dungeon !== 'undefined' &&
                     Dungeon.isFixedChestOpenedAt(nx, ny);
-                App.log(opened
-                    ? '空箱が置かれている。'
-                    : (tile === 'R' ? '赤い宝箱が道を塞いでいる。' : '宝箱が道を塞いでいる。'));
-                keepCurrentTileAction();
+                const container = typeof Dungeon !== 'undefined' && Dungeon.getContainerPresentation
+                    ? Dungeon.getContainerPresentation(chestDef)
+                    : { opened: '開いたままの空箱がある。', blocked: '宝箱が道を塞いでいる。' };
+                if (opened) {
+                    // 固定マップの空箱は表示だけでなく障害物としても残す。
+                    App.log(container.opened);
+                } else {
+                    App.log(tile === 'R' ? '赤い宝箱が道を塞いでいる。' : container.blocked);
+                }
+                keepCurrentTileAction({ bump: true });
                 Field.render();
                 return;
             }
 
-            if (tile === 'W') { keepCurrentTileAction(); return; } 
+            const isFloodedRandomFloor = !!(Field.currentMapData.isDungeon && !Field.currentMapData.isFixed && App.data?.dungeon?.isFloodedFloor);
+            if (Field.isTileImpassableForCurrentMap(tile)) { keepCurrentTileAction({ bump: true }); Field.render(); return; }
+            if (tile === '~' && !isFloodedRandomFloor) { keepCurrentTileAction({ bump: true }); Field.render(); return; }
 
             if (Field.isBuildingMovementBlocked(Field.x, Field.y, nx, ny)) {
                 App.log('建物に遮られて進めない。');
-                keepCurrentTileAction();
+                keepCurrentTileAction({ bump: true });
                 Field.render();
                 return;
             }
 
             if (typeof Dungeon !== 'undefined' && Dungeon.isLockedDoorTile && Dungeon.isLockedDoorTile(tile)) {
                 if (!Dungeon.unlockDoorAt(nx, ny, tile)) {
-                    keepCurrentTileAction();
+                    keepCurrentTileAction({ bump: true });
+                    Field.render();
                     return;
                 }
                 tile = 'T';
@@ -6463,20 +10089,54 @@ const Field = {
             if (tile === 'S' && !Field.currentMapData.isDungeon) {
                 const areaKey = App.data.location.area;
                 if (typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[areaKey]) {
+                    const mapDef = FIXED_MAPS[areaKey];
+                    const flags = App.data?.progress?.flags || {};
+                    const localExit = Array.isArray(mapDef.worldExits)
+                        ? mapDef.worldExits.find(exitDef => Number(exitDef.x) === Number(nx) && Number(exitDef.y) === Number(ny))
+                        : null;
+                    if (localExit?.requiredFlag && !flags[localExit.requiredFlag]) {
+                        App.log(localExit.lockedText || '門は固く閉ざされている。');
+                        keepCurrentTileAction({ bump: true });
+                        Field.render();
+                        return;
+                    }
                     const saved = App.data.mapReturnPoint;
                     const areaDef = (typeof STORY_DATA !== 'undefined' && STORY_DATA.areas) ? STORY_DATA.areas[areaKey] : null;
-                    const fallback = areaDef
-                        ? { area: 'WORLD', x: areaDef.centerX, y: areaDef.centerY }
-                        : (FIXED_MAPS[areaKey].exitPoint || { area: 'WORLD', x: Field.x, y: Field.y });
-                    const exit = (saved && saved.areaKey === 'WORLD')
-                        ? { area: 'WORLD', x: saved.x, y: saved.y }
+                    const fallback = localExit
+                        ? {
+                            area: localExit.area || areaDef?.worldKey || 'WORLD',
+                            worldKey: localExit.worldKey || areaDef?.worldKey || null,
+                            x: localExit.worldX,
+                            y: localExit.worldY,
+                            entryKey: localExit.entryKey || null
+                        }
+                        : (mapDef.exitPoint || (areaDef
+                            ? { area: areaDef.worldKey || 'WORLD', worldKey: areaDef.worldKey || 'WORLD', x: areaDef.centerX, y: areaDef.centerY }
+                            : { area: 'WORLD', worldKey: 'WORLD', x: Field.x, y: Field.y }));
+
+                    // 地下牢・地下神殿・謁見の間など、出口が別の固定MAPを指す場合は
+                    // ワールドへ落とさず、接続先の固定MAPと座標をそのまま復元する。
+                    if (Field.isFixedMapAreaKey(fallback?.area)) {
+                        Field.enterFixedMap(fallback.area, {
+                            entryKey: fallback.entryKey || null,
+                            targetX: fallback.x,
+                            targetY: fallback.y,
+                            silentLog: true
+                        });
+                        return;
+                    }
+
+                    const savedWorld = saved && typeof WORLD_MAPS !== 'undefined' && WORLD_MAPS[saved.areaKey];
+                    const exit = (!localExit && savedWorld)
+                        ? { area: saved.areaKey, worldKey: saved.worldKey || saved.areaKey, x: saved.x, y: saved.y }
                         : fallback;
                     App.data.mapReturnPoint = null;
-                    App.data.location.area = 'WORLD';
+                    App.data.location.area = exit.area || 'WORLD';
+                    App.data.location.worldKey = exit.worldKey || exit.area || 'WORLD';
                     App.data.transportMode = null;
-                    Field.x = exit.x; Field.y = exit.y;
-                    App.data.location.x = exit.x; App.data.location.y = exit.y;
-                    Field.currentMapData = null; 
+                    Field.x = Number(exit.x); Field.y = Number(exit.y);
+                    App.data.location.x = Field.x; App.data.location.y = Field.y;
+                    Field.currentMapData = null;
                     App.log("フィールドへ出た");
                     App.save(); Field.render();
                     if (typeof Field.startIdleStep === 'function') Field.startIdleStep();
@@ -6486,13 +10146,16 @@ const Field = {
 
             Field.x = nx; Field.y = ny;
             App.data.location.x = nx; App.data.location.y = ny;
+            if (Field.currentMapData?.isFixed && typeof Dungeon !== 'undefined' && typeof Dungeon.markFixedVisibleArea === 'function') {
+                Dungeon.markFixedVisibleArea(Field.x, Field.y, Field.currentMapData.revealRadius || 3);
+            }
 
             if (tile === 'M' && Field.currentMapData.isFixed && !Field.currentMapData.isDungeon && typeof Dungeon !== 'undefined' && typeof Dungeon.stepOnLava === 'function') {
                 Dungeon.stepOnLava();
             }
 
-            if (Field.currentMapData.isFixed && typeof Dungeon !== 'undefined' && typeof Dungeon.handleFixedTileEffect === 'function' && typeof MapRegistry !== 'undefined' && MapRegistry.findTileEffect) {
-                const effect = MapRegistry.findTileEffect(Field.currentMapData, nx, ny);
+            if (Field.currentMapData.isFixed && typeof Dungeon !== 'undefined' && typeof Dungeon.handleFixedTileEffect === 'function') {
+                const effect = Field.getRuntimeTileEffectAt ? Field.getRuntimeTileEffectAt(nx, ny) : null;
                 const activeHunter = typeof Dungeon.getFixedHunterAt === 'function' ? Dungeon.getFixedHunterAt(nx, ny) : null;
                 const activeEffect = activeHunter || (effect?.type === 'hunter' ? null : effect);
                 if (activeEffect && activeEffect.type !== 'angel') {
@@ -6522,17 +10185,25 @@ const Field = {
             if (typeof Field.startIdleStep === 'function') Field.startIdleStep();
 			
         } else {
-            const mapW = MAP_DATA[0].length, mapH = MAP_DATA.length;
+            const activeWorldMap = Field.getActiveWorldMap();
+            const mapW = activeWorldMap[0].length, mapH = activeWorldMap.length;
             nx = (nx + mapW) % mapW; ny = (ny + mapH) % mapH;
-            const tile = MAP_DATA[ny][nx].toUpperCase();
+            const surface = typeof MapRegistry !== 'undefined' && MapRegistry.getWorldSurfaceAt
+                ? MapRegistry.getWorldSurfaceAt(nx, ny)
+                : { tile: activeWorldMap[ny][nx].toUpperCase(), isBridge: false, isSea: activeWorldMap[ny][nx].toUpperCase() === 'W', isImpassable: activeWorldMap[ny][nx].toUpperCase() === 'M' };
+            const tile = surface.tile;
+            const isBridge = surface.isBridge;
             const isFlying = typeof App.isFlying === 'function' && App.isFlying();
-            if (!isFlying && tile === 'M') { App.log("険しい岩山だ"); keepCurrentTileAction(); return; }
-            if (!isFlying && tile === 'W') {
-                if (!App.hasMagicBoat || !App.hasMagicBoat()) { App.log("海は船がないと渡れない…"); keepCurrentTileAction(); return; }
+            if (!isFlying && surface.isImpassable) {
+                App.log(tile === 'M' ? "険しい岩山だ" : "深淵の断崖に阻まれている");
+                keepCurrentTileAction({ bump: true }); Field.render(); return;
+            }
+            if (!isFlying && surface.isSea) {
+                if (!App.hasMagicBoat || !App.hasMagicBoat()) { App.log("海は船がないと渡れない…"); keepCurrentTileAction({ bump: true }); Field.render(); return; }
                 if (App.data.transportMode !== 'boat') App.log("魔法の小舟で海へ漕ぎ出した。");
                 App.data.transportMode = 'boat';
             }
-            if (!isFlying && tile !== 'W' && App.data.transportMode === 'boat') {
+            if (!isFlying && !surface.isSea && App.data.transportMode === 'boat') {
                 App.data.transportMode = null;
                 App.log("小舟を降りた。");
             }
@@ -6540,7 +10211,7 @@ const Field = {
             const hasTileAction = isFlying ? false : Field.refreshCurrentAction({ silent: false });
             if (!isFlying && !hasTileAction) {
                 // --- エンカウント判定ロジック ---
-                const occurred = App.tryRandomEncounter(tile === 'W' ? 0.04 : null);
+                const occurred = App.tryRandomEncounter(surface.isSea ? 0.04 : null);
                 if (occurred) {
                     App.save();
                     Field.render();
@@ -6555,12 +10226,16 @@ const Field = {
     },
 
     render: () => {
+        // 旧セーブで起動済みの仕掛けを、現在のマップ座標定義へ毎回冪等に再適用する。
+        Field.restoreCompletedSwitchGates?.();
+        if (typeof AudioManager !== 'undefined' && typeof AudioManager.syncFieldBgm === 'function') AudioManager.syncFieldBgm();
         const canvas = document.getElementById('field-canvas'); if(!canvas) return;
+        if (typeof Field.syncCanvasToWrapperSize === 'function') Field.syncCanvasToWrapperSize();
         if (typeof PhaserFieldRenderer !== 'undefined' && PhaserFieldRenderer.render(Field)) {
             let locName = Field.currentMapData ? Field.currentMapData.name : `世界地図 (${Field.x}, ${Field.y})`;
             if (!Field.currentMapData && App.data?.transportMode === 'flying') locName += ' - 飛行中';
             if (!Field.currentMapData && App.data?.transportMode === 'boat') locName += ' - 小舟';
-            if (Field.currentMapData?.isDungeon) {
+            if (Field.currentMapData?.isDungeon && Field.currentMapData?.hideFloorLabel !== true) {
                 if (Field.currentMapData.isFixed) {
                     const baseName = Field.currentMapData.baseName || Field.currentMapData.name;
                     const floorLabel = Field.currentMapData.floorLabel || `${Dungeon.floor}階`;
@@ -6573,14 +10248,20 @@ const Field = {
             if (locNameElement) locNameElement.innerText = locName;
             if (typeof App.updateObjectiveHUD === 'function') App.updateObjectiveHUD();
             if (typeof Field.updateFieldHudState === 'function') Field.updateFieldHudState();
+            if (typeof Field.drawHudMinimap === 'function') Field.drawHudMinimap();
             const fullMapCanvas = document.getElementById('field-map-modal-canvas');
             if (fullMapCanvas && typeof Field.drawFullMap === 'function') Field.drawFullMap(fullMapCanvas);
             return;
         }
-        const ctx = canvas.getContext('2d'), ts = 32, w = canvas.width, h = canvas.height;
-        const cx = w/2, cy = h/2, rangeX = Math.ceil(w/(2*ts))+1, rangeY = Math.ceil(h/(2*ts))+1;
-        const mapW = Field.currentMapData ? Field.currentMapData.width : (typeof MAP_DATA !== 'undefined' ? MAP_DATA[0].length : 50);
-        const mapH = Field.currentMapData ? Field.currentMapData.height : (typeof MAP_DATA !== 'undefined' ? MAP_DATA.length : 32);
+        const ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
+        const FIELD_VIEW_TILES = 15;
+        const ts = Math.max(16, Math.floor(w / FIELD_VIEW_TILES));
+        const cx = w/2, cy = h/2;
+        const rangeX = Math.floor(FIELD_VIEW_TILES / 2) + 1;
+        const rangeY = Math.ceil(h / (2 * ts)) + 1;
+        const activeWorldMap = Field.getActiveWorldMap();
+        const mapW = Field.currentMapData ? Field.currentMapData.width : (activeWorldMap?.[0]?.length || 50);
+        const mapH = Field.currentMapData ? Field.currentMapData.height : (activeWorldMap?.length || 32);
         const g = (typeof GRAPHICS !== 'undefined' && GRAPHICS.images) ? GRAPHICS.images : {};
         
         const areaKey = Field.getCurrentAreaKey();
@@ -6622,7 +10303,31 @@ const Field = {
                 ctx.drawImage(g[imgName], dx, dy, targetSize, drawHeight);
                 return true;
             }
+            if (typeof GRAPHICS !== 'undefined' && typeof GRAPHICS.get === 'function') {
+                GRAPHICS.get(imgName);
+            }
             return false;
+        };
+
+        const drawWaterShore = (plan, drawX, drawY) => {
+            if (!plan?.edges?.length) return;
+            const image = g[plan.key];
+            if (!image) {
+                GRAPHICS?.get?.(plan.key);
+                return;
+            }
+            const foamHeight = Math.max(2, ts * 8 / 32);
+            plan.edges.forEach(edge => {
+                ctx.save();
+                ctx.globalAlpha = Number(plan.alpha ?? 0.58);
+                ctx.translate(
+                    drawX + ts / 2 + edge.offsetX * ts,
+                    drawY + ts / 2 + edge.offsetY * ts
+                );
+                ctx.rotate(Number(edge.angle || 0) * Math.PI / 180);
+                ctx.drawImage(image, -ts / 2, -foamHeight / 2, ts, foamHeight);
+                ctx.restore();
+            });
         };
 
         const tileTone = (tileSign) => {
@@ -6677,12 +10382,12 @@ const Field = {
             ctx.strokeRect(x + 0.5, y + 0.5, ts - 1, ts - 1);
         };
 
-        const drawFootShadow = (x, y, lift = 0, alpha = 0.22) => {
+        const drawFootShadow = (x, y, lift = 0, alpha = 0.22, radiusX = ts * 0.34, radiusY = ts * 0.13) => {
             const previousAlpha = ctx.globalAlpha;
             ctx.globalAlpha = alpha;
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.ellipse(x + ts / 2 + Math.min(5, lift), y + ts - 5, ts * 0.34, ts * 0.13, 0, 0, Math.PI * 2);
+            ctx.ellipse(x + ts / 2 + Math.min(5, lift), y + ts - 5, radiusX, radiusY, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.globalAlpha = previousAlpha;
         };
@@ -6751,6 +10456,8 @@ const Field = {
             }
         };
 
+        const elevatedEdgePlans = [];
+        const elevatedEdgeDefinition = Field.currentMapData?.elevatedEdges;
         for (let dy = -rangeY; dy <= rangeY; dy++) {
             for (let dx = -rangeX; dx <= rangeX; dx++) {
                 const drawX = Math.floor(cx + (dx * ts) - (ts / 2)), drawY = Math.floor(cy + (dy * ts) - (ts / 2));
@@ -6760,7 +10467,8 @@ const Field = {
                 const config = Field.getTileConfigForDraw ? Field.getTileConfigForDraw(upper, tx, ty) : Field.getTileConfig(upper);
                 const wallGraphic = Field.getDungeonWallGraphicForDraw(tx, ty, upper, mapW, mapH, areaKey);
                 const overlayConfig = parts.overlayConfig;
-                const groundTile = overlayConfig ? parts.baseTile : (upper === 'G' ? 'G' : 'T');
+                const isBaseTerrainTile = upper === 'T' || upper === 'G' || config?.terrain === true;
+                const groundTile = overlayConfig ? parts.baseTile : (isBaseTerrainTile ? upper : 'T');
                 // 地面は座標依存のフィールド施設オーバーレイを混ぜず、純粋な床タイルとして描く。
                 // これにより透過素材の下が黒くならず、G/Tなどの地面の上に施設画像が重なる。
                 const floorConfig = parts.worldOverlay
@@ -6789,14 +10497,19 @@ const Field = {
                 }
 
                 // 2. 通常オブジェクトの描画。overlayConfig があるタイルはここでは描かない。
-                if (upper !== 'T' && upper !== 'G' && !overlayConfig) {
+                if (!isBaseTerrainTile && !overlayConfig) {
                     if (lift > 0) drawFootShadow(drawX, drawY, lift, tone === 'ridge' ? 0.30 : 0.24);
                     const imageY = drawY - lift;
-                    if (!drawGraphic(wallGraphic || config.img, drawX, imageY, ts, ts + lift)) {
+                    const wallFaceOverlay = !!(wallGraphic && Field.getDungeonWallFaceModeForDraw?.() === 'overlay');
+                    const objectGraphic = wallFaceOverlay ? config.img : (wallGraphic || config.img);
+                    if (!drawGraphic(objectGraphic, drawX, imageY, ts, ts + lift)) {
                         if (config.color && config.color !== floorConfig.color) {
                             ctx.fillStyle = config.color;
                             ctx.fillRect(drawX, imageY, ts, ts + lift);
                         }
+                    }
+                    if (wallFaceOverlay) {
+                        drawGraphic(wallGraphic, drawX, imageY, ts, ts + lift);
                     }
                     if (lift > 0) {
                         ctx.save();
@@ -6808,19 +10521,61 @@ const Field = {
                 }
 
                 // 3. 固定MAP/固定ダンジョン専用オーバーレイ。
+                const shorePlan = config?.animatedWater === true && config?.shoreFoam === true
+                    ? window.MapRenderShared?.waterShorePlan?.({
+                        map: Field.currentMapData,
+                        x: tx,
+                        y: ty,
+                        tileSign: upper,
+                        enabled: true,
+                        alpha: Number(config.shoreFoamAlpha ?? 0.58),
+                        tileAtFn: (x, y) => Field.getRenderedTileForDraw(x, y, mapW, mapH, areaKey)
+                    })
+                    : null;
+                drawWaterShore(shorePlan, drawX, drawY);
+
                 if (overlayConfig) {
-                    const characterOverlay = String(overlayConfig.img || '').startsWith('overlay_npc_');
-                    if (useDepthRendering && (!isDungeonView || characterOverlay)) {
+                    const characterOverlay = /^(overlay_npc_|overlay_companion_)/.test(String(overlayConfig.img || ''));
+                    const bossOverlay = /^(overlay_boss_|monster_)/.test(String(overlayConfig.img || ''));
+                    const buildingOverlay = Field.isBuildingOverlayConfig?.(overlayConfig) === true;
+                    const wallOverlay = overlayConfig.wallOverlay === true;
+                    const blockingObjectOverlay = overlayConfig.blockingObject === true;
+                    const eventMarkerOverlay = overlayConfig.eventMarker === true;
+                    const eventMarkerPulse = eventMarkerOverlay && Field.step === 1 ? 0.75 : 1;
+                    if (useDepthRendering && !parts.worldOverlay && !wallOverlay && overlayConfig.suppressShadow !== true && (blockingObjectOverlay || !isDungeonView || characterOverlay || bossOverlay)) {
                         drawFootShadow(drawX, drawY, lift, 0.24);
                     }
-                    if (!drawGraphic(overlayConfig.img, drawX, drawY - lift, ts, ts + lift)) {
-                        ctx.save();
+                    const overlayWidth = eventMarkerOverlay
+                        ? Math.max(9, Math.round(ts * (Number(overlayConfig.drawWidth || 12) / 32) * eventMarkerPulse))
+                        : buildingOverlay
+                        ? Math.round(ts * Math.max(1, Number(overlayConfig.buildingScale || 2.4)))
+                        : bossOverlay
+                        ? Math.round(ts * 2)
+                        : (blockingObjectOverlay ? Math.round(ts * (Number(overlayConfig.drawWidth || 32) / 32)) : ts);
+                    const overlayHeight = eventMarkerOverlay
+                        ? Math.max(9, Math.round(ts * (Number(overlayConfig.drawHeight || 12) / 32) * eventMarkerPulse))
+                        : buildingOverlay
+                        ? Math.round(ts * Math.max(1, Number(overlayConfig.buildingScale || 2.4)))
+                        : bossOverlay
+                        ? Math.round(ts * 2)
+                        : blockingObjectOverlay
+                        ? Math.round(ts * (Number(overlayConfig.drawHeight || 32) / 32))
+                        : (wallOverlay ? Math.round(ts * 1.5) : ts + lift);
+                    const overlayX = drawX + Math.round((ts - overlayWidth) / 2);
+                    const overlayY = eventMarkerOverlay
+                        ? drawY + Math.round((ts - overlayHeight) / 2) - lift
+                        : ((buildingOverlay || wallOverlay || blockingObjectOverlay || bossOverlay) ? drawY + ts - overlayHeight : drawY - lift);
+                    ctx.save();
+                    if (eventMarkerOverlay) {
+                        ctx.globalAlpha = Field.step === 1 ? 0.52 : 0.92;
+                    }
+                    if (!drawGraphic(overlayConfig.img, overlayX, overlayY, overlayWidth, overlayHeight)) {
                         ctx.fillStyle = overlayConfig.color || config.color || '#fff';
                         ctx.beginPath();
-                        ctx.arc(drawX + ts / 2, drawY + ts / 2 - lift, ts * 0.34, 0, Math.PI * 2);
+                        ctx.arc(drawX + ts / 2, overlayY + overlayHeight / 2, eventMarkerOverlay ? ts * 0.08 : ts * 0.34, 0, Math.PI * 2);
                         ctx.fill();
-                        ctx.restore();
                     }
+                    ctx.restore();
                 }
 
                 const effectGraphicKey = Field.getTileEffectGraphicKey ? Field.getTileEffectGraphicKey(tx, ty) : null;
@@ -6837,8 +10592,69 @@ const Field = {
                     ctx.fillRect(drawX + 6, drawY + ts - 8, ts - 12, 3);
                     ctx.restore();
                 }
+
+                if (elevatedEdgeDefinition) {
+                    const edgePlan = window.MapRenderShared?.elevatedEdgeCellPlan?.({
+                        map: Field.currentMapData,
+                        definition: elevatedEdgeDefinition,
+                        x: tx,
+                        y: ty,
+                        tileSign: tile,
+                        tileAtFn: (x, y) => Field.getRenderedTileForDraw(x, y, mapW, mapH, areaKey)
+                    });
+                    const edgeScale = ts / 32;
+                    edgePlan?.edges?.forEach(edge => elevatedEdgePlans.push({
+                        key: edge.key,
+                        x: drawX + edge.x * edgeScale,
+                        y: drawY + edge.y * edgeScale,
+                        width: edge.width * edgeScale,
+                        height: edge.height * edgeScale
+                    }));
+                }
             }
         }
+
+        (Field.currentMapData?.skyOverlays || []).forEach(definition => {
+            const drawX = cx + ((Number(definition.x || 0) - Number(Field.x)) * ts) - ts / 2;
+            const drawY = cy + ((Number(definition.y || 0) - Number(Field.y)) * ts) - ts / 2;
+            const drawWidth = Math.max(8, Number(definition.drawWidth || 32)) * ts / 32;
+            const drawHeight = Math.max(8, Number(definition.drawHeight || 32)) * ts / 32;
+            drawGraphic(definition.imageKey, drawX, drawY, drawWidth, drawHeight);
+        });
+
+        // Canvas is the error-recovery renderer.  Draw ledges in a second pass so
+        // neighboring sky tiles cannot paint over the exposed platform sides.
+        elevatedEdgePlans.forEach(edge => drawGraphic(edge.key, edge.x, edge.y, edge.width, edge.height));
+
+        // Phaserと同じく、renderLayer:"object" の固定装飾はタイル描画後に一度だけ描く。
+        // getMapDrawParts() の blockingObject オーバーレイからは除外しているため、
+        // Canvasフォールバックでも2.7倍の本体だけが表示される。
+        (Field.currentMapData?.floorDecorations || []).forEach(definition => {
+            if (String(definition?.renderLayer || '').toLowerCase() !== 'object' || definition?.type !== 'image' || !definition.imageKey) return;
+            const ox = Number(definition.x || 0) - Number(Field.x);
+            const oy = Number(definition.y || 0) - Number(Field.y);
+            if (Math.abs(ox) > rangeX + 3 || Math.abs(oy) > rangeY + 3) return;
+            const drawScale = Math.max(0.1, Number(definition.drawScale || 1));
+            const drawWidth = Math.max(8, Number(definition.drawWidth || (32 * drawScale))) * ts / 32;
+            const drawHeight = Math.max(8, Number(definition.drawHeight || (32 * drawScale))) * ts / 32;
+            const anchorX = cx + (ox * ts);
+            const anchorY = cy + (oy * ts) + ts / 2;
+            const offsetX = Number(definition.drawOffsetX || 0) * ts / 32;
+            const offsetY = Number(definition.drawOffsetY || 0) * ts / 32;
+            ctx.save();
+            const baseAlpha = definition.alpha === undefined ? 1 : Number(definition.alpha);
+            ctx.globalAlpha = definition.shimmer === true && Field.step === 1
+                ? Math.max(0.68, baseAlpha - 0.18)
+                : baseAlpha;
+            drawGraphic(
+                definition.imageKey,
+                anchorX - drawWidth / 2 + offsetX,
+                anchorY - drawHeight + offsetY,
+                drawWidth,
+                drawHeight
+            );
+            ctx.restore();
+        });
 
         if (useDepthRendering) {
             ctx.save();
@@ -6856,8 +10672,8 @@ const Field = {
         // 3. ランダム生成ダンジョン内の特殊オブジェクト描画。
         // タイル文字を増やさず App.data.dungeon.* で管理するため、
         // 地形・宝箱・階段などの既存生成ロジックを壊さない。
-        const drawOverlayImage = (obj, fallbackSrc, fallbackColor) => {
-            if (!Field.currentMapData?.isDungeon || !obj || !obj.active || Number(obj.floor) !== Number(Dungeon.floor)) return;
+        const drawOverlayImage = (obj, fallbackSrc, fallbackColor, options = {}) => {
+            if ((!Field.currentMapData?.isDungeon && options.allowFixed !== true) || !obj || !obj.active || Number(obj.floor) !== Number(Dungeon.floor)) return;
             const ox = Number(obj.x) - Number(Field.x);
             const oy = Number(obj.y) - Number(Field.y);
             if (Math.abs(ox) > rangeX || Math.abs(oy) > rangeY) return;
@@ -6879,24 +10695,92 @@ const Field = {
             }
         };
 
-        drawOverlayImage(App.data?.dungeon?.healSpring, 'assets/effect/fx-buff-ai.png', '#80ffb0');
+        const drawAbyssBossSprite = () => {
+            if (areaKey !== 'ABYSS' || !Field.currentMapData?.isDungeon || typeof Dungeon === 'undefined') return;
+            const encounter = typeof Dungeon.getCurrentAbyssBossEncounter === 'function'
+                ? Dungeon.getCurrentAbyssBossEncounter()
+                : App.data?.dungeon?.abyssBossEncounter;
+            if (!encounter || !encounter.active || Number(encounter.floor) !== Number(Dungeon.floor)) return;
+            const monsterId = Number(encounter.displayMonsterId || encounter.monsterIds?.[0]);
+            if (!Number.isFinite(monsterId)) return;
+
+            const ox = Number(encounter.x ?? 5) - Number(Field.x);
+            const oy = Number(encounter.y ?? 5) - Number(Field.y);
+            if (Math.abs(ox) > rangeX + 1 || Math.abs(oy) > rangeY + 1) return;
+
+            const size = ts * 2.6;
+            const px = Math.floor(cx + (ox * ts) - (size / 2));
+            const py = Math.floor(cy + (oy * ts) - (size / 2));
+            const src = Field.getMonsterMapSpriteSrc ? Field.getMonsterMapSpriteSrc(monsterId) : `assets/monsters/monster_${String(monsterId).padStart(6, '0')}.png`;
+            const img = Field.getDirectImage(src);
+            if (img && img.complete && img.naturalWidth > 0) {
+                ctx.save();
+                ctx.drawImage(img, px, py, size, size);
+                ctx.restore();
+            } else {
+                ctx.save();
+                ctx.fillStyle = '#c78cff';
+                ctx.beginPath();
+                ctx.arc(px + size / 2, py + size / 2, ts * 0.55, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        };
+
+        const drawPostBattleBossSprite = () => {
+            const visual = Field.getPostBattleBossVisualContext?.();
+            if (!visual) return;
+            const ox = Number(visual.x) - Number(Field.x);
+            const oy = Number(visual.y) - Number(Field.y);
+            if (Math.abs(ox) > rangeX + 2 || Math.abs(oy) > rangeY + 2) return;
+            const sizeTiles = Math.max(0.5, Number(visual.config?.size || 2));
+            const size = ts * sizeTiles;
+            const anchorX = cx + (ox * ts);
+            const anchorY = cy + (oy * ts) + ts / 2;
+            const src = Field.getMonsterMapSpriteSrc?.(visual.monsterId);
+            const img = Field.getDirectImage(src);
+            drawFootShadow(anchorX - ts / 2, anchorY - ts, 0, 0.28, ts * 0.62, ts * 0.16);
+            if (img && img.complete && img.naturalWidth > 0) {
+                ctx.save();
+                ctx.drawImage(img, anchorX - size / 2, anchorY - size, size, size);
+                ctx.restore();
+            } else {
+                ctx.save();
+                ctx.fillStyle = '#c78cff';
+                ctx.beginPath();
+                ctx.arc(anchorX, anchorY - size / 2, ts * 0.52, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        };
+
+        drawOverlayImage(App.data?.dungeon?.healSpring, Dungeon.healSpringImagePath || 'assets/map/overlays/overlay_shrine_healing_spring.png', '#80ffb0');
         if (Field.currentMapData?.isFixed && Field.getFixedHealSpringsForCurrentFloor) {
             Field.getFixedHealSpringsForCurrentFloor().forEach(s => {
-                drawOverlayImage({ active: true, floor: Dungeon.floor, x: Number(s.x), y: Number(s.y), image: Dungeon.healSpringImagePath || 'assets/effect/fx-buff-ai.png' }, 'assets/effect/fx-buff-ai.png', '#80ffb0');
+                const springSrc = window.GRAPHICS?.data?.[s.imageKey]
+                    || Dungeon.healSpringImagePath
+                    || 'assets/map/overlays/overlay_shrine_healing_spring.png';
+                drawOverlayImage({ active: true, floor: Dungeon.floor, x: Number(s.x), y: Number(s.y), image: springSrc }, springSrc, '#80ffb0', { allowFixed: true });
             });
         }
         drawOverlayImage(App.data?.dungeon?.abyssRift, 'assets/effect/fx-abyss-vortex-ai.png', '#a34cff');
-        drawOverlayImage(App.data?.dungeon?.adventurer, 'assets/monsters/monster_100009.png', '#5bd6ff');
-        drawOverlayImage(App.data?.dungeon?.keyGuardian, 'assets/monsters/monster_100010.png', '#ffd78a');
-        drawOverlayImage(App.data?.dungeon?.trialAngel, 'assets/map/overlays/overlay_dungeon_trial_angel_v001.png', '#fff3a6');
+        drawOverlayImage(App.data?.dungeon?.adventurer, 'assets/monsters/monster_000105.png', '#5bd6ff');
+        drawOverlayImage(App.data?.dungeon?.keyGuardian, 'assets/monsters/monster_000103.png', '#ffd78a');
+        drawOverlayImage(App.data?.dungeon?.trialAngel, 'assets/map/overlays/overlay_dungeon_trial_angel.png', '#fff3a6');
+        drawAbyssBossSprite();
+        // 通常MAPボスと同じく主人公より前の専用DOMレイヤーを使わず、
+        // MAPオブジェクト描画の段階で戦後会話中のボスを保持する。
+        drawPostBattleBossSprite();
 
         // 4. 壁際の影は、溶岩・宝箱・階段・常設泉などの上から最後に重ねる。
         // プレイヤーまで暗くしないよう、プレイヤー描画の直前で止める。
         drawVisibleDungeonWallContactShadows();
 
         // 5. プレイヤーの描画 (hero_... の画像もスプライトシート化していれば対応可能)
-        const pKey = `hero_${['down','left','right','up'][Field.dir]}_${Field.step}`; 
-        drawFootShadow(cx - ts / 2, cy - ts / 2, 0, 0.26);
+        const direction = ['down','left','right','up'][Field.dir];
+        const isFloodedBoat = Field.isPlayerOnFloodedWater();
+        const pKey = isFloodedBoat ? `overlay_magic_boat_${direction}` : `hero_${direction}_${Field.step}`;
+        if (!isFloodedBoat) drawFootShadow(cx - ts / 2, cy - ts / 2, 0, 0.34, ts * 0.25, ts * 0.09);
         if (!drawGraphic(pKey, cx-ts/2, cy-ts/2, ts)) {
             ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI*2); ctx.fill();
         }
@@ -6908,7 +10792,7 @@ const Field = {
         let locName = Field.currentMapData ? Field.currentMapData.name : `世界地図 (${Field.x}, ${Field.y})`;
         if (!Field.currentMapData && App.data?.transportMode === 'flying') locName += ' - 飛行中';
         if (!Field.currentMapData && App.data?.transportMode === 'boat') locName += ' - 小舟';
-        if (Field.currentMapData && Field.currentMapData.isDungeon) {
+        if (Field.currentMapData && Field.currentMapData.isDungeon && Field.currentMapData.hideFloorLabel !== true) {
             if (Field.currentMapData.isFixed) {
                 const baseName = Field.currentMapData.baseName || Field.currentMapData.name;
                 const floorLabel = Field.currentMapData.floorLabel || `${Dungeon.floor}階`;
@@ -6920,19 +10804,22 @@ const Field = {
         document.getElementById('loc-name').innerText = locName;
         if (typeof App.updateObjectiveHUD === 'function') App.updateObjectiveHUD();
         if (typeof Field.updateFieldHudState === 'function') Field.updateFieldHudState();
+        if (typeof Field.drawHudMinimap === 'function') Field.drawHudMinimap();
         const fullMapCanvas = document.getElementById('field-map-modal-canvas');
         if (fullMapCanvas && typeof Field.drawFullMap === 'function') Field.drawFullMap(fullMapCanvas);
 
+        return;
+
         if (Field.minimapMode === 'minimized') return;
 
-        const mmSize = 80, mmX = w-mmSize-10, mmY = 10, range = 7;
+        const mmSize = 80, mmX = w - mmSize - 14, mmY = 14, range = 7;
         const miniCells = range * 2 + 1;
         const dms = mmSize / miniCells;
         ctx.save();
-        ctx.globalAlpha = 0.68;
+        ctx.globalAlpha = 0.56;
         ctx.fillStyle = '#000';
         ctx.fillRect(mmX, mmY, mmSize, mmSize);
-        ctx.strokeStyle = 'rgba(255,255,255,0.72)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.62)';
         ctx.lineWidth = 1;
         ctx.strokeRect(mmX + 0.5, mmY + 0.5, mmSize - 1, mmSize - 1);
 
@@ -6971,15 +10858,9 @@ const Field = {
             ctx.restore();
         };
 
-        const miniTileColor = (tile, tx, ty) => {
-            const upper = String(tile || '').toUpperCase();
-            const cfg = Field.getTileConfigForDraw ? Field.getTileConfigForDraw(tile, tx, ty) : Field.getTileConfig(tile);
-            let color = cfg?.color || '#000';
-            // ミニマップでは壁は黒で統一する。
-            if (upper === 'W') return '#000';
-            if (upper === 'M' && (!color || color === '#000' || color === '#000000')) color = '#54515b';
-            return color;
-        };
+        const miniTileColor = (tile, tx, ty) => Field.getMiniMapTileColor
+            ? Field.getMiniMapTileColor(tile, tx, ty)
+            : (Field.getTileConfig(tile)?.color || '#000');
 
         const drawMiniMarkerAt = (relX, relY, color) => {
             if (!color) return;
@@ -6995,7 +10876,8 @@ const Field = {
                 let minimapVisible = true;
 
                 if (Field.currentMapData) {
-                    if (mtx >= 0 && mtx < mapW && mty >= 0 && mty < mapH) {
+                    const outOfBounds = mtx < 0 || mtx >= mapW || mty < 0 || mty >= mapH;
+                    if (!outOfBounds) {
                         const ak = Field.getCurrentAreaKey();
                         const pk = `${mtx},${mty}`;
 
@@ -7011,13 +10893,21 @@ const Field = {
                             : ak;
                         mtile = App.data.progress.mapChanges?.[progressKey]?.[pk]
                             || App.data.progress.mapChanges?.[ak]?.[pk]
-                            || Field.currentMapData.tiles[mty][mtx];
-                        if (App.data.progress.defeatedBosses?.[progressKey]?.includes(pk)) mtile = 'G';
+                            || Field.getMapTileAt(Field.currentMapData, mtx, mty);
+                        if (String(mtile || '').toUpperCase() === 'B') {
+                            const bossDef = (typeof MapRegistry !== 'undefined' && MapRegistry.findFixedBoss)
+                                ? MapRegistry.findFixedBoss(Field.currentMapData, mtx, mty)
+                                : null;
+                            if (Field.isFixedBossDefeatedAt(bossDef, mtx, mty, progressKey)) mtile = 'G';
+                        }
+                    } else if (Field.currentMapData.isFixed) {
+                        mtile = Field.getRenderedTileForDraw(mtx, mty, mapW, mapH, Field.getCurrentAreaKey());
                     } else {
                         minimapVisible = false;
                     }
                 } else {
-                    mtile = MAP_DATA[((mty % mapH) + mapH) % mapH][((mtx % mapW) + mapW) % mapW];
+                    const worldMap = Field.getActiveWorldMap();
+                    mtile = worldMap[((mty % mapH) + mapH) % mapH][((mtx % mapW) + mapW) % mapW];
                 }
 
                 if (!minimapVisible) continue;
@@ -7027,9 +10917,9 @@ const Field = {
                 ctx.fillRect(miniX, miniY, Math.ceil(dms), Math.ceil(dms));
 
                 if (!(mdx === 0 && mdy === 0)) {
-                    const markerColor = Field.getMiniMapMarkerColor ? Field.getMiniMapMarkerColor(mtile, mtx, mty) : null;
-                    if (markerColor && Field.drawMiniMapTileMarker) {
-                        Field.drawMiniMapTileMarker(ctx, markerColor, miniX, miniY, dms);
+                    const markerInfo = Field.getMiniMapMarkerInfo ? Field.getMiniMapMarkerInfo(mtile, mtx, mty) : null;
+                    if (markerInfo?.color && Field.drawMiniMapTileMarker) {
+                        Field.drawMiniMapTileMarker(ctx, markerInfo.color, miniX, miniY, dms, markerInfo.connections);
                     }
                 }
             }
@@ -7075,11 +10965,17 @@ const Field = {
 if (typeof window !== 'undefined') {
     window.addEventListener('resize', () => {
         window.requestAnimationFrame(() => {
+            if (typeof Field.syncCanvasToWrapperSize === 'function') {
+                Field.syncCanvasToWrapperSize();
+            }
             if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.resize === 'function') {
                 PhaserFieldRenderer.resize();
             }
             if (typeof Field.updateMinimapHotspotBounds === 'function') {
                 Field.updateMinimapHotspotBounds();
+            }
+            if (Field.ready && typeof Field.render === 'function') {
+                Field.render();
             }
         });
     });

@@ -2,6 +2,8 @@
 
 This folder stores current story, worldbuilding, character relationship, and future-plot references.
 
+Note: dated archive files can include old planning assumptions. `docs/CURRENT_PRODUCT_DIRECTIVES_20260714.md` has priority: dialogue has no fixed character limit; tutorials are created only after every target screen and flow is complete; gacha has no planned player-facing use in the main game, postgame, or events. Conflicting archive text is obsolete.
+
 ## Current Archive
 
 - `20260514/`: extracted contents of `prisma_story_bible_20260514.zip`.
@@ -35,5 +37,5 @@ TXT duplicates are preserved as source copies. Prefer the `.md` files for editin
 - The world is built around six elements: fire, wind, water, thunder, light, and dark.
 - Chaos is not a seventh element; it is the scar created where the six-element law cracked.
 - Demon King Zenon should remain harsh and frightening, not simply become a misunderstood good person.
-- The early game should follow story allies and regional progression before gacha, abyss farming, reincarnation, and endless exploration become central.
+- The early game should follow story allies and regional progression before late-game farming systems become central. Gacha-related implementation remains legacy/internal unless a player-facing route is explicitly reintroduced.
 - Character relationships are dense and should be revealed gradually through events, NPCs, rumors, and postgame content.

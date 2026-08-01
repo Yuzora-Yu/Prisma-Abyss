@@ -40,7 +40,7 @@ Examples:
 
 ## Current Code Hooks
 
-- `assets.js`: owns `GRAPHICS.data`, battle effect asset paths, monster image cache lists, and startup/install image warmup lists.
+- `assets.js`: owns `GRAPHICS.data`, battle effect asset paths, the generic monster ID-to-path resolver, and startup/install image warmup lists. Monster IDs are supplied automatically from `monsters.js`.
 - `characters.js`: references character faces from `assets/characters/char_face_<id>.gif`.
 - `polish.js` `installGraphics()`: intentionally no-op; image path ownership stays in `assets.js`.
 - `map.js`: owns `TILE_THEMES`, fixed-map `themeKey` / `tileOverrides`, `FIXED_TILE_OVERLAYS`, `FIXED_OVERLAY_BASE_TILES`, world `fieldTile` overrides, and `SEA_ENCOUNTER_MONSTERS`.
@@ -50,10 +50,12 @@ Examples:
 - `main.js` transport flow: `transportMode` controls boat and flight rendering/encounter behavior, while `Sky Prism` uses fixed-map discovery records.
 - `menus_items.js`: separates tools and valuables, exposes `Light Wing`, and opens the `Sky Prism` travel destination chooser.
 - `polish.js` `PolishBattleFX`: selects battle effects by skill type, element, target scope, hit count, boss state, and critical log cues.
+- `phaser-field.js` `drawGroundDecoration()`: places generated grass/stone decoration overlays deterministically on non-interactive floor tiles without changing collision or events.
 - `modern-polish.css`: owns modern UI styling and battle effect animations, including critical damage number emphasis.
 - `battle.js`: owns battle rules and damage/heal/passive resolution. Dual-wield behavior is intentionally left unchanged.
-- `monster-images.js`: maps accepted monster IDs to `assets/monsters/monster_<id>.png`.
-- `menus_book.js` `MenuBook.getMonsterImgSrc()`: uses `window.MonsterImageMap` before legacy embedded graphics.
+- `monsters.js`: is the monster ID source of truth. `MonsterData.getImagePath()` derives `assets/monsters/monster_<id>.png`, and registering the definitions automatically updates compatibility maps and cache lists.
+- `monster-images.js`: compatibility bridge only; it contains no hand-maintained monster ID list.
+- `menus_book.js` `MenuBook.getMonsterImgSrc()`: resolves by monster ID through `MonsterData.getImagePath()` first, then uses compatibility fallbacks.
 
 Current accepted boss and rare candidate monster sprites are stored in `assets/monsters/`.
 High-floor normal monster sprites `monster_100091.png` through `monster_100180.png` were processed from `assets/raw/green/` and `assets/raw/red/` on 2026-05-15 and added to `assets/monsters/`. `monster_100096.png`, `monster_100122.png`, `monster_100133.png`, `monster_100147.png`, `monster_100157.png`, and `monster_100161.png` were carefully reprocessed on 2026-05-15, and the previously missing `monster_100112.png` was added from `assets/raw/red/`. Verification previews are stored in `verification/monster-alpha-20260515/previews/` and `verification/monster-alpha-redo-20260515/`.
@@ -73,6 +75,7 @@ Current fixed-map overlay set: transparent overlays under `assets/map/overlays/`
 - Debuff-only/status skills: `debuff` or `poison`.
 - Breath skills: `breath-*` by element, using the shared breath image with CSS color grading.
 - Physical skills: `phys-*` by element when an element is present; neutral and passive follow-ups use `neutral-*` silver/steel effects.
+- Elemental physical skills use `fx_phys_elemental_arc_v001.png` as the shared neutral-color master and retain their element-specific CSS grade. Power tiers 1-4 and scope/hit-count classes alter scale, rings, afterglow, and flash.
 - Critical, defense-piercing, and boosted magic damage hits: keep the base effect, then overlay `critical-spark` and use the stronger critical damage number.
 - Skill IDs `500-502` and `900+`: routed to existing high-grade effects where possible, with `special-rupture` as the fallback.
 

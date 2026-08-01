@@ -24,15 +24,25 @@ const MenuBook = {
 	},
 	
     getMonsterImgSrc: (m) => {
-        if (m.img) return m.img;
+        const byId = (typeof MonsterData !== 'undefined' && typeof MonsterData.getImagePath === 'function')
+            ? MonsterData.getImagePath(m)
+            : window.PRISMA_ASSETS?.getMonsterImagePath?.(m);
+        if (byId) return byId;
         const imageMap = window.MonsterImageMap || {};
-        const mappedById = imageMap[m.id] || imageMap[m.baseId];
+        const mappedById = imageMap[m.baseId] || imageMap[m.id];
         if (mappedById) return mappedById;
+        if (m.img || m.image) return m.img || m.image;
         if (typeof GRAPHICS === 'undefined' || !GRAPHICS.images) return null;
         let baseName = m.name.replace(/^(強・|真・|極・|神・)+/, '').replace(/ Lv\d+[A-Z]?$/, '').replace(/[A-Z]$/, '').trim();
         const imgKey = 'monster_' + baseName;
         if (GRAPHICS.images[imgKey]) return GRAPHICS.images[imgKey].src;
         return null;
+    },
+
+    // 図鑑の一覧と詳細ナビゲーションは、定義ファイル上の登録位置ではなくID昇順で統一する。
+    getMonstersById: () => {
+        const monsters = Array.isArray(DB.MONSTERS) ? DB.MONSTERS : [];
+        return [...monsters].sort((a, b) => Number(a.id) - Number(b.id));
     },
 
 	showList: () => {
@@ -64,7 +74,7 @@ const MenuBook = {
         const defeated = App.data.book.monsters || [];
         const killCounts = App.data.book.killCounts || {};
         
-        DB.MONSTERS.forEach(m => {
+        MenuBook.getMonstersById().forEach(m => {
             const isKnown = defeated.includes(m.id);
             const div = document.createElement('div');
             div.className = 'list-item';
@@ -114,7 +124,7 @@ const MenuBook = {
 
     switchMonster: (dir) => {
         const defeatedIds = App.data.book.monsters || [];
-        const validMonsters = DB.MONSTERS.filter(m => defeatedIds.includes(m.id));
+        const validMonsters = MenuBook.getMonstersById().filter(m => defeatedIds.includes(m.id));
         if (validMonsters.length === 0) return;
         let currentIndex = MenuBook.selectedMonster ? validMonsters.findIndex(m => m.id === MenuBook.selectedMonster.id) : -1;
         let newIndex = (currentIndex + dir + validMonsters.length) % validMonsters.length;
@@ -314,7 +324,15 @@ const MenuBook = {
             </button>
         `).join('') || '<span style="color:#555; font-size:11px;">特性なし</span>';
 
-        // タブ切り替えボタン
+
+        const habitatLabels = (typeof MonsterData !== 'undefined' && typeof MonsterData.getHabitatLabels === 'function')
+            ? MonsterData.getHabitatLabels(monster)
+            : [];
+        const habitatHtml = habitatLabels.length
+            ? habitatLabels.map(label => `<div style="font-size:12px; color:#ddd; line-height:1.6;">・${App.escapeHtml(label)}</div>`).join('')
+            : '<div style="font-size:12px; color:#777;">（生息地未登録）</div>';
+
+                // タブ切り替えボタン
         const tabBtns = `
             <div style="display:flex; gap:2px; margin-bottom:10px; background:#111; padding:2px; border-radius:4px;">
                 <button onclick="MenuBook.detailTab=1; MenuBook.showDetail(MenuBook.selectedMonster)" style="flex:1; padding:8px; border:none; font-size:11px; font-weight:bold; border-radius:3px; background:${MenuBook.detailTab===1?'#ffd700':'#222'}; color:${MenuBook.detailTab===1?'#000':'#888'};">行動・耐性</button>
@@ -353,6 +371,10 @@ const MenuBook = {
                     <div style="font-size:11px; color:#ffd700; border-bottom:1px solid #444; margin-bottom:8px;">モンスター情報</div>
                     <div style="font-size:12px; color:#ccc; line-height:1.6; white-space:pre-wrap;">${monster.archives || '（記録なし）'}</div>
                 </div>
+                <div style="background:#202a26; border:1px solid #486b59; border-radius:4px; padding:10px;">
+                    <div style="font-size:11px; color:#8fe0ad; border-bottom:1px solid #486b59; margin-bottom:8px;">生息地</div>
+                    ${habitatHtml}
+                </div>
                 <div style="background:#2a2a3a; border:1px solid #448; border-radius:4px; padding:10px;">
                     <div style="font-size:11px; color:#88f; border-bottom:1px solid #448; margin-bottom:8px;">ドロップ情報</div>
                     <div style="font-size:12px; color:#ddd; margin-bottom:4px;">通常ドロップ：${getDropText('normal')}</div>
@@ -370,7 +392,7 @@ const MenuBook = {
             </div>
             <div style="flex:1; overflow-y:auto; padding:10px; color:#ddd;">
                 <div style="display:flex; justify-content:space-between; align-items:end; border-bottom:1px solid #555; padding-bottom:5px; margin-bottom:10px;">
-                    <div><div style="font-size:10px; color:#aaa;">ID:${monster.id} / 種族:${monster.race||'不明'}</div><div style="font-size:18px; font-weight:bold; color:#ffd700;">${monster.isBoss?'<span style="color:#f44; border:1px solid #f44; font-size:10px; padding:0 4px; border-radius:3px; margin-right:5px; vertical-align:middle;">BOSS</span>':''}${monster.name}</div></div>
+                    <div><div style="font-size:10px; color:#aaa;">ID:${typeof MonsterData !== 'undefined' && MonsterData.formatId ? MonsterData.formatId(monster.id) : String(monster.id).padStart(6, '0')} / 種族:${monster.race||'不明'}</div><div style="font-size:18px; font-weight:bold; color:#ffd700;">${monster.isBoss?'<span style="color:#f44; border:1px solid #f44; font-size:10px; padding:0 4px; border-radius:3px; margin-right:5px; vertical-align:middle;">BOSS</span>':''}${monster.name}</div></div>
                     <div style="font-size:12px; background:#444; padding:2px 8px; border-radius:4px;">Rank: ${monster.rank}</div>
                 </div>
 				<div style="display:flex; gap:9px; margin-bottom:14px; align-items:stretch;">

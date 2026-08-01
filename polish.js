@@ -190,18 +190,44 @@
     lastDamageEventByUnit: new WeakMap(),
     enemyHpDisplayHolds: new WeakMap(),
     enemyHpHoldTimers: new WeakMap(),
+    pendingHpTransitions: new WeakMap(),
     beforeSnapshot: null,
     now() {
       return (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
     },
+    rawWait(ms) {
+      const waitMs = Math.max(0, Math.floor(Number(ms) || 0));
+      return waitMs <= 0 ? Promise.resolve() : new Promise((resolve) => setTimeout(resolve, waitMs));
+    },
+    battleSpeed() {
+      if (typeof Battle !== "undefined" && typeof Battle.getBattleSpeedSetting === "function") {
+        return Battle.getBattleSpeedSetting();
+      }
+      if (typeof App !== "undefined" && typeof App.getBattleSpeedSetting === "function") {
+        return App.getBattleSpeedSetting();
+      }
+      const speed = App?.data?.settings?.battleSpeed || "normal";
+      return ["normal", "fast", "fastest"].includes(speed) ? speed : "normal";
+    },
+    battleWaitMs(ms) {
+      const base = Math.max(0, Math.floor(Number(ms) || 0));
+      if (base <= 0) return 0;
+      if (typeof Battle !== "undefined" && typeof Battle.getBattleWaitMs === "function") {
+        return Battle.getBattleWaitMs(base);
+      }
+      const speed = this.battleSpeed();
+      if (speed === "fastest") return Math.max(1, Math.floor(base * 0.30));
+      if (speed === "fast") return Math.max(1, Math.floor(base * 0.50));
+      return base;
+    },
     wait(ms) {
-      return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+      return this.rawWait(this.battleWaitMs(ms));
     },
     queueVisual(run, options = {}) {
-      const beforeMs = Math.max(0, Number(options.beforeMs) || 0);
-      const durationMs = Math.max(0, Number(options.durationMs) || 0);
-      const estimatedRunMs = Math.max(0, Number(options.estimatedRunMs) || 0);
-      const afterMs = Math.max(0, Number(options.afterMs) || 0);
+      const beforeMs = this.battleWaitMs(options.beforeMs);
+      const durationMs = this.battleWaitMs(options.durationMs);
+      const estimatedRunMs = this.battleWaitMs(options.estimatedRunMs);
+      const afterMs = this.battleWaitMs(options.afterMs);
       const now = this.now();
       const startAt = Math.max(now, this.visualReadyAt || 0) + beforeMs;
       const endAt = startAt + estimatedRunMs + durationMs + afterMs;
@@ -211,10 +237,10 @@
       this.visualTail = previous
         .catch(() => {})
         .then(async () => {
-          if (beforeMs > 0) await this.wait(beforeMs);
+          if (beforeMs > 0) await this.rawWait(beforeMs);
           await run();
-          if (durationMs > 0) await this.wait(durationMs);
-          if (afterMs > 0) await this.wait(afterMs);
+          if (durationMs > 0) await this.rawWait(durationMs);
+          if (afterMs > 0) await this.rawWait(afterMs);
         })
         .catch((error) => console.warn("[PolishFX] visual queue failed", error));
 
@@ -227,8 +253,8 @@
     async waitForVisuals(extraMs = 0) {
       const tail = this.visualTail || Promise.resolve();
       await tail.catch(() => {});
-      const remain = Math.max(0, (this.visualReadyAt || 0) - this.now(), Number(extraMs) || 0);
-      if (remain > 0) await this.wait(remain);
+      const remain = Math.max(0, (this.visualReadyAt || 0) - this.now(), this.battleWaitMs(extraMs));
+      if (remain > 0) await this.rawWait(remain);
     },
     stripHtml(value) {
       const div = document.createElement("div");
@@ -291,8 +317,19 @@
       const key = raw.replace(/^battle-fx-/, "");
       if (this.assets[key]) return this.assets[key];
       if (/^breath-/.test(key)) return this.assets.breath;
-      if (/^phys-(fire|ice|thunder|wind|light|dark|chaos)$/.test(key)) return this.assets["neutral-slash"];
+      if (/^phys-(fire|ice|thunder|wind|light|dark|chaos)$/.test(key)) return this.assets["phys-elemental"] || this.assets["neutral-slash"];
       return null;
+    },
+    appendEffectAccent(node, profile, fxKind) {
+      if (!node || !profile || profile.type !== "magic" || Number(profile.tier || 1) < 3) return;
+      if (String(fxKind || "") === "arcane-burst") return;
+      if (String(fxKind || "").startsWith("ultimate-")) return;
+      const asset = this.assets["arcane-burst"];
+      if (!asset) return;
+      const accent = document.createElement("div");
+      accent.className = "battle-fx-accent battle-fx-accent-arcane";
+      accent.style.backgroundImage = `url("${asset}")`;
+      node.appendChild(accent);
     },
     isArea(cmd) {
       const scope = [cmd?.targetScope, cmd?.target, cmd?.data?.target].filter(Boolean).join(" ");
@@ -359,6 +396,16 @@
         }
       }, fallbackMs + 24);
       this.enemyHpHoldTimers.set(unit, timer);
+    },
+    stageHpTransition(unit, displayHp) {
+      if (!unit || !Number.isFinite(Number(displayHp))) return;
+      this.pendingHpTransitions.set(unit, Number(displayHp));
+    },
+    consumeHpTransition(unit) {
+      if (!unit || !this.pendingHpTransitions.has(unit)) return null;
+      const hp = this.pendingHpTransitions.get(unit);
+      this.pendingHpTransitions.delete(unit);
+      return Number.isFinite(Number(hp)) ? Number(hp) : null;
     },
     releaseEnemyHpDisplayHold(unit) {
       if (!unit || !this.isEnemy(unit)) return;
@@ -464,6 +511,51 @@
     hitCount(cmd) {
       return Math.max(1, Number(cmd?.data?.count || cmd?.hitCount || 1) || 1);
     },
+    powerTier(cmd) {
+      const data = cmd?.data || {};
+      const id = Number(data.id || 0);
+      if (id >= 900 || this.ultimateSkillKind(data, cmd)) return 4;
+      const count = this.hitCount(cmd);
+      const rate = Math.max(0, Number(data.rate || 0));
+      const base = Math.max(0, Number(data.base || 0));
+      const mp = Math.max(0, Number(data.mp || 0));
+      let score = rate * 30 + base * 0.45 + mp * 0.12 + Math.max(0, count - 1) * 7;
+      if (data.fix || data.ratio || data.PercentDamage || data.InstantDeath) score += 45;
+      if (this.isSupport(data)) score = Math.max(score, mp * 0.9 + (data.revive ? 45 : 0));
+      if (score >= 120) return 4;
+      if (score >= 78) return 3;
+      if (score >= 45) return 2;
+      return 1;
+    },
+    effectProfile(cmd) {
+      const data = cmd?.data || {};
+      const type = this.isBreathData(data)
+        ? "breath"
+        : this.isSupport(data)
+          ? (this.isDebuffOnlyData(data) ? "debuff" : "support")
+          : this.isSpellData(data, cmd)
+            ? "magic"
+            : this.isPhysicalData(data, cmd)
+              ? "physical"
+              : "special";
+      return {
+        tier: this.powerTier(cmd),
+        scope: this.isArea(cmd) ? "area" : (String(data.target || cmd?.targetScope || "").includes("ランダム") ? "random" : "single"),
+        hits: this.hitCount(cmd),
+        type,
+        element: this.elementKind(data, cmd)
+      };
+    },
+    applyEffectProfile(node, profile) {
+      if (!node || !profile) return;
+      const tier = Math.max(1, Math.min(4, Number(profile.tier || 1)));
+      node.classList.add(`battle-fx-tier-${tier}`, `battle-fx-scope-${this.cssKind(profile.scope)}`, `battle-fx-type-${this.cssKind(profile.type)}`);
+      if (Number(profile.hits || 1) > 1) node.classList.add("battle-fx-multihit");
+      node.dataset.fxTier = String(tier);
+      node.dataset.fxScope = String(profile.scope || "single");
+      node.dataset.fxType = String(profile.type || "special");
+      node.dataset.fxElement = String(profile.element || "neutral");
+    },
     ensureLayer() {
       const scene = byId("battle-scene");
       if (!scene) return null;
@@ -551,7 +643,7 @@
       return !!(
         cmd?.type === "attack" ||
         cmd?.isReaction ||
-        this.hasAny(raw, ["物理", "通常攻撃", "特技", "攻撃", "斬", "剣", "槍", "斧", "爪", "拳", "打撃", "迚ｩ逅", "騾壼ｸｸ謾ｻ", "迚ｹ谿", "謾ｻ謦"])
+        this.hasAny(raw, ["物理", "通常攻撃", "特技", "攻撃", "斬", "剣", "槍", "斧", "弓", "矢", "射", "爪", "拳", "打撃", "arrow", "bow", "shot", "迚ｩ逅", "騾壼ｸｸ謾ｻ", "迚ｹ谿", "謾ｻ謦"])
       );
     },
     isBreathData(data) {
@@ -596,12 +688,18 @@
     },
     ultimateSkillKind(data, cmd) {
       const id = Number(data?.id || 0);
-      if ([245, 238, 244, 248].includes(id)) return "ultimate-chaos";
-      if (id === 246) return "holy-burst";
-      if ([247, 166, 242].includes(id)) return "abyss-vortex";
-      if (id === 243) return "meteor";
-      if ([245, 246, 247, 238, 166, 244, 168, 242, 243, 248].includes(id)) return this.specialKind(data, cmd) || "special-rupture";
-      return null;
+      return ({
+        166: "ultimate-ragnarok",
+        168: "ultimate-prisma-end",
+        238: "ultimate-big-bang",
+        242: "ultimate-abyss-wall",
+        243: "ultimate-phoenix-flare",
+        244: "ultimate-genesis-magic",
+        245: "ultimate-chaos-shock",
+        246: "ultimate-illuminati-break",
+        247: "ultimate-the-end",
+        248: "ultimate-lost-prisma"
+      })[id] || null;
     },
     spellKind(data, cmd) {
       const base = this.elementKind(data, cmd);
@@ -628,7 +726,8 @@
     physicalKind(cmd, perHit = false) {
       const raw = this.rawData(cmd?.data);
       if (cmd?.isReaction) return this.pendingNeutralPhysicalKind || "neutral-chain";
-      if (this.hitCount(cmd) > 1) return perHit ? "neutral-slash" : "phys-sword";
+      if (this.hasAny(raw, ["弓", "矢", "射", "arrow", "bow", "shot", "volley"])) return "ranged-volley";
+      if (this.hitCount(cmd) > 1) return perHit ? "neutral-slash" : "neutral-combo";
       if (this.hasAny(raw, ["槍", "突", "pierce", "spear"])) return "neutral-pierce";
       if (this.hasAny(raw, ["斧", "打", "砕", "粉砕", "smash", "axe"])) return "neutral-smash";
       if (this.hasAny(raw, ["奥義", "渾身", "heavy", "finisher"])) return "neutral-heavy";
@@ -772,15 +871,19 @@
       node.dataset.fxKind = fxKind;
       node.style.left = `${pos.x}px`;
       node.style.top = `${pos.y}px`;
+      const profile = options.profile || null;
+      this.applyEffectProfile(node, profile);
       const imageAsset = options.image || this.assetFor(fxKind);
       const isWide = /all-|ultimate|meteor|pillar|vortex|burst|combo|breath|special|critical/.test(classKind);
-      const size = Math.max(72, Math.min(isWide ? 190 : 148, Math.max(pos.w, pos.h) * (options.big || isWide ? 1.08 : 0.76)));
+      const tierScale = [0, 0.82, 1, 1.18, 1.38][Math.max(1, Math.min(4, Number(profile?.tier || 2)))];
+      const size = Math.max(68, Math.min(isWide ? 218 : 176, Math.max(pos.w, pos.h) * (options.big || isWide ? 1.08 : 0.76) * tierScale));
       node.style.width = `${size}px`;
       node.style.height = `${size}px`;
       if (imageAsset) {
         node.classList.add("battle-fx-image");
         node.style.backgroundImage = `url("${imageAsset}")`;
       }
+      this.appendEffectAccent(node, profile, fxKind);
       if (options.hitIndex) {
         const spread = ((options.hitIndex - 1) % 5 - 2) * 7;
         node.style.setProperty("--fx-offset-x", `${spread}px`);
@@ -788,7 +891,10 @@
       }
       pos.layer.appendChild(node);
       this.particles(pos, fxKind, { ...options, quiet: !!imageAsset && !options.big });
-      setTimeout(() => node.remove(), 760);
+      const lifeMs = String(fxKind).startsWith("ultimate-")
+        ? 1480
+        : 680 + Math.max(1, Number(profile?.tier || 2)) * 90;
+      setTimeout(() => node.remove(), lifeMs);
     },
     areaRegionForTargets(targets = []) {
       const layer = this.ensureLayer();
@@ -831,8 +937,11 @@
       node.dataset.fxKind = fxKind;
       node.style.left = "50%";
       node.style.top = "50%";
-      const width = Math.max(220, region.width * 1.04);
-      const height = Math.max(96, region.height * 1.02);
+      const profile = options.profile || null;
+      this.applyEffectProfile(node, profile);
+      const tierScale = [0, 0.88, 1, 1.12, 1.25][Math.max(1, Math.min(4, Number(profile?.tier || 2)))];
+      const width = Math.max(220, region.width * 1.04 * tierScale);
+      const height = Math.max(96, region.height * 1.02 * tierScale);
       node.style.width = `${width}px`;
       node.style.height = `${height}px`;
       const imageAsset = options.image || this.assetFor(fxKind);
@@ -840,13 +949,17 @@
         node.classList.add("battle-fx-image");
         node.style.backgroundImage = `url("${imageAsset}")`;
       }
+      this.appendEffectAccent(node, profile, fxKind);
       clip.appendChild(node);
       region.layer.appendChild(clip);
       this.particles({ layer: clip, x: region.width / 2, y: region.height / 2, w: width, h: height }, fxKind, {
         big: true,
         quiet: !!imageAsset && !options.particles
       });
-      setTimeout(() => clip.remove(), 920);
+      const lifeMs = String(fxKind).startsWith("ultimate-")
+        ? 1520
+        : 780 + Math.max(1, Number(profile?.tier || 2)) * 120;
+      setTimeout(() => clip.remove(), lifeMs);
     },
     particles(pos, kind, options = {}) {
       const colors = {
@@ -873,6 +986,16 @@
         "holy-burst": "#fff2a8",
         poison: "#c36bff",
         "ultimate-chaos": "#67d7c4",
+        "ultimate-ragnarok": "#c62b35",
+        "ultimate-prisma-end": "#d8f7ff",
+        "ultimate-big-bang": "#f7d77b",
+        "ultimate-abyss-wall": "#8a55d9",
+        "ultimate-phoenix-flare": "#ff8a32",
+        "ultimate-genesis-magic": "#6fe1d1",
+        "ultimate-chaos-shock": "#67d7c4",
+        "ultimate-illuminati-break": "#fff2a8",
+        "ultimate-the-end": "#9a62e8",
+        "ultimate-lost-prisma": "#e8f5ff",
         "heal-blossom": "#8fffad",
         "special-rupture": "#c36bff",
         "critical-spark": "#fff2a8",
@@ -1001,13 +1124,16 @@
     enqueueHitEvent(event) {
       if (!event?.unit) return null;
       const { unit, cmd, hitIndex, area, screenArea, damageMatch, healMatch, kind, criticalKind, amount, hitColor } = event;
-      const sequenceAfterMs = screenArea ? this.areaHitIntervalMs : this.hitSequenceIntervalMs;
+      const supportSequenceMs = 120;
+      const sequenceAfterMs = healMatch
+        ? supportSequenceMs
+        : (screenArea ? this.areaHitIntervalMs : this.hitSequenceIntervalMs);
       const shouldShowPointEffect = !area || !screenArea;
-      const leadMs = shouldShowPointEffect ? this.hitEffectLeadMs : 0;
+      const leadMs = shouldShowPointEffect ? (healMatch ? 120 : this.hitEffectLeadMs) : 0;
       const queued = this.queueVisual(async () => {
         if (damageMatch) {
           if (shouldShowPointEffect) {
-            this.effect(unit, kind, { hitIndex });
+            this.effect(unit, kind, { hitIndex, profile: this.effectProfile(cmd) });
             if (criticalKind) this.effect(unit, criticalKind, { hitIndex, big: true });
             await this.wait(leadMs);
           }
@@ -1025,7 +1151,7 @@
         }
         if (healMatch) {
           if (shouldShowPointEffect) {
-            this.effect(unit, kind, { hitIndex });
+            this.effect(unit, kind, { hitIndex, profile: this.effectProfile(cmd) });
             await this.wait(leadMs);
           }
           this.mark(unit, "battle-heal-pulse");
@@ -1034,13 +1160,15 @@
           return;
         }
         if (shouldShowPointEffect) {
-          this.effect(unit, kind, { hitIndex, big: false });
+          this.effect(unit, kind, { hitIndex, big: false, profile: this.effectProfile(cmd) });
           await this.wait(leadMs);
         }
         this.float(unit, "MISS", "#d6d1c2", { hitIndex });
       }, { estimatedRunMs: leadMs, afterMs: sequenceAfterMs });
 
-      if ((damageMatch || healMatch) && this.isEnemy(unit)) this.startEnemyHpDisplayHold(unit, queued.endDelayMs);
+      if ((damageMatch || healMatch) && this.isEnemy(unit)) {
+        this.startEnemyHpDisplayHold(unit, queued.endDelayMs, event.displayHpBefore);
+      }
       if (damageMatch && event.defeatAtLog) this.startDefeatedHold(unit, queued.endDelayMs);
       return queued;
     },
@@ -1057,6 +1185,10 @@
           if (context) context.maxHitDelay = Math.max(context.maxHitDelay || 0, queued?.endDelayMs || 0);
         });
     },
+    async waitForCurrentActionPhase() {
+      if (this.current) this.flushAreaHits(this.current);
+      await this.waitForVisuals(0);
+    },
     playIntentEffects(cmd, options = {}) {
       if (!this.shouldPlayIntentEffects(cmd)) return 0;
       const targets = this.getTargets(cmd).filter(Boolean);
@@ -1064,14 +1196,14 @@
       const kind = options.kind || this.customFxKind(cmd, false, this.useScreenAreaEffect(cmd) ? "screen" : null) || this.visualKind(cmd, false);
       if (this.useScreenAreaEffect(cmd)) {
         this.queueVisual(() => {
-          this.screenEffect(kind, { big: true, targets });
+          this.screenEffect(kind, { big: true, targets, profile: this.effectProfile(cmd) });
         }, { afterMs: this.areaHitInitialDelayMs });
         this.lastAt = this.now();
         return targets.length;
       }
       targets.forEach((target) => {
         this.queueVisual(() => {
-          this.effect(target, kind, { big: targets.length > 1 });
+          this.effect(target, kind, { big: targets.length > 1, profile: this.effectProfile(cmd) });
         }, { afterMs: Math.min(90, this.hitSequenceIntervalMs) });
       });
       this.lastAt = this.now();
@@ -1096,7 +1228,9 @@
       if (!unit) return;
 
       const damageMatch = text.match(/に\s*([0-9,]+)\s*のダメージ/) || text.match(/ダメージを\s*([0-9,]+)\s*受けた/) || text.match(/に\s*([0-9,]+)\s*の?ダメージ/);
-      const healMatch = text.match(/HP[をが]\s*([0-9,]+)\s*回復/) || text.match(/([0-9,]+)\s*回復/);
+      // MP回復（特に攻撃ごとの吸魔）をHP回復演出として扱わない。
+      // HP回復だけを明示的に拾い、不要なエフェクト待機とHPバー操作を防ぐ。
+      const healMatch = text.match(/HP[をが]\s*([0-9,]+)\s*回復/);
       const missMatch = /ミス|身をかわした|うけない|効かなかった|きかなかった/.test(text);
       const defeatMatch = /倒れた|息絶えた|戦闘不能/.test(text);
 
@@ -1147,15 +1281,16 @@
         criticalKind,
         amount: (damageMatch || healMatch)?.[1]?.replace(/,/g, "") || "",
         hitColor: this.hitColorFromLog(message),
-        defeatAtLog: !!damageMatch && this.isDefeatedEnemy(unit)
+        defeatAtLog: !!damageMatch && this.isDefeatedEnemy(unit),
+        displayHpBefore: this.consumeHpTransition(unit)
       };
 
       if (damageMatch) {
         this.lastDamageEventByUnit.set(unit, event);
-        if (this.isEnemy(unit)) this.startEnemyHpDisplayHold(unit);
+        if (this.isEnemy(unit)) this.startEnemyHpDisplayHold(unit, 0, event.displayHpBefore);
         if (event.defeatAtLog) this.startDefeatedHold(unit);
       } else if (healMatch && this.isEnemy(unit)) {
-        this.startEnemyHpDisplayHold(unit);
+        this.startEnemyHpDisplayHold(unit, 0, event.displayHpBefore);
       }
 
       if (screenArea) {
@@ -1182,11 +1317,11 @@
       const movedEnemy = this.markEnemyIntent(cmd);
       const targetCount = this.playIntentEffects(cmd);
       if (targetCount === 0) {
-        if (movedEnemy) await new Promise((resolve) => setTimeout(resolve, 110));
+        if (movedEnemy) await this.wait(110);
         return;
       }
       const waitMs = this.useScreenAreaEffect(cmd) ? 0 : (targetCount > 1 ? 310 : 240);
-      if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
+      if (waitMs > 0) await this.wait(waitMs);
     },
     async playResults(cmd, before, options = {}) {
       if (!before || typeof Battle === "undefined") return;
@@ -1222,7 +1357,7 @@
         const unitDefeated = this.isDefeatedEnemy(unit);
         const queued = this.queueVisual(async () => {
           if (!area) {
-            this.effect(unit, this.visualKind(cmd, true));
+            this.effect(unit, this.visualKind(cmd, true), { profile: this.effectProfile(cmd) });
             await this.wait(this.hitEffectLeadMs);
           }
           this.mark(unit, "battle-hit-shake");
@@ -1240,7 +1375,7 @@
         const beforeMs = damagedOrdered.length === 0 && index === 0 ? resultStartDelay : 0;
         this.queueVisual(async () => {
           if (!area) {
-            this.effect(unit, "heal");
+            this.effect(unit, "heal", { profile: this.effectProfile(cmd) });
             await this.wait(this.hitEffectLeadMs);
           }
           this.mark(unit, "battle-heal-pulse");

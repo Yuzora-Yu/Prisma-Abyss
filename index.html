@@ -9,22 +9,15 @@
 
     <!--
       初回表示の体感改善用プリロード。
-      画像キャッシュ対象の正本は assets.js。ここはロード画面/初戦闘/ガチャ/施設背景で
-      初回だけ空白になりやすいものを先に取りに行くための補助。
+      画像キャッシュ対象の正本は assets.js。ここはリュミナ村と開幕戦で
+      初回だけ空白になりやすい最小画像を先に取りに行くための補助。
       大量追加する場合は、まず assets.js の PRISMA_ASSETS.cacheWarmup を更新すること。
     -->
-    <link rel="preload" as="image" href="assets/monsters/monster_100001.png">
-    <link rel="preload" as="image" href="assets/monsters/monster_100002.png">
-    <link rel="preload" as="image" href="assets/monsters/monster_100003.png">
-    <link rel="preload" as="image" href="assets/monsters/monster_100004.png">
+    <link rel="preload" as="image" href="assets/monsters/monster_000001.png">
     <link rel="preload" as="image" href="assets/generated/battle-field-ai.png">
-    <link rel="preload" as="image" href="assets/generated/battle-dungeon-ai.png">
-    <link rel="preload" as="image" href="assets/gacha/back_card.png">
-    <link rel="preload" as="image" href="assets/gacha/front_card.png">
-    <link rel="preload" as="image" href="assets/background/bg_inn.jpg">
-    <link rel="preload" as="image" href="assets/background/bg_casino.png">
     
 <link rel="stylesheet" href="modern-polish.css">
+<link rel="stylesheet" href="opening.css">
 
 	<script>
 if ('serviceWorker' in navigator) {
@@ -43,7 +36,7 @@ if ('serviceWorker' in navigator) {
 			<img
 				id="initial-loading-monster-img"
 				class="initial-loading-monster"
-				src="assets/monsters/monster_100001.png"
+				src="assets/monsters/monster_000001.png"
 				alt="loading"
 			>
             <div class="initial-loading-text">Now loading...</div>
@@ -56,14 +49,8 @@ if ('serviceWorker' in navigator) {
 		if (!img) return;
 
 		const SAVE_KEY = 'QoE_SaveData_v38_BalanceFix';
-
-		// ロード画面は初回キャッシュ/プリロード対象の 100001〜100024 から選ぶ。
-		// 全モンスター画像は assets.js を正本に、sw.js の初回installキャッシュで保存する。
-		// ここを100001〜100090の完全ランダムへ戻すと、初回だけロード画面が画像待ちになりやすい。
-		const fallbackIds = Array.from(
-			{ length: 24 },
-			(_, i) => 100001 + i
-		);
+		// ロード画面は assets.js の初期候補と同じ、実在する新IDだけから選ぶ。
+		const fallbackIds = [1, 2, 3, 4, 51, 52, 53, 54, 55, 101, 102, 103, 104, 151, 152, 153, 154, 155, 201, 202, 203, 204, 251, 252];
 
 		const pickRandom = (ids) => {
 			return ids[Math.floor(Math.random() * ids.length)];
@@ -80,7 +67,7 @@ if ('serviceWorker' in navigator) {
 					.map(id => Number(id))
 					.filter(id =>
 						Number.isInteger(id) &&
-						id >= 100001
+						id > 0
 					);
 			}
 		} catch (e) {
@@ -100,28 +87,26 @@ if ('serviceWorker' in navigator) {
 		img.onerror = function () {
 			retryCount++;
 
-			// 討伐済みIDに画像がなければ、従来の100001〜100090ランダムへ切り替える
+			// 討伐済みIDに画像がなければ、実在確認済みの初期候補へ切り替える
 			if (retryCount <= 5) {
 				const fallbackId = pickRandom(fallbackIds);
-				img.src = `assets/monsters/monster_${fallbackId}.png`;
+				img.src = `assets/monsters/monster_${String(fallbackId).padStart(6, '0')}.png`;
 				return;
 			}
 
 			// 念のため最後は固定
 			img.onerror = null;
-			img.src = 'assets/monsters/monster_100001.png';
+			img.src = 'assets/monsters/monster_000001.png';
 		};
 
 		const id = pickRandom(candidateIds);
-		img.src = `assets/monsters/monster_${id}.png`;
+		img.src = `assets/monsters/monster_${String(id).padStart(6, '0')}.png`;
 	})();
 	</script>
 	
 	<div id="encounter-transition" aria-hidden="true">
-		<div class="encounter-crack crack-1"></div>
-		<div class="encounter-crack crack-2"></div>
-		<div class="encounter-crack crack-3"></div>
-		<div class="encounter-crack crack-4"></div>
+		<div class="encounter-backdrop"></div>
+		<div class="encounter-vignette"></div>
 		<div class="encounter-flash-core"></div>
 	</div>
 
@@ -142,6 +127,8 @@ if ('serviceWorker' in navigator) {
         <div id="canvas-wrapper">
             <div id="phaser-field-root" aria-hidden="true"></div>
             <canvas id="field-canvas" width="320" height="320"></canvas>
+            <canvas id="field-minimap-canvas" width="80" height="80" aria-hidden="true"></canvas>
+            <div id="field-key-hud" aria-label="所持中のダンジョン鍵"></div>
             <button id="field-minimap-hotspot" type="button" aria-label="MAP" onclick="Field.handleMinimapTap(event)"></button>
             <button id="field-minimap-restore" type="button" onclick="Field.restoreMinimap(event)">MAP</button>
             <div class="ui-layer">
@@ -168,7 +155,10 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div id="battle-scene" class="scene-layer">
-        <button id="btn-auto" class="btn" style="position:absolute; top:10px; right:10px; z-index:10; width:80px;" onclick="Battle.toggleAuto()">AUTO: OFF</button>
+        <div id="battle-top-controls" aria-label="戦闘設定">
+            <button id="btn-battle-speed" class="btn" type="button" onclick="Battle.cycleBattleSpeed()" aria-label="戦闘速度: 普通" title="戦闘速度: 普通">▶</button>
+            <button id="btn-auto" class="btn" type="button" onclick="Battle.toggleAuto()" aria-pressed="false">AUTO: OFF</button>
+        </div>
         <div id="enemy-container"></div>
         <div class="party-bar" id="battle-party-bar"></div>
         
@@ -264,6 +254,7 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div id="item-screen-list" class="flex-col-container">
+        <div id="item-tabs" class="item-tab-bar" role="tablist" aria-label="道具カテゴリ"></div>
         <div id="list-items" class="scroll-area"></div>
 
         <div class="sub-screen-bottom-panel">
@@ -349,8 +340,39 @@ if ('serviceWorker' in navigator) {
 		</div>
 	</div>
 
+    <div id="sub-screen-crafting" class="sub-screen">
+        <div class="header-bar">
+            <span>📡 魔道通信</span>
+            <button class="btn" onclick="Menu.closeSubScreen('crafting')">もどる</button>
+        </div>
+        <div class="scroll-area" style="flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:12px; padding:18px 24px; overflow-y:auto;">
+            <div style="text-align:center; color:#ffd770; font-size:12px; line-height:1.65;">遠隔利用する施設・ギルド窓口を選択してください。</div>
+            <button class="menu-btn" style="min-height:68px; background:#3b2112; border:1px solid #d28a54;" onclick="Menu.openCraftingBlacksmith()">
+                <span style="display:block; font-size:17px; color:#ffd86a;">鍛冶屋</span>
+                <span style="display:block; margin-top:4px; font-size:10px; color:#d8c3ad;">装備合成・装備精錬・装備強化</span>
+            </button>
+            <button class="menu-btn" style="min-height:68px; background:#12283b; border:1px solid #78b8dc;" onclick="Menu.openCraftingAlchemy()">
+                <span style="display:block; font-size:17px; color:#aee8ff;">錬金所</span>
+                <span style="display:block; margin-top:4px; font-size:10px; color:#c4dce7;">素材から道具や香を錬成</span>
+            </button>
+            <button class="menu-btn" style="min-height:68px; background:#1d2c46; border:1px solid #8bbcff;" onclick="Menu.openMagicCommunicationGuildBoard()">
+                <span style="display:block; font-size:17px; color:#dcecff;">ギルド依頼</span>
+                <span style="display:block; margin-top:4px; font-size:10px; color:#b9cbe3;">依頼掲示板の確認・更新・受注</span>
+            </button>
+        </div>
+        <div class="sub-screen-bottom-panel">
+            <button class="btn sub-screen-back-btn" onclick="Menu.closeSubScreen('crafting')">もどる</button>
+        </div>
+    </div>
+
     <div id="sub-screen-blacksmith" class="sub-screen">
-        <div class="header-bar"><span>⚒️ 鍛冶屋</span> <button class="btn" onclick="Menu.closeSubScreen('blacksmith')">もどる</button></div>
+        <div class="header-bar">
+            <span>⚒️ 鍛冶屋</span>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <button class="btn" onclick="MenuBlacksmith.exitWorkspace()">もどる</button>
+                <button class="btn" onclick="MenuBlacksmith.exitToField()">外へ出る</button>
+            </div>
+        </div>
         <div id="smith-screen-main" class="flex-col-container" style="align-items:center; justify-content:center; gap:20px;">
             <div id="smith-info" style="color:#ffd770;"></div>
             <button class="menu-btn" style="width:200px;" onclick="MenuBlacksmith.selectMode('enhance')">装備強化</button>
@@ -443,6 +465,9 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div id="shop-scene" class="scene-layer"><div class="header-bar"><span>ショップ</span></div></div>
+    <div id="alchemy-scene" class="scene-layer"><div class="header-bar"><span>錬金所</span></div></div>
+    <div id="blacksmith-scene" class="scene-layer"><div class="header-bar"><span>鍛冶屋</span></div></div>
+    <div id="guild-scene" class="scene-layer"><div class="header-bar"><span>冒険者ギルド</span></div></div>
 
     <div id="gacha-performance" class="scene-layer">
         <div id="freeze-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:black; z-index:400; display:none;"></div>
@@ -485,23 +510,37 @@ if ('serviceWorker' in navigator) {
 <script src="skills.js"></script>
 <script src="items.js"></script>
 <script src="monsters.js"></script>
+<script src="abyss_content.js"></script>
+<script src="chest-mimics.js"></script>
+<script src="monster-drop-policy.js"></script>
 <script src="monster-images.js"></script>
 <script src="characters.js"></script>
 <script src="job_data.js"></script>
 <script src="equips.js"></script>
 
 <script src="database.js"></script>
+<script src="item_runtime.js"></script>
 <script src="passiveSkill.js"></script>
 <script src="map.js"></script>
+<script src="maps_logic.js"></script>
+<script src="map_render_shared.js"></script>
 <script src="phaser-field.js"></script>
 <script src="story.js"></script>
+<script src="story_logic.js"></script>
+<script src="opening.js"></script>
 <script src="quests.js"></script>
+<script src="guild_quests.js"></script>
+<script src="guild_master.js"></script>
 <script src="dungeon.js"></script>
 <script src="gacha.js"></script>
 <script src="facilities.js"></script>
+<script src="alchemy.js"></script>
 <script src="blacksmith.js"></script>
 <script src="save_crypto.js"></script>
+<script src="audio_manifest.js"></script>
+<script src="audio.js"></script>
 <script src="main.js"></script>
+<script src="guild.js"></script>
 <script src="battle.js"></script>
 <script src="news.js"></script>
 <script src="achievements.js"></script>

@@ -1,31 +1,28 @@
-(function () {
-  const base = "assets/monsters/";
-  const normalIds = Array.from({ length: 90 }, (_, i) => 100001 + i);
-  const abyssHighFloorIds = Array.from({ length: 90 }, (_, i) => 100091 + i);
-  const bossIds = [
-    200201, 200202, 200203, 200204,
-    301000, 301001, 301002,
-    301010, 301011, 301012,
-    301020, 301021, 301022,
-    301030, 301031, 301032,
-    301040, 301050,
-    301060, 301061, 301062,
-    301070,
-    301080, 301081, 301082,
-    301100,
-    401010, 401020, 401030, 401040, 401050, 401060, 401070,
-    401080, 401081, 401082, 401090, 401100,
-    401110, 401120, 401130, 401140, 401150, 401151, 401152, 401153,
-    401160, 401161, 401162, 401170, 401071, 401180, 401190, 401200,
-    502049, 502098,
-    902000,
-  ];
-  const ids = normalIds.concat(abyssHighFloorIds, bossIds);
+/*
+ * Monster image compatibility bridge.
+ *
+ * Monster image paths are no longer maintained as a separate ID list.
+ * The runtime derives paths from monsters.js. By default it uses:
+ *   assets/monsters/monster_<monsterId>.png
+ * A master record may set imageId to reuse another registered monster image.
+ *
+ * This file remains only for compatibility with older cached HTML/service workers.
+ */
+(function registerMonsterImages(root) {
+  const definitions = root.MonsterData?.allBases || root.MONSTERS_DATA || [];
+  const assets = root.PRISMA_ASSETS;
 
-  const bossCandidateMap = ids.reduce((map, id) => {
-    map[id] = `${base}monster_${id}.png`;
-    return map;
-  }, {});
+  if (assets?.registerMonsterDefinitions) {
+    assets.registerMonsterDefinitions(definitions);
+    return;
+  }
 
-  window.MonsterImageMap = Object.assign({}, window.MonsterImageMap || {}, bossCandidateMap);
-})();
+  const map = root.MonsterImageMap || {};
+  definitions.forEach((monster) => {
+    const id = Number(monster?.baseId ?? monster?.id);
+    const imageId = Number(monster?.imageId ?? monster?.baseId ?? monster?.id);
+    if (!Number.isFinite(id) || id <= 0 || !Number.isFinite(imageId) || imageId <= 0) return;
+    map[Math.floor(id)] = `assets/monsters/monster_${String(Math.floor(imageId)).padStart(6, '0')}.png`;
+  });
+  root.MonsterImageMap = map;
+})(globalThis);

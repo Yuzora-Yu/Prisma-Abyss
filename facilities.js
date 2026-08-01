@@ -4,12 +4,23 @@
 
 const Facilities = {
     teleportFloor: 1,
+    teleportMode: 'random',
+    modalCloseHandlers: Object.create(null),
 
     // 施設背景は assets.js / GRAPHICS を使わず、このファイルから直接参照する
     backgroundPaths: {
         facility_bg_inn: 'assets/background/bg_inn.jpg',
+        facility_bg_alchemy: 'assets/background/bg_alchemy_water_city.png',
+        facility_bg_blacksmith: 'assets/background/bg_blacksmith.png',
+        facility_bg_guild: 'assets/background/bg_guild.png',
         facility_bg_medal: 'assets/background/bg_medal.png',
         facility_bg_casino: 'assets/background/bg_casino.png'
+    },
+
+    // bg_guild.png が未配置の開発環境でも施設画面が真っ黒にならないようにする。
+    // 正式画像が存在する環境では常に primary path が優先される。
+    backgroundFallbackPaths: {
+        facility_bg_guild: 'assets/background/bg_blacksmith.png'
     },
 
     escapeAttr: (value) => String(value).replace(/[&<>"]/g, (ch) => ({
@@ -23,15 +34,20 @@ const Facilities = {
      * DQ風ベースレイアウト構築
      * IDの重複によるバグを防ぐため、モーダルやメッセージエリアにシーン固有の接尾辞を付与します。
      */
-    setupBaseLayout: (sceneId, title, bgKey, commandsHtml, exitFn, isLocked = false) => {
+    setupBaseLayout: (sceneId, title, bgKey, commandsHtml, exitFn, isLocked = false, options = {}) => {
         const container = document.getElementById(sceneId);
         if (!container) return;
 
         const bgUrl = Facilities.backgroundPaths[bgKey] || '';
+        const bgFallbackUrl = Facilities.backgroundFallbackPaths?.[bgKey] || '';
+        const topExitFn = options.topExitFn || exitFn;
+        const bottomExitFn = options.bottomExitFn || exitFn;
+        const topExitLabel = options.topExitLabel || (isLocked ? '勝負中' : '外へ出る');
+        const bottomExitLabel = options.bottomExitLabel || '出る';
         const bgImageHtml = bgUrl ? `
-                <img src="${Facilities.escapeAttr(bgUrl)}" alt="" aria-hidden="true"
+                <img src="${Facilities.escapeAttr(bgUrl)}" data-fallback-src="${Facilities.escapeAttr(bgFallbackUrl)}" alt="" aria-hidden="true"
                     style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block;"
-                    onerror="this.remove();">
+                    onerror="const fallback=this.dataset.fallbackSrc;if(fallback&&this.src.indexOf(fallback)===-1){this.onerror=()=>this.remove();this.src=fallback;}else{this.remove();}">
             ` : '';
 
         // レイアウトのリセットと構築
@@ -39,9 +55,9 @@ const Facilities = {
         
         container.innerHTML = `
             <div style="position:absolute; top:10px; right:10px; z-index:1000;">
-                <button class="btn" style="padding:6px 15px; font-size:11px; border:2px solid #fff; background:${isLocked?'#333':'#000'}; color:${isLocked?'#666':'#fff'};" 
-                    onclick="${isLocked ? '' : exitFn}" ${isLocked ? 'disabled' : ''}>
-                    ${isLocked ? '勝負中' : '外へ出る'}
+                <button id="${sceneId}-top-exit-btn" class="btn" style="padding:6px 15px; font-size:11px; border:2px solid #fff; background:${isLocked?'#333':'#000'}; color:${isLocked?'#666':'#fff'};" 
+                    onclick="${isLocked ? '' : topExitFn}" ${isLocked ? 'disabled' : ''}>
+                    ${topExitLabel}
                 </button>
             </div>
 
@@ -59,16 +75,16 @@ const Facilities = {
             <div style="background:#000; border-top:4px double #fff; padding:12px; flex-shrink:0; z-index:100;">
                 <div id="${sceneId}-cmd-row" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; max-width:400px; margin:0 auto;">
                     ${commandsHtml}
-                    <button class="menu-btn" style="background:#000; border:1px solid #777; height:40px; font-size:13px; color:#aaa;" 
-                        onclick="${isLocked ? '' : exitFn}" ${isLocked ? 'disabled' : ''}>出る</button>
+                    <button id="${sceneId}-bottom-exit-btn" class="menu-btn" style="background:#000; border:1px solid #777; height:40px; font-size:13px; color:#aaa;" 
+                        onclick="${isLocked ? '' : bottomExitFn}" ${isLocked ? 'disabled' : ''}>${bottomExitLabel}</button>
                 </div>
             </div>
 
             <div id="${sceneId}-modal-layer" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; justify-content:center; align-items:center; padding:10px;">
-                <div style="background:#000; border:3px double #fff; width:100%; max-width:320px; padding:15px; box-sizing:border-box;">
-                    <div id="${sceneId}-modal-title" style="color:#ffd700; font-size:14px; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px; font-weight:bold;"></div>
-                    <div id="${sceneId}-modal-body" class="scroll-area" style="max-height:50vh; overflow-y:auto; color:#fff;"></div>
-                    <button class="btn" style="width:100%; margin-top:15px; background:#444; border:1px solid #fff; height:40px;" onclick="Facilities.closeModal('${sceneId}')">とじる</button>
+                <div id="${sceneId}-modal-window" style="background:#000; border:3px double #fff; width:100%; max-width:320px; max-height:calc(100% - 20px); padding:15px; box-sizing:border-box; display:flex; flex-direction:column;">
+                    <div id="${sceneId}-modal-title" style="color:#ffd700; font-size:14px; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px; font-weight:bold; flex-shrink:0;"></div>
+                    <div id="${sceneId}-modal-body" class="scroll-area" style="min-height:0; max-height:50vh; overflow-y:auto; color:#fff;"></div>
+                    <button id="${sceneId}-modal-close" class="btn" style="width:100%; margin-top:15px; background:#444; border:1px solid #fff; height:40px; flex-shrink:0;" onclick="Facilities.closeModal('${sceneId}')">とじる</button>
                 </div>
             </div>
         `;
@@ -78,26 +94,59 @@ const Facilities = {
      * モーダルを表示
      * sceneIdを指定することで、隠れている別シーンのモーダルを誤操作するのを防ぎます。
      */
-    showModal: (sceneId, title, html) => {
+    showModal: (sceneId, title, html, options = {}) => {
         const layer = document.getElementById(`${sceneId}-modal-layer`);
         if(!layer) return;
-        document.getElementById(`${sceneId}-modal-title`).innerText = title;
-        document.getElementById(`${sceneId}-modal-body`).innerHTML = html;
+        const titleEl = document.getElementById(`${sceneId}-modal-title`);
+        const body = document.getElementById(`${sceneId}-modal-body`);
+        const modalWindow = document.getElementById(`${sceneId}-modal-window`);
+        const closeButton = document.getElementById(`${sceneId}-modal-close`);
+        if (!titleEl || !body || !modalWindow || !closeButton) return;
+
+        titleEl.innerText = title;
+        body.innerHTML = html;
+
+        // モーダルごとのサイズ指定は毎回既定値へ戻してから適用する。
+        // 依頼掲示板のように「上部固定＋一覧だけスクロール」が必要な画面でも、
+        // 他の施設モーダルへ高さ・overflow設定を持ち越さないため。
+        layer.style.padding = options.layerPadding || '10px';
+        layer.style.alignItems = options.layerAlignItems || 'center';
+        modalWindow.style.width = options.modalWidth || '100%';
+        modalWindow.style.maxWidth = options.modalMaxWidth || '320px';
+        modalWindow.style.height = options.modalHeight || '';
+        modalWindow.style.maxHeight = options.modalMaxHeight || 'calc(100% - 20px)';
+        body.style.flex = options.bodyFlex ? '1 1 auto' : '0 1 auto';
+        body.style.minHeight = '0';
+        body.style.maxHeight = options.bodyMaxHeight || '50vh';
+        body.style.overflowY = options.bodyOverflowY || 'auto';
+        closeButton.style.marginTop = options.closeMarginTop || '15px';
+        closeButton.textContent = options.closeLabel || 'とじる';
+
+        if (typeof options.onClose === 'function') {
+            Facilities.modalCloseHandlers[sceneId] = options.onClose;
+        } else {
+            delete Facilities.modalCloseHandlers[sceneId];
+        }
         layer.style.display = 'flex';
     },
 
     closeModal: (sceneId) => {
         const layer = document.getElementById(`${sceneId}-modal-layer`);
         if(layer) layer.style.display = 'none';
+        const onClose = Facilities.modalCloseHandlers[sceneId];
+        delete Facilities.modalCloseHandlers[sceneId];
+        if (typeof onClose === 'function') onClose();
     },
 
     // --- 1. 宿屋 ---
     initInn: () => {
         const exitFn = "App.changeScene('field')";
-        const teleportOpen = typeof App === 'undefined' || typeof App.isFeatureUnlocked !== 'function' || App.isFeatureUnlocked('teleport');
+        const teleportOpen = typeof App !== 'undefined' && typeof App.isFeatureUnlocked === 'function'
+            ? App.isFeatureUnlocked('teleport')
+            : !!(typeof App !== 'undefined' && App.data?.progress?.flags?.abyssRandomUnlocked);
         const teleportButton = teleportOpen
             ? `<button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff;" onclick="Facilities.openTeleport()">転送の扉</button>`
-            : `<button class="menu-btn" style="background:#111; border:1px solid #555; height:40px; color:#777;" onclick="App.requireFeatureUnlocked('teleport')">???</button>`;
+            : '';
         const cmds = `
             <button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff;" onclick="Facilities.stayInn(50)">泊まる (50Gold)</button>
             ${teleportButton}
@@ -121,52 +170,74 @@ const Facilities = {
         });
     },
 
+    getAbyssTeleportMode: () => 'random',
+
+    getAbyssTeleportMaxFloor: () => {
+        const dungeon = App.data?.dungeon || {};
+        return Math.max(1, Math.floor(Number(dungeon.maxFloor || 0) || 1));
+    },
+
+    getAbyssTeleportCost: (displayFloor = Facilities.teleportFloor) => {
+        const floor = Math.max(1, Math.floor(Number(displayFloor) || 1));
+        const balanceFloor = globalThis.ABYSS_FLOOR_RULES?.getBalanceFloor
+            ? globalThis.ABYSS_FLOOR_RULES.getBalanceFloor(floor, 'random')
+            : floor + 100;
+        return Math.max(0, Math.floor(balanceFloor * 10000));
+    },
+
     openTeleport: () => {
+        if (!App.data?.progress?.flags?.abyssRandomUnlocked) return Menu.msg('転送先となる深層の亀裂は、まだ見つかっていない。');
         if (typeof App !== 'undefined' && typeof App.requireFeatureUnlocked === 'function' && !App.requireFeatureUnlocked('teleport')) return;
-        const maxF = (App.data.dungeon && App.data.dungeon.maxFloor) ? App.data.dungeon.maxFloor : 0;
-        if(maxF === 0) return Menu.msg("まだ 行ける階層が ないようです。");
-        
+
+        Facilities.teleportMode = 'random';
+        const maxF = Facilities.getAbyssTeleportMaxFloor();
+        Facilities.teleportFloor = Math.max(1, Math.min(maxF, Number(Facilities.teleportFloor || 1)));
+
         Facilities.showModal('inn-scene', "行き先を選択", `
             <div style="text-align:center;">
-                <div style="font-size:11px; color:#aaa; margin-bottom:15px;">(1階につき 10,000 Gold 必要)</div>
-                <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:20px;">
+                <div style="font-size:13px;color:#fff;margin-bottom:8px;">ランダム深淵</div>
+                <div id="inn-tele-cost" style="font-size:12px;color:#ffd700;margin-bottom:15px;">必要額: ${Facilities.getAbyssTeleportCost(Facilities.teleportFloor).toLocaleString()} Gold</div>
+                <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:20px;">
                     <button class="btn" style="width:40px;height:35px;" onclick="Facilities.updateTele(-10)">-10</button>
                     <button class="btn" style="width:40px;height:35px;" onclick="Facilities.updateTele(-1)">-1</button>
-                    <span id="inn-tele-disp-val" style="font-size:28px; font-weight:bold; min-width:70px; color:#fff;">${Facilities.teleportFloor}F</span>
+                    <span id="inn-tele-disp-val" style="font-size:28px;font-weight:bold;min-width:70px;color:#fff;">${Facilities.teleportFloor}F</span>
                     <button class="btn" style="width:40px;height:35px;" onclick="Facilities.updateTele(1)">+1</button>
                     <button class="btn" style="width:40px;height:35px;" onclick="Facilities.updateTele(10)">+10</button>
                 </div>
-                <button class="menu-btn" style="width:100%; height:50px; background:#440; border:2px solid #ff0; color:#fff;" onclick="Facilities.execTele()">転送を実行する</button>
+                <button class="menu-btn" style="width:100%;height:50px;background:#440;border:2px solid #ff0;color:#fff;" onclick="Facilities.execTele()">転送を実行する</button>
             </div>
         `);
     },
 
     updateTele: (val) => {
-        const maxF = (App.data.dungeon && App.data.dungeon.maxFloor) ? App.data.dungeon.maxFloor : 0;
-        Facilities.teleportFloor = Math.max(1, Math.min(maxF, Facilities.teleportFloor + val));
+        const maxF = Facilities.getAbyssTeleportMaxFloor();
+        Facilities.teleportFloor = Math.max(1, Math.min(maxF, Facilities.teleportFloor + Number(val || 0)));
         const el = document.getElementById('inn-tele-disp-val');
-        if(el) el.innerText = Facilities.teleportFloor + "F";
+        if (el) el.innerText = Facilities.teleportFloor + "F";
+        const costEl = document.getElementById('inn-tele-cost');
+        if (costEl) costEl.innerText = `必要額: ${Facilities.getAbyssTeleportCost(Facilities.teleportFloor).toLocaleString()} Gold`;
     },
 
     execTele: () => {
+        if (!App.data?.progress?.flags?.abyssRandomUnlocked) return Menu.msg('転送先となる深層の亀裂は、まだ見つかっていない。');
         if (typeof App !== 'undefined' && typeof App.requireFeatureUnlocked === 'function' && !App.requireFeatureUnlocked('teleport')) return;
-        const cost = Facilities.teleportFloor * 10000;
-        if(App.data.gold < cost) return Menu.msg("ゴールドが 足りません。");
-        Menu.confirm(`${cost.toLocaleString()} Gold 必要ですが よろしいですか？`, () => {
-            App.data.gold -= cost; App.save();
+        Facilities.teleportFloor = Math.max(1, Math.min(Facilities.getAbyssTeleportMaxFloor(), Number(Facilities.teleportFloor || 1)));
+        const cost = Facilities.getAbyssTeleportCost(Facilities.teleportFloor);
+        if (App.data.gold < cost) return Menu.msg("ゴールドが 足りません。");
+        Menu.confirm(`ランダム深淵 ${Facilities.teleportFloor}階への転送には ${cost.toLocaleString()} Gold 必要です。よろしいですか？`, () => {
+            App.data.gold -= cost;
+            App.save();
             Facilities.closeModal('inn-scene');
-            if (typeof Dungeon !== 'undefined') Dungeon.start(Facilities.teleportFloor);
+            if (typeof Dungeon !== 'undefined') Dungeon.start(Facilities.teleportFloor, { mode: 'random' });
         });
     },
 
     // --- 2. メダル交換所 ---
     initMedal: () => {
         const exitFn = "App.changeScene('field')";
-		const hasWedge = App.data.items && App.data.items[98] > 0;
         // コマンドボタンの構成
         const cmds = `
-            <button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff; ${hasWedge ? '' : 'grid-column: span 2;'}" onclick="Facilities.openMedalMenu()">メダルを交換する</button>
-            ${hasWedge ? `<button class="menu-btn" style="background:#000; border:1px solid #f44; height:40px; color:#f44;" onclick="Facilities.challengeSpecialBoss()">災厄に挑む</button>` : ''}
+            <button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff; grid-column: span 2;" onclick="Facilities.openMedalMenu()">メダルを交換する</button>
         `;
         Facilities.setupBaseLayout('medal-scene', 'メダル交換所', 'facility_bg_medal', cmds, exitFn);
         const medals = App.data.items[99] || 0;
@@ -174,22 +245,6 @@ const Facilities = {
             「よくぞ参った。メダルを褒美と交換しよう」<br><br>
             <span style="color:#ffd700; font-weight:bold;">所持メダル: ${medals} 枚</span>
         `;
-    },
-
-// 特殊ボス戦開始ロジック
-    challengeSpecialBoss: () => {
-        Menu.confirm("「災厄の楔」が<br>不気味に脈動している……<br>ギルガメッシュを呼び覚ましますか？<br><span style='color:#f44; font-size:11px;'>※この戦いからは逃げられません</span>", () => {
-            App.data.battle = {
-                active: true,
-                isBossBattle: true,
-                isSpecialBoss: true,
-                isEstark: true,
-                fixedBossId: 902000,
-                enemies: []     // Battle.init で生成
-            };
-            App.save();
-            App.changeScene('battle');
-        });
     },
 
     openMedalMenu: () => {
@@ -606,6 +661,16 @@ const Facilities = {
                 line-height: 1.25;
                 font-size: 13px;
             }
+            body.game-page .shop-row-name .shop-row-effect {
+                display: block;
+                margin-top: 2px;
+                font-size: 9px;
+                line-height: 1.15;
+                color: #bfb28a;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
             body.game-page .shop-owned,
             body.game-page .shop-price {
                 font-size: 12px;
@@ -897,7 +962,7 @@ const Facilities = {
         const title = config.title || Facilities.shopTypeLabels[type] || '店';
         const rank = Math.max(1, Number(config.shopRank || config.rank || Facilities.getCurrentAreaShopRank()) || 1);
         const area = App?.data?.location?.area || 'WORLD';
-        App.data.currentShop = { type, title, rank, area, mode: 'home', openedAt: Date.now() };
+        App.data.currentShop = { type, title, rank, area, itemIds: Array.isArray(config.itemIds) ? config.itemIds.map(Number).filter(Number.isFinite) : null, mode: 'home', openedAt: Date.now() };
         Facilities.shopSelectedKey = null;
         Facilities.shopPendingTrade = null;
         App.changeScene('shop');
@@ -1081,12 +1146,29 @@ const Facilities = {
         `, true);
     },
 
-    getItemShopLineup: (rank = 1) => {
-        const allowedTypes = new Set(['HP回復', 'MP回復', '状態異常回復', '蘇生', '移動']);
-        const typeOrder = ['HP回復', 'MP回復', '状態異常回復', '蘇生', '移動', '換金'];
+    getItemShopLineup: (rank = 1, itemIds = null) => {
+        if (Array.isArray(itemIds) && itemIds.length) {
+            const order = new Map(itemIds.map((id, index) => [Number(id), index]));
+            return (DB.ITEMS || [])
+                .filter(item => order.has(Number(item.id)) && Number(item.price || 0) > 0)
+                .sort((a, b) => order.get(Number(a.id)) - order.get(Number(b.id)));
+        }
+        // Offensive and battle-control consumables are obtained from drops,
+        // treasure and medal exchange rather than ordinary item shops.
+        const excludedEffectKinds = new Set(['damage', 'buff', 'debuff']);
+        const allowedTypes = new Set([
+            'HP回復', 'MP回復', '状態異常回復', '蘇生', '移動',
+            '攻撃道具', '強化道具', '弱体道具', 'キャンプ'
+        ]);
+        const typeOrder = [
+            'HP回復', 'MP回復', '状態異常回復', '蘇生',
+            '攻撃道具', '強化道具', '弱体道具', 'キャンプ', '移動', '換金'
+        ];
         const maxRank = Math.max(1, Number(rank) || 1);
         const items = (DB.ITEMS || [])
             .filter(item => allowedTypes.has(item.type))
+            .filter(item => !excludedEffectKinds.has(String(item.effectKind || '').toLowerCase()))
+            .filter(item => item.shopAvailable !== false && item.medalOnly !== true)
             .filter(item => Number(item.price || 0) > 0)
             .filter(item => Number(item.rank || 1) <= maxRank);
 
@@ -1109,7 +1191,7 @@ const Facilities = {
         const cfg = App?.data?.currentShop || { rank: Facilities.getCurrentAreaShopRank() };
         const list = document.getElementById('shop-list') || document.getElementById('shop-scene-msg-content');
         if (!list) return;
-        const items = Facilities.getItemShopLineup(cfg.rank);
+        const items = Facilities.getItemShopLineup(cfg.rank, cfg.itemIds);
         if (items.length === 0) {
             list.innerHTML = `<div class="shop-empty-list">品切れです。</div>`;
             Facilities.setShopHelp('品物がありません。');
@@ -1210,6 +1292,7 @@ const Facilities = {
         Facilities.shopSelectedKey = key;
         Facilities.markShopSelectedRow(key);
         Facilities.showShopItemHelp(item.id);
+        if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('ui_shop_buy');
         Menu.msg(`${item.name}を ${qty.toLocaleString()}個 購入しました。`);
     },
 
@@ -1257,12 +1340,65 @@ const Facilities = {
         return data;
     },
 
+    getStatusEffectLabel: (key) => {
+        const labels = {
+            Poison: '毒', ToxicPoison: '猛毒', Shock: '感電', Fear: '怯え',
+            Debuff: '弱体', InstantDeath: '即死', Seal: '封印',
+            SkillSeal: '特技封印', SpellSeal: '呪文封印', HealSeal: '回復封印'
+        };
+        return (typeof Battle !== 'undefined' && Battle.statNames && Battle.statNames[key]) || labels[key] || key;
+    },
+
+    getEquipDataLabel: (key) => {
+        const labels = { hp: 'HP', mp: 'MP', atk: '攻', def: '守', mag: '魔', mdef: '魔防', spd: '速', hit: '命中', eva: '回避', cri: '会心', finDmg: '与ダメ', finRed: '被ダメ' };
+        if (labels[key]) return labels[key];
+        const rule = (typeof DB !== 'undefined' && Array.isArray(DB.OPT_RULES)) ? DB.OPT_RULES.find(r => r.key === key) : null;
+        if (rule?.name) return rule.name;
+        if (key.startsWith('attack_')) {
+            const ailment = key.replace('attack_', '');
+            const label = Facilities.getStatusEffectLabel(ailment);
+            return `攻撃時${label}`;
+        }
+        if (key.startsWith('resists_')) {
+            const ailment = key.replace('resists_', '');
+            const label = Facilities.getStatusEffectLabel(ailment);
+            return `${label}耐性`;
+        }
+        return key;
+    },
+
+    getEquipTraitsSummary: (traits = []) => {
+        if (!Array.isArray(traits) || traits.length === 0) return '';
+        const parts = traits.map(t => {
+            const traitId = Number(t?.id ?? t);
+            const lv = Number(t?.level || t?.lv || 1);
+            const master = (typeof PassiveSkill !== 'undefined' && PassiveSkill.MASTER) ? PassiveSkill.MASTER[traitId] : null;
+            return `${master?.name || `特性${traitId}`}Lv${Number.isFinite(lv) ? lv : 1}`;
+        }).filter(Boolean);
+        return parts.length ? `特性:${parts.join('・')}` : '';
+    },
+
     getEquipBaseSummary: (base, plus = 2) => {
-        const labels = { hp: 'HP', mp: 'MP', atk: '攻', def: '守', mag: '魔', mdef: '魔防', spd: '速', hit: '命中', eva: '回避', cri: '会心' };
         const data = Facilities.getBaseEquipDataForPlus(base, plus);
-        const parts = Object.entries(data || {})
-            .filter(([, v]) => typeof v === 'number' && Number(v) !== 0)
-            .map(([k, v]) => `${labels[k] || k}${v > 0 ? '+' : ''}${v}`);
+        const signed = v => `${v > 0 ? '+' : ''}${v}`;
+        const parts = [];
+        for (const [k, v] of Object.entries(data || {})) {
+            if (typeof v !== 'number' || Number(v) === 0) continue;
+            if (k.startsWith('attack_')) {
+                const ailment = k.replace('attack_', '');
+                const label = Facilities.getStatusEffectLabel(ailment);
+                parts.push(`攻撃時${Math.abs(v)}%で${label}`);
+            } else if (k.startsWith('resists_')) {
+                const ailment = k.replace('resists_', '');
+                const label = Facilities.getStatusEffectLabel(ailment);
+                parts.push(`${label}耐${signed(v)}%`);
+            } else {
+                const unit = ['hit', 'eva', 'cri', 'finDmg', 'finRed'].includes(k) ? '%' : '';
+                parts.push(`${Facilities.getEquipDataLabel(k)}${signed(v)}${unit}`);
+            }
+        }
+        const traitSummary = Facilities.getEquipTraitsSummary(base?.traits || []);
+        if (traitSummary) parts.push(traitSummary);
         return parts.length ? parts.join('　') : '特殊効果なし';
     },
 
@@ -1279,9 +1415,10 @@ const Facilities = {
         list.innerHTML = Facilities.renderShopColumnHeader('種別', '名前', '買値', 'equip') + lineup.map((base) => {
             const cost = Facilities.getEquipShopPrice(base);
             const key = `buy-equip-${Number(base.eid)}`;
+            const effectSummary = Facilities.getEquipBaseSummary(base, 0);
             return `<button class="shop-row equip" data-shop-key="${Facilities.escapeAttr(key)}" onclick="Facilities.selectShopBuyEquip(${Number(base.eid)})" onmouseenter="Facilities.showShopEquipHelp(${Number(base.eid)})" onfocus="Facilities.showShopEquipHelp(${Number(base.eid)})">
                 <span class="shop-type-pill">${Facilities.escapeAttr(Facilities.getEquipShopCategory(base))}</span>
-                <span class="shop-row-name">${Facilities.escapeAttr(base.name)}</span>
+                <span class="shop-row-name">${Facilities.escapeAttr(base.name)}<span class="shop-row-effect">${Facilities.escapeAttr(effectSummary)}</span></span>
                 <span class="shop-price">${cost.toLocaleString()} G</span>
             </button>`;
         }).join('');
@@ -1432,6 +1569,7 @@ const Facilities = {
         Facilities.shopSelectedKey = key;
         Facilities.markShopSelectedRow(key);
         Facilities.showShopEquipHelp(base.eid);
+        if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('ui_shop_buy');
 
         const detailHtml = (typeof Menu !== 'undefined' && typeof Menu.getEquipDetailHTML === 'function')
             ? Menu.getEquipDetailHTML(purchased, true)
@@ -1627,6 +1765,7 @@ const Facilities = {
         Facilities.updateShopGoldDisplay();
         Facilities.renderShopSellList();
         Facilities.setShopHelp('売却しました。');
+        if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('ui_shop_sell');
         Menu.msg(`${total.toLocaleString()}G 獲得しました。`);
     },
 
@@ -1692,6 +1831,7 @@ const Facilities = {
         Facilities.updateShopGoldDisplay();
         Facilities.renderShopSellList();
         Facilities.setShopHelp('売却しました。');
+        if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('ui_shop_sell');
         Menu.msg(`${price.toLocaleString()}G 獲得しました。`);
     },
 

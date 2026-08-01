@@ -42,8 +42,13 @@ const MenuSkills = {
         const list = document.getElementById('skill-list');
         list.innerHTML = '';
         const c = App.getChar(MenuSkills.selectedCharUid);
+        if (App.ensureCharacterBattleConfig) App.ensureCharacterBattleConfig(c);
         const player = new Player(c);
-        const skills = player.skills.filter(s => s.type.includes('回復') || s.type.includes('蘇生'));
+        const hiddenIds = new Set((c.config?.hiddenSkills || []).map(id => Number(id)));
+        const skills = player.skills.filter(s =>
+            (s.type.includes('回復') || s.type.includes('蘇生')) &&
+            !hiddenIds.has(Number(s.id))
+        ).sort(window.PRISMA_SKILL_ORDER?.compareById || ((a, b) => Number(a.id || 0) - Number(b.id || 0)));
 
         if (skills.length === 0) {
             list.innerHTML = '<div style="padding:10px; color:#888;">使用可能なスキルがありません</div>';
@@ -149,6 +154,7 @@ const MenuSkills = {
             if (effected) {
                 actorData.currentMp -= sk.mp;
                 App.save();
+                if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('ui_skill_heal_revive');
                 Menu.msg(`${sk.name}を使用した！`, () => {
                     // 全体スキルの後はスキル一覧へ、単体はターゲット一覧を更新
                     if (sk.target === '全体') MenuSkills.renderSkillList();
