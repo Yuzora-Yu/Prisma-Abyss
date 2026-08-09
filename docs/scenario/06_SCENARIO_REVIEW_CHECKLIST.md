@@ -94,7 +94,19 @@ Notes:
 Score:
 Notes:
 
-### 9. Implementation readiness
+### 9. Player interpretation / information boundary
+
+- 実装条件や開発者の意図を、システム文が代わりに説明していないか。
+- 見れば分かることを文章で重ねていないか。
+- 文章を一つ消した方が、プレイヤーが考える余地が生まれないか。
+- キャラクター全員が同じ理解速度・正確さで状況を説明していないか。
+- 失敗、寄り道、強敵、偶然の発見を「想定外だから」という理由だけで潰していないか。
+- 沈黙、配置、敵の挙動、環境変化で伝えられる情報を文章へ逃がしていないか。
+
+Score:
+Notes:
+
+### 10. Implementation readiness
 
 - script key が明確か。
 - map event が明確か。
@@ -123,6 +135,7 @@ Date:
 - Foreshadowing subtlety:
 - Flag and party awareness:
 - Existing dialogue handling:
+- Player interpretation / information boundary:
 - Implementation readiness:
 
 ### Required fixes before implementation

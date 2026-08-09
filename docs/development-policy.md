@@ -12,6 +12,18 @@ The current non-negotiable directives are recorded in `docs/CURRENT_PRODUCT_DIRE
 
 Opening asset delivery is staged: before play begins, preload Lumina Village, the opening Jelly battle, and the complete pre-opening first-cave battle set (map tiles, regular enemies, boss, and field/dungeon battle backgrounds). Play the paper-theater opening after the first-cave clear report `PROLOGUE3` advances the save to `storyStep: 2 / subStep: 1`, then present the full-image download choice.
 
+## ゲームとしての体験設計
+
+ゲーム内の文章は、実装状態や設計意図を説明するための表示領域ではない。進行条件、内部フラグ、一時編成、数値補正、制作上の分類はコードと内部文書で管理し、プレイヤーには結果と体験だけを渡す。
+
+すべての情報を文章や一枚絵で説明しきることを目標にしない。歩いて気づく、戦って分かる、失敗して覚える、後から意味が変わる、人物ごとに受け取り方が違う、といった余白をゲーム体験として扱う。沈黙、間、配置、敵の行動、壊れた物、行けない道も情報である。
+
+進行不能、セーブ破損、意図しない勝敗処理のような破壊的な不具合は防ぐ。一方で、任意探索中の強敵、珍しい遭遇、想定より早い成長、プレイヤー自身の勘違いや発見まで均一化しない。安全性と予定調和を同一視しない。
+
+登場人物は均一な理解力を持たない。見落とし、思い込み、感情的判断、土地ごとの偏見、誤った噂を許し、必要がない限り客観ナレーションで即座に正解へ訂正しない。
+
+システム文を追加する前に「その文章を消しても、画面・操作・配置・音・人物の反応で伝わるか」を確認する。伝わるなら文章を足さない。
+
 ## Core Intent
 
 The game has become feature-rich, but the next direction is to reorganize it as an RPG where features open naturally through story progression.

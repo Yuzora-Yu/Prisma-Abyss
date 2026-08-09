@@ -1468,7 +1468,7 @@ const Dungeon = {
                     return block('大灯台の第一結界源は砕けたが、海底火山の第二結界源がまだ残っている。', 'locked_light_palace_volcano');
                 }
                 if (!atLeast(7, 0) && flags.lightPalaceFlashbackCompleted !== true) {
-                    return block('結界は消えた。だが、光の宮殿へ向かう前に雷の要塞でクロードの話を聞く必要がある。', 'locked_light_palace_recall');
+                    return block('結界は消えている。それでも、クロードの言葉が引っかかる。先に雷の要塞へ戻ろう。', 'locked_light_palace_recall');
                 }
                 return ok();
             case 'GALVANIA_CAVE': {

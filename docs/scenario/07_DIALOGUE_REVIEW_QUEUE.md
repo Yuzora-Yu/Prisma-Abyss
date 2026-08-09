@@ -714,3 +714,58 @@ Created: 2026-08-10
 ### Handling in Phase 7A
 進行に必要な最短会話のみ実装する。
 アルス／レイラ／ルーナの長い感情会話、ゼノン側の真意説明は後の章別Dialogue Polishへ送る。
+
+## DR-20260810-legacy-opening-retry-meta
+
+Status: later  
+Created: 2026-08-10
+
+### Target
+- file: `story.js`
+- script key: `BATTLE_RETRY_TALK`
+- legacy event: `game_start_retry`
+- area: 旧開幕ルート
+
+### Current implemented text
+```text
+？？？？:
+「[N:301]よ、まだ倒れてはなりません。
+私に残された最後の権能をもって、今一度、深淵を打ち倒す力を授けます…」
+
+システム:
+「不思議なちからで体力が全回復し、秘められた力が開放された！！」
+```
+
+### Concern
+- 現在の5年前プロローグ導線では使用していない旧イベントだが、再利用された場合に「加護の意味・内部強化」をその場で説明しすぎる。
+- 新プロローグの全滅復帰は `PROLOGUE_LUCION_RECOVER` で現象だけを見せる方針と一致しない。
+- 旧ルート自体が dormant なので、今回の品質修正では削除・改稿しない。
+
+### Codex recommendation
+- current routeでは未使用のまま維持。
+- 旧 `game_start_retry` を再接続する場合は、その時点で削除または新しい現象描写へ置換する。
+
+### User decision
+- decision: later
+
+## DR-20260810-light-palace-legacy-exposition
+
+Status: pending  
+Created: 2026-08-10
+
+### Target
+- file: `story.js`
+- script key: `LIGHT_PALACE_LEILA_RECOVERY_JOIN` ほか旧光宮殿会話
+- area: 光の宮殿
+
+### Concern
+- 旧実装には、闇のプリズムの所在、魔王城への道、ヴェルドとの関係、同行理由を一つの会話で連続説明する箇所が残る。
+- 新版の「人物が知っていることを段階的に見せる」「プレイヤーが後から意味を繋ぐ」方針と衝突する可能性が高い。
+- 現在のPhase 6E新ルートは別骨格を使用しているため、今すぐ大量置換する必要はない。
+
+### Codex recommendation
+- 現行文をlegacy sourceとして保持。
+- 光宮殿の長台詞Polish時に、情報を人物・場所・再訪会話へ分散する案をユーザーへ提示する。
+
+### User decision
+- decision: undecided

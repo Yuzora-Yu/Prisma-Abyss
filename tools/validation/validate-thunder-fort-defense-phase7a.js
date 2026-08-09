@@ -44,7 +44,7 @@ assert(wave2Boss?.winEventId === 'thunder_fort_luna_awakening', 'Defense wave 2 
 const awake = events.thunder_fort_luna_awakening?.actions || [];
 const awakeText = (scripts.THUNDER_FORT_LUNA_AWAKENING_SKELETON || []).map(line => line.text || '').join('\n');
 assert(awakeText.includes('冒険者様、助けてくださってありがとうございます。'), 'Canonical Luna awakening line is missing.');
-assert(awakeText.includes('五年前より前の記憶を失っている'), 'Luna pre-five-year memory loss is not explicitly revealed.');
+assert(awakeText.includes('ルーナの瞳に、幼馴染を見る色はない') && !awakeText.includes('五年前より前の記憶を失っている'), 'Luna memory loss should be shown by her reaction instead of certified by narrator exposition.');
 assert(awakeText.includes('結晶樹') && awakeText.includes('レオン'), 'Crystal Tree motivation must include both Luna and Leon.');
 const awakeDump = JSON.stringify(awake);
 for (const flag of ['thunderFortDemonAssaultCleared','lunaAwakenedAtThunderFort','lunaMemoryLossRevealed','crystalTreeMainRouteOpened']) {
@@ -62,7 +62,7 @@ const assaultText = [
 ].map(line => line.text || '').join('\n');
 assert(assaultText.includes('救護') && assaultText.includes('聖女を渡せ'), 'Assault dialogue does not communicate the apparent abduction objective.');
 assert(!assaultText.includes('ゼノン') && !assaultText.includes('保護するため'), 'Assault dialogue reveals the Demon Army true motive too early.');
-assert(assaultText.includes('市民を追わず') || assaultText.includes('商店や避難所を無視'), 'Assault behavior does not show civilians are not the primary target.');
+assert(assaultText.includes('商店の窓には手をつけた跡すらない') || assaultText.includes('脇を逃げる市民には目もくれず'), 'Assault behavior does not show civilians are not the primary target.');
 
 assert(thunder.entryEventId === 'thunder_fort_demon_assault_arrival', 'Thunder Fort arrival event is not connected to floor 1.');
 assert(thunder.entryEventFlag === 'thunderFortDemonAssaultArrivalSeen', 'Thunder Fort arrival one-shot flag missing.');

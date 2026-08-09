@@ -26,7 +26,7 @@ assert(story.match(/"endAfterTurns": 5/g)?.length >= 2 && story.match(/"forcedLo
 assert(story.includes('"party": [ {"charId":204}, {"charId":305,"initialLevel":46}, {"charId":304,"initialLevel":47,"skills":[716]} ]'), 'post-Veld Layla/Leon/Claude party missing');
 assert(story.includes('{ "type": "HEAL" }'), 'post-Veld recovery before checkpoint missing');
 assert(story.includes('"lightPalaceFlashbackCompleted"'), 'flashback completion flag missing');
-assert(story.includes('光と闇が融合することなく、交互に高速循環する'), 'Flash Bomb circulation/not-integration explanation missing');
+assert(story.includes('白。黒。白。黒。焼きつくような明滅'), 'Flash Bomb event should show the alternating flash as a perceived phenomenon.');
 assert(story.includes('レオンは、ルーナを抱えたクロードごと結界の外へ投げ飛ばした'), 'Leon throws Claude+Luna escape beat missing');
 
 assert(skills.includes('"id": 716') && skills.includes('"name": "フラッシュボム"'), 'Flash Bomb skill missing');

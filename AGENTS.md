@@ -55,6 +55,16 @@ When an existing line seems suspicious, weak, inconsistent, over-explanatory, sp
 
 The user decides whether a legacy line becomes canon, gets revised, is rewritten, or is kept for now.
 
+## Game craft and player-information boundary
+
+- A game is not an application whose quality is measured by explaining every state correctly. Preserve room for discovery, misunderstanding, failure, surprise, and player interpretation.
+- Never copy internal planning language, implementation reasons, state-machine names, progression gates, or developer commentary into player-facing narration. Enforce constraints in code first.
+- Before adding system narration, ask whether movement, staging, enemy behavior, sound, silence, UI state, or a character reaction can carry the information instead. If yes, prefer the experience over the explanation.
+- Do not immediately explain unusual behavior after showing it. Let the player notice patterns and form an interpretation when the story can support that ambiguity.
+- Characters may misunderstand, hesitate, focus on different details, or be emotionally wrong. Do not normalize every character into an equally informed guide.
+- Prevent destructive bugs and softlocks, but do not automatically remove every unexpected or difficult encounter. Some unevenness, optional danger, and accidental discovery are valid game texture when intentional and recoverable.
+- Internal development documents should be explicit. Player-facing text should not expose that explicitness merely because the implementation needs it.
+
 ## Dialogue rules
 
 - There is no fixed character-count limit for dialogue lines.

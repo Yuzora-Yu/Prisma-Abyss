@@ -11416,7 +11416,6 @@ const FIXED_DUNGEON_MAPS = {
                                 },
                                 "action": {
                                     "label": "宮殿での出来事を聞く",
-                                    "log": "クロードは光の宮殿で起きたことを順に話そうとしている。",
                                     "type": "storyEvent",
                                     "eventId": "light_palace_flashback_briefing"
                                 }
@@ -11429,8 +11428,7 @@ const FIXED_DUNGEON_MAPS = {
                                     "missingFlag": "lightPalaceFlashbackCompleted"
                                 },
                                 "action": {
-                                    "label": "宮殿の回想を再開する",
-                                    "log": "クロードの話を最初から思い返す。",
+                                    "label": "宮殿での話を聞く",
                                     "type": "storyEvent",
                                     "eventId": "light_palace_flashback_start"
                                 }
@@ -12835,8 +12833,7 @@ const FIXED_DUNGEON_MAPS = {
                         x: 17, y: 11, type: "storyEvent",
                         eventId: "light_palace_final_locked_prison",
                         missingFlags: ["lightPalacePrisonRescueSecured", "lightPalaceFlashbackActive", "alanBetrayedLightPalace"],
-                        label: "祭壇の奥を確認する",
-                        log: "祭壇へ進む前に、地下牢の生存者を確認する必要がある。"
+                        label: "祭壇の奥を確認する"
                     },
                     {
                         x: 17, y: 8, type: "elementalTrialPrism", element: "光",
