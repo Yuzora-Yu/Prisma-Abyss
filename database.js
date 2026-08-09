@@ -321,7 +321,7 @@ const INITIAL_DATA_TEMPLATE = {
     },
     transportMode: null, // null / "boat" / "flying"
     mapReturnPoint: null,
-    system: { storyStateSchemaVersion: 7 },
+    system: { storyStateSchemaVersion: 8 },
     progress: { 
         floor: 0,
         storyStep: 0,        // ストーリー進行フラグ
@@ -333,6 +333,7 @@ const INITIAL_DATA_TEMPLATE = {
             thunderFortState: 0,
             underseaVolcanoState: 0,
             lightPalaceState: 0,
+            crystalTreeState: 0,
             lunaPublicIdentityKnown: false,
             lunaMemoryStage: 0,
             leonJosephRelationStage: 0,

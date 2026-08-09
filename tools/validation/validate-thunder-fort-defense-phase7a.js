@@ -86,12 +86,12 @@ assert(butler?.name === 'ダークバトラー' && Number(butler.rank) === 66, '
 const crystalBrief = events.water_city_crystal_tree_briefing?.actions || [];
 const crystalDump = JSON.stringify(crystalBrief);
 assert(crystalDump.includes('crystalTreeRouteBriefed') && crystalDump.includes('minervaCrystalTreeLeadKnown'), 'Sophia Crystal Tree briefing flags are missing.');
-assert(crystalDump.includes('\"type\":\"SUB\",\"value\":6'), 'Sophia briefing must move to 7-6.');
+assert(crystalDump.includes('\"type\":\"SUB\",\"value\":7'), 'Sophia briefing must hand off from Phase7A to the implemented Crystal Tree route.');
 const waterCity = context.FIXED_MAPS?.WATER_CITY;
 const sophia = (waterCity?.mapActors || []).find(a => a.actorId === 'sophia_water_city');
 assert(sophia?.states?.some(state => state.stateId === 'crystal_tree_main_route' && state.action?.eventId === 'water_city_crystal_tree_briefing'), 'Sophia does not expose the mandatory Crystal Tree briefing.');
 const briefingText=(scripts.WATER_CITY_CRYSTAL_TREE_BRIEFING || []).map(line => line.text || '').join('\n');
-assert(briefingText.includes('ミネルバ') && briefingText.includes('六属性') && briefingText.includes('結晶樹'), 'Sophia briefing lacks the canonical Minerva / circulation information.');
+assert(briefingText.includes('ミネルバ') && briefingText.includes('結晶樹') && briefingText.includes('水門'), 'Sophia briefing must identify Minerva and the usable route without dumping later theory.');
 
 assert((news.match(/date: "2026\/08\/10"/g) || []).length === 1, 'NEWS_DATA must keep one 2026/08/10 record.');
 assert(news.includes('雷の要塞の魔王軍防衛戦') && news.includes('ルーナ覚醒'), '2026/08/10 news does not mention Phase 7A player-facing changes.');

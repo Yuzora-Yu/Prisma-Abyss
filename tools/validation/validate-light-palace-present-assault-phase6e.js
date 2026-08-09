@@ -12,8 +12,10 @@ const story = read('story.js');
 const map = read('map.js');
 const news = read('news.js');
 
-assert(main.includes('storyStateSchemaVersion: 7'), 'main story schema version 7 missing');
-assert(database.includes('storyStateSchemaVersion: 7'), 'database story schema version 7 missing');
+const mainSchema = Number((main.match(/storyStateSchemaVersion:\s*(\d+)/) || [])[1] || 0);
+assert(mainSchema >= 7, 'main story schema must remain at least v7');
+const databaseSchema = Number((database.match(/storyStateSchemaVersion:\s*(\d+)/) || [])[1] || 0);
+assert(databaseSchema >= 7, 'database story schema must remain at least v7');
 assert(main.includes('lightPalaceState: 0') && database.includes('lightPalaceState: 0'), 'lightPalaceState defaults missing');
 assert(main.includes('reconcileLightPalaceWorldState'), 'Light Palace save reconciliation missing');
 assert(main.includes('flags.lightPalaceCleared === true || storyStep >= 8'), 'old cleared-save compatibility missing');

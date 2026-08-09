@@ -827,7 +827,7 @@ const App = {
     },
 
     // --- 新シナリオ共通状態 (WorldState / StoryState) ---
-    storyStateSchemaVersion: 7,
+    storyStateSchemaVersion: 8,
 
     getDefaultWorldState: () => ({
         prologueStage: 0,
@@ -836,6 +836,7 @@ const App = {
         thunderFortState: 0, // 0:未到達 1:機械暴走 2:要塞確保・大灯台期 3:大灯台後・海底火山期 4:海底火山後 5:魔王軍急襲警戒 6:防衛中 7:防衛成功/ルーナ覚醒後
         underseaVolcanoState: 0, // 0:未発見 1:位置判明 2:侵入 3:研究区画 4:最奥 5:攻略済み
         lightPalaceState: 0, // 0:攻略前 1:回想完了 2:現在攻略中 3:地下牢確認 4:祭壇戦後/アラン離脱 5:宮殿解放
+        crystalTreeState: 0, // 0:手掛かり前 1:行先判明 2:秘跡到達 3:ミネルバ接触 4:根源治療/防衛戦 5:攻略済み
         lunaPublicIdentityKnown: false,
         lunaMemoryStage: 0,
         leonJosephRelationStage: 0,
@@ -926,6 +927,25 @@ const App = {
         else if (flags.lightPalaceFlashbackCompleted === true) next = Math.max(next, 1);
 
         worldState.lightPalaceState = next;
+        return next;
+    },
+
+    reconcileCrystalTreeWorldState: (data = App.data) => {
+        const worldState = App.ensureWorldState(data);
+        if (!worldState) return null;
+        if (!data.progress.flags || typeof data.progress.flags !== 'object') data.progress.flags = {};
+        const flags = data.progress.flags;
+        const current = Math.max(0, Math.floor(Number(worldState.crystalTreeState || 0)));
+        let next = current;
+
+        // 結晶樹の途中段階は独立stateで保持し、既存/将来flagsから安全に復元する。
+        if (flags.crystalTreeCleared === true) next = Math.max(next, 5);
+        else if (flags.crystalTreeRootRitualStarted === true || flags.crystalTreeDefenseStarted === true) next = Math.max(next, 4);
+        else if (flags.crystalTreeMinervaMet === true) next = Math.max(next, 3);
+        else if (flags.crystalTreeEntered === true) next = Math.max(next, 2);
+        else if (flags.crystalTreeRouteBriefed === true || flags.minervaCrystalTreeLeadKnown === true) next = Math.max(next, 1);
+
+        worldState.crystalTreeState = next;
         return next;
     },
 
@@ -1751,7 +1771,7 @@ const App = {
                 abyssFloorSchemaVersion: 2,
                 monsterAllySkillPointSchemaVersion: 1,
                 monsterAllyGrowthSchemaVersion: 1,
-                storyStateSchemaVersion: 7
+                storyStateSchemaVersion: 8
             },
             progress: {
                 ...templateProgress,
@@ -8387,6 +8407,7 @@ load: () => {
         App.reconcileThunderFortWorldState(data);
         App.reconcileUnderseaVolcanoWorldState(data);
         App.reconcileLightPalaceWorldState(data);
+        App.reconcileCrystalTreeWorldState(data);
         App.ensureStoryCharacterStates(data);
 
         // 旧開発版では焼け焦げたペンダントがNEW GAME初期所持に混入していた。

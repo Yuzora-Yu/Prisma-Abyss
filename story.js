@@ -48,6 +48,11 @@ const STORY_MANAGER_DATA = {
         "7-4": "バロンたちと合流し、救護区画へ進む魔王軍を退けよう",
         "7-5": "ルーナとレオンを救う手掛かりを求め、水上都市のソフィアを訪ねよう",
         "7-6": "ソフィアから聞いたミネルバと、結晶樹の秘跡への道を探ろう",
+        "7-7": "水上都市の北側にある古い水門を調べよう",
+        "7-8": "結晶樹の奥へ進み、ミネルバを探そう",
+        "7-9": "結晶樹の根元へ向かおう",
+        "7-10": "結晶樹を守り、ルーナとレオンの治療を終えよう",
+        "7-11": "根元に残ったミネルバと話そう",
         "8-0": "魔王城へ向かい、闇のプリズムの真実を確かめよう",
         "9-0": "世界の中心に開いた深淵への亀裂を調べよう",
         "10-0": "深淵の魔窟の先に広がる異界を探索しよう",
@@ -2740,8 +2745,33 @@ const STORY_MANAGER_DATA = {
                 { "name": "システム", "text": "ルーナは目を閉じたまま、浅い呼吸を繰り返している。" }
         ],
         "WATER_CITY_CRYSTAL_TREE_BRIEFING": [
-                { "name": "ソフィア", "charId": 202, "text": "結晶樹の秘跡なら、プリズム崩壊と六属性の循環を調べている知人がいます。ミネルバという研究者です。" },
-                { "name": "ソフィア", "charId": 202, "text": "ルーナさんとレオンさん、二人とも普通の治療では届かないなら、結晶樹の根源を知る彼女を訪ねる価値があります。" },
+                { "name": "ソフィア", "charId": 202, "text": "ミネルバなら、結晶樹の秘跡にいます。根の流れを調べると言って、また一人で潜っていきました。" },
+                { "name": "ソフィア", "charId": 202, "text": "北の古い水門を使ってください。あの先なら、彼女の残した目印が見つかるはずです。" }
+        ],
+        "CRYSTAL_TREE_ARRIVAL": [
+                { "name": "システム", "text": "水音が遠のき、代わりに低い脈動だけが足元から伝わってくる。" }
+        ],
+        "CRYSTAL_TREE_MINERVA_MEETING": [
+                { "name": "ミネルバ", "charId": 206, "text": "……来た。ソフィア、やっぱり人を寄越したんだ。" },
+                { "name": "ケイト", "charId": 104, "text": "あなたがミネルバさん？　レオンさんと、ルーナさんを診てほしいんです。" },
+                { "name": "ミネルバ", "charId": 206, "text": "先にルーナ。脈が樹の根と喧嘩してる。そこに座って。" },
+                { "name": "ルーナ", "charId": 401, "text": "……はい。" },
+                { "name": "ミネルバ", "charId": 206, "text": "歩けるなら、自分で歩いて。根元まで行くよ。" }
+        ],
+        "CRYSTAL_TREE_ROOT_RITUAL": [
+                { "name": "ミネルバ", "charId": 206, "text": "レオンをそこへ。ルーナは私の手を離さないで。" },
+                { "name": "システム", "text": "根の奥で、何かが軋む。少し遅れて、複数の足音が近づいてきた。" },
+                { "name": "魔人兵長", "text": "聖女を渡せ。教団にも、お前たちにも預けられん。" },
+                { "name": "シャオ", "charId": 301, "text": "またそれか。理由も言わずに連れていけると思うな。" },
+                { "name": "魔人兵長", "text": "光をここまで穢した者が、我らだと本気で思っているのか。" }
+        ],
+        "CRYSTAL_TREE_DEFENSE_CLEAR": [
+                { "name": "システム", "text": "魔族たちは深追いせず、根の裂け目の向こうへ退いていった。" },
+                { "name": "ミネルバ", "charId": 206, "text": "……続ける。今止めた方が危ない。" },
+                { "name": "システム", "text": "しばらくして、レオンの呼吸が深くなる。ルーナの指先にも、わずかに温度が戻った。" }
+        ],
+        "CRYSTAL_TREE_POST_CLEAR_CHECKPOINT": [
+                { "name": "ミネルバ", "charId": 206, "text": "まだ根の中に残ってるものがある。……少し、考えさせて。" }
         ],
         "LIGHT_PALACE_FINAL_ENCOUNTER": [
                 {
@@ -4607,10 +4637,95 @@ const STORY_MANAGER_DATA = {
                                         { "type": "CONV", "value": "WATER_CITY_CRYSTAL_TREE_BRIEFING" },
                                         { "type": "FLAG", "key": "crystalTreeRouteBriefed", "refreshField": true },
                                         { "type": "FLAG", "key": "minervaCrystalTreeLeadKnown" },
-                                        { "type": "SUB", "value": 6 },
-                                        { "type": "LOG", "value": "ミネルバと結晶樹の秘跡への道を探ろう。" }
+                                        { "type": "WORLD_STATE", "key": "crystalTreeState", "value": 1 },
+                                        { "type": "SUB", "value": 7 }
                                 ]
                         }
+                ],
+                "winActions": []
+        },
+        "crystal_tree_route_departure": {
+                "actions": [
+                        { "type": "START_FIXED_MAP", "value": "CRYSTAL_TREE", "targetX": 14, "targetY": 18 }
+                ],
+                "winActions": []
+        },
+        "crystal_tree_arrival": {
+                "actions": [
+                        {
+                                "type": "IF_FLAG",
+                                "key": "crystalTreeEntered",
+                                "then": [],
+                                "else": [
+                                        { "type": "CONV", "value": "CRYSTAL_TREE_ARRIVAL" },
+                                        { "type": "FLAG", "key": "crystalTreeEntered", "refreshField": true },
+                                        { "type": "WORLD_STATE", "key": "crystalTreeState", "value": 2 },
+                                        { "type": "SUB", "value": 8 }
+                                ]
+                        }
+                ],
+                "winActions": []
+        },
+        "crystal_tree_minerva_meeting": {
+                "actions": [
+                        {
+                                "type": "IF_FLAG",
+                                "key": "crystalTreeMinervaMet",
+                                "then": [],
+                                "else": [
+                                        { "type": "CONV", "value": "CRYSTAL_TREE_MINERVA_MEETING" },
+                                        { "type": "ALLY", "charId": 401, "initialLevel": 1, "expMultiplierPct": 2000, "silent": true },
+                                        { "type": "FLAG", "key": "lunaFormalJoined", "refreshField": true },
+                                        { "type": "WORLD_STATE", "key": "crystalTreeState", "value": 3 },
+                                        { "type": "SUB", "value": 9 },
+                                        { "type": "FLAG", "key": "crystalTreeMinervaMet", "refreshField": true }
+                                ]
+                        }
+                ],
+                "winActions": []
+        },
+        "crystal_tree_root_ritual": {
+                "actions": [
+                        { "type": "FLAG", "key": "crystalTreeRootRitualStarted" },
+                        { "type": "FLAG", "key": "crystalTreeDefenseStarted" },
+                        { "type": "WORLD_STATE", "key": "crystalTreeState", "value": 4 },
+                        { "type": "SUB", "value": 10 },
+                        { "type": "CONV", "value": "CRYSTAL_TREE_ROOT_RITUAL" },
+                        {
+                                "type": "BOSS",
+                                "value": [652, 755, 652],
+                                "battleBg": "battle_bg_forest",
+                                "eventBattleRules": { "noRecruit": true, "noQuestProgress": true },
+                                "winEventId": "crystal_tree_defense_clear"
+                        }
+                ],
+                "winActions": []
+        },
+        "crystal_tree_defense_clear": {
+                "actions": [
+                        {
+                                "type": "IF_FLAG",
+                                "key": "crystalTreeCleared",
+                                "then": [],
+                                "else": [
+                                        { "type": "CONV", "value": "CRYSTAL_TREE_DEFENSE_CLEAR" },
+                                        { "type": "STORY_EXP", "charId": 401, "amount": 300000, "rewardKey": "luna_crystal_tree_300k" },
+                                        { "type": "SET_EXP_MULTIPLIER", "charId": 401, "pct": 1800 },
+                                        { "type": "WORLD_STATE", "key": "lunaMemoryStage", "value": 2 },
+                                        { "type": "FLAG", "key": "lunaCrystalTreeStabilized" },
+                                        { "type": "FLAG", "key": "leonCrystalTreeTreated" },
+                                        { "type": "WORLD_STATE", "key": "crystalTreeState", "value": 5 },
+                                        { "type": "SUB", "value": 11 },
+                                        { "type": "FLAG", "key": "crystalTreeDefenseCleared", "refreshField": true },
+                                        { "type": "FLAG", "key": "crystalTreeCleared", "refreshField": true }
+                                ]
+                        }
+                ],
+                "winActions": []
+        },
+        "crystal_tree_post_clear_checkpoint": {
+                "actions": [
+                        { "type": "CONV", "value": "CRYSTAL_TREE_POST_CLEAR_CHECKPOINT" }
                 ],
                 "winActions": []
         },

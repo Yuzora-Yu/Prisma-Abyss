@@ -2063,6 +2063,35 @@ const StoryManager = {
                 if (action.refreshField === true) this.refreshFieldAfterStoryStateChange();
             }
         }
+
+        if (action.type === 'STORY_EXP') {
+            const charId = Number(action.charId ?? action.value);
+            const amount = Math.max(0, Math.floor(Number(action.amount ?? action.exp) || 0));
+            const rewardKey = action.rewardKey ? String(action.rewardKey) : null;
+            if (!Number.isFinite(charId) || amount <= 0 || !rewardKey) {
+                throw new Error('STORY_EXPにはcharId / amount / rewardKeyが必要です。');
+            }
+            const result = App.grantStoryExp?.(charId, amount, rewardKey, {
+                save: !deferSave,
+                aggregateLevelUpLogs: action.aggregateLevelUpLogs !== false,
+                silent: action.silent === true
+            });
+            if (!result?.ok && result?.reason !== 'already_granted') {
+                throw new Error(`ストーリー経験値を付与できませんでした: ${rewardKey} (${result?.reason || 'unknown'})`);
+            }
+            if (action.refreshField === true) this.refreshFieldAfterStoryStateChange();
+        }
+
+        if (action.type === 'SET_EXP_MULTIPLIER') {
+            const charId = Number(action.charId ?? action.value);
+            const pct = Number(action.pct ?? action.multiplierPct ?? action.expMultiplierPct);
+            if (!Number.isFinite(charId) || !Number.isFinite(pct) || pct <= 0) {
+                throw new Error('SET_EXP_MULTIPLIERにはcharId / pctが必要です。');
+            }
+            if (!App.setCharacterExpRequirementMultiplierPct?.(charId, pct, { save: !deferSave })) {
+                throw new Error(`必要経験値倍率を設定できませんでした: charId=${charId}`);
+            }
+        }
         
         if (action.type === 'STEP') { 
             data.storyStep = action.value; 

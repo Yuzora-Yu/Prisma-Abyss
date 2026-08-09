@@ -1820,7 +1820,8 @@ const MAP_MASTER = Object.freeze({
     REES_MOUNTAIN_HUT: { id: "MAP000069", name: "リースの山小屋" },
     PROLOGUE_FINAL_ALTAR: { id: "MAP000070", name: "五年前・終焉の祭壇" },
     REXNOTE_ESTATE: { id: "MAP000071", name: "レクスノート邸" },
-    UNDERSEA_VOLCANO: { id: "MAP000072", name: "海底火山" }
+    UNDERSEA_VOLCANO: { id: "MAP000072", name: "海底火山" },
+    CRYSTAL_TREE: { id: "MAP000073", name: "結晶樹の秘跡" }
 });
 
 const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
@@ -1830,7 +1831,7 @@ const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
 
 const FIXED_AREA_MAP_KEYS = Object.freeze({
     PROLOGUE_WEST_HILL: "PROLOGUE_WEST_HILL", PROLOGUE_SOUTH_VILLAGE: "PROLOGUE_SOUTH_VILLAGE", PROLOGUE_NORTH_VILLAGE: "PROLOGUE_NORTH_VILLAGE",
-    REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO",
+    REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO", CRYSTAL_TREE: "CRYSTAL_TREE",
     START_VILLAGE: "START_VILLAGE", FIRE_VILLAGE: "FIRE_VILLAGE", WIND_VILLAGE: "WIND_VILLAGE", WATER_CITY: "WATER_CITY",
     ABYSS_FIELD: "ABYSS_FIELD", RUINED_SHRINE: "RUINED_SHRINE", TRIAL_ISLAND: "TRIAL_ISLAND", SUMMIT_TEMPLE: "SUMMIT_TEMPLE",
     START_CAVE: "START_CAVE", FOREST_WIND_HOLE: "FOREST_WIND_HOLE", IGNIS_VOLCANO: "IGNIS_VOLCANO",
@@ -5317,6 +5318,18 @@ const FIXED_MAPS = {
         ],
         "mapActions": [
             {
+                "x": 19,
+                "y": 4,
+                "label": "古い水門を調べる",
+                "type": "storyEvent",
+                "eventId": "crystal_tree_route_departure",
+                "requiredFlag": "crystalTreeRouteBriefed",
+                "imageKey": "overlay_dungeon_event",
+                "baseTile": "T",
+                "blocksMovement": false,
+                "suppressShadow": true
+            },
+            {
                 "x": 31,
                 "y": 3,
                 "label": "錬金所に入る",
@@ -7029,6 +7042,114 @@ const FIXED_MAPS = {
         ],
         "mapId": "MAP000060",
         "floorId": "MAP000060-00",
+        "useHabitatEncounters": false
+    },
+    "CRYSTAL_TREE": {
+        "name": "結晶樹の秘跡",
+        "themeKey": "WATER_CITY",
+        "width": 29,
+        "height": 21,
+        "entryPoint": { "x": 14, "y": 18 },
+        "battleBg": "battle_bg_forest",
+        "randomEncounterDisabled": true,
+        "disableRandomEncounters": true,
+        "entryEventId": "crystal_tree_arrival",
+        "entryEventFlag": "crystalTreeEntered",
+        "entryEventConditions": { "requiredFlag": "crystalTreeRouteBriefed" },
+        "tiles": [
+            "WWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+            "WWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+            "WWWWWWWTTTTTTTTTTTTTTTWWWWWWW",
+            "WWWWWWWTTTTTTTTTTTTTTTWWWWWWW",
+            "WWWWWWWTTTTTTTTTTTTTTTWWWWWWW",
+            "WWWWWWWTTTTTTTTTTTTTTTWWWWWWW",
+            "WWWWWWWTTTTTTTTTTTTTTTWWWWWWW",
+            "WWWWWWWTTTTTTTTTTTTTTTWWWWWWW",
+            "WWWWWWWWWWWWTTTTTWWWWWWWWWWWW",
+            "WWWWWWTTTTTTTTTTTTTTTTTWWWWWW",
+            "WWWWWWTTTTTTTTTTTTTTTTTWWWWWW",
+            "WWWWWWTTTTTTTTTTTTTTTTTWWWWWW",
+            "WWWWWWTTTTTTTTTTTTTTTTTWWWWWW",
+            "WWWWWWTTTTTTTTTTTTTTTTTWWWWWW",
+            "WWWWWWTTTTTTTTTTTTTTTTTWWWWWW",
+            "WWWWWWWWWWWWWTTTWWWWWWWWWWWWW",
+            "WWWWWWWWWTTTTTTTTTTTWWWWWWWWW",
+            "WWWWWWWWWTTTTTTTTTTTWWWWWWWWW",
+            "WWWWWWWWWTTTTTTTTTTTWWWWWWWWW",
+            "WWWWWWWWWTTTTTTTTTTTWWWWWWWWW",
+            "WWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+        ],
+        "nextActorPlacementId": 2,
+        "mapActors": [
+            {
+                "placementId": 1,
+                "actorId": "minerva_crystal_tree",
+                "name": "ミネルバ",
+                "x": 14,
+                "y": 11,
+                "imageKey": "overlay_companion_minerva",
+                "states": [
+                    {
+                        "stateId": "first_meeting",
+                        "priority": 100,
+                        "when": {
+                            "requiredFlag": "crystalTreeEntered",
+                            "missingFlag": "crystalTreeMinervaMet"
+                        },
+                        "placement": { "x": 14, "y": 11 },
+                        "action": {
+                            "label": "ミネルバと話す",
+                            "type": "storyEvent",
+                            "eventId": "crystal_tree_minerva_meeting"
+                        }
+                    },
+                    {
+                        "stateId": "root_ritual",
+                        "priority": 90,
+                        "when": {
+                            "requiredFlag": "crystalTreeMinervaMet",
+                            "missingFlag": "crystalTreeDefenseCleared"
+                        },
+                        "placement": { "x": 14, "y": 6 },
+                        "action": {
+                            "label": "ミネルバに声をかける",
+                            "type": "storyEvent",
+                            "eventId": "crystal_tree_root_ritual"
+                        }
+                    },
+                    {
+                        "stateId": "after_defense",
+                        "priority": 80,
+                        "when": {
+                            "requiredFlag": "crystalTreeDefenseCleared"
+                        },
+                        "placement": { "x": 14, "y": 6 },
+                        "action": {
+                            "label": "ミネルバと話す",
+                            "type": "storyEvent",
+                            "eventId": "crystal_tree_post_clear_checkpoint"
+                        }
+                    }
+                ]
+            }
+        ],
+        "mapActions": [
+            {
+                "x": 14,
+                "y": 18,
+                "label": "古い水門へ戻る",
+                "type": "fixedMap",
+                "target": "WATER_CITY",
+                "targetX": 19,
+                "targetY": 4,
+                "imageKey": "overlay_dungeon_event",
+                "baseTile": "T",
+                "blocksMovement": false,
+                "suppressShadow": true
+            }
+        ],
+        "mapId": "MAP000073",
+        "floorId": "MAP000073-00",
         "useHabitatEncounters": false
     }
 };
