@@ -1,0 +1,26 @@
+const fs = require('fs');
+const vm = require('vm');
+function assert(c,m){ if(!c) throw new Error(m); }
+const context={ console };
+context.window=context; context.globalThis=context;
+vm.createContext(context);
+vm.runInContext(fs.readFileSync('quests.js','utf8'),context,{filename:'quests.js'});
+const quests=context.QUEST_DATA || context.QuestData || context.QUESTS;
+assert(quests,'QUEST_DATA missing');
+const marie=quests.marie_water_city;
+const fb=quests.frieda_baron_thunder_depths;
+const hayate=quests.hayate_water_city;
+const zelied=quests.zelied_big_tower;
+const luna=quests.luna_hidden_dark_shrine;
+assert(marie?.unlockFlags?.includes('underseaVolcanoCleared'),'Marie must wait until Undersea Volcano clear');
+assert(fb?.unlockFlags?.includes('underseaVolcanoCleared'),'Frieda/Baron must wait until Undersea Volcano clear');
+assert(hayate?.disabled===true && hayate?.legacyConvertedToLongArc===true,'legacy Hayate quick join must be disabled');
+assert(zelied?.disabled===true && zelied?.legacyConvertedToStory===true,'legacy Zelied join quest must be disabled');
+assert(luna?.disabled===true && luna?.legacyConvertedToStory===true,'legacy Luna hidden join quest must be disabled');
+const map=fs.readFileSync('map.js','utf8');
+assert(map.includes('"requiredFlag": "legacyHayateQuickHuntEnabled"'),'Hayate legacy actor gate missing');
+assert(map.includes('"requiredFlag": "legacyZeliedJoinQuestEnabled"'),'Zelied legacy actor gate missing');
+assert(map.includes('"requiredFlag": "legacyLunaHiddenJoinQuestEnabled"'),'Luna legacy actor gate missing');
+const uv=(map.match(/"requiredFlag": "underseaVolcanoCleared"/g)||[]).length;
+assert(uv>=3,'Marie/Frieda/Baron post-volcano actor gates missing');
+console.log('PASS validate-recruitment-route-cleanup-phase5d');

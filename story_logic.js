@@ -10,6 +10,9 @@ const StoryManager = {
     currentScript: null,
     index: 0,
     onComplete: null,
+    mapTransferRecheckTokens: new Set(),
+    resumeRunnerActive: false,
+    resumeRunnerToken: null,
 
     // ==========================================
     // 目的表示の正本
@@ -65,7 +68,7 @@ const StoryManager = {
         const killCounts = data?.book?.killCounts || {};
         const calamityKills = Number(killCounts[902000] || 0) + Number(killCounts[2000] || 0);
         if (calamityKills <= 0) {
-            return "メダルを集めて災厄に挑もう";
+            return "ふるびたコインを集めて災厄に挑もう";
         }
 
         return "ダンジョンで最強装備をそろえよう";
@@ -75,6 +78,19 @@ const StoryManager = {
         if (!data && typeof App !== 'undefined') data = App.data;
         const progress = data?.progress || {};
         const flags = progress.flags || {};
+        const prologueStage = Math.max(0, Number(progress.worldState?.prologueStage || 0));
+        if (prologueStage >= 100 && flags.prologuePresentWakeSeen) {
+            if (!flags.prologueDepartedReesHut) return 'リースの山小屋を出て、リュミナ地方へ向かおう';
+            if (!flags.presentLuminaRescueSeen) return '現在のリュミナ村で起きている異変を確かめよう';
+            if (Number(progress.storyStep || 0) === 0) return 'リュミナ村の長老に話を聞こう';
+        }
+        if (prologueStage > 0 && prologueStage < 100) {
+            if (prologueStage <= 1) return 'ルーナを追って村の南側へ戻ろう';
+            if (prologueStage === 2) return '悲鳴のした方へ急ごう';
+            if (prologueStage === 3) return 'ルーナと一緒に南エリアの家へ向かおう';
+            if (prologueStage === 4) return '崩れ続ける村を離れ、南の入口へ急ごう';
+            if (prologueStage >= 5) return '南の入口を塞ぐ深淵の気配に立ち向かおう';
+        }
         const currentArea = (typeof Field !== 'undefined' && typeof Field.getCurrentAreaKey === 'function')
             ? Field.getCurrentAreaKey()
             : data?.location?.area;
@@ -853,6 +869,12 @@ const StoryManager = {
         const source = battle || App?.data?.battle || null;
         const targetEventId = String(eventId || '');
         if (!source?.isBossBattle || !targetEventId) return false;
+        const event = this.events?.[targetEventId] || null;
+        if (!this.resolvePostBattleBossSpriteConfig(event).enabled) {
+            const pending = App?.data?.progress?.pendingPostBattleBossVisual;
+            if (pending && String(pending.eventId || '') === targetEventId) delete App.data.progress.pendingPostBattleBossVisual;
+            return false;
+        }
 
         const ids = (Array.isArray(source.fixedBossId) ? source.fixedBossId : [source.fixedBossId])
             .map(id => Number(id))
@@ -878,6 +900,7 @@ const StoryManager = {
     getPostBattleBossVisualContext: function(eventId, event = null, phase = 'actions') {
         const targetEventId = String(eventId || '');
         const spriteConfig = this.resolvePostBattleBossSpriteConfig(event);
+        if (!spriteConfig.enabled) return null;
         const pending = App?.data?.progress?.pendingPostBattleBossVisual || null;
         const pendingMatches = pending && String(pending.eventId || '') === targetEventId &&
             String(pending.phase || 'actions') === String(phase || 'actions');
@@ -1216,25 +1239,148 @@ const StoryManager = {
         App.log(`<span style="color:#ff8b8b;">イベント処理を中断しました。再読込すると同じ位置から再試行します。<br>${this.escapeHtml ? this.escapeHtml(message) : message}</span>`);
     },
 
+    getMapTransferArrivalState: function(pending) {
+        if (!pending) return { arrived: false };
+        const location = App.data?.location || {};
+        const area = String(location.area || '');
+        const mapData = (typeof Field !== 'undefined') ? Field.currentMapData : null;
+        let currentAreaKey = null;
+        try {
+            currentAreaKey = typeof Field !== 'undefined' && typeof Field.getCurrentAreaKey === 'function'
+                ? Field.getCurrentAreaKey()
+                : null;
+        } catch (error) {
+            console.warn('[StoryManager] current area lookup during transfer recovery failed:', error);
+        }
+        const mapIds = [
+            mapData?.id,
+            mapData?.key,
+            mapData?.mapId,
+            mapData?.areaKey,
+            mapData?.canonicalAreaKey,
+            currentAreaKey,
+            area
+        ].filter(value => value !== undefined && value !== null).map(String);
+        const currentFloor = Number(App.data?.progress?.floor || mapData?.floor || 0);
+        const currentX = Number(typeof Field !== 'undefined' && Number.isFinite(Number(Field.x)) ? Field.x : location.x);
+        const currentY = Number(typeof Field !== 'undefined' && Number.isFinite(Number(Field.y)) ? Field.y : location.y);
+
+        let destinationMatches = false;
+        if (pending.targetType === 'fixedMap' || pending.targetType === 'fixedDungeon') {
+            destinationMatches = mapIds.includes(String(pending.targetId || ''));
+        } else if (pending.targetType === 'abyss') {
+            destinationMatches = area === 'ABYSS' || mapIds.includes('ABYSS');
+            if (destinationMatches && pending.mode && App.data?.dungeon?.abyssMode) {
+                destinationMatches = String(App.data.dungeon.abyssMode) === String(pending.mode);
+            }
+        }
+
+        if (destinationMatches && Number.isFinite(Number(pending.floor)) && Number(pending.floor) > 0) {
+            destinationMatches = currentFloor === Number(pending.floor);
+        }
+        if (destinationMatches && pending.targetX !== null && pending.targetX !== undefined &&
+            Number.isFinite(Number(pending.targetX))) {
+            destinationMatches = currentX === Number(pending.targetX);
+        }
+        if (destinationMatches && pending.targetY !== null && pending.targetY !== undefined &&
+            Number.isFinite(Number(pending.targetY))) {
+            destinationMatches = currentY === Number(pending.targetY);
+        }
+        return {
+            arrived: destinationMatches,
+            area,
+            mapIds,
+            floor: currentFloor,
+            x: currentX,
+            y: currentY
+        };
+    },
+
     recoverPendingMapTransfer: function() {
         const progress = App?.data?.progress;
         const pending = progress?.pendingMapTransfer;
+        if (!pending) return false;
         const journal = this.ensureEventJournal();
         const active = journal?.active;
-        if (!pending || !active || pending.sourceEventToken !== active.token) return false;
-        const area = String(App.data?.location?.area || '');
-        let arrived = false;
-        if (pending.targetType === 'fixedMap' || pending.targetType === 'fixedDungeon') {
-            arrived = area === String(pending.targetId || '');
-        } else if (pending.targetType === 'abyss') {
-            arrived = area === 'ABYSS';
+        const arrival = this.getMapTransferArrivalState(pending);
+
+        // シーン切替直後はField.currentMapDataの構築がまだ終わっていない場合がある。
+        // API受付から短時間は失敗判定せず、初期化完了後にもう一度照合する。
+        if (!arrival.arrived && pending.status === 'dispatched' &&
+            Date.now() - Number(pending.dispatchedAt || 0) < 1500) {
+            // 再照合予約はメモリ上だけで管理する。セーブへ一時フラグを残すと、
+            // タイマー発火前の再読込後に永久に再予約されないため。
+            if (!(this.mapTransferRecheckTokens instanceof Set)) this.mapTransferRecheckTokens = new Set();
+            if (!this.mapTransferRecheckTokens.has(pending.token)) {
+                this.mapTransferRecheckTokens.add(pending.token);
+                setTimeout(() => {
+                    this.mapTransferRecheckTokens.delete(pending.token);
+                    const current = App.data?.progress?.pendingMapTransfer;
+                    if (current?.token === pending.token) StoryManager.resumeActiveConversation?.();
+                }, 250);
+            }
+            return true;
         }
-        if (!arrived) return false;
-        const key = this.getEventPathKey(pending.actionPath || active.currentPath || []);
-        if (key) active.completedActions[key] = true;
-        delete progress.pendingMapTransfer;
-        this.completeEventExecution(active);
-        return true;
+
+        if (arrival.arrived) {
+            pending.status = 'arrived';
+            pending.arrivedAt = Date.now();
+            pending.arrival = arrival;
+            if (active && pending.sourceEventToken === active.token) {
+                const key = this.getEventPathKey(pending.actionPath || active.currentPath || []);
+                if (key) active.completedActions[key] = true;
+                delete progress.pendingMapTransfer;
+                this.completeEventExecution(active);
+            } else if (!active && pending.sourceEventSnapshot?.eventId) {
+                // 遷移自体は成功したが、旧版の削除先行処理などでactiveだけ失われた場合も
+                // 保存済みスナップショットから完了処理を復元する。
+                const restored = this.normalizeActiveEventJournal(pending.sourceEventSnapshot);
+                const key = this.getEventPathKey(pending.actionPath || restored.currentPath || []);
+                if (key) restored.completedActions[key] = true;
+                journal.active = restored;
+                progress.activeEvent = restored;
+                delete progress.pendingMapTransfer;
+                this.completeEventExecution(restored);
+            } else {
+                delete progress.pendingMapTransfer;
+                App.save();
+            }
+            return true;
+        }
+
+        // 遷移API受付後も目的地へ到着していない場合は、元命令を未完了のまま再試行する。
+        // actionPathを完了扱いにしないため、MAP変更失敗でイベントだけ失われない。
+        if (active && pending.sourceEventToken === active.token) {
+            active.status = 'running';
+            active.currentPath = Array.isArray(pending.actionPath) ? [...pending.actionPath] : active.currentPath;
+            pending.status = 'retry';
+            pending.lastMismatch = arrival;
+            pending.retryCount = Math.max(0, Number(pending.retryCount || 0)) + 1;
+            delete progress.pendingMapTransfer;
+            journal.active = active;
+            progress.activeEvent = active;
+            App.save();
+            return false;
+        }
+
+        // 旧版の削除先行セーブを救済できるよう、保存済みイベントスナップショットがあれば復元する。
+        if (!active && pending.sourceEventSnapshot?.eventId) {
+            const restored = this.normalizeActiveEventJournal(pending.sourceEventSnapshot);
+            restored.status = 'running';
+            restored.currentPath = Array.isArray(pending.actionPath) ? [...pending.actionPath] : restored.currentPath;
+            const key = this.getEventPathKey(restored.currentPath || []);
+            if (key) delete restored.completedActions[key];
+            journal.active = restored;
+            progress.activeEvent = restored;
+            delete progress.pendingMapTransfer;
+            App.save();
+            return false;
+        }
+
+        pending.status = 'orphaned';
+        pending.lastMismatch = arrival;
+        App.save();
+        return false;
     },
 
     persistEventCursor: function(active, path) {
@@ -1262,7 +1408,7 @@ const StoryManager = {
             this.persistEventCursor(active, path);
             let result = null;
 
-            if (action.type === 'IF_FLAG' || action.type === 'IF' || action.type === 'IF_ITEM' || action.type === 'CHOICE') {
+            if (action.type === 'IF_FLAG' || action.type === 'IF' || action.type === 'IF_ITEM' || action.type === 'IF_KILL_COUNTS' || action.type === 'CHOICE') {
                 let branchName = active.selectedBranches[pathKey];
                 if (!branchName) {
                     if (action.type === 'IF_FLAG' || action.type === 'IF') {
@@ -1274,6 +1420,14 @@ const StoryManager = {
                         const itemId = Number(action.id ?? action.itemId ?? action.value);
                         const requiredCount = Math.max(1, Math.floor(Number(action.count) || 1));
                         branchName = Number(App.data?.items?.[itemId] || 0) >= requiredCount
+                            ? 'then'
+                            : (Array.isArray(action.else) ? 'else' : 'otherwise');
+                    } else if (action.type === 'IF_KILL_COUNTS') {
+                        const ids = (Array.isArray(action.ids) ? action.ids : [action.id ?? action.value])
+                            .map(Number).filter(id => Number.isFinite(id) && id > 0);
+                        const minimum = Math.max(1, Math.floor(Number(action.minimum ?? action.count) || 1));
+                        const killCounts = App.data?.book?.killCounts || {};
+                        branchName = ids.length > 0 && ids.every(id => Number(killCounts[id] || killCounts[String(id)] || 0) >= minimum)
                             ? 'then'
                             : (Array.isArray(action.else) ? 'else' : 'otherwise');
                     } else {
@@ -1311,19 +1465,23 @@ const StoryManager = {
                 });
             }
 
-            if (result === 'BREAK' || result === 'BREAK_COMPLETE') {
-                active.completedActions[pathKey] = true;
+            if (result === 'BREAK' || result === 'BREAK_COMPLETE' || result === 'BREAK_TRANSFER') {
                 active.currentPath = path;
-                active.status = result === 'BREAK_COMPLETE' ? 'completed' : 'suspended';
-                if (result === 'BREAK_COMPLETE') {
+                if (result === 'BREAK_TRANSFER') {
+                    // 到着確認が済むまで命令を完了扱いにしない。
+                    active.status = 'waiting_transfer';
                     const pendingTransfer = App.data?.progress?.pendingMapTransfer;
-                    if (pendingTransfer?.sourceEventToken === active.token &&
-                        this.getEventPathKey(pendingTransfer.actionPath || []) === pathKey) {
-                        delete App.data.progress.pendingMapTransfer;
+                    if (pendingTransfer?.sourceEventToken === active.token) {
+                        pendingTransfer.sourceEventSnapshot = JSON.parse(JSON.stringify(active));
                     }
-                    this.completeEventExecution(active);
-                } else App.save();
-                return 'BREAK';
+                    App.save();
+                } else {
+                    active.completedActions[pathKey] = true;
+                    active.status = result === 'BREAK_COMPLETE' ? 'completed' : 'suspended';
+                    if (result === 'BREAK_COMPLETE') this.completeEventExecution(active);
+                    else App.save();
+                }
+                return result === 'BREAK_TRANSFER' ? 'BREAK_TRANSFER' : 'BREAK';
             }
 
             active.completedActions[pathKey] = true;
@@ -1334,42 +1492,73 @@ const StoryManager = {
         return null;
     },
 
+    beginResumeRunner: function(token = null) {
+        if (this.resumeRunnerActive) return false;
+        this.resumeRunnerActive = true;
+        this.resumeRunnerToken = token || this.createEventToken('resume');
+        return this.resumeRunnerToken;
+    },
+
+    endResumeRunner: function(token = null) {
+        if (token && this.resumeRunnerToken && token !== this.resumeRunnerToken) return false;
+        this.resumeRunnerActive = false;
+        this.resumeRunnerToken = null;
+        return true;
+    },
+
     /**
      * 中断されたイベントまたは会話があれば再開する
      */
     resumeActiveConversation: function() {
         const data = App.data ? App.data.progress : null;
         if (!data) return false;
+        // field初期化や多重入力から同じ再開処理が重なっても、既存ランナーを優先する。
+        if (this.resumeRunnerActive) return true;
         if (this.recoverPendingMapTransfer()) return true;
         const journal = this.ensureEventJournal();
         const active = journal?.active;
         if (!active && !data.activeConversation) return false;
 
+        const runnerToken = this.beginResumeRunner(
+            active?.token || `conversation:${String(data.activeConversation?.key || 'unknown')}`
+        );
+        if (!runnerToken) return true;
         this.active = false;
         this.isTyping = false;
         (async () => {
-            if (active?.eventId) {
-                const event = this.events[active.eventId];
-                if (event?.restartOnResume === true) {
-                    active.currentPath = null;
-                    delete data.activeConversation;
-                    App.save();
+            try {
+                if (active?.eventId) {
+                    // restartOnResume は副作用済み命令との整合が取れないため使用しない。
+                    // eventJournal の分岐・完了済み命令・会話行を正確に再開する。
+                    if (active.phase === 'win') {
+                        await this.onBattleWin(active.eventId, 0, 0, { token: active.token, resume: true, meta: active.meta });
+                    } else {
+                        await this.executeEvent(active.eventId, false, 0, 0, { token: active.token, resume: true, meta: active.meta });
+                    }
+                } else if (data.activeConversation) {
+                    const key = data.activeConversation.key;
+                    const conversationResult = await this.waitForConversationCompletion(key, Number(data.activeConversation.index || 0));
+                    const conversationStatus = conversationResult?.status
+                        || (conversationResult === false ? 'error' : 'completed');
+                    if (conversationStatus !== 'completed') {
+                        throw new Error(`会話を再開できませんでした: ${key} (${conversationStatus})`);
+                    }
+                    this.endConversation();
                 }
-                if (active.phase === 'win') {
-                    await this.onBattleWin(active.eventId, 0, 0, { token: active.token, resume: true, meta: active.meta });
-                } else {
-                    await this.executeEvent(active.eventId, false, 0, 0, { token: active.token, resume: true, meta: active.meta });
-                }
-            } else if (data.activeConversation) {
-                const key = data.activeConversation.key;
-                await this.showConversation(key, Number(data.activeConversation.index || 0));
-                this.endConversation();
+            } catch (error) {
+                this.isTyping = false;
+                this.active = false;
+                console.error('[StoryManager] active conversation resume failed:', error);
+                App.log('<span style="color:#ff8b8b;">会話の再開に失敗しました。再読込すると同じ位置から再試行します。</span>');
+            } finally {
+                this.endResumeRunner(runnerToken);
             }
         })();
         return true;
     },
 
     resumeQueuedEventByPhase: function(phase = null) {
+        if (this.resumeRunnerActive) return true;
         const journal = this.ensureEventJournal();
         if (!journal || journal.active) return false;
         const entry = journal.queue
@@ -1378,13 +1567,25 @@ const StoryManager = {
         if (!entry) return false;
         const active = this.activateQueuedEvent(entry);
         if (!active) return false;
+        const actualPhase = entry.phase === 'win' ? 'win' : 'actions';
+        const runnerToken = this.beginResumeRunner(entry.token);
+        if (!runnerToken) return true;
         this.active = false;
         this.isTyping = false;
         (async () => {
-            if (phase === 'win') {
-                await this.onBattleWin(entry.eventId, 0, 0, { token: entry.token, resume: true, meta: entry.meta });
-            } else {
-                await this.executeEvent(entry.eventId, false, 0, 0, { token: entry.token, resume: true, meta: entry.meta });
+            try {
+                // 絞り込み引数phaseではなく、実際に取り出したentry.phaseで配送する。
+                // resumePendingStoryEvent(null)経由のwin予約をactionsへ誤配送すると、
+                // 元イベントのBOSS命令が再実行され、イベント戦闘が永久ループする。
+                if (actualPhase === 'win') {
+                    await this.onBattleWin(entry.eventId, 0, 0, { token: entry.token, resume: true, meta: entry.meta });
+                } else {
+                    await this.executeEvent(entry.eventId, false, 0, 0, { token: entry.token, resume: true, meta: entry.meta });
+                }
+            } catch (error) {
+                console.error('[StoryManager] queued event resume failed:', error);
+            } finally {
+                this.endResumeRunner(runnerToken);
             }
         })();
         return true;
@@ -1428,7 +1629,7 @@ const StoryManager = {
             for (let i = Math.max(0, Number(startActionIndex || 0)); i < event.actions.length; i++) {
                 const lineIdx = i === Number(startActionIndex || 0) ? startLineIndex : 0;
                 const result = await this.processAction(event.actions[i], eventId, lineIdx);
-                if (result === 'BREAK' || result === 'BREAK_COMPLETE') return result;
+                if (result === 'BREAK' || result === 'BREAK_COMPLETE' || result === 'BREAK_TRANSFER') return result;
             }
             return true;
         }
@@ -1448,7 +1649,7 @@ const StoryManager = {
             const result = await this.runEventActionList(event.actions, eventId, 'actions', active, {
                 initialLineIndex: startLineIndex
             });
-            if (result === 'BREAK') return true;
+            if (result === 'BREAK' || result === 'BREAK_TRANSFER') return true;
             this.completeEventExecution(active);
             this.refreshFieldAfterStoryStateChange();
             return true;
@@ -1479,7 +1680,7 @@ const StoryManager = {
             const result = await this.runEventActionList(event.winActions, eventId, 'win', active, {
                 initialLineIndex: startLineIndex
             });
-            if (result === 'BREAK') return true;
+            if (result === 'BREAK' || result === 'BREAK_TRANSFER') return true;
             this.completeEventExecution(active);
             this.refreshFieldAfterStoryStateChange();
             return true;
@@ -1513,12 +1714,19 @@ const StoryManager = {
             token,
             sourceEventToken: active.token,
             sourceEventId: active.eventId,
+            sourceEventSnapshot: JSON.parse(JSON.stringify(active)),
             actionPath: Array.isArray(context.path) ? [...context.path] : active.currentPath,
             targetType,
             targetId: targetId || null,
             entryKey: transferOptions.entryKey || null,
             mode: transferOptions.mode || null,
             floor: transferOptions.floor || null,
+            targetX: transferOptions.targetX !== null && transferOptions.targetX !== undefined && Number.isFinite(Number(transferOptions.targetX))
+                ? Number(transferOptions.targetX)
+                : null,
+            targetY: transferOptions.targetY !== null && transferOptions.targetY !== undefined && Number.isFinite(Number(transferOptions.targetY))
+                ? Number(transferOptions.targetY)
+                : null,
             status: 'requested',
             requestedAt: Date.now()
         };
@@ -1537,19 +1745,21 @@ const StoryManager = {
             else if (transferOptions.direct === true && typeof Dungeon.start === 'function') {
                 result = Dungeon.start(transferOptions.floor || 1, { mode: transferOptions.mode || 'story' }) !== false;
             } else if (typeof Dungeon.enter === 'function') {
-                Dungeon.enter({ mode: transferOptions.mode || 'story' });
-                result = true;
+                result = Dungeon.enter({ mode: transferOptions.mode || 'story' }) !== false;
             }
         }
 
         if (!result) {
             progress.pendingMapTransfer.status = 'error';
             progress.pendingMapTransfer.error = 'target_rejected';
+            progress.pendingMapTransfer.failedAt = Date.now();
             App.save();
             throw new Error(`MAP遷移に失敗しました: ${targetType}:${targetId || ''}`);
         }
-        progress.pendingMapTransfer.status = 'arrived';
-        progress.pendingMapTransfer.arrivedAt = Date.now();
+        // APIがtrueを返しただけでは到着完了とみなさない。次シーン初期化後に厳密照合する。
+        progress.pendingMapTransfer.status = 'dispatched';
+        progress.pendingMapTransfer.dispatchedAt = Date.now();
+        App.save();
         return true;
     },
 
@@ -1684,6 +1894,20 @@ const StoryManager = {
         }
     },
 
+    waitForConversationCompletion: async function(scriptKey, startFromIndex = 0, options = {}) {
+        const pollMs = Math.max(20, Number(options.pollMs || 50));
+        let result = await this.showConversation(scriptKey, startFromIndex);
+        while (result?.status === 'busy') {
+            await new Promise(resolve => setTimeout(resolve, pollMs));
+            if (typeof options.abortWhen === 'function' && options.abortWhen()) {
+                return { status: 'aborted', scriptKey };
+            }
+            result = await this.showConversation(scriptKey, startFromIndex);
+        }
+        const status = result?.status || (result === false ? 'error' : 'completed');
+        return result && typeof result === 'object' ? result : { status, scriptKey };
+    },
+
     /**
      * 各アクションの個別処理
      * @param {Object} action 
@@ -1694,12 +1918,126 @@ const StoryManager = {
         const data = App.data.progress;
         const deferSave = context.deferSave === true;
         
-        // CONV命令時に lineIndex を渡す
-        if (action.type === 'CONV') await this.showConversation(action.value, lineIndex);
+        // CONV命令時に lineIndex を渡す。未表示・競合を成功扱いしない。
+        if (action.type === 'CONV') {
+            const conversationResult = await this.waitForConversationCompletion(action.value, lineIndex, {
+                abortWhen: () => context.activeEvent?.status === 'error'
+            });
+            const conversationStatus = conversationResult?.status
+                || (conversationResult === false ? 'error' : 'completed');
+            if (conversationStatus !== 'completed') {
+                throw new Error(`会話を完了できませんでした: ${action.value} (${conversationStatus})`);
+            }
+        }
         
         if (action.type === 'ALLY') {
-            App.addStoryAlly(action.value, { save: !deferSave });
+            App.addStoryAlly(Number(action.charId ?? action.value), {
+                save: !deferSave,
+                initialLevel: action.initialLevel,
+                expMultiplierPct: action.expMultiplierPct,
+                available: action.available !== false,
+                joinParty: action.joinParty !== false,
+                silent: action.silent === true,
+                allowPermanentReturn: action.allowPermanentReturn === true
+            });
             this.refreshFieldAfterStoryStateChange();
+        }
+
+        if (action.type === 'TEMP_ALLY') {
+            const charId = Number(action.charId ?? action.value);
+            if (Number.isFinite(charId)) {
+                App.addStoryAlly(charId, {
+                    temporary: true,
+                    available: action.available !== false,
+                    joinParty: action.joinParty !== false,
+                    initialLevel: action.initialLevel,
+                    expMultiplierPct: action.expMultiplierPct,
+                    silent: action.silent === true,
+                    save: !deferSave
+                });
+                this.refreshFieldAfterStoryStateChange();
+            }
+        }
+
+        if (action.type === 'RESET_TEMP_ALLY') {
+            const charId = Number(action.charId ?? action.value);
+            if (Number.isFinite(charId) && typeof App.resetTemporaryStoryAlly === 'function') {
+                App.resetTemporaryStoryAlly(charId, { save: !deferSave, force: action.force === true });
+                this.refreshFieldAfterStoryStateChange();
+            }
+        }
+
+        if (action.type === 'RESET_HERO_BASELINE') {
+            if (typeof App.resetHeroAfterPlayablePrologue === 'function') {
+                App.resetHeroAfterPlayablePrologue({ save: !deferSave });
+                if (typeof Menu !== 'undefined') Menu.renderPartyBar();
+            }
+        }
+
+        if (action.type === 'PROMOTE_TEMP_ALLY') {
+            const charId = Number(action.charId ?? action.value);
+            if (Number.isFinite(charId) && typeof App.promoteTemporaryStoryAlly === 'function') {
+                App.promoteTemporaryStoryAlly(charId, { available: action.available !== false, save: !deferSave });
+                this.refreshFieldAfterStoryStateChange();
+            }
+        }
+
+        if (action.type === 'SET_CHARACTER_LB') {
+            const charId = Number(action.charId ?? action.value);
+            if (Number.isFinite(charId) && typeof App.setStoryCharacterLimitBreak === 'function') {
+                App.setStoryCharacterLimitBreak(charId, action.limitBreak ?? action.lb ?? 99, { save: !deferSave });
+                if (typeof Menu !== 'undefined') Menu.renderPartyBar();
+            }
+        }
+
+        if (action.type === 'SCENE_BEGIN') {
+            const options = action.options && typeof action.options === 'object' ? JSON.parse(JSON.stringify(action.options)) : {};
+            if (Array.isArray(action.temporaryParty)) options.temporaryParty = action.temporaryParty;
+            if (Array.isArray(action.carryoverCharacterIds)) options.carryoverCharacterIds = action.carryoverCharacterIds;
+            if (action.visualPreset) options.visualPreset = action.visualPreset;
+            if (action.wipeoutEventId) options.wipeoutEventId = action.wipeoutEventId;
+            if (action.exitTrigger) options.exitTrigger = action.exitTrigger;
+            options.restartOnWipeout = action.restartOnWipeout === true;
+            options.isolateInventory = action.isolateInventory === true;
+            options.mergeLoot = action.mergeLoot === true;
+            const ctx = App.beginSceneContext(options);
+            if (!ctx) throw new Error('回想Scene Contextを開始できませんでした。');
+        }
+
+        if (action.type === 'SCENE_PARTY') {
+            if (!App.setSceneContextParty(action.party || action.value || [], { preserveExisting: action.preserveExisting !== false })) {
+                throw new Error('回想パーティを変更できませんでした。');
+            }
+            this.refreshFieldAfterStoryStateChange();
+        }
+
+        if (action.type === 'SCENE_CHECKPOINT') {
+            if (!App.setSceneContextCheckpoint(action.id || action.value || 'default', { wipeoutEventId: action.wipeoutEventId })) {
+                throw new Error('回想チェックポイントを保存できませんでした。');
+            }
+        }
+
+        if (action.type === 'SCENE_RESTORE') {
+            if (!App.restoreSceneContextCheckpoint(action.id || action.value || null, { changeScene: action.changeScene !== false })) {
+                throw new Error('回想チェックポイントへ復帰できませんでした。');
+            }
+        }
+
+        if (action.type === 'SCENE_END') {
+            if (!App.endSceneContext(null, {
+                carryoverCharacterIds: action.carryoverCharacterIds,
+                changeScene: action.changeScene !== false,
+                saveAfter: false
+            })) throw new Error('回想Scene Contextを終了できませんでした。');
+            this.refreshFieldAfterStoryStateChange();
+        }
+
+        if (action.type === 'WORLD_STATE') {
+            const key = String(action.key || '').trim();
+            if (key && typeof App.setWorldStateValue === 'function') {
+                App.setWorldStateValue(key, action.value, { save: !deferSave });
+                if (action.refreshField === true) this.refreshFieldAfterStoryStateChange();
+            }
         }
         
         if (action.type === 'STEP') { 
@@ -1869,7 +2207,7 @@ const StoryManager = {
                 floor: action.floor || null,
                 nestedReturn: action.nestedReturn === true
             }, context);
-            return 'BREAK_COMPLETE';
+            return 'BREAK_TRANSFER';
         }
 
         if (action.type === 'START_FIXED_MAP') {
@@ -1880,7 +2218,7 @@ const StoryManager = {
                 targetY: action.targetY,
                 replaceReturnPoint: action.replaceReturnPoint === true
             }, context);
-            return 'BREAK_COMPLETE';
+            return 'BREAK_TRANSFER';
         }
 
         if (action.type === 'START_ABYSS_DUNGEON') {
@@ -1891,7 +2229,7 @@ const StoryManager = {
                 mode,
                 floor
             }, context);
-            return 'BREAK_COMPLETE';
+            return 'BREAK_TRANSFER';
         }
 
         if (!context.managed && (action.type === 'IF_FLAG' || action.type === 'IF')) {
@@ -1902,7 +2240,7 @@ const StoryManager = {
             if (Array.isArray(branch)) {
                 for (const sub of branch) {
                     const res = await this.processAction(sub, eventId);
-                    if (res === 'BREAK') return 'BREAK';
+                    if (res === 'BREAK' || res === 'BREAK_TRANSFER') return res;
                 }
             }
         }
@@ -1916,7 +2254,23 @@ const StoryManager = {
             if (Array.isArray(branch)) {
                 for (const sub of branch) {
                     const res = await this.processAction(sub, eventId);
-                    if (res === 'BREAK') return 'BREAK';
+                    if (res === 'BREAK' || res === 'BREAK_TRANSFER') return res;
+                }
+            }
+        }
+
+        if (!context.managed && action.type === 'IF_KILL_COUNTS') {
+            const ids = (Array.isArray(action.ids) ? action.ids : [action.id ?? action.value])
+                .map(Number).filter(id => Number.isFinite(id) && id > 0);
+            const minimum = Math.max(1, Math.floor(Number(action.minimum ?? action.count) || 1));
+            const killCounts = App.data?.book?.killCounts || {};
+            const branch = ids.length > 0 && ids.every(id => Number(killCounts[id] || killCounts[String(id)] || 0) >= minimum)
+                ? action.then
+                : (action.else || action.otherwise);
+            if (Array.isArray(branch)) {
+                for (const sub of branch) {
+                    const res = await this.processAction(sub, eventId);
+                    if (res === 'BREAK' || res === 'BREAK_TRANSFER') return res;
                 }
             }
         }
@@ -1927,7 +2281,7 @@ const StoryManager = {
             if (branch && branch.length > 0) {
                 for (const sub of branch) {
                     const res = await this.processAction(sub, eventId);
-                    if (res === 'BREAK') return 'BREAK';
+                    if (res === 'BREAK' || res === 'BREAK_TRANSFER') return res;
                 }
             }
         }
@@ -1935,6 +2289,68 @@ const StoryManager = {
         if (action.type === 'MAP_CHANGE') {
             if (typeof MapRegistry !== 'undefined' && typeof MapRegistry.applyStoryMapMutation === 'function') {
                 MapRegistry.applyStoryMapMutation(action.value || action.key, { save: !deferSave });
+            }
+        }
+
+        if (action.type === 'ABYSS_SPIRIT_TRIAL_BATTLE') {
+            const element = String(action.element || action.value || '');
+            const master = (typeof App.getAbyssSpiritTrialMaster === 'function')
+                ? App.getAbyssSpiritTrialMaster()
+                : (globalThis.ABYSS_SPIRIT_TRIAL_MASTER || {});
+            const definition = master[element];
+            if (!definition) throw new Error(`六属性プリズムの正式マスターが見つかりません: ${element}`);
+            const progress = App.ensureAbyssSpiritTrialEvents?.() || App.ensureAbyssRegionProgress?.() || data;
+            progress.abyssSpiritTrialEvents = progress.abyssSpiritTrialEvents || {};
+            const record = progress.abyssSpiritTrialEvents[element] || (progress.abyssSpiritTrialEvents[element] = {});
+            record.state = 'challenged';
+            record.attempts = Math.max(0, Math.floor(Number(record.attempts) || 0)) + 1;
+            record.lastAttemptAt = Date.now();
+            const requiredElements = Object.keys(master);
+            return this.processAction({
+                type:'BOSS',
+                value:Number(definition.bossId),
+                winEventId:definition.victoryEventId,
+                suppressFixedBossDefeat:true,
+                bossStatMultiplier:1,
+                elementalSpiritTrial:{
+                    version:1,
+                    element,
+                    rewardItemId:Number(definition.rewardItemId || 0),
+                    completionItemId:Number(globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008),
+                    requiredElements,
+                    attemptNumber:record.attempts,
+                    victoryEventId:definition.victoryEventId
+                }
+            }, eventId, lineIndex, context);
+        }
+
+        if (action.type === 'ABYSS_SPIRIT_TRIAL_COMPLETE') {
+            const element = String(action.element || action.value || '');
+            const progress = App.ensureAbyssSpiritTrialEvents?.() || App.ensureAbyssRegionProgress?.() || data;
+            progress.flags = progress.flags || {};
+            progress.abyssSpiritBlessings = progress.abyssSpiritBlessings || {};
+            progress.abyssSpiritTrialEvents = progress.abyssSpiritTrialEvents || {};
+            const record = progress.abyssSpiritTrialEvents[element] || (progress.abyssSpiritTrialEvents[element] = {});
+            progress.abyssSpiritBlessings[element] = true;
+            record.state = 'completed';
+            record.completedAt = record.completedAt || Date.now();
+            const master = (typeof App.getAbyssSpiritTrialMaster === 'function') ? App.getAbyssSpiritTrialMaster() : {};
+            const elements = Object.keys(master).length ? Object.keys(master) : ['火','水','風','雷','光','闇'];
+            if (elements.every(key => progress.abyssSpiritBlessings[key])) {
+                progress.flags.abyssAllSpiritTrialsCleared = true;
+                const itemId = Number(globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008);
+                if (Number(App.data?.items?.[itemId] || 0) <= 0) {
+                    progress.flags.abyssOctaprismGrantPending = true;
+                }
+            }
+        }
+
+        if (action.type === 'ABYSS_SPIRIT_TRIAL_GRANT_OCTAPRISM') {
+            const committed = (typeof App.grantOctaprismFromPendant === 'function')
+                ? App.grantOctaprismFromPendant()
+                : { ok:false, reason:'missing-api' };
+            if (!committed?.ok) {
+                throw new Error('ペンダントの変化とオクタプリズマ授与を保存できませんでした。');
             }
         }
 
@@ -2019,6 +2435,27 @@ const StoryManager = {
 
             const battleChainId = action.battleChainId || activeFixedBossContext?.battleChainId || inheritedChainId ||
                 `battle-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+            const elementalSpiritTrial = action.elementalSpiritTrial && typeof action.elementalSpiritTrial === 'object'
+                ? JSON.parse(JSON.stringify(action.elementalSpiritTrial))
+                : null;
+            const directEventBattleRuleKeys = [
+                'bestiaryExcluded', 'noDrops', 'noExp', 'noGold', 'noQuestProgress', 'noRecruit',
+                'forcedLoss', 'hpFloor', 'endAfterTurns', 'endAtHpPercent', 'storyVariantOf',
+                'targetMonsterId', 'targetMonsterIds'
+            ];
+            const explicitEventBattleRules = action.eventBattleRules && typeof action.eventBattleRules === 'object'
+                ? action.eventBattleRules
+                : action.eventBattle && typeof action.eventBattle === 'object'
+                    ? action.eventBattle
+                    : null;
+            const directEventBattleRules = Object.fromEntries(
+                directEventBattleRuleKeys
+                    .filter(key => action[key] !== undefined)
+                    .map(key => [key, action[key]])
+            );
+            const eventBattleRules = (explicitEventBattleRules || Object.keys(directEventBattleRules).length)
+                ? JSON.parse(JSON.stringify({ ...(explicitEventBattleRules || {}), ...directEventBattleRules }))
+                : null;
             App.data.battle = {
                 active: false,
                 isBossBattle: true,
@@ -2035,11 +2472,24 @@ const StoryManager = {
                 eventId,
                 fixedKeyReward: fixedKeyReward,
                 isAmbushed: !!action.ambush,
+                forceAutoOff: action.forceAutoOff === true,
                 storyWinEventId: action.winEventId || null,
                 storyLossEventId: action.lossEventId || null,
                 battleChainId,
                 battleChainPhase: Math.max(0, Number(action.battleChainPhase ?? activeFixedBossContext?.phase ?? 0)),
-                fixedBossContextNonce: activeFixedBossContext?.nonce || null
+                completedTurns: 0,
+                ...(eventBattleRules ? { eventBattleRules } : {}),
+                fixedBossContextNonce: activeFixedBossContext?.nonce || null,
+                ...(elementalSpiritTrial ? {
+                    elementalSpiritTrial,
+                    abyssSpiritElement: elementalSpiritTrial.element,
+                    fixedTrialElement: elementalSpiritTrial.element,
+                    fixedTrialRewardItemId: Number(elementalSpiritTrial.rewardItemId || 0),
+                    fixedTrialCompletionItemId: Number(elementalSpiritTrial.completionItemId || 0),
+                    fixedTrialRequiredElements: Array.isArray(elementalSpiritTrial.requiredElements)
+                        ? elementalSpiritTrial.requiredElements.slice()
+                        : []
+                } : {})
             };
             if (!deferSave) App.save();
             this.isTyping = false;
@@ -2197,115 +2647,164 @@ const StoryManager = {
      */
     showConversation: async function(scriptKey, startFromIndex = 0) {
         const lines = this.scripts[scriptKey];
-        if (!lines) return;
-        
-        // すでに会話中の場合は重複して動かさない
-        if (this.isTyping) return;
+        if (!Array.isArray(lines)) {
+            console.error(`[StoryManager] conversation not found: ${scriptKey}`);
+            return { status: 'missing', scriptKey };
+        }
+
+        // 別会話の入力待ちを「完了」と誤認しない。呼出側はqueuedのまま再試行する。
+        if (this.isTyping) return { status: 'busy', scriptKey };
         this.isTyping = true;
+        let completed = false;
+        let overlay = null;
 
-        startFromIndex = Math.max(0, Math.floor(Number(startFromIndex) || 0));
-        if (startFromIndex > 0 && this.scriptHasInlineFieldVisual(scriptKey)) {
-            try {
-                await this.restoreInlineFieldVisualState(scriptKey, startFromIndex);
-            } catch (e) {
-                console.warn('[StoryManager] inline field visual resume failed:', e);
-            }
-        }
-
-        let overlay = document.getElementById('story-ui-overlay') || this.createStoryDOM();
-        overlay.style.display = 'flex';
-        
-        const portraitImg = document.getElementById('story-portrait');
-        const nameBox = document.getElementById('story-name');
-        const textBox = document.getElementById('story-text');
-        const nextIndicator = document.getElementById('story-next-indicator');
-        const textWindow = textBox ? textBox.parentElement : null;
-        if (textWindow && !textWindow.dataset.defaultStyle) {
-            textWindow.dataset.defaultStyle = textWindow.getAttribute('style') || '';
-        }
-
-        for (let i = startFromIndex; i < lines.length; i++) {
-            const line = lines[i];
-
-            // 現在のセリフ番号を保存
-            if (App.data) {
-                App.data.progress.activeConversation = { key: scriptKey, index: i };
-                App.save();
-            }
-
-            if (this.isInlineStoryCommand(line)) {
-                await this.runInlineStoryCommand(line);
-                continue;
-            }
-            if (!line || typeof line.text !== 'string') continue;
-            if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('dialogue');
-
-            const hasExplicitCharId = line.charId !== undefined && line.charId !== null;
-            const isSystemLine = line.name === 'システム' && !hasExplicitCharId;
-            const masterChar = hasExplicitCharId ? DB.CHARACTERS.find(c => c.id === line.charId) : null;
-            const savedChar = hasExplicitCharId ? App.data.characters.find(c => c.charId === line.charId) : null;
-            let displayName = isSystemLine ? '' : (savedChar ? savedChar.name : (masterChar ? masterChar.name : line.name));
-            let displayImg = isSystemLine ? '' : (savedChar?.img || masterChar?.img);
-            if (line.hidePortrait === true) displayImg = '';
-
-            if (textWindow) {
-                if (isSystemLine) {
-                    textWindow.style.cssText = `
-                        position: absolute;
-                        top: 45%;
-                        left: 20px;
-                        right: 20px;
-                        background: rgba(0,0,0,0.72);
-                        border: none;
-                        border-radius: 2px;
-                        padding: 12px 16px;
-                        box-sizing: border-box;
-                        height: 112px;
-                        min-height: 112px;
-                        max-height: 112px;
-                        overflow: hidden;
-                        box-shadow: none;
-                        z-index: 10;
-                    `;
-                } else if (textWindow.dataset.defaultStyle) {
-                    textWindow.style.cssText = textWindow.dataset.defaultStyle;
+        try {
+            startFromIndex = Math.max(0, Math.floor(Number(startFromIndex) || 0));
+            if (startFromIndex > 0 && this.scriptHasInlineFieldVisual(scriptKey)) {
+                try {
+                    await this.restoreInlineFieldVisualState(scriptKey, startFromIndex);
+                } catch (e) {
+                    console.warn('[StoryManager] inline field visual resume failed:', e);
                 }
             }
-            nameBox.style.display = isSystemLine ? 'none' : 'block';
 
-            let processedText = line.text.replace(/\[N:(\d+)\]/g, (match, id) => {
-                const targetId = parseInt(id);
-                const saved = App.data.characters.find(c => c.charId === targetId);
-                const master = DB.CHARACTERS.find(c => c.id === targetId);
-                return (saved ? saved.name : (master ? master.name : `ID:${id}`));
-            }).replace(/\\n/g, '\n');
+            overlay = document.getElementById('story-ui-overlay') || this.createStoryDOM();
+            if (!overlay) throw new Error('会話UIを生成できませんでした。');
+            overlay.style.display = 'flex';
 
-            this.backlog.push({ name: displayName, text: processedText.replace(/\n/g, " ") });
-
-            portraitImg.src = displayImg || "";
-            portraitImg.style.display = displayImg ? 'block' : 'none';
-            nameBox.innerText = displayName;
-            nextIndicator.style.visibility = 'hidden';
-
-            let isTyping = true, skipTyping = false;
-            overlay.onclick = (e) => { if (!e.target.closest('.no-skip') && isTyping) skipTyping = true; };
-
-            textBox.innerHTML = "";
-            const chars = processedText.split("");
-            for (let j = 0; j < chars.length; j++) {
-                if (skipTyping) { textBox.innerHTML = processedText.replace(/\n/g, "<br>"); break; }
-                let char = chars[j];
-                textBox.innerHTML += (char === "\n" ? "<br>" : char);
-                await new Promise(r => setTimeout(r, char === "\n" ? this.newlineWait : this.textSpeed));
+            const portraitImg = document.getElementById('story-portrait');
+            const nameBox = document.getElementById('story-name');
+            const textBox = document.getElementById('story-text');
+            const nextIndicator = document.getElementById('story-next-indicator');
+            if (!portraitImg || !nameBox || !textBox || !nextIndicator) {
+                throw new Error('会話UIの必須要素が不足しています。');
             }
-            isTyping = false;
-            nextIndicator.style.visibility = 'visible';
-            await new Promise(resolve => { overlay.onclick = (e) => { if (!e.target.closest('.no-skip')) resolve(); }; });
+            const textWindow = textBox.parentElement;
+            if (textWindow && !textWindow.dataset.defaultStyle) {
+                textWindow.dataset.defaultStyle = textWindow.getAttribute('style') || '';
+            }
+
+            for (let i = startFromIndex; i < lines.length; i++) {
+                const line = lines[i];
+
+                if (App.data) {
+                    App.data.progress.activeConversation = { key: scriptKey, index: i };
+                    App.save();
+                }
+
+                if (this.isInlineStoryCommand(line)) {
+                    await this.runInlineStoryCommand(line);
+                    // 命令の副作用と次カーソルを同じ保存へ確定する。
+                    if (App.data?.progress) {
+                        App.data.progress.activeConversation = { key: scriptKey, index: i + 1 };
+                        App.save();
+                    }
+                    continue;
+                }
+                if (!line || typeof line.text !== 'string') continue;
+                if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('dialogue');
+
+                const hasExplicitCharId = line.charId !== undefined && line.charId !== null;
+                const isSystemLine = line.name === 'システム' && !hasExplicitCharId;
+                const masterChar = hasExplicitCharId ? DB.CHARACTERS.find(c => c.id === line.charId) : null;
+                const savedChar = hasExplicitCharId ? App.data.characters.find(c => c.charId === line.charId) : null;
+                let displayName = isSystemLine ? '' : (savedChar ? savedChar.name : (masterChar ? masterChar.name : line.name));
+                let displayImg = isSystemLine ? '' : (savedChar?.img || masterChar?.img);
+                if (line.hidePortrait === true) displayImg = '';
+
+                if (textWindow) {
+                    if (isSystemLine) {
+                        textWindow.style.cssText = `
+                            position: absolute;
+                            top: 45%;
+                            left: 20px;
+                            right: 20px;
+                            background: rgba(0,0,0,0.72);
+                            border: none;
+                            border-radius: 2px;
+                            padding: 12px 16px;
+                            box-sizing: border-box;
+                            height: 112px;
+                            min-height: 112px;
+                            max-height: 112px;
+                            overflow: hidden;
+                            box-shadow: none;
+                            z-index: 10;
+                        `;
+                    } else if (textWindow.dataset.defaultStyle) {
+                        textWindow.style.cssText = textWindow.dataset.defaultStyle;
+                    }
+                }
+                nameBox.style.display = isSystemLine ? 'none' : 'block';
+
+                const processedText = line.text.replace(/\[N:(\d+)\]/g, (match, id) => {
+                    const targetId = parseInt(id);
+                    const saved = App.data.characters.find(c => c.charId === targetId);
+                    const master = DB.CHARACTERS.find(c => c.id === targetId);
+                    return (saved ? saved.name : (master ? master.name : `ID:${id}`));
+                }).replace(/\\n/g, '\n');
+
+                this.backlog.push({ name: displayName, text: processedText.replace(/\n/g, ' ') });
+                portraitImg.src = displayImg || '';
+                portraitImg.style.display = displayImg ? 'block' : 'none';
+                nameBox.innerText = displayName;
+                nextIndicator.style.visibility = 'hidden';
+
+                let isLineTyping = true;
+                let skipTyping = false;
+                overlay.onclick = (e) => {
+                    if (!e.target.closest('.no-skip') && isLineTyping) skipTyping = true;
+                };
+
+                textBox.innerHTML = '';
+                const chars = processedText.split('');
+                for (let j = 0; j < chars.length; j++) {
+                    if (skipTyping) {
+                        textBox.innerHTML = processedText.replace(/\n/g, '<br>');
+                        break;
+                    }
+                    const char = chars[j];
+                    textBox.innerHTML += (char === '\n' ? '<br>' : char);
+                    await new Promise(resolve => setTimeout(resolve, char === '\n' ? this.newlineWait : this.textSpeed));
+                }
+                isLineTyping = false;
+                nextIndicator.style.visibility = 'visible';
+                await new Promise(resolve => {
+                    overlay.onclick = (e) => {
+                        if (!e.target.closest('.no-skip')) resolve();
+                    };
+                });
+                // 読了した行を再表示しないよう、次行カーソルを直ちに保存する。
+                if (App.data?.progress) {
+                    App.data.progress.activeConversation = { key: scriptKey, index: i + 1 };
+                    App.save();
+                }
+            }
+
+            completed = true;
+            if (App.data?.progress) {
+                delete App.data.progress.activeConversation;
+                App.save();
+            }
+            return { status: 'completed', scriptKey };
+        } catch (error) {
+            console.error(`[StoryManager] conversation failed: ${scriptKey}`, error);
+            // 会話DOMやインライン演出で例外が起きても、透明なオーバーレイや
+            // 入力待ちを残さない。カーソルはfinallyで保持し、再読込後に再試行する。
+            try { this.dismissChoiceUI({ hideOverlay: true }); } catch (_) {}
+            try { this.clearStoryPortrait(); } catch (_) {}
+            if (overlay) overlay.style.display = 'none';
+            this.active = false;
+            throw error;
+        } finally {
+            this.isTyping = false;
+            if (overlay) overlay.onclick = null;
+            // 失敗時はactiveConversationを残し、同じ行から再試行できるようにする。
+            if (!completed && App.data?.progress?.activeConversation?.key !== scriptKey) {
+                App.data.progress.activeConversation = { key: scriptKey, index: startFromIndex };
+                try { App.save(); } catch (_) {}
+            }
         }
-        
-        if (App.data) { delete App.data.progress.activeConversation; App.save(); }
-		this.isTyping = false;
-        // showConversation 自体では閉じず、executeEvent 側の endConversation に任せる
     },
 
     /**

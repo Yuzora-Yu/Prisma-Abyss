@@ -158,7 +158,8 @@ class Player extends Entity {
         }
 
         // ★修正: 転生回数を考慮した「実効レベル」を計算してスキル習得判定に使用
-        const effectiveLevel = data.level + (100 * (data.reincarnationCount || 0));
+        const equivalentCycles = data.isMonsterAlly === true ? (data.monsterFusionCount || 0) : (data.reincarnationCount || 0);
+        const effectiveLevel = data.level + (100 * equivalentCycles);
         const table = JOB_SKILLS[data.job];
         if (table) {
             for (let lv = 1; lv <= effectiveLevel; lv++) {
@@ -277,6 +278,127 @@ const App = {
     data: null,
     pendingAction: null, 
 	encounterTransitioning: false,
+	playTimeRuntime: null,
+	playTimeTicker: null,
+	playTimeEventsBound: false,
+
+	ensurePlayTimeData: (data = App.data) => {
+		if (!data || typeof data !== 'object') return 0;
+		if (!data.stats || typeof data.stats !== 'object' || Array.isArray(data.stats)) data.stats = {};
+		const value = Math.max(0, Math.floor(Number(data.stats.playTimeMs || 0)));
+		data.stats.playTimeMs = value;
+		if (!data.system || typeof data.system !== 'object' || Array.isArray(data.system)) data.system = {};
+		if (Number(data.system.playTimeSchemaVersion || 0) < 1) data.system.playTimeSchemaVersion = 1;
+		return value;
+	},
+
+	getPlayTimeClock: () => {
+		if (typeof performance !== 'undefined' && typeof performance.now === 'function') return performance.now();
+		return Date.now();
+	},
+
+	startPlayTimeTracking: () => {
+		if (!App.data) return;
+		const savedMs = App.ensurePlayTimeData(App.data);
+		App.playTimeRuntime = {
+			accumulatedMs: savedMs,
+			activeSince: (typeof document === 'undefined' || !document.hidden) ? App.getPlayTimeClock() : null
+		};
+
+		if (!App.playTimeEventsBound && typeof document !== 'undefined') {
+			App.playTimeEventsBound = true;
+			document.addEventListener('visibilitychange', () => {
+				if (!App.playTimeRuntime || !App.data) return;
+				if (document.hidden) App.commitPlayTime({ keepRunning: false });
+				else App.resumePlayTime();
+				App.refreshPlayTimeDisplays();
+			});
+			if (typeof window !== 'undefined') {
+				window.addEventListener('pagehide', () => App.commitPlayTime({ keepRunning: false }));
+			}
+		}
+
+		if (App.playTimeTicker) clearInterval(App.playTimeTicker);
+		App.playTimeTicker = setInterval(() => App.refreshPlayTimeDisplays(), 1000);
+		App.refreshPlayTimeDisplays();
+	},
+
+	resumePlayTime: () => {
+		if (!App.data) return;
+		if (!App.playTimeRuntime) {
+			App.startPlayTimeTracking();
+			return;
+		}
+		if (App.playTimeRuntime.activeSince == null) App.playTimeRuntime.activeSince = App.getPlayTimeClock();
+	},
+
+	commitPlayTime: (options = {}) => {
+		if (!App.data) return 0;
+		App.ensurePlayTimeData(App.data);
+		if (!App.playTimeRuntime) {
+			App.playTimeRuntime = { accumulatedMs: App.data.stats.playTimeMs, activeSince: null };
+		}
+		const now = App.getPlayTimeClock();
+		if (App.playTimeRuntime.activeSince != null) {
+			const delta = Math.max(0, now - App.playTimeRuntime.activeSince);
+			App.playTimeRuntime.accumulatedMs = Math.max(
+				Number(App.data.stats.playTimeMs || 0),
+				Number(App.playTimeRuntime.accumulatedMs || 0) + delta
+			);
+		}
+		App.data.stats.playTimeMs = Math.max(0, Math.floor(Number(App.playTimeRuntime.accumulatedMs || 0)));
+		const shouldContinue = options.keepRunning !== false
+			&& (typeof document === 'undefined' || !document.hidden);
+		App.playTimeRuntime.activeSince = shouldContinue ? now : null;
+		return App.data.stats.playTimeMs;
+	},
+
+	getCurrentPlayTimeMs: (data = App.data) => {
+		if (!data) return 0;
+		const saved = Math.max(0, Math.floor(Number(data.stats?.playTimeMs || 0)));
+		if (data !== App.data || !App.playTimeRuntime || App.playTimeRuntime.activeSince == null) return saved;
+		const delta = Math.max(0, App.getPlayTimeClock() - App.playTimeRuntime.activeSince);
+		return Math.max(saved, Math.floor(Number(App.playTimeRuntime.accumulatedMs || saved) + delta));
+	},
+
+	formatPlayTime: (milliseconds) => {
+		if (typeof SaveSlots !== 'undefined' && typeof SaveSlots.formatPlayTime === 'function') {
+			return SaveSlots.formatPlayTime(milliseconds);
+		}
+		const maxSeconds = 9999 * 3600 + 59 * 60 + 59;
+		const totalSeconds = Math.min(maxSeconds, Math.max(0, Math.floor((Number(milliseconds) || 0) / 1000)));
+		const hours = Math.floor(totalSeconds / 3600);
+		const minutes = Math.floor((totalSeconds % 3600) / 60);
+		const seconds = totalSeconds % 60;
+		return `${String(hours).padStart(4, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+	},
+
+	refreshPlayTimeDisplays: () => {
+		if (typeof document === 'undefined') return;
+		const text = App.formatPlayTime(App.getCurrentPlayTimeMs());
+		document.querySelectorAll('[data-play-time]').forEach(element => {
+			element.textContent = text;
+		});
+	},
+
+	updateSaveMetadata: (updatedAt = new Date().toISOString()) => {
+		if (!App.data) return null;
+		if (!App.data.system || typeof App.data.system !== 'object' || Array.isArray(App.data.system)) App.data.system = {};
+		App.data.system.lastSavedAt = updatedAt;
+		if (typeof SaveSlots !== 'undefined' && typeof SaveSlots.buildMetadata === 'function') {
+			App.data.system.saveMetadata = SaveSlots.buildMetadata(App.data, { updatedAt });
+		} else {
+			const hero = App.data.characters?.find(character => character?.uid === App.data.party?.[0]) || App.data.characters?.[0];
+			App.data.system.saveMetadata = {
+				heroName: hero?.name || '冒険者',
+				heroLevel: Math.max(1, Number(hero?.level || 1)),
+				playTimeMs: Math.max(0, Number(App.data.stats?.playTimeMs || 0)),
+				locationLabel: String(App.data.location?.area || '不明な場所'),
+				updatedAt
+			};
+		}
+		return App.data.system.saveMetadata;
+	},
 
     defaultBattleStrategy: 'balanced',
     battleStrategies: {
@@ -386,8 +508,8 @@ const App = {
         207: 35,  // ハイネ（海底神殿クリア後⇒禁忌の森深部）
         209: 28,  // シルビア（ジョセフ加入後⇒水上都市）
         
-        201: 38,  // アラン（雷の要塞クリア後⇒海底神殿深部）
-        202: 35,  // ソフィア（雷の要塞クリア後⇒海底神殿深部）
+        201: 38,  // アラン（海底神殿後⇒レクスノート邸。本格バランスは後工程）
+        202: 35,  // ソフィア（結晶樹導線の連続SQへ移行予定）
         203: 40,  // ハヤテ（アラン加入後⇒水上都市）
         
         103: 35,  // ゼリード（大灯台クリア後）
@@ -704,27 +826,905 @@ const App = {
         return true;
     },
 
+    // --- 新シナリオ共通状態 (WorldState / StoryState) ---
+    storyStateSchemaVersion: 6,
+
+    getDefaultWorldState: () => ({
+        prologueStage: 0,
+        fireVillageRecovery: 0,
+        waterCityState: 0, // 0:未到達/未確定 1:暗黒騎士占拠 2:解放後 3:後期変化
+        thunderFortState: 0, // 0:未到達 1:機械暴走 2:要塞確保・大灯台期 3:大灯台後・海底火山期 4:海底火山後
+        underseaVolcanoState: 0, // 0:未発見 1:位置判明 2:侵入 3:研究区画 4:最奥 5:攻略済み
+        lunaPublicIdentityKnown: false,
+        lunaMemoryStage: 0,
+        leonJosephRelationStage: 0,
+        hayateZeliedTruthStage: 0,
+        churchPoliticalState: 0,
+        alanOutcome: 'active'
+    }),
+
+    ensureWorldState: (data = App.data) => {
+        if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+        if (!data.progress || typeof data.progress !== 'object' || Array.isArray(data.progress)) data.progress = {};
+        const defaults = App.getDefaultWorldState();
+        const current = (data.progress.worldState && typeof data.progress.worldState === 'object' && !Array.isArray(data.progress.worldState))
+            ? data.progress.worldState
+            : {};
+        data.progress.worldState = { ...defaults, ...current };
+        if (!data.system || typeof data.system !== 'object' || Array.isArray(data.system)) data.system = {};
+        data.system.storyStateSchemaVersion = Math.max(
+            Number(data.system.storyStateSchemaVersion || 0),
+            Number(App.storyStateSchemaVersion || 1)
+        );
+        return data.progress.worldState;
+    },
+
+    reconcileThunderFortWorldState: (data = App.data) => {
+        const worldState = App.ensureWorldState(data);
+        if (!worldState) return null;
+        const flags = data?.progress?.flags || {};
+        const current = Math.max(0, Math.floor(Number(worldState.thunderFortState || 0)));
+        let next = current;
+        if (flags.underseaVolcanoCleared === true) next = Math.max(next, 4);
+        else if (flags.bigTowerCleared === true || flags.lighthouseCleared === true) next = Math.max(next, 3);
+        else if (flags.thunderFortCleared === true) next = Math.max(next, 2);
+        else if (flags.josephJoinedAtThunderFort === true) next = Math.max(next, 1);
+        worldState.thunderFortState = next;
+        return next;
+    },
+
+    reconcileUnderseaVolcanoWorldState: (data = App.data) => {
+        const worldState = App.ensureWorldState(data);
+        if (!worldState) return null;
+        if (!data.progress.flags || typeof data.progress.flags !== 'object') data.progress.flags = {};
+        const flags = data.progress.flags;
+        const storyStep = Math.max(0, Math.floor(Number(data.progress.storyStep || 0)));
+
+        // 旧版は大灯台クリア直後にStep 7へ進んでいた。そこまで進行済みのsaveを巻き戻さず、
+        // 新規挿入した海底火山だけlegacy bypass済みとして補完する。
+        if (storyStep >= 7 || flags.lightPalaceCleared === true) {
+            if (flags.underseaVolcanoRouteOpened !== true) flags.underseaVolcanoRouteOpened = true;
+            if (flags.underseaVolcanoCleared !== true) flags.underseaVolcanoCleared = true;
+            flags.underseaVolcanoLegacyBypass = true;
+        } else if (flags.underseaVolcanoBriefingSeen === true || flags.underseaVolcanoRouteKnown === true) {
+            if (flags.underseaVolcanoRouteOpened !== true) flags.underseaVolcanoRouteOpened = true;
+        }
+
+        const current = Math.max(0, Math.floor(Number(worldState.underseaVolcanoState || 0)));
+        let next = current;
+        if (flags.underseaVolcanoCleared === true) next = Math.max(next, 5);
+        else if (flags.underseaVolcanoBossAreaReached === true) next = Math.max(next, 4);
+        else if (flags.underseaVolcanoResearchReached === true) next = Math.max(next, 3);
+        else if (flags.underseaVolcanoEntered === true) next = Math.max(next, 2);
+        else if (flags.underseaVolcanoRouteOpened === true) next = Math.max(next, 1);
+        worldState.underseaVolcanoState = next;
+        return next;
+    },
+
+    getWorldStateValue: (key, fallback = null) => {
+        const state = App.ensureWorldState();
+        if (!state || !Object.prototype.hasOwnProperty.call(state, key)) return fallback;
+        return state[key];
+    },
+
+    setWorldStateValue: (key, value, options = {}) => {
+        const state = App.ensureWorldState();
+        if (!state || !key) return false;
+        state[key] = value;
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return true;
+    },
+
+    // --- 回想 / 別視点シーン用の一時Scene Context ---
+    // 永続saveへ一時状態を混ぜず、終了時に現在世界のフィールド・所持状態・partyを復元する。
+    sceneContextStack: [],
+
+    cloneSceneContextValue: (value) => {
+        if (value === undefined) return undefined;
+        return JSON.parse(JSON.stringify(value));
+    },
+
+    getVisibleSceneId: () => {
+        if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return 'field';
+        const scenes = Array.from(document.querySelectorAll('.scene-layer') || []);
+        const visible = scenes.find(scene => scene && scene.style?.display !== 'none');
+        const id = String(visible?.id || '');
+        return id.endsWith('-scene') ? id.slice(0, -6) : (id || 'field');
+    },
+
+    getActiveSceneContext: () => {
+        const stack = Array.isArray(App.sceneContextStack) ? App.sceneContextStack : (App.sceneContextStack = []);
+        return stack.length ? stack[stack.length - 1] : null;
+    },
+
+    isSceneContextSaveSuppressed: () => {
+        const stack = Array.isArray(App.sceneContextStack) ? App.sceneContextStack : [];
+        return stack.some(context => context?.suppressSave !== false);
+    },
+
+    getSceneVisualFilterCss: (preset) => {
+        if (!preset) return '';
+        if (typeof preset === 'string' && preset.includes('(')) return preset;
+        const key = String(preset).toLowerCase();
+        if (key === 'sepia' || key === 'memory' || key === 'flashback') {
+            return 'sepia(0.72) saturate(0.72) contrast(1.08) brightness(0.96)';
+        }
+        if (key === 'desaturated') return 'saturate(0.45) contrast(1.04)';
+        return '';
+    },
+
+    applySceneContextVisualFilter: (preset, targetId = 'field-scene') => {
+        if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return false;
+        const target = document.getElementById(targetId);
+        if (!target || !target.style) return false;
+        target.style.filter = App.getSceneVisualFilterCss(preset);
+        return true;
+    },
+
+    captureSceneContextSnapshot: () => {
+        if (!App.data) return null;
+        const clone = App.cloneSceneContextValue;
+        const progress = App.data.progress || {};
+        const fieldReady = typeof Field !== 'undefined' && Field.ready;
+        return {
+            sourceSceneId: App.getVisibleSceneId(),
+            data: {
+                location: clone(App.data.location),
+                characters: clone(App.data.characters),
+                party: clone(App.data.party),
+                items: clone(App.data.items),
+                inventory: clone(App.data.inventory),
+                gold: App.data.gold,
+                gems: App.data.gems,
+                book: clone(App.data.book),
+                stats: clone(App.data.stats),
+                dungeon: clone(App.data.dungeon),
+                battle: clone(App.data.battle),
+                mapReturnPoint: clone(App.data.mapReturnPoint)
+            },
+            progress: {
+                floor: progress.floor,
+                flags: clone(progress.flags),
+                worldState: clone(progress.worldState),
+                storyCharacters: clone(progress.storyCharacters),
+                storyRewards: clone(progress.storyRewards),
+                quests: clone(progress.quests),
+                openedChests: clone(progress.openedChests),
+                defeatedBosses: clone(progress.defeatedBosses),
+                visitedFixedMaps: clone(progress.visitedFixedMaps),
+                fixedDungeonVisitedMaps: clone(progress.fixedDungeonVisitedMaps),
+                mapChanges: clone(progress.mapChanges),
+                clearedDungeons: clone(progress.clearedDungeons),
+                unlocked: clone(progress.unlocked)
+            },
+            field: {
+                x: fieldReady ? Field.x : App.data.location?.x,
+                y: fieldReady ? Field.y : App.data.location?.y,
+                dir: typeof Field !== 'undefined' ? Field.dir : 3
+            },
+            visual: (() => {
+                const target = typeof document !== 'undefined' && document.getElementById
+                    ? document.getElementById('field-scene')
+                    : null;
+                return { fieldFilter: target?.style?.filter || '' };
+            })()
+        };
+    },
+
+    restoreSceneContextSnapshot: (snapshot) => {
+        if (!snapshot || !App.data) return false;
+        const clone = App.cloneSceneContextValue;
+        const dataSnapshot = snapshot.data || {};
+        ['location','characters','party','items','inventory','book','stats','dungeon','battle','mapReturnPoint'].forEach(key => {
+            App.data[key] = clone(dataSnapshot[key]);
+        });
+        App.data.gold = Number(dataSnapshot.gold || 0);
+        App.data.gems = Number(dataSnapshot.gems || 0);
+        if (!App.data.progress || typeof App.data.progress !== 'object') App.data.progress = {};
+        const progressSnapshot = snapshot.progress || {};
+        ['flags','worldState','storyCharacters','storyRewards','quests','openedChests','defeatedBosses','visitedFixedMaps','fixedDungeonVisitedMaps','mapChanges','unlocked'].forEach(key => {
+            App.data.progress[key] = clone(progressSnapshot[key]) || {};
+        });
+        App.data.progress.clearedDungeons = clone(progressSnapshot.clearedDungeons) || [];
+        App.data.progress.floor = Number(progressSnapshot.floor || 0);
+        if (typeof Field !== 'undefined') {
+            Field.x = Number(snapshot.field?.x ?? App.data.location?.x ?? Field.x);
+            Field.y = Number(snapshot.field?.y ?? App.data.location?.y ?? Field.y);
+            Field.dir = Number.isFinite(Number(snapshot.field?.dir)) ? Number(snapshot.field.dir) : Field.dir;
+        }
+        if (typeof document !== 'undefined' && document.getElementById) {
+            const fieldScene = document.getElementById('field-scene');
+            if (fieldScene?.style) fieldScene.style.filter = snapshot.visual?.fieldFilter || '';
+        }
+        App.ensureWorldState?.(App.data);
+        App.ensureStoryCharacterStates?.(App.data);
+        App.ensureStoryRewardState?.(App.data);
+        return true;
+    },
+
+    beginSceneContext: (options = {}) => {
+        if (!App.data) return null;
+        if (App.data.battle?.active && options.allowDuringBattle !== true) return null;
+        const snapshot = App.captureSceneContextSnapshot();
+        if (!snapshot) return null;
+        const token = `scene-context-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        const context = {
+            token,
+            type: String(options.type || 'story'),
+            suppressSave: options.suppressSave !== false,
+            snapshot,
+            visualPreset: options.visualPreset || options.filter || null,
+            startedAt: Date.now(),
+            checkpoints: {},
+            restartOnWipeout: options.restartOnWipeout === true,
+            wipeoutEventId: options.wipeoutEventId || null,
+            carryoverCharacterIds: Array.isArray(options.carryoverCharacterIds) ? options.carryoverCharacterIds.map(Number).filter(Number.isFinite) : [],
+            mergeLoot: options.mergeLoot === true,
+            exitTrigger: options.exitTrigger && typeof options.exitTrigger === 'object' ? App.cloneSceneContextValue(options.exitTrigger) : null,
+            isolatedInventory: options.isolateInventory === true,
+            isolatedBaseline: null
+        };
+        if (!Array.isArray(App.sceneContextStack)) App.sceneContextStack = [];
+        App.sceneContextStack.push(context);
+
+        if (App.data.progress) App.data.progress.floor = Math.max(0, Number(options.floor || 0));
+        if (options.clearDungeon !== false) App.data.dungeon = null;
+        App.data.battle = { active:false };
+        if (options.clearReturnPoint !== false) App.data.mapReturnPoint = null;
+
+        if (context.isolatedInventory) {
+            App.data.items = App.cloneSceneContextValue(options.sceneItems || {});
+            App.data.inventory = App.cloneSceneContextValue(options.sceneInventory || []);
+            App.data.gold = Math.max(0, Number(options.sceneGold || 0));
+            App.data.gems = Math.max(0, Number(options.sceneGems || 0));
+            // 回想は現在側の所持品だけでなく、現在側で開封済みの宝箱状態も参照しない。
+            // 回想中に実際に取得した宝箱だけは終了時に現在世界へ統合する。
+            const globalOpenedChests = App.cloneSceneContextValue(App.data.progress?.openedChests || {});
+            if (!App.data.progress) App.data.progress = {};
+            App.data.progress.openedChests = {};
+            context.isolatedBaseline = {
+                items: App.cloneSceneContextValue(App.data.items),
+                inventory: App.cloneSceneContextValue(App.data.inventory),
+                gold: App.data.gold,
+                gems: App.data.gems,
+                globalOpenedChests
+            };
+        }
+
+        const targetLocation = options.location && typeof options.location === 'object'
+            ? options.location
+            : options.area
+                ? { area: options.area, worldKey: options.worldKey, x: options.x, y: options.y }
+                : null;
+        if (targetLocation) {
+            const current = App.data.location || {};
+            App.data.location = {
+                ...current,
+                ...App.cloneSceneContextValue(targetLocation),
+                area: targetLocation.area || current.area || 'WORLD',
+                x: Number.isFinite(Number(targetLocation.x)) ? Number(targetLocation.x) : Number(current.x || 0),
+                y: Number.isFinite(Number(targetLocation.y)) ? Number(targetLocation.y) : Number(current.y || 0)
+            };
+            if (!App.data.location.worldKey) delete App.data.location.worldKey;
+        }
+
+        if (Array.isArray(options.temporaryParty)) {
+            App.setSceneContextParty(options.temporaryParty, { preserveExisting: true });
+        }
+
+        if (typeof Field !== 'undefined') {
+            if (Number.isFinite(Number(options.dir))) Field.dir = Number(options.dir);
+            if (App.data.location) {
+                Field.x = Number(App.data.location.x || 0);
+                Field.y = Number(App.data.location.y || 0);
+            }
+        }
+        if (context.visualPreset) App.applySceneContextVisualFilter(context.visualPreset);
+        if (options.changeScene !== false && typeof App.changeScene === 'function') App.changeScene(options.sceneId || 'field');
+        return context;
+    },
+
+    setSceneContextParty: (partySpecs = [], options = {}) => {
+        const context = App.getActiveSceneContext();
+        if (!context || !Array.isArray(partySpecs)) return false;
+        App.data.party = [null, null, null, null];
+        partySpecs.slice(0, 4).forEach((entry, index) => {
+            const spec = typeof entry === 'object' ? entry : { charId: entry };
+            const charId = Number(spec.charId ?? spec.id);
+            if (!Number.isFinite(charId)) return;
+            let ally = options.preserveExisting !== false ? App.getStoryAllyCharacter(charId) : null;
+            if (!ally) {
+                ally = App.addStoryAlly(charId, {
+                    initialLevel: spec.initialLevel,
+                    expMultiplierPct: spec.expMultiplierPct,
+                    available: true,
+                    joinParty: false,
+                    temporary: true,
+                    allowPermanentReturn: true,
+                    silent: true,
+                    save: false
+                });
+            } else {
+                App.setStoryAllyAvailability(charId, true, { save:false, removeFromParty:false, allowPermanentOverride:true });
+                App.setStoryAllyTemporary(charId, true, { save:false });
+            }
+            if (!ally) return;
+            if (Number.isFinite(Number(spec.expMultiplierPct))) App.setCharacterExpRequirementMultiplierPct?.(ally, Number(spec.expMultiplierPct), { save:false });
+            if (Array.isArray(spec.skills)) {
+                if (!Array.isArray(ally.skillBookSkills)) ally.skillBookSkills = [];
+                spec.skills.map(Number).filter(Number.isFinite).forEach(id => { if (!ally.skillBookSkills.includes(id)) ally.skillBookSkills.push(id); });
+            }
+            if (ally.uid) App.data.party[index] = ally.uid;
+        });
+        if (typeof Menu !== 'undefined') Menu.renderPartyBar?.();
+        return true;
+    },
+
+    setSceneContextCheckpoint: (checkpointId = 'default', options = {}) => {
+        const context = App.getActiveSceneContext();
+        if (!context) return false;
+        const id = String(checkpointId || 'default');
+        const snapshot = App.captureSceneContextSnapshot();
+        if (!snapshot) return false;
+        context.checkpoints[id] = snapshot;
+        context.activeCheckpointId = id;
+        if (options.wipeoutEventId !== undefined) context.wipeoutEventId = options.wipeoutEventId || null;
+        return true;
+    },
+
+    restoreSceneContextCheckpoint: (checkpointId = null, options = {}) => {
+        const context = App.getActiveSceneContext();
+        if (!context) return false;
+        const id = String(checkpointId || context.activeCheckpointId || 'default');
+        const snapshot = context.checkpoints?.[id];
+        if (!snapshot) return false;
+        if (!App.restoreSceneContextSnapshot(snapshot)) return false;
+        context.activeCheckpointId = id;
+        if (context.visualPreset) App.applySceneContextVisualFilter(context.visualPreset);
+        if (options.changeScene !== false && typeof App.changeScene === 'function') App.changeScene(options.sceneId || 'field');
+        return true;
+    },
+
+    getSceneContextExitEvent: (areaKey, floor) => {
+        const context = App.getActiveSceneContext();
+        const trigger = context?.exitTrigger;
+        if (!trigger?.eventId) return null;
+        if (trigger.areaKey && String(trigger.areaKey) !== String(areaKey || '')) return null;
+        if (trigger.floor != null && Number(trigger.floor) !== Number(floor)) return null;
+        return String(trigger.eventId);
+    },
+
+    collectSceneContextCarryover: (context, options = {}) => {
+        const ids = Array.isArray(options.carryoverCharacterIds) ? options.carryoverCharacterIds : (context?.carryoverCharacterIds || []);
+        const out = {};
+        ids.map(Number).filter(Number.isFinite).forEach(id => {
+            const char = App.getStoryAllyCharacter(id);
+            if (!char) return;
+            out[String(id)] = {
+                level: Math.max(1, Number(char.level || 1)),
+                exp: Math.max(0, Number(char.exp || 0)),
+                equips: App.cloneSceneContextValue(char.equips || {}),
+                skillBookSkills: App.cloneSceneContextValue(char.skillBookSkills || [])
+            };
+        });
+        return out;
+    },
+
+    mergeSceneContextLoot: (sceneItems, sceneInventory, context, sceneProgress = null) => {
+        if (!context?.mergeLoot) return;
+        if (!App.data.items || typeof App.data.items !== 'object') App.data.items = {};
+        Object.entries(sceneItems || {}).forEach(([id, count]) => {
+            const amount = Math.max(0, Math.floor(Number(count || 0)));
+            if (amount > 0) App.data.items[id] = Number(App.data.items[id] || 0) + amount;
+        });
+        if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+        (Array.isArray(sceneInventory) ? sceneInventory : []).forEach(equip => App.data.inventory.push(App.cloneSceneContextValue(equip)));
+        // 回想で開けた宝箱は現在でも開封済みにする。これにより同一宝箱の二重取得を防ぐ。
+        if (!App.data.progress) App.data.progress = {};
+        if (!App.data.progress.openedChests || typeof App.data.progress.openedChests !== 'object') App.data.progress.openedChests = {};
+        const opened = sceneProgress?.openedChests || {};
+        Object.entries(opened).forEach(([key, value]) => {
+            if (value) App.data.progress.openedChests[key] = App.cloneSceneContextValue(value);
+        });
+    },
+
+    endSceneContext: (token = null, options = {}) => {
+        const context = App.getActiveSceneContext();
+        if (!context) return false;
+        if (token && String(token) !== String(context.token)) return false;
+        const carryover = App.collectSceneContextCarryover(context, options);
+        const sceneItems = context.isolatedInventory ? App.cloneSceneContextValue(App.data.items || {}) : {};
+        const sceneInventory = context.isolatedInventory ? App.cloneSceneContextValue(App.data.inventory || []) : [];
+        const sceneProgress = context.isolatedInventory ? { openedChests: App.cloneSceneContextValue(App.data.progress?.openedChests || {}) } : null;
+        App.sceneContextStack.pop();
+        if (!App.restoreSceneContextSnapshot(context.snapshot)) return false;
+        if (!App.data.progress || typeof App.data.progress !== 'object') App.data.progress = {};
+        if (!App.data.progress.storyCharacterCarryover || typeof App.data.progress.storyCharacterCarryover !== 'object') App.data.progress.storyCharacterCarryover = {};
+        Object.entries(carryover).forEach(([id, value]) => { App.data.progress.storyCharacterCarryover[id] = value; });
+        App.mergeSceneContextLoot(sceneItems, sceneInventory, context, sceneProgress);
+        if (options.changeScene !== false && typeof App.changeScene === 'function') {
+            App.changeScene(options.sceneId || context.snapshot?.sourceSceneId || 'field');
+        }
+        if (options.saveAfter === true && typeof App.save === 'function') App.save();
+        return true;
+    },
+
+    // --- 新シナリオ共通条件評価 / ストーリー仲間状態 ---
+    getDefaultStoryCharacterState: () => ({
+        recruited: false,
+        available: false,
+        temporary: false,
+        permanentlyUnavailable: false
+    }),
+
+    ensureStoryCharacterStates: (data = App.data) => {
+        if (!data || typeof data !== 'object' || Array.isArray(data)) return {};
+        if (!data.progress || typeof data.progress !== 'object' || Array.isArray(data.progress)) data.progress = {};
+        if (!data.progress.storyCharacters || typeof data.progress.storyCharacters !== 'object' || Array.isArray(data.progress.storyCharacters)) {
+            data.progress.storyCharacters = {};
+        }
+        const states = data.progress.storyCharacters;
+        const roster = Array.isArray(data.characters) ? data.characters : [];
+        roster.forEach(char => {
+            const id = Number(char?.charId);
+            if (!Number.isFinite(id)) return;
+            const key = String(id);
+            const current = (states[key] && typeof states[key] === 'object' && !Array.isArray(states[key])) ? states[key] : {};
+            const permanent = current.permanentlyUnavailable === true;
+            states[key] = {
+                ...App.getDefaultStoryCharacterState(),
+                ...current,
+                recruited: true,
+                available: permanent ? false : (current.available !== undefined ? current.available === true : true),
+                permanentlyUnavailable: permanent
+            };
+        });
+        if (!data.system || typeof data.system !== 'object' || Array.isArray(data.system)) data.system = {};
+        data.system.storyStateSchemaVersion = Math.max(
+            Number(data.system.storyStateSchemaVersion || 0),
+            Number(App.storyStateSchemaVersion || 2)
+        );
+        return states;
+    },
+
+    ensureStoryCharacterState: (charId, data = App.data) => {
+        const id = Number(charId);
+        if (!Number.isFinite(id)) return null;
+        const states = App.ensureStoryCharacterStates(data);
+        const key = String(id);
+        if (!states[key] || typeof states[key] !== 'object' || Array.isArray(states[key])) {
+            const rosterHasCharacter = Array.isArray(data?.characters) && data.characters.some(char => Number(char?.charId) === id);
+            states[key] = {
+                ...App.getDefaultStoryCharacterState(),
+                recruited: rosterHasCharacter,
+                available: rosterHasCharacter
+            };
+        }
+        if (states[key].permanentlyUnavailable === true) states[key].available = false;
+        return states[key];
+    },
+
+    getStoryCharacterState: (charId) => {
+        const state = App.ensureStoryCharacterState(charId);
+        return state ? { ...state } : null;
+    },
+
+    getStoryAllyCharacter: (charId, data = App.data) => {
+        const id = Number(charId);
+        if (!Number.isFinite(id) || !Array.isArray(data?.characters)) return null;
+        return data.characters.find(char => Number(char?.charId) === id) || null;
+    },
+
+    hasStoryAlly: (charId) => {
+        const state = App.ensureStoryCharacterState(charId);
+        if (state?.recruited === true) return true;
+        return !!App.getStoryAllyCharacter(charId);
+    },
+
+    isStoryAllyAvailable: (charId) => {
+        const state = App.ensureStoryCharacterState(charId);
+        return !!(state && state.recruited === true && state.available === true && state.permanentlyUnavailable !== true);
+    },
+
+    isStoryAllyInParty: (charId) => {
+        const character = App.getStoryAllyCharacter(charId);
+        if (!character || !Array.isArray(App.data?.party)) return false;
+        return App.data.party.some(uid => uid && String(uid) === String(character.uid));
+    },
+
+    removeStoryAllyFromParty: (charId, options = {}) => {
+        const character = App.getStoryAllyCharacter(charId);
+        if (!character || !Array.isArray(App.data?.party)) return false;
+        let changed = false;
+        App.data.party = App.data.party.map(uid => {
+            if (uid && String(uid) === String(character.uid)) {
+                changed = true;
+                return null;
+            }
+            return uid;
+        });
+        if (changed && options.save !== false && typeof App.save === 'function') App.save();
+        return changed;
+    },
+
+    setStoryAllyAvailability: (charId, available, options = {}) => {
+        const state = App.ensureStoryCharacterState(charId);
+        if (!state) return false;
+        const next = available === true;
+        if (next && state.permanentlyUnavailable === true && options.allowPermanentOverride !== true) return false;
+        if (next) {
+            state.recruited = true;
+            state.permanentlyUnavailable = options.allowPermanentOverride === true ? false : state.permanentlyUnavailable;
+        }
+        state.available = next;
+        if (!next && options.removeFromParty !== false) App.removeStoryAllyFromParty(charId, { save: false });
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return true;
+    },
+
+    setStoryAllyTemporary: (charId, temporary, options = {}) => {
+        const state = App.ensureStoryCharacterState(charId);
+        if (!state) return false;
+        state.temporary = temporary === true;
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return true;
+    },
+
+    setStoryAllyPermanentlyUnavailable: (charId, unavailable = true, options = {}) => {
+        const state = App.ensureStoryCharacterState(charId);
+        if (!state) return false;
+        state.permanentlyUnavailable = unavailable === true;
+        if (state.permanentlyUnavailable) {
+            state.available = false;
+            App.removeStoryAllyFromParty(charId, { save: false });
+        } else if (options.restoreAvailability === true && state.recruited === true) {
+            state.available = true;
+        }
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return true;
+    },
+
+    returnCharacterEquipment: (charIdOrUid, options = {}) => {
+        if (!App.data || !Array.isArray(App.data.characters)) return { ok:false, reason:'no_data', returned:[] };
+        const numericId = Number(charIdOrUid);
+        const character = App.data.characters.find(char =>
+            (Number.isFinite(numericId) && Number(char?.charId) === numericId) ||
+            String(char?.uid || '') === String(charIdOrUid)
+        );
+        if (!character) return { ok:false, reason:'character_missing', returned:[] };
+        if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+        const returned = [];
+        const seen = new Set();
+        if (character.equips && typeof character.equips === 'object') {
+            Object.keys(character.equips).forEach(slot => {
+                const equip = character.equips[slot];
+                if (equip && typeof equip === 'object') {
+                    const identity = equip.uid != null ? `uid:${String(equip.uid)}` : equip;
+                    if (!seen.has(identity)) {
+                        seen.add(identity);
+                        App.data.inventory.push(equip);
+                        returned.push(equip);
+                    }
+                }
+                character.equips[slot] = null;
+            });
+        }
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return { ok:true, character, returned, returnedCount:returned.length };
+    },
+
+    departStoryAlly: (charId, options = {}) => {
+        const character = App.getStoryAllyCharacter(charId);
+        if (!character) return { ok:false, reason:'character_missing', returnedCount:0 };
+        const equipmentResult = options.returnEquipment === false
+            ? { ok:true, returned:[], returnedCount:0 }
+            : App.returnCharacterEquipment(charId, { save:false });
+        const state = App.ensureStoryCharacterState(charId);
+        state.recruited = true;
+        state.available = false;
+        state.temporary = false;
+        if (options.permanent === true) state.permanentlyUnavailable = true;
+        App.removeStoryAllyFromParty(charId, { save:false });
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return {
+            ok:true,
+            character,
+            permanent:state.permanentlyUnavailable === true,
+            returned:equipmentResult.returned || [],
+            returnedCount:Number(equipmentResult.returnedCount || 0)
+        };
+    },
+
+    rejoinStoryAlly: (charId, options = {}) => {
+        let character = App.getStoryAllyCharacter(charId);
+        const state = App.ensureStoryCharacterState(charId);
+        if (state?.permanentlyUnavailable === true && options.allowPermanentReturn !== true) {
+            return { ok:false, reason:'permanently_unavailable', character:null };
+        }
+        if (!character && options.createIfMissing === true) {
+            character = App.addStoryAlly(Number(charId), {
+                initialLevel:options.initialLevel,
+                expMultiplierPct:options.expMultiplierPct,
+                available:true,
+                joinParty:false,
+                allowPermanentReturn:options.allowPermanentReturn === true,
+                silent:true,
+                save:false
+            });
+        }
+        if (!character) return { ok:false, reason:'character_missing', character:null };
+        state.recruited = true;
+        state.available = true;
+        state.temporary = false;
+        if (options.allowPermanentReturn === true) state.permanentlyUnavailable = false;
+        let joinedParty = false;
+        if (options.joinParty !== false && Array.isArray(App.data.party) && !App.data.party.includes(character.uid)) {
+            const slot = App.data.party.findIndex(uid => !uid);
+            if (slot >= 0) {
+                App.data.party[slot] = character.uid;
+                joinedParty = true;
+            }
+        }
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return { ok:true, character, joinedParty };
+    },
+
+    resetTemporaryStoryAlly: (charId, options = {}) => {
+        const id = Number(charId);
+        if (!Number.isFinite(id) || !App.data) return { ok:false, reason:'invalid_character' };
+        const state = App.ensureStoryCharacterState(id);
+        if (state?.temporary !== true && options.force !== true) return { ok:false, reason:'not_temporary' };
+        const character = App.getStoryAllyCharacter(id);
+        if (character) App.removeStoryAllyFromParty(id, { save:false });
+        if (Array.isArray(App.data.characters)) {
+            App.data.characters = App.data.characters.filter(char => Number(char?.charId) !== id);
+        }
+        const states = App.ensureStoryCharacterStates(App.data);
+        states[String(id)] = { ...App.getDefaultStoryCharacterState() };
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return { ok:true, removed:!!character };
+    },
+
+    resetHeroAfterPlayablePrologue: (options = {}) => {
+        if (!App.data || !Array.isArray(App.data.characters)) return false;
+        const hero = App.data.characters.find(char => char?.isHero || Number(char?.charId) === 301 || String(char?.uid) === 'p1');
+        const initialHero = App.getInitialData?.()?.characters?.find(char => char?.isHero || Number(char?.charId) === 301 || String(char?.uid) === 'p1');
+        if (!hero || !initialHero) return false;
+        const preserved = {
+            uid:hero.uid, isHero:hero.isHero, charId:hero.charId, name:hero.name,
+            equips:hero.equips, config:hero.config, img:hero.img, customImage:hero.customImage
+        };
+        const resetKeys = [
+            'job','rarity','level','exp','sp','hp','mp','atk','def','spd','mag','mdef','hit','eva','cri',
+            'limitBreak','lbProgress','tree','alloc','skills','traits','disabledTraits','reincarnationCount','expMultiplierPct'
+        ];
+        resetKeys.forEach(key => {
+            if (initialHero[key] !== undefined) hero[key] = JSON.parse(JSON.stringify(initialHero[key]));
+            else delete hero[key];
+        });
+        Object.assign(hero, preserved);
+        delete hero.currentHp;
+        delete hero.currentMp;
+        delete hero.battleStatus;
+        const stats = typeof App.calcStats === 'function' ? App.calcStats(hero) : null;
+        hero.currentHp = Math.max(1, Number(stats?.maxHp || hero.hp || 1));
+        hero.currentMp = Math.max(0, Number(stats?.maxMp || hero.mp || 0));
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return true;
+    },
+
+    promoteTemporaryStoryAlly: (charId, options = {}) => {
+        const id = Number(charId);
+        const state = App.ensureStoryCharacterState(id);
+        const character = App.getStoryAllyCharacter(id);
+        if (!state || !character) return false;
+        state.recruited = true;
+        state.available = options.available !== false;
+        state.temporary = false;
+        state.permanentlyUnavailable = false;
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return true;
+    },
+
+    setStoryCharacterLimitBreak: (charId, value = 99, options = {}) => {
+        const id = Number(charId);
+        const target = Math.max(0, Math.min(Number(App.limitBreakConfig?.max || 99), Math.floor(Number(value) || 0)));
+        const character = App.getStoryAllyCharacter(id);
+        if (!character) return false;
+        const progress = App.ensureLimitBreakProgress?.(character);
+        if (!progress) return false;
+        const totalBefore = Math.max(0, Number(App.getLimitBreakSourceTotal?.(character) || 0));
+        if (target > totalBefore) progress.sources.story += target - totalBefore;
+        const now = Date.now();
+        if (target >= 50) {
+            progress.trials.mid = true;
+            progress.trials.midClearedAt = progress.trials.midClearedAt || now;
+        }
+        if (target >= 99) {
+            progress.trials.final = true;
+            progress.trials.finalClearedAt = progress.trials.finalClearedAt || now;
+            progress.trials.mid = true;
+            progress.trials.midClearedAt = progress.trials.midClearedAt || progress.trials.finalClearedAt;
+        }
+        character.limitBreak = target;
+        if (typeof App.syncDerivedLimitBreaks === 'function') App.syncDerivedLimitBreaks();
+        if (typeof App.calcStats === 'function') {
+            const stats = App.calcStats(character);
+            character.currentHp = Math.max(1, Number(stats?.maxHp || character.hp || 1));
+            character.currentMp = Math.max(0, Number(stats?.maxMp || character.mp || 0));
+        }
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return true;
+    },
+
+    normalizeConditionList: (value) => {
+        if (value === undefined || value === null || value === false) return [];
+        return Array.isArray(value) ? value : [value];
+    },
+
+    normalizeItemRequirements: (value) => {
+        return App.normalizeConditionList(value).map(requirement => {
+            if (typeof requirement === 'number' || typeof requirement === 'string') {
+                return { id: Number(requirement), count: 1 };
+            }
+            return {
+                id: Number(requirement?.id ?? requirement?.itemId),
+                count: Math.max(1, Math.floor(Number(requirement?.count) || 1))
+            };
+        }).filter(requirement => Number.isFinite(requirement.id));
+    },
+
+    compareConditionValue: (actual, operator, expected) => {
+        const op = String(operator || '===').trim();
+        switch (op) {
+            case '=':
+            case '==': return actual == expected; // intentional loose support for data-authored numeric strings
+            case '===': return actual === expected;
+            case '!=': return actual != expected;
+            case '!==': return actual !== expected;
+            case '>': return Number(actual) > Number(expected);
+            case '>=': return Number(actual) >= Number(expected);
+            case '<': return Number(actual) < Number(expected);
+            case '<=': return Number(actual) <= Number(expected);
+            case 'in': return Array.isArray(expected) && expected.includes(actual);
+            case 'notIn': return Array.isArray(expected) && !expected.includes(actual);
+            case 'truthy': return !!actual;
+            case 'falsy': return !actual;
+            default: return actual === expected;
+        }
+    },
+
+    normalizeWorldStateConditions: (value) => {
+        if (!value) return [];
+        if (Array.isArray(value)) return value.filter(Boolean);
+        if (typeof value === 'object') {
+            if ('key' in value || 'path' in value) return [value];
+            return Object.entries(value).map(([key, expected]) => {
+                // Object-map shorthand supports both primitive equality and explicit comparison rules.
+                // Example: { prologueStage: { op: '>=', value: 1 } } must become
+                // { key: 'prologueStage', op: '>=', value: 1 }, not an object-equality check.
+                if (expected && typeof expected === 'object' && !Array.isArray(expected)
+                    && ('op' in expected || 'operator' in expected || 'value' in expected)) {
+                    return { key, ...expected, op: expected.op || expected.operator || '===' };
+                }
+                return { key, value: expected, op: '===' };
+            });
+        }
+        return [];
+    },
+
+    evaluateWorldStateCondition: (condition) => {
+        if (!condition || typeof condition !== 'object') return true;
+        const key = condition.key ?? condition.path;
+        if (!key) return true;
+        const actual = App.getWorldStateValue(String(key));
+        return App.compareConditionValue(actual, condition.op || condition.operator || '===', condition.value);
+    },
+
+    evaluateGameConditions: (condition = {}, options = {}) => {
+        if (!condition || condition.active === false) return false;
+        const progress = App.data?.progress || {};
+        const flags = progress.flags || {};
+        const items = App.data?.items || {};
+        const requiredFlags = Array.isArray(condition.requiredFlags)
+            ? condition.requiredFlags
+            : (condition.requiredFlag ? [condition.requiredFlag] : []);
+        const missingFlags = Array.isArray(condition.missingFlags)
+            ? condition.missingFlags
+            : (condition.missingFlag ? [condition.missingFlag] : []);
+        if (!requiredFlags.every(flag => !!flags[flag]) || !missingFlags.every(flag => !flags[flag])) return false;
+
+        const requiredItems = App.normalizeItemRequirements(condition.requiredItems);
+        const missingItems = App.normalizeItemRequirements(condition.missingItems);
+        if (!requiredItems.every(requirement => Number(items[requirement.id] || 0) >= requirement.count)) return false;
+        if (!missingItems.every(requirement => Number(items[requirement.id] || 0) < requirement.count)) return false;
+
+        if (condition.requiredStoryStep !== undefined) {
+            const step = Number(progress.storyStep || 0);
+            const subStep = Number(progress.subStep || 0);
+            const requiredStep = Number(condition.requiredStoryStep);
+            const requiredSubStep = Number(condition.requiredSubStep || 0);
+            if (!(step > requiredStep || (step === requiredStep && subStep >= requiredSubStep))) return false;
+        }
+
+        const requiredWorldState = App.normalizeWorldStateConditions(condition.requiredWorldState || condition.worldStateConditions);
+        const missingWorldState = App.normalizeWorldStateConditions(condition.missingWorldState);
+        if (!requiredWorldState.every(App.evaluateWorldStateCondition)) return false;
+        if (!missingWorldState.every(entry => !App.evaluateWorldStateCondition(entry))) return false;
+
+        const requiredAllies = App.normalizeConditionList(condition.requiredAllies).map(Number).filter(Number.isFinite);
+        const missingAllies = App.normalizeConditionList(condition.missingAllies).map(Number).filter(Number.isFinite);
+        const requiredAvailableAllies = App.normalizeConditionList(condition.requiredAvailableAllies).map(Number).filter(Number.isFinite);
+        const missingAvailableAllies = App.normalizeConditionList(condition.missingAvailableAllies).map(Number).filter(Number.isFinite);
+        const requiredPartyAllies = App.normalizeConditionList(condition.requiredPartyAllies).map(Number).filter(Number.isFinite);
+        const missingPartyAllies = App.normalizeConditionList(condition.missingPartyAllies).map(Number).filter(Number.isFinite);
+        if (!requiredAllies.every(App.hasStoryAlly) || !missingAllies.every(id => !App.hasStoryAlly(id))) return false;
+        if (!requiredAvailableAllies.every(App.isStoryAllyAvailable) || !missingAvailableAllies.every(id => !App.isStoryAllyAvailable(id))) return false;
+        if (!requiredPartyAllies.every(App.isStoryAllyInParty) || !missingPartyAllies.every(id => !App.isStoryAllyInParty(id))) return false;
+
+        if (options.includeQuestRequirements !== false) {
+            const requiredQuests = App.normalizeConditionList(condition.requiredQuests).filter(Boolean);
+            const missingQuests = App.normalizeConditionList(condition.missingQuests).filter(Boolean);
+            if (typeof App.isQuestCompleted === 'function') {
+                if (!requiredQuests.every(id => App.isQuestCompleted(id))) return false;
+                if (!missingQuests.every(id => !App.isQuestCompleted(id))) return false;
+            }
+            const questStateRules = condition.requiredQuestStates;
+            if (questStateRules && typeof App.getQuestState === 'function') {
+                const rules = Array.isArray(questStateRules)
+                    ? questStateRules
+                    : Object.entries(questStateRules).map(([id, state]) => ({ id, state }));
+                for (const rule of rules) {
+                    const id = rule?.id ?? rule?.questId;
+                    if (!id) continue;
+                    const actualState = App.getQuestState(id)?.state;
+                    const expectedStates = Array.isArray(rule.state) ? rule.state : (Array.isArray(rule.states) ? rule.states : [rule.state]);
+                    if (!expectedStates.filter(Boolean).includes(actualState)) return false;
+                }
+            }
+            const questStageRules = condition.requiredQuestStages;
+            if (questStageRules && typeof App.getQuestStage === 'function') {
+                const rules = Array.isArray(questStageRules)
+                    ? questStageRules
+                    : Object.entries(questStageRules).map(([id, stage]) =>
+                        stage && typeof stage === 'object' ? { id, ...stage } : { id, op:'>=', value:stage }
+                    );
+                for (const rule of rules) {
+                    const id = rule?.id ?? rule?.questId;
+                    if (!id) continue;
+                    const expected = rule?.value ?? rule?.stage ?? 0;
+                    if (!App.compareConditionValue(App.getQuestStage(id), rule?.op || rule?.operator || '>=', expected)) return false;
+                }
+            }
+        }
+        return true;
+    },
+
     // --- 初期データ構造の定義 ---
     // セーブデータが全くない場合や、マイグレーション時のデフォルト参照用
     getInitialData: () => {
         return {
-            location: { area: 'START_VILLAGE', x: 6, y: 5 },
+            location: { area: 'PROLOGUE_WEST_HILL', x: 8, y: 7 },
             settings: App.getDefaultSettings(),
-            system: { monsterIdSchemaVersion: 4, abyssFloorSchemaVersion: 2, monsterAllySkillPointSchemaVersion: 1, monsterAllyGrowthSchemaVersion: 1 },
+            system: { monsterIdSchemaVersion: 4, abyssFloorSchemaVersion: 2, monsterAllySkillPointSchemaVersion: 1, monsterAllyGrowthSchemaVersion: 1, storyStateSchemaVersion: 6 },
             progress: { 
                 floor: 0, 
                 storyStep: 0, 
-                flags: { hasShip: false, luminaVillageTopWallRowV1: true }, 
+                flags: { hasShip: false, luminaVillageTopWallRowV1: true },
+                worldState: App.getDefaultWorldState(),
+                storyCharacters: {},
+                storyRewards: {},
                 unlocked: { ...App.getDefaultUnlockState(), boat: false },
                 clearedDungeons: [],
                 openedChests: {},  
                 defeatedBosses: {},
                 visitedFixedMaps: {},
                 quests: {},
-                guild: { rank: 'G', exp: 0, points: 0, offers: [], questStates: {}, completionCounts: {}, refreshCount: 0 }
+                guild: { rank: 'G', exp: 0, points: 0, offers: [], questStates: {}, completionCounts: {}, refreshCount: 0 },
+                coinSpendingRewards: { claimedMilestones: [] }
             },
             inventory: [],
-            items: { "1": 3 }, 
+            items: { "1": 3, "701009": 1 },
             characters: [
                 { uid: 'p1', charId: 301, name: 'アルス', job: '勇者', level: 1, exp: 0, hp: 50, mp: 20, atk: 15, def: 10, mag: 10, spd: 10, equips: { '武器':null, '盾':null, '頭':null, '体':null, '足':null }, sp: 0, tree: {}, skillBookSkills: [], config: { fullAuto: false, hiddenSkills: [], autoDisabledSkills: [], skillUsageConfigVersion: 2, strategy: 'balanced' } }
             ],
@@ -750,12 +1750,13 @@ const App = {
             },
             stats: { 
                 wipeoutCount: 0,
-                totalSteps: 0, totalBattles: 0, totalChestsOpened: 0, totalMedals: 0,
+                totalSteps: 0, totalBattles: 0, totalChestsOpened: 0, totalMedals: 0, totalCoinsSpent: 0,
                 totalQuestCompletions: 0, totalGuildQuestCompletions: 0,
                 totalAlchemyCrafts: 0, totalAlchemyItemsCrafted: 0,
                 totalBlacksmithActions: 0, blacksmithSynthesisCount: 0,
                 blacksmithRefineAttempts: 0, blacksmithRefineSuccesses: 0,
                 blacksmithEnhanceAttempts: 0, blacksmithEnhanceSuccesses: 0,
+                playTimeMs: 0,
                 maxGold: 0, 
                 maxGems: 0, 
                 maxDamage: { val: 0, actor: '未記録', skill: '-' } 
@@ -838,12 +1839,15 @@ const App = {
 			
             if (!App.data.progress.flags) App.data.progress.flags = {};
             if (!App.data.progress.quests || typeof App.data.progress.quests !== 'object' || Array.isArray(App.data.progress.quests)) App.data.progress.quests = {};
+            if (!App.data.progress.storyRewards || typeof App.data.progress.storyRewards !== 'object' || Array.isArray(App.data.progress.storyRewards)) App.data.progress.storyRewards = {};
             if (!App.data.progress.unlocked || typeof App.data.progress.unlocked !== 'object' || Array.isArray(App.data.progress.unlocked)) App.data.progress.unlocked = {};
             if (!App.data.progress.clearedDungeons) App.data.progress.clearedDungeons = [];
             if (!App.data.progress.openedChests) App.data.progress.openedChests = {};
             if (!App.data.progress.defeatedBosses) App.data.progress.defeatedBosses = {};
             if (!App.data.progress.visitedFixedMaps || typeof App.data.progress.visitedFixedMaps !== 'object' || Array.isArray(App.data.progress.visitedFixedMaps)) App.data.progress.visitedFixedMaps = {};
         }
+        App.ensureWorldState(App.data);
+        App.ensureStoryCharacterStates(App.data);
 
         // リュミナ村の上端へ壁行を追加した版への座標移行。
         // 新規データは初期フラグ済み。旧セーブだけ、村内のY座標と保存済み座標キーを一度だけ+1する。
@@ -996,7 +2000,7 @@ const App = {
 
 	// 全画像データの手動/初回ダウンロード用キャッシュ名。
 	// sw.js の RUNTIME_CACHE_NAME と揃えること。
-    fullDataCacheName: 'prisma-abyss-v17.20260801-runtime',
+    fullDataCacheName: 'prisma-abyss-v39.20260804-runtime',
 
 
 	// 初回起動時の「全データを今ダウンロードしますか？」で「いいえ」を選んだ記録。
@@ -1612,6 +2616,8 @@ const App = {
             }
             return; 
         }
+
+		App.startPlayTimeTracking();
 		
 		// ★追加：累計獲得Gold/GEM フックを起動時に1回だけ有効化
 		if (typeof App.totalGoldGem === 'function') App.totalGoldGem();
@@ -2370,6 +3376,9 @@ const App = {
             }
             if (typeof Facilities !== 'undefined') Facilities.closeModal?.('guild-scene');
             Menu.closeAll?.();
+            Field.render?.();
+            Field.refreshCurrentAction?.({ silent:true });
+            Field.startIdleStep?.();
         });
         return true;
     },
@@ -2543,22 +3552,383 @@ const App = {
         return changed;
     },
 
+
+    // カルメナ北門は二将の討伐記録を正本とし、無関係なクエスト戦でフラグだけが立った旧セーブを修復する。
+    reconcileCarmenaGateProgress: (data = App.data) => {
+        if (!data || typeof data !== 'object') return false;
+        data.progress = (data.progress && typeof data.progress === 'object') ? data.progress : {};
+        data.progress.flags = (data.progress.flags && typeof data.progress.flags === 'object') ? data.progress.flags : {};
+        data.progress.defeatedBosses = (data.progress.defeatedBosses && typeof data.progress.defeatedBosses === 'object') ? data.progress.defeatedBosses : {};
+        data.book = (data.book && typeof data.book === 'object') ? data.book : {};
+        data.book.killCounts = (data.book.killCounts && typeof data.book.killCounts === 'object') ? data.book.killCounts : {};
+        const flags = data.progress.flags;
+        const kills = data.book.killCounts;
+        const getKills = id => Math.max(0, Number(kills[id] || kills[String(id)] || 0));
+        const gateIds = [302000, 302001];
+        const laterBossIds = [302010,302020,302030,302040,302050,302060,302070,302080,302081,302082,302083,302084,302100,302101];
+        const laterFlags = [
+            'abyssLeonardDefeated','abyssEliciaDefeated','abyssFirstBarrierCleared','abyssSyrisDefeated',
+            'abyssGradDefeated','abyssSecondBarrierCleared','abyssLegacionNorthGateOpen','abyssVeldDefeated',
+            'abyssJasperDefeated','abyssIlluminaciaDefeated','abyssVegnasisDefeated','abyssAzelgaragDefeated',
+            'abyssEpilogueSeen','abyssRandomUnlocked'
+        ];
+        const bothKilled = gateIds.every(id => getKills(id) >= 1);
+        const anyGateKilled = gateIds.some(id => getKills(id) >= 1);
+        const laterProgress = laterFlags.some(flag => !!flags[flag]) || laterBossIds.some(id => getKills(id) >= 1);
+        let changed = false;
+        if (bothKilled || laterProgress || (!!flags.abyssCarmenaGateCleared && anyGateKilled)) {
+            gateIds.forEach(id => {
+                if (getKills(id) < 1) { kills[id] = 1; changed = true; }
+            });
+            if (!flags.abyssCarmenaGateCleared) { flags.abyssCarmenaGateCleared = true; changed = true; }
+        } else if (flags.abyssCarmenaGateCleared) {
+            flags.abyssCarmenaGateCleared = false;
+            const gatePositions = new Set(['18,2','20,2']);
+            Object.keys(data.progress.defeatedBosses).forEach(key => {
+                if (!['CARMENA','MAP000054'].includes(String(key).toUpperCase())) return;
+                const entries = data.progress.defeatedBosses[key];
+                if (!Array.isArray(entries)) return;
+                const next = entries.filter(pos => !gatePositions.has(String(pos)));
+                if (next.length !== entries.length) { data.progress.defeatedBosses[key] = next; changed = true; }
+            });
+            changed = true;
+        }
+        return changed;
+    },
+
+    // 2026-08-15以降に段階削除できるよう、短期互換処理は明示ID付き台帳で一度だけ実行する。
+    compatibilityMigrationRemovalDate: '2026-08-15',
+
+    ensureCompatibilityMigrationLedger: (data = App.data) => {
+        if (!data || typeof data !== 'object') return null;
+        if (!data.system || typeof data.system !== 'object' || Array.isArray(data.system)) data.system = {};
+        if (!data.system.oneTimeMigrations || typeof data.system.oneTimeMigrations !== 'object' || Array.isArray(data.system.oneTimeMigrations)) {
+            data.system.oneTimeMigrations = {};
+        }
+        return data.system.oneTimeMigrations;
+    },
+
+    runOneTimeCompatibilityMigration: (data, migrationId, worker) => {
+        const ledger = App.ensureCompatibilityMigrationLedger(data);
+        if (!ledger || ledger[migrationId]) return { applied:false, changed:false, count:0 };
+        const result = (typeof worker === 'function' ? worker() : null) || {};
+        const count = Math.max(0, Math.floor(Number(result.count ?? (result.changed ? 1 : 0)) || 0));
+        ledger[migrationId] = {
+            completedAt: Date.now(),
+            changed: result.changed === true || count > 0,
+            count
+        };
+        return { applied:true, changed:result.changed === true || count > 0, count };
+    },
+
+    // 終極形態302101の討伐済みセーブでは、旧版で欠落し得た関連3形態の討伐数を一度だけ救済する。
+    migrateAbyssBossKillCountsV1: (data = App.data) => {
+        if (!data || typeof data !== 'object') return false;
+        data.system = (data.system && typeof data.system === 'object') ? data.system : {};
+        data.book = (data.book && typeof data.book === 'object') ? data.book : {};
+        data.book.killCounts = (data.book.killCounts && typeof data.book.killCounts === 'object') ? data.book.killCounts : {};
+        if (data.system.abyssBossKillCountRecoveryV1Completed) return false;
+        const kills = data.book.killCounts;
+        const finalKills = Math.max(0, Number(kills[302101] || kills['302101'] || 0));
+        if (finalKills < 1) return false;
+        [302000, 302001, 302100].forEach(id => {
+            if (Math.max(0, Number(kills[id] || kills[String(id)] || 0)) < 1) kills[id] = 1;
+        });
+        data.system.abyssBossKillCountRecoveryV1Completed = true;
+        return true;
+    },
+
+    // V1完了フラグが先行していたセーブも対象に、終極形態討伐から関連3体を再補正する。
+    migrateAbyssBossKillCountsV2: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260803_abyssBossKillCountsV2',
+        () => {
+            if (!data.book || typeof data.book !== 'object' || Array.isArray(data.book)) data.book = { monsters: [], killCounts: {} };
+            if (!data.book.killCounts || typeof data.book.killCounts !== 'object' || Array.isArray(data.book.killCounts)) data.book.killCounts = {};
+            const kills = data.book.killCounts;
+            const finalKills = Math.max(0, Math.floor(Number(kills[302101] ?? kills['302101'] ?? 0) || 0));
+            let count = 0;
+            if (finalKills >= 1) {
+                [302100, 302000, 302001].forEach(id => {
+                    const current = Math.max(0, Math.floor(Number(kills[id] ?? kills[String(id)] ?? 0) || 0));
+                    if (current < 1) {
+                        kills[id] = 1;
+                        count++;
+                    }
+                });
+            }
+            return { changed: count > 0, count };
+        }
+    ),
+
+    getReincarnationLegacyGrowthWeight: (reincarnationCount, level, mode = 'legacy') => {
+        const cycles = Math.max(0, Math.floor(Number(reincarnationCount) || 0));
+        const currentLevelUps = Math.max(0, Math.min(99, Math.floor(Number(level) || 1) - 1));
+        const multiplier = cycle => mode === 'current'
+            ? 1 + Math.min(5, Math.max(0, cycle)) * 0.10
+            : 1 + Math.max(0, cycle);
+        let weight = 0;
+        for (let cycle = 0; cycle < cycles; cycle++) weight += 99 * multiplier(cycle);
+        weight += currentLevelUps * multiplier(cycles);
+        return weight;
+    },
+
+    // 旧「転生1回ごとに成長+100%」で増えた基礎能力を、新しい+10%（最大+50%）相当へ一度だけ縮尺補正する。
+    migrateReincarnationGrowthFormulaV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260803_reincarnationGrowthRebuildV1',
+        () => {
+            if (!Array.isArray(data.characters)) return { changed:false, count:0 };
+            const statKeys = ['hp', 'mp', 'atk', 'def', 'spd', 'mag', 'mdef'];
+            let count = 0;
+            data.characters.forEach(char => {
+                if (!char || char.isMonsterAlly === true) return;
+                const reincarnationCount = Math.max(0, Math.floor(Number(char.reincarnationCount) || 0));
+                if (reincarnationCount < 1) return;
+                const legacyWeight = App.getReincarnationLegacyGrowthWeight(reincarnationCount, char.level, 'legacy');
+                const currentWeight = App.getReincarnationLegacyGrowthWeight(reincarnationCount, char.level, 'current');
+                if (!(legacyWeight > 0) || !(currentWeight > 0) || currentWeight >= legacyWeight) return;
+                const ratio = currentWeight / legacyWeight;
+                const master = (window.CHARACTERS_DATA || []).find(entry => Number(entry?.id) === Number(char.charId));
+                if (!master) return;
+                let changed = false;
+                statKeys.forEach(key => {
+                    const base = Math.max(key === 'mp' ? 0 : 1, Math.floor(Number(master[key]) || 0));
+                    const before = Math.max(base, Math.floor(Number(char[key]) || base));
+                    const permanentBonus = Math.max(0, Math.floor(Number(char.permanentStatBonuses?.[key]) || 0));
+                    const scalableGrowth = Math.max(0, before - base - permanentBonus);
+                    const after = Math.max(base + permanentBonus, base + permanentBonus + Math.floor(scalableGrowth * ratio));
+                    if (after !== before) {
+                        char[key] = after;
+                        changed = true;
+                    }
+                });
+                if (changed) {
+                    char.currentHp = Math.min(Math.max(0, Number(char.currentHp) || 0), Math.max(1, Number(char.hp) || 1));
+                    char.currentMp = Math.min(Math.max(0, Number(char.currentMp) || 0), Math.max(0, Number(char.mp) || 0));
+                    count++;
+                }
+            });
+            return { changed: count > 0, count };
+        }
+    ),
+
+    // 完了済みのルーナ／ゼノンクエストに紐づく旧戦後ボス描画コンテキストを一度だけ掃除する。
+    migrateLunaZenonBossVisualCleanupV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260803_lunaZenonBossVisualCleanupV1',
+        () => {
+            const progress = data.progress && typeof data.progress === 'object' ? data.progress : null;
+            if (!progress) return { changed:false, count:0 };
+            const completed = questId => progress.quests?.[questId]?.state === 'completed';
+            const targets = {
+                luna_hidden_dark_shrine: { eventId:'quest_luna_hidden_clear', monsterId:401170 },
+                zenon_hidden_grezelia: { eventId:'quest_zenon_hidden_clear', monsterId:401180 }
+            };
+            const completedTargets = Object.entries(targets).filter(([questId]) => completed(questId)).map(([, value]) => value);
+            if (completedTargets.length === 0) return { changed:false, count:0 };
+            const matches = value => completedTargets.some(target => {
+                const eventId = String(value?.eventId || value?.storyEventId || value?.fixedStoryEventId || value?.storyWinEventId || '');
+                const ids = (Array.isArray(value?.monsterIds) ? value.monsterIds : [value?.monsterId, value?.fixedBossId])
+                    .flat().map(Number).filter(Number.isFinite);
+                return eventId === target.eventId || ids.includes(target.monsterId);
+            });
+            let count = 0;
+            ['pendingPostBattleBossVisual', 'lastFixedBossEvent', 'activeFixedBossContext'].forEach(key => {
+                if (progress[key] && matches(progress[key])) {
+                    delete progress[key];
+                    count++;
+                }
+            });
+            if (data.battle && matches(data.battle) && data.battle.active !== true) {
+                ['fixedBossId', 'fixedBossPosition', 'fixedBossProgressKey', 'fixedStoryEventId', 'storyWinEventId'].forEach(key => {
+                    if (data.battle[key] !== undefined) delete data.battle[key];
+                });
+                count++;
+            }
+            return { changed: count > 0, count };
+        }
+    ),
+
+    // 属性結晶片を耐性の正本へ変更するため、旧加護フラグだけを持つセーブへ
+    // 対応する結晶片を一度だけ補填する。以後に加入する仲間も所持判定から恩恵を受ける。
+    migrateSpiritFragmentResistanceSourceV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260804_spiritFragmentResistanceSourceV1',
+        () => {
+            if (!data.progress || typeof data.progress !== 'object') return { changed:false, count:0 };
+            if (!data.items || typeof data.items !== 'object' || Array.isArray(data.items)) data.items = {};
+            const blessings = data.progress.abyssSpiritBlessings || {};
+            const itemMap = globalThis.ABYSS_REGION_CONTENT?.spiritItemByElement || {};
+            let count = 0;
+            Object.entries(itemMap).forEach(([element, itemId]) => {
+                if (blessings[element] !== true) return;
+                const current = Math.max(0, Math.floor(Number(data.items[itemId] ?? data.items[String(itemId)] ?? 0) || 0));
+                if (current > 0) return;
+                data.items[itemId] = 1;
+                count++;
+            });
+            return { changed:count > 0, count };
+        }
+    ),
+
+    // ペンダント導入前のセーブへ、一度だけ現在の物語状態に合う貴重品を補填する。
+    // オクタプリズマ所持済みなら変化後、未所持なら変化前を正本とし、二種の同時所持を防ぐ。
+    migratePendantOctaprismV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260804_pendantOctaprismV1',
+        () => {
+            if (!data.items || typeof data.items !== 'object' || Array.isArray(data.items)) data.items = {};
+            const content = globalThis.ABYSS_REGION_CONTENT || {};
+            const octaprismId = Number(content.octaprismItemId || 701008);
+            const charredId = Number(content.charredPendantItemId || 701009);
+            const crystalId = Number(content.lightCrystalPendantItemId || 701010);
+            const countOf = id => Math.max(0, Math.floor(Number(data.items[id] ?? data.items[String(id)] ?? 0) || 0));
+            const ownsOctaprism = countOf(octaprismId) > 0;
+            let count = 0;
+            if (ownsOctaprism) {
+                if (countOf(crystalId) < 1) { data.items[crystalId] = 1; count++; }
+                if (countOf(charredId) > 0) { delete data.items[charredId]; delete data.items[String(charredId)]; count++; }
+            } else {
+                if (countOf(charredId) < 1) { data.items[charredId] = 1; count++; }
+                if (countOf(crystalId) > 0) { delete data.items[crystalId]; delete data.items[String(crystalId)]; count++; }
+            }
+            return { changed:count > 0, count };
+        }
+    ),
+
+    // ギルガメッシュ報酬の旧【EX】装備は基礎7能力だけを一度55%へ補正する。
+    // オプション・固定特性・UID・ロック状態は一切変更しない。
+    migrateSpecialBossEquipmentBalanceV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260804_specialBossEquipmentBalanceV1',
+        () => {
+            const phaseMaster = globalThis.ABYSS_REGION_CONTENT?.randomDungeonPhase2IMaster?.specialBossEquipment || {};
+            const scale = Math.max(0.01, Number(phaseMaster.baseStatScale || 0.55));
+            const keys = ['hp','mp','atk','def','spd','mag','mdef'];
+            const seenObjects = new WeakSet();
+            let count = 0;
+            const adjust = equipment => {
+                if (!equipment || typeof equipment !== 'object' || seenObjects.has(equipment)) return;
+                seenObjects.add(equipment);
+                if (!String(equipment.name || '').startsWith('【EX】')) return;
+                if (Number(equipment.specialBossEquipmentBalanceVersion || 0) >= 2) return;
+                if (!equipment.data || typeof equipment.data !== 'object') return;
+                keys.forEach(key => {
+                    if (!Number.isFinite(Number(equipment.data[key]))) return;
+                    equipment.data[key] = Math.max(key === 'mp' ? 0 : 1, Math.floor(Number(equipment.data[key]) * scale));
+                });
+                equipment.specialBossEquipmentBalanceVersion = 2;
+                equipment.specialBossEquipmentBaseStatScale = scale;
+                equipment.specialBossMonsterId = Number(equipment.specialBossMonsterId || 902000);
+                count++;
+            };
+            (Array.isArray(data.inventory) ? data.inventory : []).forEach(adjust);
+            (Array.isArray(data.characters) ? data.characters : []).forEach(character => {
+                if (!character?.equips || typeof character.equips !== 'object') return;
+                Object.values(character.equips).forEach(adjust);
+            });
+            return { changed:count > 0, count };
+        }
+    ),
+
+    // 完全削除した旧深淵ボスが保存中の戦闘・図鑑・依頼へ残っている場合は参照ごと除去する。
+    purgeRemovedLegacyAbyssBossReferences: (data = App.data) => {
+        if (!data || typeof data !== 'object') return false;
+        const removed = id => Number.isFinite(Number(id)) && Number(id) >= 401010 && Number(id) <= 401100;
+        let changed = false;
+        if (Array.isArray(data.book?.monsters)) {
+            const next = data.book.monsters.filter(id => !removed(id));
+            if (next.length !== data.book.monsters.length) { data.book.monsters = next; changed = true; }
+        }
+        if (data.book?.killCounts && typeof data.book.killCounts === 'object') {
+            Object.keys(data.book.killCounts).forEach(key => { if (removed(key)) { delete data.book.killCounts[key]; changed = true; } });
+        }
+        const filterIds = value => (Array.isArray(value) ? value : [value]).filter(id => !removed(id));
+        if (data.battle && typeof data.battle === 'object') {
+            if (Array.isArray(data.battle.fixedBossId)) {
+                const next = filterIds(data.battle.fixedBossId);
+                if (next.length !== data.battle.fixedBossId.length) { data.battle.fixedBossId = next.length ? next : null; changed = true; }
+            } else if (removed(data.battle.fixedBossId)) { data.battle.fixedBossId = null; changed = true; }
+            ['fixedEnemyIds','monsters'].forEach(key => {
+                if (!Array.isArray(data.battle[key])) return;
+                const next = filterIds(data.battle[key]);
+                if (next.length !== data.battle[key].length) { data.battle[key] = next; changed = true; }
+            });
+            if (Array.isArray(data.battle.enemies)) {
+                const next = data.battle.enemies.filter(enemy => !removed(enemy?.id) && !removed(enemy?.baseId));
+                if (next.length !== data.battle.enemies.length) { data.battle.enemies = next; changed = true; }
+            }
+            if (data.battle.active && (!Array.isArray(data.battle.enemies) || data.battle.enemies.length === 0) && !data.battle.fixedBossId) {
+                data.battle.active = false; changed = true;
+            }
+        }
+        const encounter = data.dungeon?.abyssBossEncounter;
+        if (encounter && Array.isArray(encounter.monsterIds)) {
+            const next = filterIds(encounter.monsterIds);
+            if (next.length !== encounter.monsterIds.length) { encounter.monsterIds = next; changed = true; }
+            if (!next.length) { data.dungeon.abyssBossEncounter = null; changed = true; }
+        }
+        const guildLists = [data.guild?.availableQuests, data.guild?.acceptedQuests, data.guild?.completedQuests];
+        guildLists.filter(Array.isArray).forEach(list => list.forEach(quest => {
+            if (!Array.isArray(quest?.bossMonsterIds)) return;
+            const next = filterIds(quest.bossMonsterIds);
+            if (next.length !== quest.bossMonsterIds.length) { quest.bossMonsterIds = next; changed = true; }
+        }));
+        return changed;
+    },
+
     /**
      * ストーリー上の仲間を加入させる
      * ガチャ産キャラクターと同一のデータ構造で初期化する
      */
     addStoryAlly: (charId, options = {}) => {
         const master = window.CHARACTERS_DATA.find(c => c.id === charId);
-        if (!master) return;
-        const initialLevel = App.getStoryAllyInitialLevel(charId);
+        if (!master) return null;
+        const state = App.ensureStoryCharacterState(charId);
+        if (state?.permanentlyUnavailable === true && options.allowPermanentReturn !== true) {
+            if (!options.silent) App.log(`${master.name}は現在、仲間へ戻ることができない。`);
+            return null;
+        }
+        const carryover = App.data?.progress?.storyCharacterCarryover?.[String(charId)] || null;
+        const requestedInitialLevel = options.initialLevel !== undefined ? Math.floor(Number(options.initialLevel)) : App.getStoryAllyInitialLevel(charId);
+        const inheritedLevel = Math.max(1, Math.floor(Number(carryover?.level || 1)));
+        const initialLevel = Math.max(1, Math.min(100, Math.max(Number.isFinite(requestedInitialLevel) ? requestedInitialLevel : 1, inheritedLevel)));
         const existing = App.data.characters.find(c => c.charId === charId);
+        const applyCarryover = (ally) => {
+            if (!ally || !carryover) return ally;
+            ally.exp = Math.max(Number(ally.exp || 0), Number(carryover.exp || 0));
+            if (carryover.equips && typeof carryover.equips === 'object') ally.equips = App.cloneSceneContextValue(carryover.equips);
+            if (Array.isArray(carryover.skillBookSkills)) {
+                if (!Array.isArray(ally.skillBookSkills)) ally.skillBookSkills = [];
+                carryover.skillBookSkills.map(Number).filter(Number.isFinite).forEach(id => { if (!ally.skillBookSkills.includes(id)) ally.skillBookSkills.push(id); });
+            }
+            return ally;
+        };
+        const shouldBeAvailable = options.available !== false;
+        const shouldJoinParty = options.joinParty !== false && shouldBeAvailable;
+        const markState = () => {
+            const allyState = App.ensureStoryCharacterState(charId);
+            allyState.recruited = true;
+            allyState.available = shouldBeAvailable;
+            allyState.temporary = options.temporary === true;
+            if (options.allowPermanentReturn === true) allyState.permanentlyUnavailable = false;
+            return allyState;
+        };
+
         if (existing) {
             let changed = false;
             while ((existing.level || 1) < initialLevel) {
                 App.applyLevelUpGrowth(existing, { silent: true });
                 changed = true;
             }
-            if (Array.isArray(App.data.party) && !App.data.party.includes(existing.uid)) {
+            const previousState = App.getStoryCharacterState(charId);
+            if (options.expMultiplierPct !== undefined) App.setCharacterExpRequirementMultiplierPct(existing, options.expMultiplierPct, { save: false });
+            markState();
+            if (!previousState || previousState.available !== shouldBeAvailable || previousState.temporary !== (options.temporary === true)) changed = true;
+            if (!shouldBeAvailable) {
+                changed = App.removeStoryAllyFromParty(charId, { save: false }) || changed;
+            } else if (shouldJoinParty && Array.isArray(App.data.party) && !App.data.party.includes(existing.uid)) {
                 const emptyIndex = App.data.party.findIndex(uid => !uid);
                 if (emptyIndex >= 0) {
                     App.data.party[emptyIndex] = existing.uid;
@@ -2567,16 +3937,15 @@ const App = {
                 }
             }
             if (changed && options.save !== false) App.save();
+            applyCarryover(existing);
             return existing;
         }
 
-
-        // 1. 必要な情報だけを抽出した保存用オブジェクトを作成
-        //    ステータスはLv1基準で作成し、下で共通レベルアップ処理を回して初期Lvまで成長させる。
+        // 必要な情報だけを抽出した保存用オブジェクトを作成し、通常レベルアップ処理で初期Lvへ成長させる。
         const saveAlly = {
             uid: 'u' + Date.now() + Math.floor(Math.random() * 1000),
             charId: charId,
-            name: master.name, // 名前は表示用に保持
+            name: master.name,
             job: master.job,
             rarity: master.rarity,
             level: 1,
@@ -2588,10 +3957,9 @@ const App = {
             def: master.def,
             mag: master.mag,
             spd: master.spd,
-			mdef: master.mdef,
+            mdef: master.mdef,
             equips: { '武器': null, '盾': null, '頭': null, '体': null, '足': null },
-			// ★1. 特性は一旦空で作成する
-            traits: [], 
+            traits: [],
             disabledTraits: [],
             tree: { ATK: 0, MAG: 0, SPD: 0, HP: 0, MP: 0, WARRIOR: 0, MAGE: 0, PRIEST: 0, M_KNIGHT: 0 },
             skillBookSkills: [],
@@ -2602,39 +3970,29 @@ const App = {
                 sources: { story: 0, battle: 0, dungeon: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, monster: 0, trial: 0, item: 0, legacy: 0 },
                 trials: { mid: false, final: false, midClearedAt: null, finalClearedAt: null }
             },
-            reincarnationCount: 0
-            // ★ img, archives, lbSkills, resists 等の静的データはここには含めない
+            reincarnationCount: 0,
+            expMultiplierPct: Math.max(1, Math.round(Number(options.expMultiplierPct ?? master.expMultiplierPct ?? 100) || 100))
         };
-		
-		// ★2. レベルアップ習得ロジックを呼び出す
-        // newCharはLv1なので、conditions[0] ({lv:1, total:0}) を満たし、
-        // fixedTraits[0]（またはランダム）が1つだけ追加されます。
+
         if (typeof PassiveSkill !== 'undefined' && PassiveSkill.applyLevelUpTraits) {
             PassiveSkill.applyLevelUpTraits(saveAlly);
         }
-
-        // 3. ストーリー加入時の初期レベルを反映する。
-        //    経験値だけを入れるのではなく、通常レベルアップと同じ成長・SP・スキル・特性処理を内部適用する。
-        for (let lv = 1; lv < initialLevel; lv++) {
-            App.applyLevelUpGrowth(saveAlly, { silent: true });
-        }
+        for (let lv = 1; lv < initialLevel; lv++) App.applyLevelUpGrowth(saveAlly, { silent: true });
         saveAlly.exp = 0;
 
         App.data.characters.push(saveAlly);
+        markState();
         let joinedParty = false;
-        if (Array.isArray(App.data.party)) {
+        if (shouldJoinParty && Array.isArray(App.data.party)) {
             const emptyIndex = App.data.party.findIndex(uid => !uid);
             if (emptyIndex >= 0) {
                 App.data.party[emptyIndex] = saveAlly.uid;
                 joinedParty = true;
             }
         }
+        applyCarryover(saveAlly);
         if (options.save !== false) App.save();
-        if (!options.silent) {
-            App.log(joinedParty
-                ? `なんと ${saveAlly.name}が仲間に加わった！`
-                : `なんと ${saveAlly.name}が仲間に加わった！`);
-        }
+        if (!options.silent) App.log(`なんと ${saveAlly.name}が仲間に加わった！`);
         return saveAlly;
     },
 
@@ -2646,145 +4004,156 @@ const App = {
 
     isMonsterAlly: (char) => !!(char && char.isMonsterAlly === true),
 
-    // 仲間モンスターの成長係数は、加入時の実ステータスそのものを使わない。
-    // 高Rank個体の数百～数千という値をそのまま growthBase にすると、通常仲間の数倍～数十倍成長するため、
-    // 通常仲間の growthBase 中央値を総量の基準にし、モンスター固有の得意・苦手だけを比率として残す。
+    // 通常仲間の転生回数と、仲間モンスターの合成回数を同じ育成周期として扱う。
+    getReincarnationEquivalentCount: (charData) => {
+        if (!charData) return 0;
+        const raw = App.isMonsterAlly(charData) ? charData.monsterFusionCount : charData.reincarnationCount;
+        return Math.max(0, Math.floor(Number(raw) || 0));
+    },
+
+    // 永続能力を維持したまま周回するため、旧仕様の「1回ごとに+100%」は廃止。
+    // 1回につき+10%、5回で最大+50%とし、通常仲間と仲間モンスターで共通化する。
+    getReincarnationGrowthMultiplier: (charData) => {
+        const count = Math.min(5, App.getReincarnationEquivalentCount(charData));
+        return 1 + count * 0.10;
+    },
+
+    // 仲間モンスターの成長型は monsters.js の各レコードへ明示する。
+    // ゲーム実行時には能力値から型を推測せず、マスターの allyGrowthType を正本として扱う。
     monsterAllyGrowthConfig: Object.freeze({
-        schemaVersion: 1,
+        schemaVersion: 3,
         stats: Object.freeze(['hp', 'mp', 'atk', 'def', 'mag', 'mdef', 'spd']),
+        combatStats: Object.freeze(['atk', 'def', 'mag', 'mdef', 'spd']),
         labels: Object.freeze({ hp:'HP', mp:'MP', atk:'攻撃', def:'防御', mag:'魔力', mdef:'魔防', spd:'速さ' }),
-        minMultiplier: 0.62,
-        maxMultiplier: 1.42
+        fallbackType: 'BALANCE_A'
     }),
 
-    getMedianNumber: (values, fallback = 1) => {
-        const sorted = (Array.isArray(values) ? values : [])
-            .map(Number).filter(Number.isFinite).sort((a, b) => a - b);
-        if (!sorted.length) return Number(fallback) || 1;
-        const mid = Math.floor(sorted.length / 2);
-        return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    getMonsterAllyGrowthTypeMaster: (growthType) => {
+        const registry = globalThis.MONSTER_ALLY_GROWTH_TYPE_MASTER;
+        const fallback = App.monsterAllyGrowthConfig.fallbackType;
+        const normalized = String(growthType || fallback).toUpperCase();
+        return {
+            registry,
+            id: registry?.types?.[normalized] ? normalized : fallback,
+            data: registry?.types?.[normalized] || registry?.types?.[fallback] || null
+        };
     },
 
-    getMonsterAllyGrowthBenchmarks: () => {
-        if (App._monsterAllyGrowthBenchmarks) return App._monsterAllyGrowthBenchmarks;
-        const keys = App.monsterAllyGrowthConfig.stats;
-        const fallbackGrowth = { hp:43, mp:17, atk:42, def:27, mag:38, mdef:34, spd:32 };
-        const fallbackInitial = { hp:35, mp:12, atk:20, def:18, mag:20, mdef:19, spd:18 };
-        const masters = (window.CHARACTERS_DATA || []).filter(master => master && master.growthBase);
-        const growthBase = {};
-        const initialBase = {};
-        keys.forEach(key => {
-            growthBase[key] = Math.max(1, Math.round(App.getMedianNumber(
-                masters.map(master => master.growthBase?.[key]), fallbackGrowth[key]
-            )));
-            initialBase[key] = Math.max(key === 'mp' ? 0 : 1, Math.round(App.getMedianNumber(
-                masters.map(master => master[key]), fallbackInitial[key]
-            )));
-        });
-        App._monsterAllyGrowthBenchmarks = Object.freeze({
-            growthBase: Object.freeze(growthBase),
-            initialBase: Object.freeze(initialBase)
-        });
-        return App._monsterAllyGrowthBenchmarks;
+    getMonsterAllySourceId: (charOrMonsterId) => {
+        if (charOrMonsterId && typeof charOrMonsterId === 'object') {
+            const directId = Number(charOrMonsterId.monsterId ?? charOrMonsterId.sourceMonsterId);
+            if (Number.isFinite(directId) && directId > 0) return directId;
+            const encodedCharId = Number(charOrMonsterId.charId);
+            if (Number.isFinite(encodedCharId) && encodedCharId >= 900000000) {
+                const inferredId = encodedCharId - 900000000;
+                if (inferredId > 0) return inferredId;
+            }
+            return null;
+        }
+        const directId = Number(charOrMonsterId);
+        return Number.isFinite(directId) && directId > 0 ? directId : null;
     },
 
-    // 同レベルの通常仲間が持つ、おおよその素ステータス中央値を決定論的に求める。
-    // 実キャラクターをランダム成長させて比較しないため、セーブ移行時にも同じ結果になる。
-    getMonsterAllyGrowthReferenceStats: (level = 1) => {
-        const lv = Math.max(1, Math.min(100, Math.floor(Number(level) || 1)));
-        const keys = App.monsterAllyGrowthConfig.stats;
-        const benchmarks = App.getMonsterAllyGrowthBenchmarks();
-        const masters = (window.CHARACTERS_DATA || []).filter(master => master && master.growthBase);
-        const result = {};
-        keys.forEach(key => {
-            const statMult = (key === 'hp' || key === 'mp') ? 2.0 : 1.0;
-            const flatAverage = (key === 'hp' || key === 'mp') ? 3.0 : 1.0;
-            const estimates = masters.map(master => {
-                const initial = Math.max(key === 'mp' ? 0 : 1, Number(master[key] ?? benchmarks.initialBase[key]) || 0);
-                const growth = Math.max(1, Number(master.growthBase?.[key] ?? benchmarks.growthBase[key]) || 1);
-                return initial + (lv - 1) * (growth * 0.06 * statMult + flatAverage);
-            });
-            const fallback = benchmarks.initialBase[key] + (lv - 1) * (benchmarks.growthBase[key] * 0.06 * statMult + flatAverage);
-            result[key] = Math.max(key === 'mp' ? 1 : 1, App.getMedianNumber(estimates, fallback));
-        });
-        return result;
+    getMonsterMasterForAlly: (charOrMonsterId) => {
+        const monsterId = App.getMonsterAllySourceId(charOrMonsterId);
+        if (!Number.isFinite(monsterId)) return null;
+        if (globalThis.MonsterData?.getMonsterById) return globalThis.MonsterData.getMonsterById(monsterId);
+        return (globalThis.MONSTERS_DATA || []).find(monster => Number(monster?.id) === monsterId) || null;
     },
 
-    buildMonsterAllyGrowthProfile: (sourceStats = {}, level = 1) => {
-        const keys = App.monsterAllyGrowthConfig.stats;
-        const benchmarks = App.getMonsterAllyGrowthBenchmarks();
-        const reference = App.getMonsterAllyGrowthReferenceStats(level);
-        const ratios = {};
-        keys.forEach(key => {
-            const value = Math.max(0, Number(sourceStats[key]) || 0);
-            ratios[key] = Math.max(0.03, value / Math.max(1, Number(reference[key]) || 1));
-        });
+    getMonsterAllyGrowthReferenceCharacter: (referenceKey) => {
+        const registry = globalThis.MONSTER_ALLY_GROWTH_TYPE_MASTER;
+        const key = String(referenceKey || 'BALANCE').toUpperCase();
+        const id = Number(registry?.referenceCharacterIds?.[key] || registry?.referenceCharacterIds?.BALANCE || 301);
+        return (window.CHARACTERS_DATA || []).find(character => Number(character?.id) === id)
+            || (window.CHARACTERS_DATA || []).find(character => Number(character?.id) === 301)
+            || null;
+    },
 
-        // 全体的に強い／弱いという加入時パワー差は初期値へ残し、成長総量には持ち込まない。
-        // 幾何平均からの相対比だけを使うことで、モンスターらしい能力配分を成長へ写す。
-        const geometricMean = Math.exp(keys.reduce((sum, key) => sum + Math.log(ratios[key]), 0) / keys.length);
-        const relative = {};
-        keys.forEach(key => { relative[key] = ratios[key] / Math.max(0.0001, geometricMean); });
+    getMonsterAllyNeutralCombatGrowth: () => {
+        if (App._monsterAllyNeutralCombatGrowth) return App._monsterAllyNeutralCombatGrowth;
+        const registry = globalThis.MONSTER_ALLY_GROWTH_TYPE_MASTER;
+        const ids = Object.values(registry?.referenceCharacterIds || { BALANCE:301, PHYSICAL:109, MAGIC:110 }).map(Number);
+        const refs = ids.map(id => (window.CHARACTERS_DATA || []).find(character => Number(character?.id) === id)).filter(Boolean);
+        const combatStats = App.monsterAllyGrowthConfig.combatStats;
+        const total = refs.reduce((sum, character) => {
+            return sum + combatStats.reduce((subTotal, key) => subTotal + Math.max(1, Number(character?.growthBase?.[key]) || 1), 0);
+        }, 0);
+        const fallbackPerStat = 29;
+        const perStat = refs.length > 0
+            ? Math.max(1, Math.round(total / (refs.length * combatStats.length)))
+            : fallbackPerStat;
+        // バランス型Aを全能力ほぼ同等にし、A/B/Cの特化比率をマスターの重みどおり表現する。
+        const result = Object.fromEntries(combatStats.map(key => [key, perStat]));
+        App._monsterAllyNeutralCombatGrowth = Object.freeze(result);
+        return App._monsterAllyNeutralCombatGrowth;
+    },
 
-        const ordered = [...keys].sort((a, b) => relative[b] - relative[a]);
-        const strengths = ordered.slice(0, 2);
-        const weaknesses = ordered.slice(-2).reverse();
-        const multipliers = {};
-        keys.forEach(key => {
-            multipliers[key] = Math.max(0.68, Math.min(1.32, Math.pow(relative[key], 0.72)));
-        });
-
-        // 上位2項目と下位2項目には最低限の差を保証し、得意・苦手が成長結果で埋もれないようにする。
-        if (strengths[0]) multipliers[strengths[0]] = Math.max(multipliers[strengths[0]], 1.30);
-        if (strengths[1]) multipliers[strengths[1]] = Math.max(multipliers[strengths[1]], 1.17);
-        if (weaknesses[0]) multipliers[weaknesses[0]] = Math.min(multipliers[weaknesses[0]], 0.70);
-        if (weaknesses[1]) multipliers[weaknesses[1]] = Math.min(multipliers[weaknesses[1]], 0.84);
-
-        // 通常仲間の中央値と総成長量を揃えた後、個性の範囲だけを残す。
-        const baseTotal = keys.reduce((sum, key) => sum + benchmarks.growthBase[key], 0);
-        const weightedTotal = keys.reduce((sum, key) => sum + benchmarks.growthBase[key] * multipliers[key], 0);
+    buildMonsterAllyGrowthProfile: (growthType = null) => {
+        const typeMaster = App.getMonsterAllyGrowthTypeMaster(growthType);
+        const data = typeMaster.data || { hpMpReference:'BALANCE', weights:{ atk:1, def:1, mag:1, mdef:1, spd:1 }, label:'バランス型A' };
+        const hpMpRef = App.getMonsterAllyGrowthReferenceCharacter(data.hpMpReference);
+        const neutral = App.getMonsterAllyNeutralCombatGrowth();
+        const explicitGrowthBase = data.growthBase && typeof data.growthBase === 'object' ? data.growthBase : null;
+        const weights = data.weights || {};
+        const baseTotal = App.monsterAllyGrowthConfig.combatStats.reduce((sum, key) => sum + Math.max(1, Number(neutral[key]) || 1), 0);
+        const weightedTotal = App.monsterAllyGrowthConfig.combatStats.reduce((sum, key) => {
+            return sum + Math.max(1, Number(neutral[key]) || 1) * Math.max(0.01, Number(weights[key]) || 1);
+        }, 0);
         const normalize = weightedTotal > 0 ? baseTotal / weightedTotal : 1;
-        keys.forEach(key => {
-            multipliers[key] = Math.max(
-                App.monsterAllyGrowthConfig.minMultiplier,
-                Math.min(App.monsterAllyGrowthConfig.maxMultiplier, multipliers[key] * normalize)
-            );
-        });
-
-        const growthBase = {};
-        keys.forEach(key => {
-            growthBase[key] = Math.max(1, Math.round(benchmarks.growthBase[key] * multipliers[key]));
-        });
-        return { growthBase, strengths, weaknesses, multipliers, reference };
+        const growthBase = explicitGrowthBase
+            ? Object.fromEntries(App.monsterAllyGrowthConfig.stats.map(key => [key, Math.max(1, Math.round(Number(explicitGrowthBase[key]) || 1))]))
+            : {
+                hp: Math.max(1, Math.round(Number(hpMpRef?.growthBase?.hp) || 50)),
+                mp: Math.max(1, Math.round(Number(hpMpRef?.growthBase?.mp) || 18))
+            };
+        if (!explicitGrowthBase) {
+            App.monsterAllyGrowthConfig.combatStats.forEach(key => {
+                growthBase[key] = Math.max(1, Math.round((Number(neutral[key]) || 1) * (Number(weights[key]) || 1) * normalize));
+            });
+        }
+        const ordered = App.monsterAllyGrowthConfig.combatStats
+            .map(key => ({ key, weight: explicitGrowthBase ? (growthBase[key] / Math.max(1, Number(neutral[key]) || 1)) : (Number(weights[key]) || 1) }))
+            .sort((a, b) => b.weight - a.weight || a.key.localeCompare(b.key));
+        const strengths = ordered.filter(entry => entry.weight > 1).map(entry => entry.key);
+        const weaknesses = ordered.filter(entry => entry.weight < 1).reverse().map(entry => entry.key);
+        return {
+            growthType: typeMaster.id,
+            label: data.label || typeMaster.id,
+            hpMpReference: data.hpMpReference || 'BALANCE',
+            growthBase,
+            strengths,
+            weaknesses,
+            multipliers: Object.fromEntries(App.monsterAllyGrowthConfig.combatStats.map(key => [key, Number((explicitGrowthBase
+                ? growthBase[key] / Math.max(1, Number(neutral[key]) || 1)
+                : (Number(weights[key]) || 1) * normalize).toFixed(4))]))
+        };
     },
 
     applyMonsterAllyGrowthProfile: (char, options = {}) => {
         if (!App.isMonsterAlly(char)) return { changed:false, profile:null };
-        const level = Math.max(1, Math.min(100, Math.floor(Number(char.level) || 1)));
-        const source = options.sourceStats || {
-            hp: char.hp, mp: char.mp, atk: char.atk, def: char.def,
-            mag: char.mag, mdef: char.mdef, spd: char.spd
-        };
-        const profile = App.buildMonsterAllyGrowthProfile(source, level);
+        const sourceMaster = options.sourceMonster || App.getMonsterMasterForAlly(char);
+        const requestedType = options.growthType
+            || sourceMaster?.allyGrowthType
+            || char.monsterAllyMeta?.growthType
+            || App.monsterAllyGrowthConfig.fallbackType;
+        const profile = App.buildMonsterAllyGrowthProfile(requestedType);
         char.growthBase = { ...profile.growthBase };
-        if (!char.monsterAllyMeta || typeof char.monsterAllyMeta !== 'object' || Array.isArray(char.monsterAllyMeta)) {
-            char.monsterAllyMeta = {};
-        }
+        if (!char.monsterAllyMeta || typeof char.monsterAllyMeta !== 'object' || Array.isArray(char.monsterAllyMeta)) char.monsterAllyMeta = {};
         char.monsterAllyMeta.growthProfileVersion = App.monsterAllyGrowthConfig.schemaVersion;
+        char.monsterAllyMeta.growthType = profile.growthType;
+        char.monsterAllyMeta.growthTypeLabel = profile.label;
+        char.monsterAllyMeta.growthHpMpReference = profile.hpMpReference;
         char.monsterAllyMeta.growthStrengths = [...profile.strengths];
         char.monsterAllyMeta.growthWeaknesses = [...profile.weaknesses];
-        char.monsterAllyMeta.growthMultipliers = Object.fromEntries(
-            Object.entries(profile.multipliers).map(([key, value]) => [key, Number(value.toFixed(4))])
-        );
+        char.monsterAllyMeta.growthMultipliers = { ...profile.multipliers };
         return { changed:true, profile };
     },
 
     migrateMonsterAllyGrowthV1: (data = App.data) => {
         if (!data || typeof data !== 'object') return { changed:false, count:0 };
         if (!data.system || typeof data.system !== 'object' || Array.isArray(data.system)) data.system = {};
-        if (Number(data.system.monsterAllyGrowthSchemaVersion || 0) >= App.monsterAllyGrowthConfig.schemaVersion) {
-            return { changed:false, count:0 };
-        }
+        if (Number(data.system.monsterAllyGrowthSchemaVersion || 0) >= App.monsterAllyGrowthConfig.schemaVersion) return { changed:false, count:0 };
         let count = 0;
         if (Array.isArray(data.characters)) {
             data.characters.forEach(char => {
@@ -3192,6 +4561,126 @@ const App = {
         return Array.from(ids);
     },
 
+    projectCharacterBaseStatsAtLevel: (charId, level) => {
+        const master = (window.CHARACTERS_DATA || []).find(entry => Number(entry?.id) === Number(charId));
+        if (!master) return null;
+        const targetLevel = Math.max(1, Math.min(100, Math.floor(Number(level) || 1)));
+        const result = {
+            hp: Math.max(1, Math.floor(Number(master.hp) || 1)),
+            mp: Math.max(0, Math.floor(Number(master.mp) || 0)),
+            atk: Math.max(1, Math.floor(Number(master.atk) || 1)),
+            def: Math.max(1, Math.floor(Number(master.def) || 1)),
+            spd: Math.max(1, Math.floor(Number(master.spd) || 1)),
+            mag: Math.max(1, Math.floor(Number(master.mag) || 1)),
+            mdef: Math.max(1, Math.floor(Number(master.mdef) || 1))
+        };
+        const growth = master.growthBase || master;
+        for (let nextLevel = 2; nextLevel <= targetLevel; nextLevel++) {
+            const milestone = nextLevel === 50 || nextLevel === 100 ? 5.5 : 1;
+            result.hp += Math.max(1, Math.floor((Number(growth.hp) || result.hp) * 0.06 * 2 * milestone)) + 3;
+            result.mp += Math.max(1, Math.floor((Number(growth.mp) || Math.max(1, result.mp)) * 0.06 * 2 * milestone)) + 3;
+            ['atk', 'def', 'spd', 'mag', 'mdef'].forEach(key => {
+                result[key] += Math.max(1, Math.floor((Number(growth[key]) || result[key]) * 0.06 * milestone)) + 1;
+            });
+        }
+        return result;
+    },
+
+    getComparableCharacterBaseStats: (charId, level, data = App.data) => {
+        const targetLevel = Math.max(1, Math.min(100, Math.floor(Number(level) || 1)));
+        const saved = Array.isArray(data?.characters)
+            ? data.characters.find(char => Number(char?.charId) === Number(charId) && Number(char?.level) === targetLevel)
+            : null;
+        const projected = App.projectCharacterBaseStatsAtLevel(charId, targetLevel);
+        if (!saved) return projected;
+        const keys = ['hp', 'mp', 'atk', 'def', 'spd', 'mag', 'mdef'];
+        return Object.fromEntries(keys.map(key => [key, Math.max(Number(saved[key]) || 0, Number(projected?.[key]) || 0)]));
+    },
+
+    applyMonsterAllyStatFloor: (char, sourceMonster = null, data = App.data) => {
+        if (!App.isMonsterAlly(char)) return { changed:false, count:0 };
+        const master = sourceMonster || App.getMonsterMasterForAlly(char);
+        const rules = master?.specialBossRules || {};
+        const floorCharacterId = Number(rules.allyStatFloorCharacterId || 0);
+        if (!Number.isFinite(floorCharacterId) || floorCharacterId <= 0) return { changed:false, count:0 };
+        const reference = App.getComparableCharacterBaseStats(floorCharacterId, char.level, data);
+        if (!reference) return { changed:false, count:0 };
+        const multiplier = Math.max(1.01, Number(rules.allyStatFloorMultiplier || 1.10));
+        const keys = ['hp', 'mp', 'atk', 'def', 'spd', 'mag', 'mdef'];
+        const oldMaxHp = Math.max(1, Number(char.hp) || 1);
+        const oldMaxMp = Math.max(0, Number(char.mp) || 0);
+        const hasCurrentHp = Number.isFinite(Number(char.currentHp));
+        const hasCurrentMp = Number.isFinite(Number(char.currentMp));
+        const oldCurrentHp = hasCurrentHp ? Math.max(0, Number(char.currentHp) || 0) : oldMaxHp;
+        const oldCurrentMp = hasCurrentMp ? Math.max(0, Number(char.currentMp) || 0) : oldMaxMp;
+        const hpRatio = Math.min(1, oldCurrentHp / oldMaxHp);
+        const mpRatio = oldMaxMp > 0 ? Math.min(1, oldCurrentMp / oldMaxMp) : 1;
+        let count = 0;
+        keys.forEach(key => {
+            const minimum = Math.max(key === 'mp' ? 0 : 1, Math.ceil((Number(reference[key]) || 0) * multiplier));
+            if ((Number(char[key]) || 0) < minimum) {
+                char[key] = minimum;
+                count++;
+            }
+        });
+        if (count > 0) {
+            char.currentHp = oldCurrentHp >= oldMaxHp
+                ? Math.max(1, Number(char.hp) || 1)
+                : Math.max(1, Math.min(Number(char.hp) || 1, Math.floor((Number(char.hp) || 1) * hpRatio)));
+            char.currentMp = oldCurrentMp >= oldMaxMp
+                ? Math.max(0, Number(char.mp) || 0)
+                : Math.max(0, Math.min(Number(char.mp) || 0, Math.floor((Number(char.mp) || 0) * mpRatio)));
+        }
+        if (!char.monsterAllyMeta || typeof char.monsterAllyMeta !== 'object' || Array.isArray(char.monsterAllyMeta)) char.monsterAllyMeta = {};
+        char.monsterAllyMeta.statFloorProfileVersion = 2;
+        char.monsterAllyMeta.statFloorCharacterId = floorCharacterId;
+        char.monsterAllyMeta.statFloorMultiplier = multiplier;
+        return { changed: count > 0, count };
+    },
+
+    migrateGilgameshAllyDominanceV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260803_gilgameshAllyDominanceV1',
+        () => {
+            if (!Array.isArray(data.characters)) return { changed:false, count:0 };
+            let count = 0;
+            data.characters.forEach(char => {
+                if (!App.isMonsterAlly(char) || Number(char.monsterId || char.sourceMonsterId) !== 902000) return;
+                const master = App.getMonsterMasterForAlly(902000);
+                App.applyMonsterAllyGrowthProfile(char, { sourceMonster: master, growthType:'ALL_SPECIAL' });
+                const result = App.applyMonsterAllyStatFloor(char, master, data);
+                if (result.changed) count++;
+            });
+            return { changed: count > 0, count };
+        }
+    ),
+
+    // V1済みセーブや旧形式のcharIdのみを持つ加入済み個体も、一度だけ確実に再補正する。
+    migrateGilgameshAllyDominanceV2: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260803_gilgameshAllyDominanceV2',
+        () => {
+            if (!Array.isArray(data.characters)) return { changed:false, count:0 };
+            const master = App.getMonsterMasterForAlly(902000);
+            if (!master) return { changed:false, count:0 };
+            let count = 0;
+            data.characters.forEach(char => {
+                if (!char || typeof char !== 'object') return;
+                const sourceId = App.getMonsterAllySourceId(char);
+                const encodedGilgamesh = Number(char.charId) === 900902000;
+                if (sourceId !== 902000 && !encodedGilgamesh) return;
+                if (!App.isMonsterAlly(char) && !encodedGilgamesh) return;
+                char.isMonsterAlly = true;
+                char.monsterId = 902000;
+                char.sourceMonsterId = 902000;
+                App.applyMonsterAllyGrowthProfile(char, { sourceMonster: master, growthType:'ALL_SPECIAL' });
+                App.applyMonsterAllyStatFloor(char, master, data);
+                count++;
+            });
+            return { changed: count > 0, count };
+        }
+    ),
+
     createMonsterAllyData: (enemy, baseMonster = null) => {
         if (!App.data || !enemy) return null;
         const base = baseMonster || (typeof Battle !== 'undefined' && Battle.getMonsterBaseById ? Battle.getMonsterBaseById(enemy.baseId || enemy.id) : null) || enemy;
@@ -3218,10 +4707,8 @@ const App = {
 
         const traits = App.generateMonsterRecruitTraitsForLevel(joinLevel, base, enemy);
         const monsterImage = App.getMonsterRecruitImagePath(base, enemy);
-        const growthProfile = App.buildMonsterAllyGrowthProfile({
-            hp: hpMp.hp, mp: hpMp.mp, atk: atkMag.atk, def: defMdef.def,
-            mag: atkMag.mag, mdef: defMdef.mdef, spd
-        }, joinLevel);
+        const growthType = base.allyGrowthType || enemy.allyGrowthType || App.monsterAllyGrowthConfig.fallbackType;
+        const growthProfile = App.buildMonsterAllyGrowthProfile(growthType);
 
         const saveAlly = {
             uid,
@@ -3278,14 +4765,16 @@ const App = {
                 skillPointLevelTarget: Math.max(0, joinLevel - 1),
                 joinLevel,
                 growthProfileVersion: App.monsterAllyGrowthConfig.schemaVersion,
+                growthType: growthProfile.growthType,
+                growthTypeLabel: growthProfile.label,
+                growthHpMpReference: growthProfile.hpMpReference,
                 growthStrengths: [...growthProfile.strengths],
                 growthWeaknesses: [...growthProfile.weaknesses],
-                growthMultipliers: Object.fromEntries(
-                    Object.entries(growthProfile.multipliers).map(([key, value]) => [key, Number(value.toFixed(4))])
-                )
+                growthMultipliers: { ...growthProfile.multipliers }
             }
         };
 
+        App.applyMonsterAllyStatFloor(saveAlly, base, App.data);
         saveAlly.currentHp = saveAlly.hp;
         saveAlly.currentMp = saveAlly.mp;
         return saveAlly;
@@ -3430,14 +4919,45 @@ const App = {
         return App.getQuestState(questId).state === 'completed';
     },
 
-    hasStoryAlly: (charId) => {
-        const id = Number(charId);
-        return Array.isArray(App.data.characters) && App.data.characters.some(c => Number(c.charId) === id);
+    getQuestStage: (questId) => {
+        const state = App.getQuestState(questId);
+        return Math.max(0, Math.floor(Number(state?.stage || 0)));
+    },
+
+    setQuestStage: (questId, stage, options = {}) => {
+        const quests = App.ensureQuestState();
+        const current = quests[questId] && typeof quests[questId] === 'object' ? quests[questId] : { state:'available' };
+        if (current.state === 'completed' && options.allowCompleted !== true) return false;
+        if (current.state === 'failed' && options.allowFailed !== true) return false;
+        const next = Math.max(0, Math.floor(Number(stage) || 0));
+        const previous = Math.max(0, Math.floor(Number(current.stage || 0)));
+        if (next < previous && options.allowDecrease !== true) return false;
+        quests[questId] = { ...current, stage:next, stageUpdatedAt:Date.now() };
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return true;
+    },
+
+    advanceQuestStage: (questId, amount = 1, options = {}) => {
+        const increment = Math.max(1, Math.floor(Number(amount) || 1));
+        return App.setQuestStage(questId, App.getQuestStage(questId) + increment, options);
+    },
+
+    failQuest: (questId, options = {}) => {
+        const quests = App.ensureQuestState();
+        const current = quests[questId] && typeof quests[questId] === 'object' ? quests[questId] : { state:'available' };
+        if (current.state === 'completed' && options.allowCompleted !== true) return false;
+        if (current.state === 'failed') return true;
+        quests[questId] = { ...current, state:'failed', failedAt:Date.now(), failReason:options.reason || current.failReason || null };
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        if (typeof MenuStatus !== 'undefined' && typeof MenuStatus.render === 'function') MenuStatus.render();
+        return true;
     },
 
     isQuestUnlocked: (questId) => {
         const quest = App.getQuestDefinition(questId);
-        if (!quest) return false;
+        if (!quest || quest.disabled === true) return false;
+        const currentQuestState = App.getQuestState(questId);
+        if (currentQuestState.state === 'failed' && quest.retryableAfterFailure !== true) return false;
         const flags = App.data?.progress?.flags || {};
         const unlockFlags = Array.isArray(quest.unlockFlags) ? quest.unlockFlags : [];
         const missingFlags = Array.isArray(quest.missingFlags) ? quest.missingFlags : [];
@@ -3445,11 +4965,12 @@ const App = {
         const requiredQuests = Array.isArray(quest.requiredQuests) ? quest.requiredQuests : [];
         const rewardAllies = Array.isArray(quest.rewardAllies) ? quest.rewardAllies : [];
         const alreadyRewarded = rewardAllies.length > 0 && rewardAllies.every(charId => App.hasStoryAlly(charId));
-        return unlockFlags.every(flag => !!flags[flag])
-            && missingFlags.every(flag => !flags[flag])
-            && requiredAllies.every(charId => App.hasStoryAlly(charId))
-            && requiredQuests.every(id => App.isQuestCompleted(id))
-            && !alreadyRewarded;
+        return App.evaluateGameConditions({
+            requiredFlags: unlockFlags,
+            missingFlags,
+            requiredAllies,
+            requiredQuests
+        }) && !alreadyRewarded;
     },
 
     escapeHtml: (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -3643,6 +5164,7 @@ const App = {
         quests[questId] = {
             ...(current && typeof current === 'object' ? current : {}),
             state: 'accepted',
+            stage: Math.max(0, Math.floor(Number(current?.stage || 0))),
             startedAt: Date.now(),
             completedAt: null,
             progress: {}
@@ -3676,8 +5198,10 @@ const App = {
 
         quests[questId] = {
             state: 'completed',
+            stage: Math.max(0, Math.floor(Number(current?.stage || 0))),
             startedAt: current?.startedAt || Date.now(),
-            completedAt: Date.now()
+            completedAt: Date.now(),
+            progress: current?.progress && typeof current.progress === 'object' ? current.progress : {}
         };
         App.incrementLifetimeStat('totalQuestCompletions', 1, { save: false });
 
@@ -4421,22 +5945,7 @@ const App = {
     },
 
     initTitleScreen: () => { 
-        App.load(); 
-        const btn = document.getElementById('btn-continue'); 
-        if(App.data && btn) { 
-            btn.disabled = false; 
-            let name = '勇者'; let lv = 1;
-            if(App.data.party && App.data.party[0]) {
-                const c = App.data.characters.find(ch => ch.uid === App.data.party[0]);
-                if(c) { name = c.name; lv = c.level; }
-            }
-            btn.textContent = '続きから';
-            const detail = document.createElement('span');
-            detail.style.fontSize = '12px';
-            detail.textContent = `(${name} Lv.${lv})`;
-            btn.appendChild(document.createElement('br'));
-            btn.appendChild(detail);
-        } 
+        App.load();
     },
 
     migrateAbyssRegionSave: () => {
@@ -4601,6 +6110,10 @@ const App = {
             if (Array.isArray(App.data.dungeon.returnStack)) App.data.dungeon.returnStack.forEach(repairConceptWorldPoint);
             App.data.system.abyssRegionSchemaVersion = 7;
         }
+        if (typeof App.migrateAbyssBossKillCountsV1 === 'function') App.migrateAbyssBossKillCountsV1(App.data);
+        if (typeof App.purgeRemovedLegacyAbyssBossReferences === 'function') App.purgeRemovedLegacyAbyssBossReferences(App.data);
+        if (typeof App.reconcileCarmenaGateProgress === 'function') App.reconcileCarmenaGateProgress(App.data);
+        if (typeof App.ensureAbyssSpiritTrialEvents === 'function') App.ensureAbyssSpiritTrialEvents();
         if (typeof App.reconcileDerivedProgressFlags === 'function') App.reconcileDerivedProgressFlags();
     },
 
@@ -4638,6 +6151,7 @@ load: () => {
                     startTime: Date.now()
                 };
             }
+            App.ensurePlayTimeData(App.data);
             if (typeof App.syncDerivedLimitBreaks === 'function') {
                 App.syncDerivedLimitBreaks();
             }
@@ -4674,14 +6188,59 @@ load: () => {
         App.saveTransactionPending = false;
     },
 
+    restoreSaveDataSnapshot: (snapshot) => {
+        const restored = typeof snapshot === 'string' ? JSON.parse(snapshot) : snapshot;
+        if (!restored || typeof restored !== 'object') return false;
+        if (!App.data || typeof App.data !== 'object') {
+            App.data = restored;
+            return true;
+        }
+        Object.keys(App.data).forEach(key => { delete App.data[key]; });
+        Object.assign(App.data, restored);
+        return true;
+    },
+
+    // 装備・素材・通貨を伴う処理向け。保存失敗時は同じ App.data 参照へ全状態を戻す。
+    runAtomicSaveMutation: (mutator) => {
+        if (!App.data || typeof mutator !== 'function') return { ok:false, reason:'invalid' };
+        let snapshot;
+        try {
+            snapshot = App.serializeSaveData(App.data);
+        } catch (error) {
+            return { ok:false, reason:'snapshot', error };
+        }
+        try {
+            const result = mutator();
+            if (result && result.ok === false) {
+                App.restoreSaveDataSnapshot(snapshot);
+                return result;
+            }
+            if (App.save()) return { ok:true, result };
+            App.restoreSaveDataSnapshot(snapshot);
+            App.updateHUD?.();
+            return { ok:false, reason:'save', saveFailed:true };
+        } catch (error) {
+            App.restoreSaveDataSnapshot(snapshot);
+            App.updateHUD?.();
+            console.error('[ATOMIC SAVE] 処理を取り消しました。', error);
+            return { ok:false, reason:'mutation', error };
+        }
+    },
+
     save: () => {
         if (!App.data) return false;
+        if (typeof App.isSceneContextSaveSuppressed === 'function' && App.isSceneContextSaveSuppressed()) {
+            App.sceneContextSaveAttempted = true;
+            if (typeof App.updateHUD === 'function') App.updateHUD();
+            return true;
+        }
         if (Number(App.saveTransactionDepth || 0) > 0) {
             App.saveTransactionPending = true;
             return true;
         }
         let saved = false;
         try {
+            App.commitPlayTime({ keepRunning: true });
             if (Field.ready) {
                 App.data.location.x = Field.x;
                 App.data.location.y = Field.y;
@@ -4690,6 +6249,8 @@ load: () => {
             if (!App.data.stats) App.data.stats = { maxGold: 0, maxGems: 0 };
             if (App.data.gold > (App.data.stats.maxGold || 0)) App.data.stats.maxGold = App.data.gold;
             if (App.data.gems > (App.data.stats.maxGems || 0)) App.data.stats.maxGems = App.data.gems;
+
+            App.updateSaveMetadata();
 
             localStorage.setItem(CONST.SAVE_KEY, App.serializeSaveData(App.data));
             App.saveFailureNotified = false;
@@ -4790,6 +6351,8 @@ load: () => {
         const name = document.getElementById('player-name').value || 'アルス';
         App.data = JSON.parse(JSON.stringify(INITIAL_DATA_TEMPLATE));
         App.ensureSettings();
+        App.ensureWorldState(App.data);
+        App.ensureStoryCharacterStates(App.data);
         if (!App.data.progress) App.data.progress = {};
         if (!App.data.progress.flags || typeof App.data.progress.flags !== 'object' || Array.isArray(App.data.progress.flags)) App.data.progress.flags = {};
         App.data.progress.flags.hasShip = false;
@@ -4840,8 +6403,10 @@ load: () => {
 
 			// ★ここが重要：勝利後レジューム用ではなく、通常イベント予約として持つ
 			App.data.progress.pendingEventId = 'game_start';
+			App.ensurePlayTimeData(App.data);
+			App.updateSaveMetadata();
 
-			localStorage.setItem(CONST.SAVE_KEY, JSON.stringify(App.data));
+			localStorage.setItem(CONST.SAVE_KEY, App.serializeSaveData(App.data));
 			window.location.href = 'index.html';
 		} catch(e) {
 			App.showMessage("データ作成失敗");
@@ -4873,6 +6438,136 @@ load: () => {
         return App.data.progress;
     },
 
+    getAbyssSpiritTrialMaster: () => {
+        const storyMaster = globalThis.ABYSS_SPIRIT_TRIAL_MASTER;
+        if (storyMaster && typeof storyMaster === 'object') return storyMaster;
+        const contentMaster = globalThis.ABYSS_REGION_CONTENT?.spiritTrials || {};
+        return Object.fromEntries(Object.entries(contentMaster).map(([element, entry]) => {
+            const key = String(entry?.key || '').toLowerCase();
+            return [element, {
+                ...entry,
+                spiritName: `${element}の大精霊`,
+                introEventId: `abyss_spirit_trial_${key}_intro`,
+                retryEventId: `abyss_spirit_trial_${key}_retry`,
+                victoryEventId: `abyss_spirit_trial_${key}_victory`
+            }];
+        }));
+    },
+
+    ensureAbyssSpiritTrialEvents: (options = {}) => {
+        const progress = App.ensureAbyssRegionProgress();
+        progress.flags = progress.flags || {};
+        if (!progress.abyssSpiritTrialEvents || typeof progress.abyssSpiritTrialEvents !== 'object') {
+            progress.abyssSpiritTrialEvents = {};
+        }
+        const validStates = new Set(['untouched', 'challenged', 'lost', 'victory', 'completed']);
+        const master = App.getAbyssSpiritTrialMaster();
+        const elements = Object.keys(master).length
+            ? Object.keys(master)
+            : ['火', '水', '風', '雷', '光', '闇'];
+        elements.forEach(element => {
+            const source = progress.abyssSpiritTrialEvents[element];
+            const record = source && typeof source === 'object' ? source : {};
+            record.state = validStates.has(record.state) ? record.state : 'untouched';
+            record.attempts = Math.max(0, Math.floor(Number(record.attempts) || 0));
+            record.lostOnce = record.lostOnce === true;
+            // 旧セーブの加護は再戦を要求せず完了扱いへ移す。ただし、今回の勝利後会話待ち
+            // (victoryBattleIdあり) は victory のまま残し、会話と六個目報酬を再開できるようにする。
+            if (progress.abyssSpiritBlessings[element] && record.state !== 'victory' && record.state !== 'completed') {
+                record.state = 'completed';
+                record.completedAt = record.completedAt || Date.now();
+                record.legacyBlessingImported = true;
+            }
+            progress.abyssSpiritTrialEvents[element] = record;
+        });
+
+        const allCleared = elements.length > 0 && elements.every(element => progress.abyssSpiritBlessings[element]);
+        const octaprismItemId = Number(globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008);
+        const ownsOctaprism = Number(App.data?.items?.[octaprismItemId] || 0) > 0;
+        if (allCleared) {
+            progress.flags.abyssAllSpiritTrialsCleared = true;
+            if (ownsOctaprism) {
+                progress.flags.abyssOctaprismGrantPending = false;
+                progress.flags.abyssOctaprismGrantEventSeen = true;
+                elements.forEach(element => {
+                    const record = progress.abyssSpiritTrialEvents[element];
+                    if (record.state !== 'victory') record.state = 'completed';
+                });
+            } else {
+                // 演出済みフラグだけが残ってアイテムを欠く旧セーブも、授与イベントへ戻して救済する。
+                progress.flags.abyssOctaprismGrantPending = true;
+            }
+        }
+        if (options.save === true && typeof App.save === 'function') App.save();
+        return progress;
+    },
+
+    grantOctaprismFromPendant: () => {
+        if (!App.data || typeof App.runAtomicSaveMutation !== 'function') return { ok:false, reason:'invalid' };
+        return App.runAtomicSaveMutation(() => {
+            if (!App.data.items || typeof App.data.items !== 'object' || Array.isArray(App.data.items)) App.data.items = {};
+            const progress = App.ensureAbyssSpiritTrialEvents?.() || App.ensureAbyssRegionProgress?.();
+            if (!progress) return { ok:false, reason:'progress' };
+            progress.flags = progress.flags || {};
+            const master = App.getAbyssSpiritTrialMaster?.() || {};
+            const elements = Object.keys(master).length ? Object.keys(master) : ['火','水','風','雷','光','闇'];
+            if (!elements.every(element => progress.abyssSpiritBlessings?.[element] === true)) {
+                return { ok:false, reason:'requirements' };
+            }
+
+            const content = globalThis.ABYSS_REGION_CONTENT || {};
+            const octaprismId = Number(content.octaprismItemId || 701008);
+            const charredId = Number(content.charredPendantItemId || 701009);
+            const crystalId = Number(content.lightCrystalPendantItemId || 701010);
+            delete App.data.items[charredId];
+            delete App.data.items[String(charredId)];
+            App.data.items[crystalId] = Math.max(1, Math.floor(Number(App.data.items[crystalId] ?? App.data.items[String(crystalId)] ?? 0) || 0));
+            App.data.items[octaprismId] = Math.max(1, Math.floor(Number(App.data.items[octaprismId] ?? App.data.items[String(octaprismId)] ?? 0) || 0));
+
+            progress.flags.abyssOctaprismGrantPending = false;
+            progress.flags.abyssOctaprismGrantEventSeen = true;
+            progress.flags.abyssAllSpiritTrialsCleared = true;
+            progress.abyssOctaprismGrantedAt = progress.abyssOctaprismGrantedAt || Date.now();
+            elements.forEach(element => {
+                const record = progress.abyssSpiritTrialEvents?.[element];
+                if (record && record.state !== 'completed') record.state = 'completed';
+            });
+            return { ok:true, octaprismId, crystalId };
+        });
+    },
+
+    resolveAbyssSpiritTrialEventId: (element) => {
+        const key = String(element || '');
+        const master = App.getAbyssSpiritTrialMaster();
+        const definition = master[key];
+        if (!definition) return null;
+        const progress = App.ensureAbyssSpiritTrialEvents();
+        const octaprismItemId = Number(globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008);
+        const elements = Object.keys(master);
+        const allCleared = elements.length > 0 && elements.every(name => progress.abyssSpiritBlessings[name]);
+        const record = progress.abyssSpiritTrialEvents[key];
+        // 六個目の勝利後会話待ちは、共通授与イベントより先に再開する。
+        if (progress.abyssSpiritBlessings[key] && record?.state === 'victory') {
+            return definition.victoryEventId;
+        }
+        if (allCleared && (progress.flags?.abyssOctaprismGrantPending || Number(App.data?.items?.[octaprismItemId] || 0) <= 0)) {
+            return 'abyss_spirit_trials_octaprism_grant';
+        }
+        if (progress.abyssSpiritBlessings[key]) {
+            return null;
+        }
+        if (record?.lostOnce || record?.state === 'lost' || record?.state === 'challenged') return definition.retryEventId;
+        return definition.introEventId;
+    },
+
+    getOwnedAbyssSpiritElements: (data = App.data) => {
+        const itemMap = globalThis.ABYSS_REGION_CONTENT?.spiritItemByElement || {};
+        const items = data?.items || {};
+        return Object.entries(itemMap)
+            .filter(([, itemId]) => Math.max(0, Number(items[itemId] ?? items[String(itemId)] ?? 0) || 0) > 0)
+            .map(([element]) => element);
+    },
+
     getEnvironmentalElementModifiers: (char) => {
         const master = globalThis.ABYSS_REGION_MASTER;
         const result = {};
@@ -4900,12 +6595,15 @@ load: () => {
         const spiritElement = battleActive ? App.data?.battle?.abyssSpiritElement : null;
         if (spiritElement) result[spiritElement] = (result[spiritElement] || 0) - 50;
 
-        const blessings = App.ensureAbyssRegionProgress().abyssSpiritBlessings;
-        Object.keys(blessings).filter(element => blessings[element]).forEach(element => {
-            result[element] = (result[element] || 0) + 20;
+        // 加護は加入済みキャラクターへ個別保存せず、結晶片の所持を正本として
+        // 現在・将来の全仲間へ同じ耐性を動的に適用する。
+        const ownedSpiritElements = App.getOwnedAbyssSpiritElements();
+        const fragmentResistance = Math.max(0, Number(globalThis.ABYSS_REGION_CONTENT?.randomDungeonPhase2IMaster?.spiritFragmentResistance || 20));
+        ownedSpiritElements.forEach(element => {
+            result[element] = (result[element] || 0) + fragmentResistance;
         });
         if (battleActive && App.data?.battle?.abyssSpiritFinalBlessing) {
-            Object.keys(blessings).filter(element => blessings[element]).forEach(element => {
+            ownedSpiritElements.forEach(element => {
                 result[element] = (result[element] || 0) + 30;
             });
         }
@@ -5383,8 +7081,8 @@ load: () => {
         const silent = options.silent === true;
         const logs = [];
 
-        // 転生回数による補正倍率の計算
-        const reincMult = 1 + (charData.reincarnationCount || 0);
+        // 転生・モンスター合成による共通の成長補正。
+        const reincMult = App.getReincarnationGrowthMultiplier(charData);
 
         charData.level++;
 
@@ -5404,27 +7102,24 @@ load: () => {
         let magBonus = 0;  // 魔力用 (魔の極み)
         let mdefBonus = 0; // 魔法防御用 (魔の極み)
 
-        if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
-            // ID 58 大器晩成: stat_bonus_mult は 0.1(10%) 単位
+        if (typeof PassiveSkill !== 'undefined' && typeof PassiveSkill.getSumValue === 'function') {
+            // 固定付与を含む装備特性も成長へ反映する。成長系3特性はランダム装備特性の抽選対象外。
             statBonus = PassiveSkill.getSumValue(charData, 'stat_bonus_mult');
-
-            // ID 59 武の極み: 1(1%) 単位
             atkBonus = PassiveSkill.getSumValue(charData, 'atk_growth_bonus') / 100;
             defBonus = PassiveSkill.getSumValue(charData, 'def_growth_bonus') / 100;
-
-            // ID 60 魔の極み: 1(1%) 単位
             magBonus = PassiveSkill.getSumValue(charData, 'mag_growth_bonus') / 100;
             mdefBonus = PassiveSkill.getSumValue(charData, 'mdef_growth_bonus') / 100;
         }
 
-        // 各倍率の決定 (1.0 + 全体ボーナス + 個別ボーナス)
-        const hpMult   = 2.0 + statBonus;
-        const mpMult   = 2.0 + statBonus;
-        const atkMult  = 1.0 + statBonus + atkBonus;
-        const defMult  = 1.0 + statBonus + defBonus;
-        const magMult  = 1.0 + statBonus + magBonus;
-        const mdefMult = 1.0 + statBonus + mdefBonus;
-        const spdMult  = 1.0 + statBonus;
+        // 大器晩成は「全能力の最終成長量+10%/Lv」として乗算し、HP/MPだけ効果が半減する旧挙動を解消。
+        const allStatMult = 1.0 + Math.max(0, statBonus);
+        const hpMult   = 2.0 * allStatMult;
+        const mpMult   = 2.0 * allStatMult;
+        const atkMult  = (1.0 + atkBonus) * allStatMult;
+        const defMult  = (1.0 + defBonus) * allStatMult;
+        const magMult  = (1.0 + magBonus) * allStatMult;
+        const mdefMult = (1.0 + mdefBonus) * allStatMult;
+        const spdMult  = 1.0 * allStatMult;
 
         // 各ステータス上昇量の計算
         let incHp   = Math.max(1, Math.floor(((growthRef.hp || master.hp || 100) * reincMult) * r() * hpMult));
@@ -5518,23 +7213,108 @@ load: () => {
         return logs;
     },
 
+    ensureStoryRewardState: (data = App.data) => {
+        if (!data || typeof data !== 'object' || Array.isArray(data)) return {};
+        if (!data.progress || typeof data.progress !== 'object' || Array.isArray(data.progress)) data.progress = {};
+        if (!data.progress.storyRewards || typeof data.progress.storyRewards !== 'object' || Array.isArray(data.progress.storyRewards)) {
+            data.progress.storyRewards = {};
+        }
+        return data.progress.storyRewards;
+    },
+
+    hasStoryReward: (rewardKey, data = App.data) => {
+        if (!rewardKey) return false;
+        const rewards = App.ensureStoryRewardState(data);
+        return rewards[String(rewardKey)] === true;
+    },
+
+    getCharacterExpRequirementMultiplierPct: (charData) => {
+        const raw = Number(charData?.expMultiplierPct);
+        if (!Number.isFinite(raw) || raw <= 0) return 100;
+        return Math.max(1, Math.round(raw));
+    },
+
+    setCharacterExpRequirementMultiplierPct: (characterOrCharId, pct, options = {}) => {
+        const charData = (characterOrCharId && typeof characterOrCharId === 'object')
+            ? characterOrCharId
+            : App.getStoryAllyCharacter(characterOrCharId);
+        if (!charData) return false;
+        const normalized = Math.max(1, Math.round(Number(pct) || 100));
+        charData.expMultiplierPct = normalized;
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return true;
+    },
+
+    grantStoryExp: (charId, expGain, rewardKey, options = {}) => {
+        const id = Number(charId);
+        const amount = Math.max(0, Math.floor(Number(expGain) || 0));
+        if (!Number.isFinite(id) || amount <= 0) return { ok: false, reason: 'invalid_reward' };
+        const rewards = App.ensureStoryRewardState();
+        const key = rewardKey ? String(rewardKey) : null;
+        if (key && rewards[key] === true) return { ok: false, reason: 'already_granted', duplicate: true };
+        const charData = App.getStoryAllyCharacter(id);
+        if (!charData) return { ok: false, reason: 'character_missing' };
+        const beforeLevel = Math.max(1, Number(charData.level || 1));
+        const beforeExp = Math.max(0, Number(charData.exp || 0));
+        const logs = App.gainExp(charData, amount, {
+            save: false,
+            aggregateLevelUpLogs: options.aggregateLevelUpLogs !== false,
+            silent: options.silent === true
+        });
+        if (key) rewards[key] = true;
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        return {
+            ok: true,
+            charId: id,
+            rewardKey: key,
+            expGranted: amount,
+            beforeLevel,
+            afterLevel: Math.max(1, Number(charData.level || 1)),
+            levelsGained: Math.max(0, Number(charData.level || 1) - beforeLevel),
+            beforeExp,
+            afterExp: Math.max(0, Number(charData.exp || 0)),
+            logs
+        };
+    },
+
     /**
      * レベルアップ処理
      */
     gainExp: (charData, expGain, options = {}) => {
+        if (!charData) return [];
         if (!charData.exp) charData.exp = 0;
-        charData.exp += expGain;
-        let logs = [];
+        const amount = Math.max(0, Math.floor(Number(expGain) || 0));
+        charData.exp += amount;
+        const logs = [];
+        const startLevel = Math.max(1, Number(charData.level || 1));
+        const aggregate = options.aggregateLevelUpLogs === true;
+        const silent = options.silent === true;
+        const beforeSkills = new Set((Array.isArray(charData.skills) ? charData.skills : []).map(Number));
 
-        // レベル上限100
+        // レベル上限100。大量Story EXPでも、飛び越えた各Lvの技能・特性処理は一段ずつ通す。
         while (charData.level < 100) {
-            // App.getNextExp 内で「大器晩成」の exp_need_mult が計算されている前提
             const nextExp = App.getNextExp(charData);
-            if (charData.exp >= nextExp) {
-                charData.exp -= nextExp;
+            if (charData.exp < nextExp) break;
+            charData.exp -= nextExp;
+            if (aggregate || silent) {
+                App.applyLevelUpGrowth(charData, { silent: true });
+            } else {
                 logs.push(...App.applyLevelUpGrowth(charData));
-            } else { break; }
+            }
         }
+
+        if (!silent && aggregate && charData.level > startLevel) {
+            const gainedLevels = charData.level - startLevel;
+            logs.push(`<span style="color:#00ff00; font-weight:bold;"><br>${charData.name}は ${gainedLevels}レベル上がり、Lv.${charData.level}になった！</span>`);
+            const learnedSkills = (Array.isArray(charData.skills) ? charData.skills : [])
+                .map(Number)
+                .filter(id => !beforeSkills.has(id));
+            learnedSkills.forEach(id => {
+                const skill = (typeof DB !== 'undefined' && Array.isArray(DB.SKILLS)) ? DB.SKILLS.find(entry => Number(entry.id) === id) : null;
+                logs.push(`<span style="color:#ffff00;">${skill?.name || `スキル${id}`} を覚えた！</span>`);
+            });
+        }
+        if (charData.level >= 100) charData.exp = Math.max(0, Number(charData.exp || 0));
         if (options.save !== false) App.save();
         return logs;
     },
@@ -5609,6 +7389,8 @@ load: () => {
 		// 4. ベース作成
 		const eq = { 
 			id: Date.now() + Math.random().toString(36).substring(2), 
+            eid: Number(base.eid),
+            masterEid: Number(base.eid),
             source: source || 'drop',
 			rank: base.rank, 
 			name: base.name, 
@@ -5659,7 +7441,7 @@ load: () => {
 
 			// ★真・装備：特性を 1〜3個、Lv1〜5 で付与（固定traitsは維持してマージ）
 			if (typeof PassiveSkill !== 'undefined' && PassiveSkill.generateEquipmentTraits) {
-				const randTraits = PassiveSkill.generateEquipmentTraits({ countMin: 1, countMax: 3, lvMin: 1, lvMax: 5 });
+				const randTraits = PassiveSkill.generateEquipmentTraits({ equipment:eq, countMin:1, countMax:3, lvMin:1, lvMax:5 });
 				eq.traits = [...(eq.traits || []), ...(randTraits || [])];
 			}
 		}
@@ -5709,7 +7491,7 @@ load: () => {
 		// 7. 特性およびシナジーの判定
 		if (plus >= 3) {
 		  if (typeof PassiveSkill !== 'undefined' && PassiveSkill.generateEquipmentTraits) {
-			const randTraits = PassiveSkill.generateEquipmentTraits();
+			const randTraits = PassiveSkill.generateEquipmentTraits({ equipment:eq });
 			// 固定 + ランダムを結合（同IDが被ったら加算するか、どちらか優先するかは好み）
 			eq.traits = [...(eq.traits || []), ...(randTraits || [])];
 		  }
@@ -5746,6 +7528,8 @@ load: () => {
 
 		const eq = { 
 			id: Date.now() + Math.random().toString(36).substring(2), 
+            eid: Number(base.eid),
+            masterEid: Number(base.eid),
 			rank: base.rank, 
 			name: base.name, 
 			type: base.type, 
@@ -5821,7 +7605,7 @@ load: () => {
 		} else if (plus >= 3) {
 			// 指定がなくプラス3以上の場合は従来通りランダム付与
 			if (typeof PassiveSkill !== 'undefined' && PassiveSkill.generateEquipmentTraits) {
-				const randTraits = PassiveSkill.generateEquipmentTraits();
+				const randTraits = PassiveSkill.generateEquipmentTraits({ equipment:eq });
 				eq.traits = [...(eq.traits || []), ...(randTraits || [])];
 			}
 		}
@@ -5953,7 +7737,7 @@ load: () => {
 		const level = charData.level || 1;
 
 		// 転生回数
-		const reincCount = charData.reincarnationCount || 0;
+		const reincCount = App.getReincarnationEquivalentCount(charData);
 
 		// 実質レベル（転生を考慮した内部レベル）
 		// 例：転生1回・表示Lv1 => eL=101
@@ -6065,12 +7849,12 @@ load: () => {
 		/* =====================================================
 		 * 特性補正：「58 大器晩成」の反映
 		 * ===================================================== */
-		// 特性による必要経験値の増加率を取得（スキルLv * 10%）
-		if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
-			// 修正後のキー 'exp_need_mult' を指定して合計値を取得
+		// 特性による必要経験値の増加率を取得（スキルLv * 5%）
+		if (typeof PassiveSkill !== 'undefined' && typeof PassiveSkill.getSumValue === 'function') {
+			// 固定付与を含む装備の大器晩成も必要経験値へ反映する。
 			const expAddPct = PassiveSkill.getSumValue(charData, 'exp_need_mult');
 			if (expAddPct > 0) {
-				// 例: スキルLv1(10%)なら、必要経験値を1.1倍にする
+				// 例: スキルLv1(5%)なら、必要経験値を1.05倍にする
 				needExp = needExp * (1 + expAddPct / 100); 
 			}
 }
@@ -6078,8 +7862,10 @@ load: () => {
 		/* =====================================================
 		 * 最終出力
 		 * ===================================================== */
-		// レアリティ倍率を反映して切り上げ
-		return Math.ceil(needExp * rarityMult);
+		// レアリティ倍率とキャラクター個別の必要EXP倍率を反映して切り上げ。
+		// expMultiplierPct は100が通常、ルーナ加入直後は2000など percentage points の整数で管理する。
+		const individualExpMult = App.getCharacterExpRequirementMultiplierPct(charData) / 100;
+		return Math.ceil(needExp * rarityMult * individualExpMult);
 	},
 
     checkNewSkill: (charData) => {
@@ -6202,95 +7988,147 @@ load: () => {
         return next;
     },
 
-    getMonsterFusionPreview: (primaryUid, materialUid, selectedSkillIds = null) => {
+    getMonsterFusionPreview: (primaryUid, materialUid, selectedSkillIds = null, selectedTraitIds = null) => {
         const primary = App.getChar(primaryUid);
         const material = App.getChar(materialUid);
         if (!primary || !material || primary.uid === material.uid || !App.isMonsterAlly(primary) || !App.isMonsterAlly(material)) {
-            return { ok: false, message: '合成する仲間モンスターを確認できません。' };
+            return { ok:false, message:'合成する仲間モンスターを確認できません。' };
         }
+
         const allSkills = Array.from(new Set([...(primary.skills || []), ...(material.skills || [])]
             .map(Number).filter(id => Number.isFinite(id) && id >= 100)));
-        let skills = allSkills.length <= 8
+        const selectedSkills = allSkills.length <= 8
             ? allSkills.slice()
-            : (Array.isArray(selectedSkillIds)
-                ? Array.from(new Set(selectedSkillIds.map(Number).filter(id => allSkills.includes(id))))
-                : []);
-        if (skills.length > 8) skills = skills.slice(0, 8);
+            : Array.from(new Set((Array.isArray(selectedSkillIds) ? selectedSkillIds : [])
+                .map(Number).filter(id => allSkills.includes(id)))).slice(0, 8);
+
+        const traitById = new Map();
+        [...(primary.traits || []), ...(material.traits || [])].forEach(trait => {
+            const id = Number(trait?.id);
+            if (!Number.isFinite(id) || id <= 0) return;
+            const current = traitById.get(id);
+            const level = Math.max(1, Math.floor(Number(trait?.level ?? trait?.lv) || 1));
+            const battleCount = Math.max(0, Math.floor(Number(trait?.battleCount) || 0));
+            if (!current || level > current.level || (level === current.level && battleCount > current.battleCount)) {
+                traitById.set(id, { id, level, battleCount });
+            }
+        });
+        const allTraits = Array.from(traitById.values());
+        const selectedTraitSet = new Set((Array.isArray(selectedTraitIds) ? selectedTraitIds : []).map(Number));
+        const traits = allTraits.length <= 6
+            ? allTraits.map(trait => ({ ...trait }))
+            : allTraits.filter(trait => selectedTraitSet.has(trait.id)).slice(0, 6).map(trait => ({ ...trait }));
+
         const stats = {};
         ['hp', 'mp', 'atk', 'def', 'mag', 'mdef', 'spd'].forEach(key => {
             const minimum = key === 'mp' ? 0 : 1;
-            stats[key] = Math.max(minimum, Math.floor((Number(primary[key] || 0) + Number(material[key] || 0)) / 4));
+            const primaryValue = Math.max(minimum, Math.floor(Number(primary[key]) || 0));
+            const materialBonus = Math.max(0, Math.floor((Number(material[key]) || 0) * 0.10));
+            stats[key] = Math.max(minimum, primaryValue + materialBonus);
         });
-        return { ok: true, primary, material, allSkills, skills, stats, requiresSkillSelection: allSkills.length > 8 };
+
+        return {
+            ok:true,
+            primary,
+            material,
+            allSkills,
+            skills:selectedSkills,
+            allTraits,
+            traits,
+            stats,
+            requiresSkillSelection:allSkills.length > 8,
+            requiresTraitSelection:allTraits.length > 6,
+            nextFusionCount:Math.max(0, Math.floor(Number(primary.monsterFusionCount) || 0)) + 1
+        };
     },
 
-    fuseMonsterAllies: (primaryUid, materialUid, selectedSkillIds = null) => {
-        const preview = App.getMonsterFusionPreview(primaryUid, materialUid, selectedSkillIds);
+    fuseMonsterAllies: (primaryUid, materialUid, selectedSkillIds = null, selectedTraitIds = null) => {
+        const preview = App.getMonsterFusionPreview(primaryUid, materialUid, selectedSkillIds, selectedTraitIds);
         if (!preview.ok) return preview;
-        if (preview.requiresSkillSelection && (!Array.isArray(selectedSkillIds) || preview.skills.length !== 8)) {
-            return { ...preview, ok: false, reason: 'needsSkillSelection', message: '引き継ぐスキルを8個選んでください。' };
+        if (preview.requiresSkillSelection && preview.skills.length !== 8) {
+            return { ...preview, ok:false, reason:'needsSkillSelection', message:'引き継ぐスキルを8個選んでください。' };
+        }
+        if (preview.requiresTraitSelection && preview.traits.length !== 6) {
+            return { ...preview, ok:false, reason:'needsTraitSelection', message:'引き継ぐ特性を6個選んでください。' };
         }
         const potId = Number(window.PRISMA_SYNTHESIS_POT_ITEM_ID || 599999);
-        if (Number(App.data?.items?.[potId] || 0) <= 0) return { ok: false, reason: 'noPot', message: '合成の壺を持っていません。' };
+        if (Number(App.data?.items?.[potId] || 0) <= 0) return { ok:false, reason:'noPot', message:'合成の壺を持っていません。' };
 
-        const { primary, material, skills, stats } = preview;
-        const returnedEquipment = Array.from(new Set(Object.values(material.equips || {}).filter(Boolean)));
+        const { primary, material, skills, traits, stats, nextFusionCount } = preview;
         if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+        const returnedEquipment = [];
+        const seenEquipment = new Set();
+        [primary, material].forEach(character => {
+            Object.values(character.equips || {}).forEach(equip => {
+                if (!equip || seenEquipment.has(equip)) return;
+                seenEquipment.add(equip);
+                returnedEquipment.push(equip);
+            });
+        });
         returnedEquipment.forEach(equip => App.data.inventory.push(equip));
 
         const retainedSkillSet = new Set(skills.map(Number));
+        const retainedTraitSet = new Set(traits.map(trait => Number(trait.id)));
         const oldConfig = (primary.config && typeof primary.config === 'object') ? primary.config : {};
+        const oldMeta = (primary.monsterAllyMeta && typeof primary.monsterAllyMeta === 'object') ? primary.monsterAllyMeta : {};
+        const primaryGrowthBase = primary.growthBase ? { ...primary.growthBase } : null;
+        const emptyEquips = { '武器':null, '盾':null, '頭':null, '体':null, '足':null };
+
         Object.assign(primary, stats, {
-            level: 1,
-            exp: 0,
-            sp: 0,
-            currentHp: stats.hp,
-            currentMp: stats.mp,
-            skills: skills.slice(0, 8),
-            skillBookSkills: [],
-            limitBreak: 0,
-            lbProgress: {
-                counters: { battleWins: 0 },
-                sources: { story: 0, battle: 0, dungeon: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, monster: 0, trial: 0, item: 0, legacy: 0 },
-                trials: { mid: false, final: false, midClearedAt: null, finalClearedAt: null }
-            },
-            reincarnationCount: 0,
-            growthBase: { ...stats },
-            config: {
+            level:1,
+            exp:0,
+            currentHp:stats.hp,
+            currentMp:stats.mp,
+            skills:skills.slice(0, 8),
+            skillBookSkills:[],
+            traits:traits.map(trait => ({ ...trait })),
+            disabledTraits:(primary.disabledTraits || []).map(Number).filter(id => retainedTraitSet.has(id)),
+            equips:emptyEquips,
+            reincarnationCount:0,
+            monsterFusionCount:nextFusionCount,
+            config:{
                 ...oldConfig,
-                hiddenSkills: (oldConfig.hiddenSkills || []).map(Number).filter(id => retainedSkillSet.has(id)),
-                autoDisabledSkills: (oldConfig.autoDisabledSkills || []).map(Number).filter(id => retainedSkillSet.has(id))
-            },
-            monsterFusionCount: Math.max(0, Number(primary.monsterFusionCount || 0)) + 1
+                hiddenSkills:(oldConfig.hiddenSkills || []).map(Number).filter(id => retainedSkillSet.has(id)),
+                autoDisabledSkills:(oldConfig.autoDisabledSkills || []).map(Number).filter(id => retainedSkillSet.has(id))
+            }
         });
+        if (primaryGrowthBase) primary.growthBase = primaryGrowthBase;
+        else App.applyMonsterAllyGrowthProfile(primary);
         primary.monsterAllyMeta = {
-            ...(primary.monsterAllyMeta || {}),
-            fusedAt: Date.now(),
-            absorbedMonsterId: material.monsterId || material.sourceMonsterId || null,
-            absorbedName: material.name || ''
+            ...oldMeta,
+            growthProfileVersion:App.monsterAllyGrowthConfig.schemaVersion,
+            fusedAt:Date.now(),
+            fusionCount:nextFusionCount,
+            absorbedMonsterId:material.monsterId || material.sourceMonsterId || null,
+            absorbedName:material.name || ''
         };
+
         App.data.characters = (App.data.characters || []).filter(character => character && character.uid !== material.uid);
-        if (Array.isArray(App.data.party)) {
-            App.data.party = App.data.party.map(uid => uid === material.uid ? null : uid);
-        }
+        if (Array.isArray(App.data.party)) App.data.party = App.data.party.map(uid => uid === material.uid ? null : uid);
         App.data.items[potId]--;
         if (App.data.items[potId] <= 0) delete App.data.items[potId];
         App.ensureCharacterBattleConfig?.(primary);
+        if (typeof PassiveSkill !== 'undefined') PassiveSkill.normalizeDisabledTraits?.(primary);
+        const fusedStats = typeof App.calcStats === 'function'
+            ? App.calcStats(primary)
+            : { maxHp:primary.hp, maxMp:primary.mp };
+        primary.currentHp = Math.max(1, Math.floor(Number(fusedStats?.maxHp ?? primary.hp) || 1));
+        primary.currentMp = Math.max(0, Math.floor(Number(fusedStats?.maxMp ?? primary.mp) || 0));
         App.save();
         return {
-            ok: true,
-            character: primary,
-            consumedUid: material.uid,
-            returnedEquipmentCount: returnedEquipment.length,
-            message: `${primary.name}は新たな力を得てレベル1になった！`
+            ok:true,
+            character:primary,
+            consumedUid:material.uid,
+            returnedEquipmentCount:returnedEquipment.length,
+            message:`${primary.name}は新たな力を得てレベル1になった！\n合成回数: ${nextFusionCount}回`
         };
     },
 
     getLifetimeStatDefaults: () => ({
-        totalSteps: 0, totalBattles: 0, totalChestsOpened: 0, totalMedals: 0,
+        totalSteps: 0, totalBattles: 0, totalChestsOpened: 0, totalMedals: 0, totalCoinsSpent: 0,
         totalQuestCompletions: 0, totalGuildQuestCompletions: 0,
         totalAlchemyCrafts: 0, totalAlchemyItemsCrafted: 0,
-        totalBlacksmithActions: 0, blacksmithSynthesisCount: 0,
+        totalBlacksmithActions: 0, blacksmithSynthesisCount: 0, blacksmithMaterialUpgradeCount: 0,
         blacksmithRefineAttempts: 0, blacksmithRefineSuccesses: 0,
         blacksmithEnhanceAttempts: 0, blacksmithEnhanceSuccesses: 0
     }),
@@ -6311,6 +8149,31 @@ load: () => {
         stats[key] = Math.max(0, Number(stats[key] || 0) + Number(amount || 0));
         if (options.save !== false && typeof App.save === 'function') App.save();
         return stats[key];
+    },
+
+    ensureCoinSpendingRewardProgress: (data = App.data, options = {}) => {
+        if (!data || typeof data !== 'object') return null;
+        if (!data.progress || typeof data.progress !== 'object' || Array.isArray(data.progress)) data.progress = {};
+        if (!data.progress.flags || typeof data.progress.flags !== 'object' || Array.isArray(data.progress.flags)) data.progress.flags = {};
+        const current = data.progress.coinSpendingRewards;
+        if (!current || typeof current !== 'object' || Array.isArray(current)) {
+            data.progress.coinSpendingRewards = { claimedMilestones: [] };
+        }
+        const state = data.progress.coinSpendingRewards;
+        state.claimedMilestones = Array.from(new Set((Array.isArray(state.claimedMilestones) ? state.claimedMilestones : [])
+            .map(value => Math.max(0, Math.floor(Number(value) || 0)))
+            .filter(value => value > 0))).sort((a, b) => a - b);
+
+        const stats = App.ensureLifetimeStats(data);
+        if (options.migrateLegacy === true && !data.progress.flags.coinSpendingTrackingV1Initialized) {
+            // 旧セーブは取得累計と現在所持数の差を、復元可能な範囲の過去消費数として引き継ぐ。
+            const acquired = Math.max(0, Math.floor(Number(stats?.totalMedals) || 0));
+            const held = Math.max(0, Math.floor(Number(data.items?.[99]) || 0));
+            const estimatedLegacySpent = Math.max(0, acquired - held);
+            stats.totalCoinsSpent = Math.max(Number(stats.totalCoinsSpent) || 0, estimatedLegacySpent);
+            data.progress.flags.coinSpendingTrackingV1Initialized = true;
+        }
+        return state;
     },
 
     getAbyssLegacyProgressFloor: (data = App.data) => {
@@ -6456,6 +8319,10 @@ load: () => {
         if (!loadedData || typeof loadedData !== 'object' || Array.isArray(loadedData)) return loadedData;
 
         const data = loadedData;
+        App.ensureWorldState(data);
+        App.reconcileThunderFortWorldState(data);
+        App.reconcileUnderseaVolcanoWorldState(data);
+        App.ensureStoryCharacterStates(data);
 
         if (data.characters && Array.isArray(data.characters)) {
             data.characters.forEach(char => {
@@ -6473,6 +8340,7 @@ load: () => {
                     char.skills = uniqueCharacterSkills(char.skills).filter(id => id >= 100).slice(0, 8);
                     char.skillBookSkills = [];
                     char.reincarnationCount = 0;
+                    char.monsterFusionCount = Math.max(0, Math.floor(Number(char.monsterFusionCount) || 0));
                 } else {
                     char.skills = uniqueCharacterSkills(char.skills);
                     char.skillBookSkills = uniqueBookSkills(char.skillBookSkills)
@@ -6491,6 +8359,16 @@ load: () => {
         if (!data.book || typeof data.book !== 'object' || Array.isArray(data.book)) data.book = { monsters: [] };
         if (!Array.isArray(data.book.monsters)) data.book.monsters = [];
         if (!data.book.killCounts || typeof data.book.killCounts !== 'object' || Array.isArray(data.book.killCounts)) data.book.killCounts = {};
+        App.migrateAbyssBossKillCountsV1(data);
+        App.migrateAbyssBossKillCountsV2(data);
+        App.migrateReincarnationGrowthFormulaV1(data);
+        App.migrateGilgameshAllyDominanceV2(data);
+        App.migrateLunaZenonBossVisualCleanupV1(data);
+        App.migrateSpiritFragmentResistanceSourceV1(data);
+        App.migratePendantOctaprismV1(data);
+        App.migrateSpecialBossEquipmentBalanceV1(data);
+        App.purgeRemovedLegacyAbyssBossReferences(data);
+        App.reconcileCarmenaGateProgress(data);
 
         if (!data.battle || typeof data.battle !== 'object' || Array.isArray(data.battle)) data.battle = { active: false };
 
@@ -6514,7 +8392,9 @@ load: () => {
         if (typeof data.stats.totalSteps !== 'number') data.stats.totalSteps = 0;
         if (typeof data.stats.totalBattles !== 'number') data.stats.totalBattles = 0;
         if (typeof data.stats.startTime !== 'number') data.stats.startTime = Date.now();
+        App.ensurePlayTimeData(data);
         App.ensureLifetimeStats(data);
+        App.ensureCoinSpendingRewardProgress(data, { migrateLegacy: true });
         data.stats.totalQuestCompletions = Math.max(Number(data.stats.totalQuestCompletions || 0), Object.values(data.progress?.quests || {}).filter(entry => entry?.state === 'completed').length);
         data.stats.totalGuildQuestCompletions = Math.max(Number(data.stats.totalGuildQuestCompletions || 0), App.getGuildQuestCompletionCount(data));
 
@@ -6551,6 +8431,11 @@ load: () => {
         if (!App.data) {
             if(typeof Menu !== 'undefined') Menu.msg("セーブデータがありません");
             else App.showMessage("セーブデータがありません");
+            return;
+        }
+        const isGamePage = typeof document !== 'undefined' && document.body?.classList?.contains('game-page');
+        if (isGamePage && typeof App.save === 'function' && !App.save()) {
+            App.showMessage("現在のオートセーブを更新できなかったため、データ出力を中止しました");
             return;
         }
         if (typeof SaveCrypto === 'undefined' || typeof SaveCrypto.encodeSaveData !== 'function') {
@@ -6606,9 +8491,16 @@ load: () => {
                     if (App.isImportableSaveData(loadedData)) {
                         const migratedData = App.migrateImportedSaveData(JSON.parse(JSON.stringify(loadedData)));
                         const suffix = isLegacy ? "\n\n旧形式のバックアップは、読み込み時に現在の形式へ補正されます。" : "";
-                        if (await App.showConfirm(`現在のデータを上書きして復元しますか？\n(ページがリロードされます)${suffix}`)) {
-                            localStorage.setItem(CONST.SAVE_KEY, JSON.stringify(migratedData));
-                            location.reload();
+                        if (await App.showConfirm(`バックアップを読み込むと、現在のオートセーブは即時上書きされます。\n手動セーブNo.1～9は変更されません。\n\n読み込んで再開しますか？${suffix}`)) {
+                            if (typeof SaveSlots !== 'undefined' && typeof SaveSlots.writeDataToAutoSlot === 'function') {
+                                SaveSlots.writeDataToAutoSlot(migratedData);
+                            } else {
+                                App.data = migratedData;
+                                App.ensurePlayTimeData(App.data);
+                                App.updateSaveMetadata();
+                                localStorage.setItem(CONST.SAVE_KEY, App.serializeSaveData(App.data));
+                            }
+                            window.location.href = 'index.html';
                         }
                     } else {
                         App.showMessage("不正なセーブデータ形式です");
@@ -6887,9 +8779,11 @@ load: () => {
 		if (App.encounterTransitioning) return true;
 		if (App.data.battle && App.data.battle.active) return true;
 
-		const encounterRate = rate !== null
+		const baseEncounterRate = rate !== null
 			? rate
 			: ((App.data.walkCount || 0) > 15 ? 0.06 : 0.03);
+        const encounterRateMultiplier = Math.max(0, Number(Field.currentMapData?.randomEncounterRateMultiplier || 1));
+        const encounterRate = Math.max(0, Math.min(1, baseEncounterRate * encounterRateMultiplier));
 
 		if (Math.random() >= encounterRate) {
 			return false;
@@ -6940,6 +8834,11 @@ load: () => {
             guildQuestChallengeId: mapEncounter?.guildQuestId || null,
             guildChallengeEnemyBoost: mapEncounter?.enemyBoost ? JSON.parse(JSON.stringify(mapEncounter.enemyBoost)) : null,
             guildChallengeAllyAilments: Array.isArray(mapEncounter?.allyAilments) ? [...mapEncounter.allyAilments] : [],
+            randomDungeonModifier: mapEncounter?.randomDungeonModifier ? JSON.parse(JSON.stringify(mapEncounter.randomDungeonModifier)) : null,
+            rareEncounterRateMultiplier: Math.max(0, Number(mapEncounter?.rareEncounterRateMultiplier || 1)),
+            rareDropMultiplier: Math.max(0, Number(mapEncounter?.rareDropMultiplier || 1)),
+            equipPlus3BonusPct: Math.max(0, Number(mapEncounter?.equipPlus3BonusPct || 0)),
+            storyBossEchoFloor: mapEncounter?.randomDungeonModifier?.id === 'storyBossEcho',
 			isAmbushed: flags.isAmbushed,
 			isPreemptive: flags.isPreemptive
 		};
@@ -7028,10 +8927,22 @@ load: () => {
                         resumed = Dungeon.resumePendingRiftReward();
                     }
 
+                    // 特殊階層の説明はフロア生成後に一度だけ表示する。戦闘結果・報酬会話を優先する。
+                    if (!resumed && App.data?.dungeon?.pendingFloorModifierAnnouncement?.active &&
+                        typeof Dungeon !== 'undefined' && typeof Dungeon.resumePendingFloorModifierAnnouncement === 'function') {
+                        resumed = Dungeon.resumePendingFloorModifierAnnouncement();
+                    }
+
                     // リザルト表示中断で保留されたモンスター仲間のスキル成長確認。
                     if (!resumed && App.data?.progress?.pendingMonsterSkillEvolution &&
                         typeof Battle !== 'undefined' && typeof Battle.resumePendingMonsterSkillEvolution === 'function') {
                         resumed = Battle.resumePendingMonsterSkillEvolution();
+                    }
+
+                    // 固定MAPの初回到着イベント。会話・戦闘結果などの復元を優先し、
+                    // 何も再開しなかった時だけ現在地の正式マスターから判定する。
+                    if (!resumed && typeof Field !== 'undefined' && typeof Field.runCurrentFixedMapEntryEvent === 'function') {
+                        resumed = Field.runCurrentFixedMapEntryEvent();
                     }
 
                     // 現在地タイルのアクション再評価。
@@ -7069,6 +8980,8 @@ load: () => {
         if(sceneId === 'shop') Facilities.initShop();
         if(sceneId === 'alchemy' && typeof Alchemy !== 'undefined') Alchemy.init();
         if(sceneId === 'blacksmith' && typeof MenuBlacksmith !== 'undefined' && typeof MenuBlacksmith.initFacility === 'function') MenuBlacksmith.initFacility();
+        if(sceneId === 'monster-nursery' && typeof MonsterNursery !== 'undefined') MonsterNursery.init();
+        if(sceneId === 'boss-training' && typeof BossTraining !== 'undefined') BossTraining.init();
         if(sceneId === 'guild' && typeof Guild !== 'undefined' && typeof Guild.initFacility === 'function') Guild.initFacility();
     }
 };
@@ -7320,6 +9233,22 @@ const Field = {
             || App.data?.location?.worldKey
             || App.data?.mapReturnPoint?.worldKey
             || 'WORLD';
+    },
+
+    runCurrentFixedMapEntryEvent: () => {
+        if (typeof FIXED_MAPS === 'undefined' || typeof StoryManager === 'undefined' ||
+            typeof StoryManager.executeEvent !== 'function') return false;
+        const areaKey = Field.getCurrentAreaKey?.();
+        const areaDef = areaKey ? FIXED_MAPS[areaKey] : null;
+        const eventId = String(areaDef?.entryEventId || '').trim();
+        if (!eventId) return false;
+        const flagKey = String(areaDef.entryEventFlag || '').trim();
+        const flags = App.data?.progress?.flags || {};
+        if (flagKey && flags[flagKey]) return false;
+        if (areaDef.entryEventConditions && typeof App.evaluateGameConditions === 'function' &&
+            !App.evaluateGameConditions(areaDef.entryEventConditions)) return false;
+        StoryManager.executeEvent(eventId);
+        return true;
     },
 
     enterFixedMap: (targetAreaKey, options = {}) => {
@@ -7782,7 +9711,7 @@ const Field = {
         }
         const effect = Field.getRuntimeTileEffectAt(tileX, tileY);
         if (!effect) return null;
-        if (effect.type === 'hunter') return null;
+        if (effect.type === 'hunter' || effect.type === 'storyEvent') return null;
         const colors = {
             poison: '#7bd14a',
             ice: '#93e7ff',
@@ -8500,6 +10429,7 @@ const Field = {
         drawDungeonObject(App.data?.dungeon?.adventurer, '#5bd6ff');
         drawDungeonObject(App.data?.dungeon?.trialAngel, '#fff3a6');
         drawDungeonObject(App.data?.dungeon?.keyGuardian, '#ffd78a');
+        (App.data?.dungeon?.randomHunters || []).forEach(hunter => drawDungeonObject(hunter, '#ff5b5b'));
 
         ctx.strokeStyle = 'rgba(255,255,255,0.72)';
         ctx.lineWidth = 1;
@@ -8639,6 +10569,10 @@ const Field = {
             ? bossDef.requiredFlags
             : (bossDef.requiredFlag ? [bossDef.requiredFlag] : []);
         if (!requiredFlags.every(flag => !!flags[flag])) return false;
+        const missingFlags = Array.isArray(bossDef.missingFlags)
+            ? bossDef.missingFlags
+            : (bossDef.missingFlag ? [bossDef.missingFlag] : []);
+        if (missingFlags.some(flag => !!flags[flag])) return false;
         const clearedFlags = Array.isArray(bossDef.clearedFlags)
             ? bossDef.clearedFlags
             : (bossDef.clearedFlag ? [bossDef.clearedFlag] : []);
@@ -8723,34 +10657,7 @@ const Field = {
     },
 
     isMapActionAvailable: (action) => {
-        if (!action) return false;
-        const flags = App.data?.progress?.flags || {};
-        const requiredFlags = Array.isArray(action.requiredFlags)
-            ? action.requiredFlags
-            : (action.requiredFlag ? [action.requiredFlag] : []);
-        const missingFlags = Array.isArray(action.missingFlags)
-            ? action.missingFlags
-            : (action.missingFlag ? [action.missingFlag] : []);
-        if (!requiredFlags.every(flag => !!flags[flag]) || !missingFlags.every(flag => !flags[flag])) return false;
-        const normalizeItemRequirements = (value) => {
-            if (!value) return [];
-            const list = Array.isArray(value) ? value : [value];
-            return list.map(entry => {
-                if (typeof entry === 'number' || typeof entry === 'string') return { id: Number(entry), count: 1 };
-                return { id: Number(entry?.id ?? entry?.itemId), count: Math.max(1, Math.floor(Number(entry?.count) || 1)) };
-            }).filter(entry => Number.isFinite(entry.id));
-        };
-        const requiredItems = normalizeItemRequirements(action.requiredItems);
-        const missingItems = normalizeItemRequirements(action.missingItems);
-        if (!requiredItems.every(entry => Number(App.data?.items?.[entry.id] || 0) >= entry.count)) return false;
-        if (!missingItems.every(entry => Number(App.data?.items?.[entry.id] || 0) < entry.count)) return false;
-        if (action.requiredStoryStep !== undefined) {
-            const step = Number(App.data?.progress?.storyStep || 0);
-            const sub = Number(App.data?.progress?.subStep || 0);
-            const requiredStep = Number(action.requiredStoryStep);
-            const requiredSub = Number(action.requiredSubStep || 0);
-            if (!(step > requiredStep || (step === requiredStep && sub >= requiredSub))) return false;
-        }
+        if (!action || !App.evaluateGameConditions(action)) return false;
         if (action.hideWhenNoEvent && !Field.resolveMapActionEventId(action)) return false;
         if (action.type === 'quest' && action.questId) {
             const questState = App.getQuestState(action.questId).state;
@@ -9335,35 +11242,18 @@ const Field = {
         }
 
         if (action.type === 'elementalTrialPrism') {
-            const progress = App.ensureAbyssRegionProgress();
-            const elements = Array.isArray(action.elements) ? action.elements : [];
-            const nextElement = elements.find(element => !progress.abyssSpiritBlessings[element]);
-            if (!nextElement) {
-                App.log(action.completedText || '六つのプリズムは、認めた者へ穏やかな光を返している。');
+            const element = String(action.element || (Array.isArray(action.elements) ? action.elements[0] : '') || '');
+            const eventId = App.resolveAbyssSpiritTrialEventId(element);
+            if (eventId && typeof StoryManager !== 'undefined') {
+                StoryManager.executeEvent(eventId);
                 return;
             }
-            const bossId = Number(action.bossByElement?.[nextElement]);
-            if (!bossId) {
+            const progress = App.ensureAbyssSpiritTrialEvents();
+            if (progress.abyssSpiritBlessings?.[element]) {
+                App.log(action.completedText || `${element}のプリズムは、認めた者へ穏やかな光を返している。`);
+            } else {
                 App.log('プリズムは沈黙している。');
-                return;
             }
-            App.data.battle = {
-                active: false,
-                isBossBattle: true,
-                isSpecialBoss: false,
-                isEstark: false,
-                fixedBossId: bossId,
-                abyssSpiritElement: nextElement,
-                fixedTrialElement: nextElement,
-                fixedTrialRewardItemId: Number(action.rewardItemByElement?.[nextElement] || 0),
-                fixedTrialCompletionItemId: Number(action.completionItemId || 0),
-                fixedTrialRequiredElements: (Array.isArray(action.requiredElements) ? action.requiredElements : elements).slice(),
-                bossStatMultiplier: Number(action.bossStatMultiplier || 1),
-                suppressFixedBossDefeat: true,
-                enemies: []
-            };
-            App.save();
-            App.changeScene('battle');
             return;
         }
 
@@ -9495,6 +11385,11 @@ const Field = {
             return;
         }
 
+        if (action.type === 'casino') {
+            App.changeScene('casino');
+            return;
+        }
+
         if (action.type === 'alchemy' && typeof Alchemy !== 'undefined' && typeof Alchemy.openFromField === 'function') {
             Alchemy.openFromField(action);
             return;
@@ -9502,6 +11397,16 @@ const Field = {
 
         if (action.type === 'blacksmith' && typeof MenuBlacksmith !== 'undefined' && typeof MenuBlacksmith.openFromField === 'function') {
             MenuBlacksmith.openFromField(action);
+            return;
+        }
+
+        if (action.type === 'monsterNursery' && typeof MonsterNursery !== 'undefined' && typeof MonsterNursery.openFromField === 'function') {
+            MonsterNursery.openFromField(action);
+            return;
+        }
+
+        if (action.type === 'bossTraining' && typeof BossTraining !== 'undefined' && typeof BossTraining.openFromField === 'function') {
+            BossTraining.openFromField();
             return;
         }
 
@@ -9649,7 +11554,7 @@ const Field = {
                     App.setAction('カジノに入る', () => App.changeScene('casino'));
                 } else if (tile === 'E') {
                     logIfNeeded('交換所のようだ。');
-                    App.setAction('メダル交換', () => App.changeScene('medal'));
+                    App.setAction('ふるびたコイン交換', () => App.changeScene('medal'));
                 }
             } else if (Field.currentMapData.isFixed && typeof Dungeon !== 'undefined' && typeof Dungeon.prepareFixedTileAction === 'function') {
                 const fixedMapAction = (typeof MapRegistry !== 'undefined' && MapRegistry.findMapAction)
@@ -9670,10 +11575,7 @@ const Field = {
                 if (Dungeon.prepareFixedTileAction(tile, x, y, { silent })) return true;
             }
 
-            // 泉がイベント・階段・装飾と同じマスに置かれて通行不能でも、隣接マスから利用できる。
-            // 現在地固有のイベントを優先した後に評価し、通常の階段や会話ボタンを奪わない。
-            if (typeof Dungeon !== 'undefined' && typeof Dungeon.prepareAdjacentHealSpringAction === 'function' &&
-                Dungeon.prepareAdjacentHealSpringAction({ silent })) return true;
+            // 回復の泉は足元にある場合だけ利用可能。隣接マスからはアクションを出さない。
 
             if (tile === 'V' || tile === 'H' || tile === 'A' || tile === 'J' || tile === 'R' || tile === 'B') {
                 logIfNeeded('何か気になるものがある。');
@@ -9759,7 +11661,10 @@ const Field = {
                         : targetAreaKey === 'CRENA_LIMESTONE_CAVE'
                             ? 'crenaCaveEntered'
                             : null;
-                    if (entryEventStageMatches && (!enteredFlag || !flags[enteredFlag])) {
+                    const entryEventConditionsMatch = !areaDef.entryEventConditions ||
+                        typeof App.evaluateGameConditions !== 'function' ||
+                        App.evaluateGameConditions(areaDef.entryEventConditions);
+                    if (entryEventStageMatches && entryEventConditionsMatch && (!enteredFlag || !flags[enteredFlag])) {
                         StoryManager.executeEvent(areaDef.entryEventId);
                         return;
                     }
@@ -9770,7 +11675,7 @@ const Field = {
                 logIfNeeded('小さな休憩所がある。');
                 App.setAction('休む', () => App.changeScene('inn'));
         } else if (tile === 'E') {
-            App.setAction('メダル交換', () => App.changeScene('medal'));
+            App.setAction('ふるびたコイン交換', () => App.changeScene('medal'));
         } else if (tile === 'K') {
             App.setAction('カジノに入る', () => App.changeScene('casino'));
         } else if (tile === 'D') {
@@ -10181,6 +12086,13 @@ const Field = {
             Field.refreshCurrentAction({ silent: false });
 
             if (Field.currentMapData.isDungeon) Dungeon.handleMove(nx, ny);
+            if (Field.currentMapData.isDungeon && !Field.currentMapData.isFixed && typeof Dungeon !== 'undefined' && typeof Dungeon.stepRandomHunters === 'function') {
+                const caught = Dungeon.stepRandomHunters();
+                if (caught) {
+                    Field.render();
+                    return;
+                }
+            }
             App.save(); Field.render();
             if (typeof Field.startIdleStep === 'function') Field.startIdleStep();
 			
@@ -10767,6 +12679,12 @@ const Field = {
         drawOverlayImage(App.data?.dungeon?.adventurer, 'assets/monsters/monster_000105.png', '#5bd6ff');
         drawOverlayImage(App.data?.dungeon?.keyGuardian, 'assets/monsters/monster_000103.png', '#ffd78a');
         drawOverlayImage(App.data?.dungeon?.trialAngel, 'assets/map/overlays/overlay_dungeon_trial_angel.png', '#fff3a6');
+        (App.data?.dungeon?.randomHunters || []).forEach(hunter => {
+            if (!hunter?.active) return;
+            const graphicKey = typeof Dungeon.getAdventurerGraphicKey === 'function' ? Dungeon.getAdventurerGraphicKey(hunter) : null;
+            const src = graphicKey ? window.GRAPHICS?.data?.[graphicKey] : null;
+            drawOverlayImage(hunter, src || 'assets/monsters/monster_000105.png', '#ff5b5b');
+        });
         drawAbyssBossSprite();
         // 通常MAPボスと同じく主人公より前の専用DOMレイヤーを使わず、
         // MAPオブジェクト描画の段階で戦後会話中のボスを保持する。
@@ -10955,6 +12873,7 @@ const Field = {
         drawMiniObject(App.data?.dungeon?.adventurer, '#5bd6ff');
         drawMiniObject(App.data?.dungeon?.trialAngel, '#fff3a6');
         drawMiniObject(App.data?.dungeon?.keyGuardian, '#ffd78a');
+        (App.data?.dungeon?.randomHunters || []).forEach(hunter => drawMiniObject(hunter, '#ff5b5b'));
 
         drawHeldKeyHud();
 

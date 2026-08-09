@@ -1716,7 +1716,7 @@ const STORY_DATA = {
             }
         },
         MEDAL: {
-            name: "メダル王",
+            name: "古銭王",
             rank: 1,
             centerX: 32,
             centerY: 18,
@@ -1799,7 +1799,7 @@ const MAP_MASTER = Object.freeze({
     RIDPALM_DREAM_CORRIDOR: { id: "MAP000048", name: "夢幻回廊リドパルム" },
     JAGOREA_ROOT: { id: "MAP000049", name: "災禍の根ジャゴレア" },
     CHRONO_ABYSS: { id: "MAP000050", name: "次元牢獄クロノアビス" },
-    MEDAL: { id: "MAP000051", name: "メダル王" },
+    MEDAL: { id: "MAP000051", name: "古銭王" },
     WORLD: { id: "MAP000052", name: "地上世界" },
     ABYSS_WORLD: { id: "MAP000053", name: "深淵世界" },
     CARMENA: { id: "MAP000054", name: "最果ての地カルメナ" },
@@ -1813,7 +1813,14 @@ const MAP_MASTER = Object.freeze({
     LEGACION_UPPER_GALLERY: { id: "MAP000062", name: "混沌魔城レガシオン 上層回廊" },
     LEGACION_WEST_TOWER: { id: "MAP000063", name: "混沌魔城レガシオン 西塔" },
     LEGACION_EAST_TOWER: { id: "MAP000064", name: "混沌魔城レガシオン 東塔" },
-    MEMORY_REALM: { id: "MAP000065", name: "追憶の魔境" }
+    MEMORY_REALM: { id: "MAP000065", name: "追憶の魔境" },
+    PROLOGUE_WEST_HILL: { id: "MAP000066", name: "名もなき山村 西の高台" },
+    PROLOGUE_SOUTH_VILLAGE: { id: "MAP000067", name: "名もなき山村 南エリア" },
+    PROLOGUE_NORTH_VILLAGE: { id: "MAP000068", name: "名もなき山村 北エリア" },
+    REES_MOUNTAIN_HUT: { id: "MAP000069", name: "リースの山小屋" },
+    PROLOGUE_FINAL_ALTAR: { id: "MAP000070", name: "五年前・終焉の祭壇" },
+    REXNOTE_ESTATE: { id: "MAP000071", name: "レクスノート邸" },
+    UNDERSEA_VOLCANO: { id: "MAP000072", name: "海底火山" }
 });
 
 const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
@@ -1822,6 +1829,8 @@ const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
 }, {}));
 
 const FIXED_AREA_MAP_KEYS = Object.freeze({
+    PROLOGUE_WEST_HILL: "PROLOGUE_WEST_HILL", PROLOGUE_SOUTH_VILLAGE: "PROLOGUE_SOUTH_VILLAGE", PROLOGUE_NORTH_VILLAGE: "PROLOGUE_NORTH_VILLAGE",
+    REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO",
     START_VILLAGE: "START_VILLAGE", FIRE_VILLAGE: "FIRE_VILLAGE", WIND_VILLAGE: "WIND_VILLAGE", WATER_CITY: "WATER_CITY",
     ABYSS_FIELD: "ABYSS_FIELD", RUINED_SHRINE: "RUINED_SHRINE", TRIAL_ISLAND: "TRIAL_ISLAND", SUMMIT_TEMPLE: "SUMMIT_TEMPLE",
     START_CAVE: "START_CAVE", FOREST_WIND_HOLE: "FOREST_WIND_HOLE", IGNIS_VOLCANO: "IGNIS_VOLCANO",
@@ -2434,6 +2443,267 @@ const FIXED_OVERLAY_BASE_TILES = {
 };
 
 const FIXED_MAPS = {
+    "PROLOGUE_WEST_HILL": {
+        "name": "名もなき山村 西の高台",
+        "themeKey": "START_VILLAGE",
+        "width": 17,
+        "height": 13,
+        "entryPoint": { "x": 8, "y": 7 },
+        "battleBg": "battle_bg_first",
+        "randomEncounterDisabled": true,
+        "tiles": [
+            "WWWWWWWWWWWWWWWWW",
+            "WGGGGGGGGGGGGGGGW",
+            "WGGGGGGTTTGGGGGGW",
+            "WGGGGGTTTTTGGGGGW",
+            "WGGGGTTGGGTTGGGGW",
+            "WGGGGTTGGGTTGGGGW",
+            "WGGGGGTTTTTGGGGGW",
+            "WGGGGGGTTTGGGGGGW",
+            "WGGGGGGTTTGGGGGGW",
+            "WGGGGGGTTTGGGGGGW",
+            "WGGGGGGTTTGGGGGGW",
+            "WGGGGGGTTTGGGGGGW",
+            "WWWWWWWWWWWWWWWWW"
+        ],
+        "mapActors": [],
+        "mapActions": [
+            {
+                "x": 8, "y": 11,
+                "type": "fixedMap",
+                "target": "PROLOGUE_SOUTH_VILLAGE",
+                "targetX": 12, "targetY": 2,
+                "label": "ルーナを追って南エリアへ急ぐ",
+                "requiredWorldState": { "prologueStage": { "op": ">=", "value": 1 } },
+                "log": "大地の揺れが続いている。ルーナを追わなければ。"
+            }
+        ]
+    },
+    "PROLOGUE_SOUTH_VILLAGE": {
+        "name": "名もなき山村 南エリア",
+        "themeKey": "START_VILLAGE",
+        "width": 25,
+        "height": 21,
+        "entryPoint": { "x": 12, "y": 2 },
+        "battleBg": "battle_bg_first",
+        "isDungeon": true,
+        "useHabitatEncounters": true,
+        "encounterRank": 1,
+        "randomEncounterRateMultiplier": 0.75,
+        "entryEventId": "prologue_south_arrival",
+        "entryEventFlag": "prologueFirstBattleCleared",
+        "tiles": [
+            "WWWWWWWWWWWWWWWWWWWWWWWWW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGGGTTTTTTTTTTTGGGGGGW",
+            "WGGGGGGTTGGGTGGGTTGGGGGGW",
+            "WGGGGGGTTGGGTGGGTTGGGGGGW",
+            "WGGGGGGTTTTTTTTTTTGGGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGTTTTTTTTTTTTTTTGGGGW",
+            "WGGGGTTGGGGGTGGGGGTTGGGGW",
+            "WGGGGTTGGGGGTGGGGGTTGGGGW",
+            "WGGGGTTTTTTTTTTTTTTTGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGGTTTTTTTTTTTTTGGGGGW",
+            "WGGGGGTTGGGGTGGGGTTGGGGGW",
+            "WGGGGGTTTTTTTTTTTTTGGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WWWWWWWWWWWWWWWWWWWWWWWWW"
+        ],
+        "mapActors": [],
+        "mapActions": [
+            {
+                "x": 12, "y": 1,
+                "type": "fixedMap",
+                "target": "PROLOGUE_NORTH_VILLAGE",
+                "targetX": 12, "targetY": 18,
+                "label": "北エリアへ向かう",
+                "requiredFlag": "prologueFirstBattleCleared"
+            },
+            {
+                "x": 2, "y": 3,
+                "type": "fixedMap",
+                "target": "PROLOGUE_WEST_HILL",
+                "targetX": 8, "targetY": 11,
+                "label": "西の高台へ戻る",
+                "requiredFlag": "prologueFirstBattleCleared"
+            },
+            {
+                "x": 17, "y": 15,
+                "type": "storyEvent",
+                "eventId": "prologue_home_loss",
+                "label": "家のあった場所へ向かう",
+                "requiredFlag": "prologueFirstBattleCleared",
+                "missingFlag": "prologueHomeLostSeen"
+            },
+            {
+                "x": 12, "y": 19,
+                "type": "log",
+                "label": "村の南口を見る",
+                "log": "村の外へ続く道だ。今はまず、家族の無事を確かめなければ。",
+                "requiredFlag": "prologueFirstBattleCleared",
+                "missingFlag": "prologueHomeLostSeen"
+            },
+            {
+                "x": 12, "y": 19,
+                "type": "storyEvent",
+                "eventId": "prologue_south_exit_boss",
+                "label": "崩れる村から脱出する",
+                "requiredFlag": "prologueHomeLostSeen",
+                "missingFlag": "prologueFirstBossResolved"
+            }
+        ]
+    },
+    "REES_MOUNTAIN_HUT": {
+        "name": "リースの山小屋",
+        "themeKey": "START_VILLAGE",
+        "width": 11,
+        "height": 9,
+        "entryPoint": { "x": 5, "y": 5 },
+        "randomEncounterDisabled": true,
+        "entryEventId": "prologue_present_wake",
+        "entryEventFlag": "prologuePresentWakeSeen",
+        "tiles": [
+            "WWWWWWWWWWW",
+            "WTTTTTTTTTW",
+            "WTTTTTTTTTW",
+            "WTTTTTTTTTW",
+            "WTTTTTTTTTW",
+            "WTTTTTTTTTW",
+            "WTTTTTTTTTW",
+            "WTTTTTTTTTW",
+            "WWWWWWWWWWW"
+        ],
+        "mapActors": [],
+        "mapActions": [
+            {
+                "x": 5, "y": 7,
+                "type": "storyEvent",
+                "eventId": "present_depart_rees",
+                "label": "山を下り、旅立つ",
+                "requiredFlag": "prologuePresentWakeSeen",
+                "missingFlag": "prologueDepartedReesHut"
+            }
+        ]
+    },
+    "REXNOTE_ESTATE": {
+        "name": "レクスノート邸",
+        "themeKey": "WATER_CITY",
+        "width": 17,
+        "height": 11,
+        "entryPoint": { "x": 8, "y": 8 },
+        "randomEncounterDisabled": true,
+        "entryEventId": "rexnote_estate_arrival",
+        "entryEventFlag": "rexnoteEstateArrivalSeen",
+        "tiles": [
+            "WWWWWWWWWWWWWWWWW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WWWWWWWWWWWWWWWWW"
+        ],
+        "mapActors": [],
+        "mapActions": [
+            {
+                "x": 8,
+                "y": 9,
+                "type": "fixedMap",
+                "target": "WATER_CITY",
+                "targetX": 21,
+                "targetY": 13,
+                "label": "水上都市へ戻る",
+                "requiredFlag": "rexnoteEstateArrivalSeen"
+            },
+            {
+                "x": 8,
+                "y": 2,
+                "type": "log",
+                "label": "古い家紋を見る",
+                "log": "埃をかぶった盾形の家紋に、『REXNOTE』の文字だけが残っている。"
+            }
+        ]
+    },
+    "PROLOGUE_FINAL_ALTAR": {
+        "name": "五年前・終焉の祭壇",
+        "themeKey": "FINAL_ALTAR",
+        "width": 13,
+        "height": 9,
+        "entryPoint": { "x": 6, "y": 6 },
+        "battleBg": "battle_bg_lastboss",
+        "randomEncounterDisabled": true,
+        "entryEventId": "prologue_hidden_azelgarag_start",
+        "entryEventFlag": "prologueHiddenAzelgaragResolved",
+        "tiles": [
+            "WWWWWWWWWWWWW",
+            "WTTTTTTTTTTTW",
+            "WTTTTTTTTTTTW",
+            "WTTTTTTTTTTTW",
+            "WTTTTTTTTTTTW",
+            "WTTTTTTTTTTTW",
+            "WTTTTTTTTTTTW",
+            "WTTTTTTTTTTTW",
+            "WWWWWWWWWWWWW"
+        ],
+        "mapActors": [],
+        "mapActions": []
+    },
+    "PROLOGUE_NORTH_VILLAGE": {
+        "name": "名もなき山村 北エリア",
+        "themeKey": "START_VILLAGE",
+        "width": 25,
+        "height": 21,
+        "entryPoint": { "x": 12, "y": 18 },
+        "battleBg": "battle_bg_first",
+        "isDungeon": true,
+        "useHabitatEncounters": true,
+        "encounterRank": 31,
+        "rareEncounterRateMultiplier": 1.35,
+        "randomEncounterRateMultiplier": 1.0,
+        "tiles": [
+            "WWWWWWWWWWWWWWWWWWWWWWWWW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGTTTTTTTTTTTTTTTTTGGGW",
+            "WGGGTTGGGGGGTGGGGGGTTGGGW",
+            "WGGGTTGGGGGGTGGGGGGTTGGGW",
+            "WGGGTTTTTTTTTTTTTTTTTGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGTTTTTTTTTTTTTTTGGGGW",
+            "WGGGGTTGGGGGTGGGGGTTGGGGW",
+            "WGGGGTTGGGGGTGGGGGTTGGGGW",
+            "WGGGGTTTTTTTTTTTTTTTGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGTTTTTTTTTTTTTTTTTGGGW",
+            "WGGGTTGGGGGGTGGGGGGTTGGGW",
+            "WGGGTTGGGGGGTGGGGGGTTGGGW",
+            "WGGGTTTTTTTTTTTTTTTTTGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WGGGGGGGGGGGTGGGGGGGGGGGW",
+            "WWWWWWWWWWWWWWWWWWWWWWWWW"
+        ],
+        "mapActors": [],
+        "mapActions": [
+            {
+                "x": 12, "y": 19,
+                "type": "fixedMap",
+                "target": "PROLOGUE_SOUTH_VILLAGE",
+                "targetX": 12, "targetY": 2,
+                "label": "南エリアへ戻る"
+            }
+        ]
+    },
     "CARMENA": {
         "name": "最果ての地カルメナ",
         "themeKey": "ABYSS_FIELD",
@@ -2449,6 +2719,8 @@ const FIXED_MAPS = {
             "y": 25
         },
         "battleBg": "battle_bg_abyss_boss",
+        "entryEventId": "abyss_carmena_arrival_warning",
+        "entryEventFlag": "abyssCarmenaArrivalWarningSeen",
         "tiles": [
             "WWWWWWWWWWWWWWWWWWWSWWWWWWWWWWWWWWWWWWW",
             "WWWWWWWWWWWWWWWWWGGGGGGGWWWWWWWWWWWWWWW",
@@ -2480,7 +2752,7 @@ const FIXED_MAPS = {
             "WWWWWWWWWWWWWWWWWGGTGGWWWWWWWWWWWWWWWWW",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
-        "nextActorPlacementId": 5,
+        "nextActorPlacementId": 6,
         "mapActors": [
             {
                 "placementId": 1,
@@ -2565,6 +2837,27 @@ const FIXED_MAPS = {
                         }
                     }
                 ]
+            },
+            {
+                "placementId": 5,
+                "actorId": "abyss_carmena_resident_lighthouse",
+                "name": "地上から落ちた男",
+                "x": 34,
+                "y": 20,
+                "imageKey": "overlay_npc_villager",
+                "baseTile": "G",
+                "states": [
+                    {
+                        "stateId": "abyss_carmena_resident_lighthouse",
+                        "priority": 0,
+                        "when": {},
+                        "action": {
+                            "type": "storyEvent",
+                            "eventId": "abyss_carmena_resident_lighthouse",
+                            "label": "地上から落ちた男と話す"
+                        }
+                    }
+                ]
             }
         ],
         "mapActions": [
@@ -2626,7 +2919,7 @@ const FIXED_MAPS = {
                 "startEventId": "abyss_carmena_gate_battle",
                 "storyEventId": "abyss_carmena_gate_clear",
                 "actionLabel": "二将に挑む",
-                "challengeText": "グレン将軍とレオン将軍が同時に武器を構えた。\n二人を相手に戦いますか？"
+                "challengeText": "グレン将軍とガレオン将軍が同時に武器を構えた。\n二人を相手に戦いますか？"
             },
             {
                 "x": 20,
@@ -2641,7 +2934,7 @@ const FIXED_MAPS = {
                 "startEventId": "abyss_carmena_gate_battle",
                 "storyEventId": "abyss_carmena_gate_clear",
                 "actionLabel": "二将に挑む",
-                "challengeText": "レオン将軍とグレン将軍が同時に武器を構えた。\n二人を相手に戦いますか？"
+                "challengeText": "ガレオン将軍とグレン将軍が同時に武器を構えた。\n二人を相手に戦いますか？"
             }
         ],
         "exitPoint": {
@@ -3227,6 +3520,13 @@ const FIXED_MAPS = {
         ],
         "mapActions": [
             {
+                "x": 7,
+                "y": 23,
+                "type": "bossTraining",
+                "label": "訓練所へ入る",
+                "suppressEventMarker": true
+            },
+            {
                 "x": 8,
                 "y": 28,
                 "type": "blacksmith",
@@ -3245,6 +3545,46 @@ const FIXED_MAPS = {
                 "y": 32,
                 "type": "guild",
                 "label": "冒険者ギルドへ",
+                "suppressEventMarker": true
+            },
+            {
+                "x": 15,
+                "y": 25,
+                "type": "monsterNursery",
+                "label": "モンスター育成所へ",
+                "suppressEventMarker": true
+            },
+            {
+                "x": 32,
+                "y": 25,
+                "type": "shop",
+                "shopType": "item",
+                "title": "レガシオン 技法書店",
+                "shopRank": 100,
+                "itemIds": [
+                    600300,
+                    600301,
+                    600302,
+                    600303,
+                    600401,
+                    600407,
+                    600414,
+                    600501,
+                    600503,
+                    600602
+                ],
+                "requiredFlag": "abyssEpilogueSeen",
+                "lockedText": "深淵王との戦いを見届けた者だけが利用できる。",
+                "label": "技法書を見る",
+                "suppressEventMarker": true
+            },
+            {
+                "x": 38,
+                "y": 32,
+                "type": "casino",
+                "requiredFlag": "abyssEpilogueSeen",
+                "lockedText": "店内はまだ準備中のようだ。",
+                "label": "カジノに入る",
                 "suppressEventMarker": true
             },
             {
@@ -3651,6 +3991,10 @@ const FIXED_MAPS = {
             "y": 10
         },
         "battleBg": "battle_bg_field",
+        "entryEventId": "present_lumina_rescue",
+        "entryEventFlag": "presentLuminaRescueSeen",
+        "entryEventStoryStep": 0,
+        "entryEventConditions": { "requiredFlags": ["prologueDepartedReesHut"] },
         "tiles": [
             "WWWWWWWWWWWWWWW",
             "WWWWWWWWWWWDWWW",
@@ -4249,15 +4593,17 @@ const FIXED_MAPS = {
                 "imageKey": "overlay_npc_villager",
                 "states": [
                     {
-                        "stateId": "arisa_haine_forest_depths",
+                        "stateId": "arisa_haine_main_story",
                         "priority": 0,
-                        "when": {},
+                        "when": {
+                            "requiredFlag": "arisaHaineMainStoryRequired",
+                            "missingFlag": "arisaHaineMainStoryStarted"
+                        },
                         "action": {
-                            "label": "村人から話を聞く",
+                            "label": "村人から二人の消息を聞く",
                             "log": "村人が禁忌の森の方を見つめている。",
-                            "type": "quest",
-                            "questId": "arisa_haine_forest_depths",
-                            "lockedText": "今はまだ、禁忌の森の奥へ進むには危険が大きい。"
+                            "type": "storyEvent",
+                            "eventId": "main_arisa_haine_start"
                         }
                     }
                 ]
@@ -4471,7 +4817,7 @@ const FIXED_MAPS = {
             "WWWWWWWWWWWWWWWWWWWLWWWWWWWWWWWWWWWWWWW",
             "WWWWWWWWWWWWWWWWWWWSWWWWWWWWWWWWWWWWWWW"
         ],
-        "nextActorPlacementId": 14,
+        "nextActorPlacementId": 15,
         "mapActors": [
             {
                 "placementId": 1,
@@ -4708,7 +5054,9 @@ const FIXED_MAPS = {
                     {
                         "stateId": "marie_water_city",
                         "priority": 0,
-                        "when": {},
+                        "when": {
+                            "requiredFlag": "underseaVolcanoCleared"
+                        },
                         "action": {
                             "label": "マリーと話す",
                             "log": "白いローブの女性が、避難民の無事を祈っている。",
@@ -4730,7 +5078,9 @@ const FIXED_MAPS = {
                     {
                         "stateId": "hayate_water_city",
                         "priority": 0,
-                        "when": {},
+                        "when": {
+                            "requiredFlag": "legacyHayateQuickHuntEnabled"
+                        },
                         "action": {
                             "label": "ハヤテと話す",
                             "log": "水路のそばに、落ち着きなく周囲を見渡す若者がいる。",
@@ -4815,13 +5165,44 @@ const FIXED_MAPS = {
                         }
                     },
                     {
+                        "stateId": "water_city_post_clear",
+                        "priority": 30,
+                        "when": {
+                            "requiredFlag": "waterCityCleared",
+                            "missingFlag": "waterCityPostClearTalked"
+                        },
+                        "placement": {
+                            "x": 20,
+                            "y": 13
+                        },
+                        "action": {
+                            "label": "ソフィアと話す",
+                            "type": "storyEvent",
+                            "eventId": "water_city_after_clear"
+                        }
+                    },
+                    {
+                        "stateId": "water_city_rexnote_route",
+                        "priority": 40,
+                        "when": {
+                            "requiredFlag": "arisaHaineMainStoryCleared",
+                            "missingFlag": "rexnoteRouteKnown"
+                        },
+                        "placement": {
+                            "x": 21,
+                            "y": 13
+                        },
+                        "action": {
+                            "label": "ソフィアに二人の無事を伝える",
+                            "type": "storyEvent",
+                            "eventId": "water_city_rexnote_briefing"
+                        }
+                    },
+                    {
                         "stateId": "sophia_alan_seabed_depths",
                         "priority": 20,
                         "when": {
-                            "requiredFlags": [
-                                "waterCityCleared",
-                                "thunderFortCleared"
-                            ]
+                            "requiredFlag": "legacySophiaAlanQuestEnabled"
                         },
                         "action": {
                             "label": "ソフィアと話す",
@@ -4829,6 +5210,29 @@ const FIXED_MAPS = {
                             "type": "quest",
                             "questId": "sophia_alan_seabed_depths",
                             "lockedText": "今はまだ、海底神殿の奥へ進む手段がない。"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 14,
+                "actorId": "wind_messenger_water_city",
+                "name": "風の集落の使い",
+                "x": 16,
+                "y": 20,
+                "imageKey": "overlay_npc_villager",
+                "states": [
+                    {
+                        "stateId": "wind_messenger_water_city",
+                        "priority": 0,
+                        "when": {
+                            "requiredFlag": "waterCityPostClearTalked",
+                            "missingFlag": "arisaHaineMainStoryRequired"
+                        },
+                        "action": {
+                            "label": "息を切らした使いと話す",
+                            "type": "storyEvent",
+                            "eventId": "water_city_wind_messenger"
                         }
                     }
                 ]
@@ -4845,10 +5249,7 @@ const FIXED_MAPS = {
                         "stateId": "sophia_alan_seabed_depths",
                         "priority": 0,
                         "when": {
-                            "requiredFlags": [
-                                "waterCityCleared",
-                                "thunderFortCleared"
-                            ]
+                            "requiredFlag": "legacySophiaAlanQuestEnabled"
                         },
                         "action": {
                             "label": "アランと話す",
@@ -9727,7 +10128,10 @@ const FIXED_DUNGEON_MAPS = {
                         toFloor: 2,
                         targetX: 19,
                         targetY: 20,
-                        label: "2階へ"
+                        label: "2階へ",
+                        requiredFlag: "zeliedLighthouseIntroSeen",
+                        lockedLabel: "上層への隔壁を調べる",
+                        lockedLog: "灯台の裏設備を知る者に話を聞いた方がよさそうだ。"
                     }
                 ],
                 chests: [
@@ -9755,9 +10159,42 @@ const FIXED_DUNGEON_MAPS = {
                         "imageKey": "overlay_companion_zelied",
                         "states": [
                             {
+                                "stateId": "zelied_lighthouse_story_intro",
+                                "priority": 30,
+                                "when": {
+                                    "requiredStoryStep": 6,
+                                    "requiredWorldState": {
+                                        "thunderFortState": { "op": "==", "value": 2 }
+                                    },
+                                    "missingFlag": "zeliedLighthouseIntroSeen"
+                                },
+                                "action": {
+                                    "label": "ゼリードと話す",
+                                    "log": "灯台の一階に、見覚えのある男がいる。",
+                                    "type": "storyEvent",
+                                    "eventId": "lighthouse_zelied_story_intro"
+                                }
+                            },
+                            {
+                                "stateId": "zelied_lighthouse_story_support",
+                                "priority": 20,
+                                "when": {
+                                    "requiredFlag": "zeliedLighthouseIntroSeen",
+                                    "missingFlag": "bigTowerCleared"
+                                },
+                                "action": {
+                                    "label": "ゼリードと話す",
+                                    "log": "ゼリードは灯台の増設部分を観察している。",
+                                    "type": "storyEvent",
+                                    "eventId": "lighthouse_zelied_story_support"
+                                }
+                            },
+                            {
                                 "stateId": "zelied_big_tower",
                                 "priority": 0,
-                                "when": {},
+                                "when": {
+                                    "requiredFlag": "legacyZeliedJoinQuestEnabled"
+                                },
                                 "action": {
                                     "label": "ゼリードと話す",
                                     "log": "ゼリードが、頂上に残る歪みを見上げている。",
@@ -9769,7 +10206,18 @@ const FIXED_DUNGEON_MAPS = {
                         ]
                     }
                 ],
-                mapActions: [],
+                mapActions: [
+                    {
+                        x: 15, y: 20,
+                        label: "船着き場から海底火山へ向かう",
+                        log: "ゼリードが示した海底火山への航路を確認する。",
+                        type: "storyEvent",
+                        eventId: "undersea_volcano_departure",
+                        requiredFlag: "underseaVolcanoRouteOpened",
+                        missingFlag: "underseaVolcanoCleared",
+                        imageKey: "overlay_dungeon_event"
+                    }
+                ],
                 entryPoint: {
                     x: 11,
                     y: 21
@@ -10221,6 +10669,7 @@ const FIXED_DUNGEON_MAPS = {
                             303205
                         ],
                         questId: "zelied_big_tower",
+                        requiredFlag: "legacyZeliedJoinQuestEnabled",
                         inactiveTile: "G",
                         mapSpriteMonsterId: 301060,
                         startEventId: "quest_zelied_tower_echo_encounter",
@@ -10236,6 +10685,156 @@ const FIXED_DUNGEON_MAPS = {
                 },
                 name: "",
                 themeKey: "BIG_TOWER"
+            }
+        ]
+    },
+    UNDERSEA_VOLCANO: {
+        name: "海底火山",
+        themeKey: "FIRE_VILLAGE",
+        rank: 52,
+        encounterRank: 52,
+        battleBg: "battle_bg_fire",
+        entryPoint: { x: 9, y: 13 },
+        floors: [
+            {
+                label: "第1層・海底火道", encounterRank: 52, width: 19, height: 15,
+                tiles: [
+                    "WWWWWWWWWWWWWWWWWWW",
+                    "WWWWWWWWWDWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWTTTTTTTTTTTTTWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWTTTTTTTTTTTTTWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWTTTTTTTTTTTTTWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWSWWWWWWWWW",
+                    "WWWWWWWWWWWWWWWWWWW"
+                ],
+                floorLinks: [
+                    { x:9, y:13, to:"EXIT", label:"大灯台沖へ戻る" },
+                    { x:9, y:1, toFloor:2, targetX:9, targetY:13, label:"第2層へ" }
+                ],
+                entryPoint:{x:9,y:13}, themeKey:"FIRE_VILLAGE"
+            },
+            {
+                label: "第2層・圧熱回廊", encounterRank: 53, width: 19, height: 15,
+                tiles: [
+                    "WWWWWWWWWWWWWWWWWWW",
+                    "WWWWWWWWWDWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWTTTTTTTTTTTTTWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWTTTTTTTTTTTTTWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWTTTTTTTTTTTTTWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWUWWWWWWWWW",
+                    "WWWWWWWWWWWWWWWWWWW"
+                ],
+                floorLinks: [
+                    { x:9, y:13, toFloor:1, targetX:9, targetY:1, label:"第1層へ戻る" },
+                    { x:9, y:1, toFloor:3, targetX:9, targetY:13, label:"第3層へ" }
+                ],
+                entryPoint:{x:9,y:13}, themeKey:"FIRE_VILLAGE"
+            },
+            {
+                label: "第3層・火脈深部", encounterRank: 54, width: 19, height: 15,
+                tiles: [
+                    "WWWWWWWWWWWWWWWWWWW",
+                    "WWWWWWWWWDWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWTTTTTTTTTTTTTWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWTTTTTTTTTTTTTWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWTTTTTTTTTTTTTWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWUWWWWWWWWW",
+                    "WWWWWWWWWWWWWWWWWWW"
+                ],
+                floorLinks: [
+                    { x:9, y:13, toFloor:2, targetX:9, targetY:1, label:"第2層へ戻る" },
+                    { x:9, y:1, toFloor:4, targetX:9, targetY:13, label:"研究区画へ" }
+                ],
+                entryPoint:{x:9,y:13}, themeKey:"FIRE_VILLAGE"
+            },
+            {
+                label: "研究区画", encounterRank: 55, randomEncounterDisabled:true, disableRandomEncounters:true, width: 19, height: 15,
+                entryEventId:"undersea_volcano_research_entry", entryEventFlag:"underseaVolcanoResearchReached",
+                tiles: [
+                    "WWWWWWWWWWWWWWWWWWW",
+                    "WWWWWWWWWDWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWGGGGGGTGGGGGGWWW",
+                    "WWWGGGGGGTGGGGGGWWW",
+                    "WWWGGGGGGTGGGGGGWWW",
+                    "WWWTTTTTTTTTTTTTWWW",
+                    "WWWGGGGGGTGGGGGGWWW",
+                    "WWWGGGGGGTGGGGGGWWW",
+                    "WWWGGGGGGTGGGGGGWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWTWWWWWWWWW",
+                    "WWWWWWWWWUWWWWWWWWW",
+                    "WWWWWWWWWWWWWWWWWWW"
+                ],
+                mapActions:[
+                    { x:9, y:7, type:"log", label:"研究記録を調べる", log:"火の力を長期間肉体へ馴染ませるための観測記録が残されている。海水圧と周囲の水属性を安全弁として利用していたようだ。", imageKey:"overlay_dungeon_event" }
+                ],
+                floorLinks: [
+                    { x:9, y:13, toFloor:3, targetX:9, targetY:1, label:"第3層へ戻る" },
+                    { x:9, y:1, toFloor:5, targetX:9, targetY:13, label:"最奥へ" }
+                ],
+                entryPoint:{x:9,y:13}, themeKey:"THUNDER_FORT"
+            },
+            {
+                label: "最奥・戦闘エリア", encounterRank: 56, randomEncounterDisabled:true, disableRandomEncounters:true, width: 19, height: 15,
+                entryEventId:"undersea_volcano_battle_area_entry", entryEventFlag:"underseaVolcanoBossAreaReached",
+                tiles: [
+                    "WWWWWWWWWWWWWWWWWWW",
+                    "WWWWWWWWWWWWWWWWWWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWTTTTTTTTTTTTTTTWW",
+                    "WWWWWWWWWUWWWWWWWWW",
+                    "WWWWWWWWWWWWWWWWWWW"
+                ],
+                bosses: [
+                    {
+                        x: 9,
+                        y: 4,
+                        monsterId: 301063,
+                        startEventId: "undersea_grad_encounter",
+                        storyEventId: "undersea_grad_clear",
+                        clearedFlag: "underseaVolcanoCleared",
+                        actionLabel: "炎楔のグラドと対峙する"
+                    }
+                ],
+                floorLinks: [
+                    { x:9, y:13, toFloor:4, targetX:9, targetY:1, label:"研究区画へ戻る" }
+                ],
+                entryPoint:{x:9,y:13}, themeKey:"FIRE_VILLAGE"
             }
         ]
     },
@@ -10349,7 +10948,7 @@ const FIXED_DUNGEON_MAPS = {
                         type: "item"
                     }
                 ],
-                nextActorPlacementId: 10,
+                nextActorPlacementId: 14,
                 mapActors: [
                     {
                         "placementId": 1,
@@ -10448,9 +11047,27 @@ const FIXED_DUNGEON_MAPS = {
                         "imageKey": "overlay_companion_frieda",
                         "states": [
                             {
+                                "stateId": "undersea_volcano_departure_story",
+                                "priority": 30,
+                                "when": {
+                                    "requiredWorldState": {
+                                        "thunderFortState": { "op": "==", "value": 3 }
+                                    },
+                                    "missingFlag": "underseaVolcanoBriefingSeen"
+                                },
+                                "action": {
+                                    "label": "三人の話を聞く",
+                                    "log": "フリーダたちは海底火山へ向かう準備をしている。",
+                                    "type": "storyEvent",
+                                    "eventId": "thunder_guild_undersea_volcano_briefing"
+                                }
+                            },
+                            {
                                 "stateId": "frieda_baron_thunder_depths",
                                 "priority": 0,
-                                "when": {},
+                                "when": {
+                                    "requiredFlag": "underseaVolcanoCleared"
+                                },
                                 "action": {
                                     "label": "フリーダと話す",
                                     "log": "フリーダが、高圧電流の先を見据えている。",
@@ -10470,9 +11087,27 @@ const FIXED_DUNGEON_MAPS = {
                         "imageKey": "overlay_companion_baron",
                         "states": [
                             {
+                                "stateId": "undersea_volcano_departure_story",
+                                "priority": 30,
+                                "when": {
+                                    "requiredWorldState": {
+                                        "thunderFortState": { "op": "==", "value": 3 }
+                                    },
+                                    "missingFlag": "underseaVolcanoBriefingSeen"
+                                },
+                                "action": {
+                                    "label": "三人の話を聞く",
+                                    "log": "バロンたちは海底火山へ向かう準備をしている。",
+                                    "type": "storyEvent",
+                                    "eventId": "thunder_guild_undersea_volcano_briefing"
+                                }
+                            },
+                            {
                                 "stateId": "frieda_baron_thunder_depths",
                                 "priority": 0,
-                                "when": {},
+                                "when": {
+                                    "requiredFlag": "underseaVolcanoCleared"
+                                },
                                 "action": {
                                     "label": "バロンと話す",
                                     "log": "バロンが、雷の制御核へ向けて武器を握り直している。",
@@ -10581,6 +11216,138 @@ const FIXED_DUNGEON_MAPS = {
                                     "type": "storyEvent",
                                     "eventId": "post_thunder_fort_base_1",
                                     "lockedText": "雷の轟きで声が届かない。"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "placementId": 10,
+                        "actorId": "thunder_fort_holy_knight_crisis",
+                        "name": "聖騎士",
+                        "x": 12,
+                        "y": 11,
+                        "imageKey": "overlay_npc_bronze_knight",
+                        "blocksMovement": true,
+                        "interactFromAdjacent": true,
+                        "states": [
+                            {
+                                "stateId": "thunder_fort_holy_knight_crisis",
+                                "priority": 20,
+                                "when": {
+                                    "requiredWorldState": {
+                                        "thunderFortState": { "op": "==", "value": 1 }
+                                    }
+                                },
+                                "action": {
+                                    "label": "聖騎士と話す",
+                                    "log": "聖騎士は避難路の確保を優先している。",
+                                    "type": "storyEvent",
+                                    "eventId": "thunder_fort_holy_knight_crisis"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "placementId": 11,
+                        "actorId": "thunder_fort_dark_knight_crisis",
+                        "name": "暗黒騎士",
+                        "x": 20,
+                        "y": 11,
+                        "imageKey": "overlay_npc_dark_soldier",
+                        "blocksMovement": true,
+                        "interactFromAdjacent": true,
+                        "states": [
+                            {
+                                "stateId": "thunder_fort_dark_knight_crisis",
+                                "priority": 20,
+                                "when": {
+                                    "requiredWorldState": {
+                                        "thunderFortState": { "op": "==", "value": 1 }
+                                    }
+                                },
+                                "action": {
+                                    "label": "暗黒騎士と話す",
+                                    "log": "暗黒騎士は居住区を無視して中枢だけを見ている。",
+                                    "type": "storyEvent",
+                                    "eventId": "thunder_fort_dark_knight_crisis"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "placementId": 12,
+                        "actorId": "marie_undersea_volcano_departure",
+                        "name": "マリー",
+                        "x": 16,
+                        "y": 21,
+                        "imageKey": "overlay_companion_marie",
+                        "states": [
+                            {
+                                "stateId": "undersea_volcano_departure_story",
+                                "priority": 30,
+                                "when": {
+                                    "requiredWorldState": {
+                                        "thunderFortState": { "op": "==", "value": 3 }
+                                    },
+                                    "missingFlag": "underseaVolcanoBriefingSeen"
+                                },
+                                "action": {
+                                    "label": "三人の話を聞く",
+                                    "log": "マリーは海底火山へ向かう覚悟を決めている。",
+                                    "type": "storyEvent",
+                                    "eventId": "thunder_guild_undersea_volcano_briefing"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "placementId": 13,
+                        "actorId": "claude_light_palace_memory",
+                        "name": "クロード",
+                        "x": 18,
+                        "y": 21,
+                        "imageKey": "overlay_companion_claude",
+                        "states": [
+                            {
+                                "stateId": "claude_luna_arrival",
+                                "priority": 50,
+                                "when": {
+                                    "requiredFlag": "underseaVolcanoCleared",
+                                    "missingFlag": "lunaSurvivalRevealed"
+                                },
+                                "action": {
+                                    "label": "騒ぎを確かめる",
+                                    "log": "救護所の前に人が集まっている。",
+                                    "type": "storyEvent",
+                                    "eventId": "thunder_fort_claude_luna_arrival"
+                                }
+                            },
+                            {
+                                "stateId": "claude_flashback_briefing",
+                                "priority": 40,
+                                "when": {
+                                    "requiredFlag": "lunaSurvivalRevealed",
+                                    "missingFlag": "lightPalaceFlashbackReady"
+                                },
+                                "action": {
+                                    "label": "宮殿での出来事を聞く",
+                                    "log": "クロードは光の宮殿で起きたことを順に話そうとしている。",
+                                    "type": "storyEvent",
+                                    "eventId": "light_palace_flashback_briefing"
+                                }
+                            },
+                            {
+                                "stateId": "claude_flashback_resume",
+                                "priority": 35,
+                                "when": {
+                                    "requiredFlag": "lightPalaceFlashbackReady",
+                                    "missingFlag": "lightPalaceFlashbackCompleted"
+                                },
+                                "action": {
+                                    "label": "宮殿の回想を再開する",
+                                    "log": "クロードの話を最初から思い返す。",
+                                    "type": "storyEvent",
+                                    "eventId": "light_palace_flashback_start"
                                 }
                             }
                         ]
@@ -11388,6 +12155,7 @@ const FIXED_DUNGEON_MAPS = {
                             901
                         ],
                         questId: "frieda_baron_thunder_depths",
+                        requiredFlag: "underseaVolcanoCleared",
                         startEventId: "quest_frieda_baron_encounter",
                         storyEventId: "quest_frieda_baron_clear",
                         bossStatMultiplier: 1.35,
@@ -11538,11 +12306,15 @@ const FIXED_DUNGEON_MAPS = {
                     x: 17,
                     y: 26
                 },
+                entryEventId: "light_palace_present_assault_entry",
+                entryEventFlag: "lightPalacePresentAssaultEntrySeen",
+                entryEventConditions: { requiredFlag: "lightPalaceFlashbackCompleted", missingFlag: "lightPalaceFlashbackActive" },
                 bosses: [
                     {
                         x: 27,
                         y: 6,
                         monsterId: 952,
+                        missingFlag: "lightPalaceFlashbackActive",
                         keyRewardColor: "gold",
                         actionLabel: "白光の番兵と戦う",
                         inspectLog: "金の鍵を携えた番兵が白い回廊を守っている。"
@@ -11819,6 +12591,16 @@ const FIXED_DUNGEON_MAPS = {
                     x: 5,
                     y: 25
                 },
+                tileEffects: [
+                    {
+                        x: 20,
+                        y: 6,
+                        type: "storyEvent",
+                        eventId: "light_palace_flashback_hexagram_trap",
+                        eventFlag: "lightPalaceFlashbackHexagramResolved",
+                        conditions: { requiredFlag: "lightPalaceFlashbackActive" }
+                    }
+                ],
                 name: "",
                 themeKey: "LIGHT_PALACE"
             },
@@ -11899,6 +12681,7 @@ const FIXED_DUNGEON_MAPS = {
                             301070,
                             301050
                         ],
+                        missingFlag: "lightPalaceFlashbackActive",
                         startEventId: "light_palace_final_encounter",
                         storyEventId: "light_palace_clear",
                         actionLabel: "祭壇へ進む"
@@ -12221,11 +13004,41 @@ const FIXED_DUNGEON_MAPS = {
                         x: 13,
                         y: 3,
                         monsterId: 301071,
+                        missingFlag: "lightPalaceFlashbackActive",
                         startEventId: "light_palace_prison_guard_encounter",
                         storyEventId: "light_palace_prison_guard_clear",
                         actionLabel: "地下牢の看守に挑む"
                     }
                 ],
+                name: "",
+                themeKey: "LIGHT_PALACE"
+            },
+            {
+                label: "聖女の部屋・回想",
+                encounterRank: 0,
+                width: 17,
+                height: 13,
+                disableRandomEncounters: true,
+                tiles: [
+                    "^^^^^^^^^^^^^^^^^",
+                    "^WWWWWWWWWWWWWWW^",
+                    "^WWWWTTTTTWWWWWW^",
+                    "^WWWTTTTTTTWWWWW^",
+                    "^WWWTTTTTTTWWWWW^",
+                    "^WWWTTTTTTTWWWWW^",
+                    "^WWWTTTTTTTWWWWW^",
+                    "^WWWTTTTTTTWWWWW^",
+                    "^WWWWTTTTTWWWWWW^",
+                    "^WWWWTTDTTWWWWWW^",
+                    "^WWWWWWWWWWWWWWW^",
+                    "^WWWWWWWWWWWWWWW^",
+                    "^^^^^^^^^^^^^^^^^"
+                ],
+                floorLinks: [
+                    { x: 7, y: 9, toFloor: 4, targetX: 17, targetY: 24, label: "聖女の部屋を出る" }
+                ],
+                entryPoint: { x: 7, y: 7 },
+                mapActions: [],
                 name: "",
                 themeKey: "LIGHT_PALACE"
             }
@@ -15540,7 +16353,9 @@ const FIXED_DUNGEON_MAPS = {
                             {
                                 "stateId": "luna_hidden_dark_shrine",
                                 "priority": 0,
-                                "when": {},
+                                "when": {
+                                    "requiredFlag": "legacyLunaHiddenJoinQuestEnabled"
+                                },
                                 "action": {
                                     "label": "月影の声を聞く",
                                     "log": "月光の向こうから、静かな呼び声が届く。",
@@ -15569,7 +16384,7 @@ const FIXED_DUNGEON_MAPS = {
                         questId: "luna_hidden_dark_shrine",
                         startEventId: "quest_luna_hidden_encounter",
                         storyEventId: "quest_luna_hidden_clear",
-                        requiredFlag: "lightPalaceCleared",
+                        requiredFlag: "legacyLunaHiddenJoinQuestEnabled",
                         actionLabel: "月影の試練に挑む",
                         inspectLog: "月光を飲む影が、祭壇の中央で脈打っている。"
                     }

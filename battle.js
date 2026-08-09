@@ -10,6 +10,23 @@ const Battle = {
     enemies: [],
     commandQueue: [], 
     currentActorIndex: 0, 
+    turnExecutionActive: false,
+    turnExecutionToken: null,
+    finishState: 'idle',
+    finishToken: null,
+    finishTimerId: null,
+    runtimeGeneration: 0,
+    inputGeneration: 0,
+    phaseTransitionResumeToken: null,
+    deferredPhaseTransitionResumeToken: null,
+    phaseTransitionRestartPending: false,
+    phaseTransitionRunnerActive: false,
+    phaseTransitionRunnerToken: null,
+    phaseTransitionRunnerScheduled: false,
+    deferredInputStart: false,
+    inputRecoveryScheduled: false,
+    inputRecoveryAttempts: 0,
+    turnRecoveryAttempts: 0,
     selectingAction: null, 
     selectedItemOrSkill: null,
 	runAttemptCount: 0, // ★追加: 逃走試行回数
@@ -19,7 +36,7 @@ const Battle = {
     
     // ステータス表示名マッピング
     statNames: {
-        atk: '攻撃力', def: '守備力', spd: '素早さ', mag: '魔力', mdef: '魔法防御',
+        atk: '攻撃力', def: '守備力', octaprismDef: '守備力', spd: '素早さ', mag: '魔力', mdef: '魔法防御',
         cri: '会心率', eva: '回避率',
         elmResUp: '全属性耐性', elmResDown: '全属性耐性',
         Poison: '毒', ToxicPoison: '猛毒', Shock: '感電', Fear: '怯え',
@@ -153,8 +170,340 @@ const Battle = {
         return Math.max(0, Math.min(100, configuredRate + Number(bonus || 0)));
     },
 
-    rollConfiguredDrop: (drop, bonus = 0) => {
-        return Math.random() * 100 < Battle.getConfiguredDropRate(drop, bonus);
+    rollConfiguredDrop: (drop, bonus = 0, rateMultiplier = 1) => {
+        const rate = Math.max(0, Math.min(100, Battle.getConfiguredDropRate(drop, bonus) * Math.max(0, Number(rateMultiplier || 1))));
+        return Math.random() * 100 < rate;
+    },
+
+    // ランダム迷宮の報酬補正は、戦闘開始時に保存された戦闘データを正本とする。
+    // 未設定の通常戦・旧セーブでは従来値へ安全にフォールバックする。
+    getBattleRewardRateModifiers: (battleData = App.data?.battle) => {
+        const rareDropMultiplier = Number(battleData?.rareDropMultiplier);
+        const equipPlus3BonusPct = Number(battleData?.equipPlus3BonusPct);
+        return {
+            rareDropMultiplier: Number.isFinite(rareDropMultiplier)
+                ? Math.max(0, rareDropMultiplier)
+                : 1,
+            equipPlus3BonusPct: Number.isFinite(equipPlus3BonusPct)
+                ? Math.max(0, equipPlus3BonusPct)
+                : 0
+        };
+    },
+
+    // 物語専用戦闘の共通ルール。通常戦へ影響しないよう、battle.eventBattleRules のみを参照する。
+    getEventBattleRules: (battleData = App.data?.battle) => {
+        const raw = battleData?.eventBattleRules;
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {
+            active:false, bestiaryExcluded:false, noDrops:false, noExp:false, noGold:false,
+            noQuestProgress:false, noRecruit:false, forcedLoss:false, hpFloor:null,
+            endAfterTurns:null, endAtHpPercent:null, storyVariantOf:null, targetMonsterIds:[], skillFailureRules:[]
+        };
+        const toFiniteOrNull = value => {
+            const num = Number(value);
+            return Number.isFinite(num) ? num : null;
+        };
+        const targetSource = Array.isArray(raw.targetMonsterIds)
+            ? raw.targetMonsterIds
+            : raw.targetMonsterId != null ? [raw.targetMonsterId] : [];
+        return {
+            active:true,
+            bestiaryExcluded: raw.bestiaryExcluded === true,
+            noDrops: raw.noDrops === true,
+            noExp: raw.noExp === true,
+            noGold: raw.noGold === true,
+            noQuestProgress: raw.noQuestProgress === true,
+            noRecruit: raw.noRecruit === true,
+            forcedLoss: raw.forcedLoss === true,
+            hpFloor: toFiniteOrNull(raw.hpFloor),
+            endAfterTurns: toFiniteOrNull(raw.endAfterTurns),
+            endAtHpPercent: toFiniteOrNull(raw.endAtHpPercent),
+            storyVariantOf: raw.storyVariantOf ?? null,
+            targetMonsterIds: targetSource.map(Number).filter(Number.isFinite),
+            skillFailureRules: Array.isArray(raw.skillFailureRules)
+                ? JSON.parse(JSON.stringify(raw.skillFailureRules))
+                : []
+        };
+    },
+
+    // 物語戦闘で「大技を試みるが、設定上の干渉で術式だけが失敗する」演出を共通化する。
+    // 通常の封印・MP不足とは別物で、敵の格を下げずに戦闘中の異常をプレイヤーへ見せる用途。
+    tryHandleEventBattleSkillFailure: (cmd, rules = Battle.getEventBattleRules()) => {
+        if (!cmd?.isEnemy || cmd.type !== 'skill' || !cmd.data || !rules?.active) return false;
+        const authored = Array.isArray(rules.skillFailureRules) ? rules.skillFailureRules : [];
+        if (!authored.length) return false;
+        const actor = cmd.actor;
+        const actorId = Number(actor?.baseId ?? actor?.id);
+        const skillId = Number(cmd.data?.id);
+        const battleData = App.data?.battle;
+        if (!battleData) return false;
+        if (!battleData.eventSkillFailureCounts || typeof battleData.eventSkillFailureCounts !== 'object') {
+            battleData.eventSkillFailureCounts = {};
+        }
+
+        const format = (text, count) => String(text || '')
+            .replaceAll('{actor}', String(actor?.name || '敵'))
+            .replaceAll('{skill}', String(cmd.data?.name || '技'))
+            .replaceAll('{count}', String(count));
+
+        for (let i = 0; i < authored.length; i++) {
+            const rule = authored[i] || {};
+            const monsterIds = Array.isArray(rule.targetMonsterIds)
+                ? rule.targetMonsterIds.map(Number).filter(Number.isFinite)
+                : rule.targetMonsterId != null ? [Number(rule.targetMonsterId)] : [];
+            if (monsterIds.length && !monsterIds.includes(actorId)) continue;
+            const skillIds = Array.isArray(rule.skillIds)
+                ? rule.skillIds.map(Number).filter(Number.isFinite)
+                : rule.skillId != null ? [Number(rule.skillId)] : [];
+            if (skillIds.length && !skillIds.includes(skillId)) continue;
+
+            const key = String(rule.id || `rule_${i}`);
+            const count = Math.max(0, Number(battleData.eventSkillFailureCounts[key] || 0));
+            const maxTriggers = Number(rule.maxTriggers);
+            if (Number.isFinite(maxTriggers) && maxTriggers >= 0 && count >= maxTriggers) continue;
+            const chance = Number.isFinite(Number(rule.chance)) ? Math.max(0, Math.min(1, Number(rule.chance))) : 1;
+            if (Math.random() > chance) continue;
+
+            const nextCount = count + 1;
+            battleData.eventSkillFailureCounts[key] = nextCount;
+            const attempt = rule.attemptMessage || '{actor}は{skill}を解放しようとした！';
+            if (attempt) Battle.log(format(attempt, nextCount));
+            const messages = Array.isArray(rule.failureMessages) && rule.failureMessages.length
+                ? rule.failureMessages
+                : ['{skill}の術式は失敗した！'];
+            Battle.log(format(messages[(nextCount - 1) % messages.length], nextCount));
+            return true;
+        }
+        return false;
+    },
+
+    getEventBattleTargetEnemies: (rules = Battle.getEventBattleRules()) => {
+        const enemies = Array.isArray(Battle.enemies) ? Battle.enemies.filter(Boolean) : [];
+        if (!rules?.active || !Array.isArray(rules.targetMonsterIds) || rules.targetMonsterIds.length === 0) return enemies;
+        const ids = new Set(rules.targetMonsterIds.map(Number));
+        return enemies.filter(enemy => ids.has(Number(enemy?.baseId ?? enemy?.id)));
+    },
+
+    getEventBattleHpFloorValue: (enemy, rules = Battle.getEventBattleRules()) => {
+        if (!enemy || !rules?.active) return null;
+        const targets = Battle.getEventBattleTargetEnemies(rules);
+        if (!targets.includes(enemy)) return null;
+        const maxHp = Math.max(1, Number(enemy.baseMaxHp || enemy.maxHp || enemy.hp || 1));
+        let floor = 0;
+        if (Number.isFinite(Number(rules.hpFloor))) floor = Math.max(floor, Math.floor(Number(rules.hpFloor)));
+        if (Number.isFinite(Number(rules.endAtHpPercent))) {
+            const pct = Math.max(0, Math.min(100, Number(rules.endAtHpPercent)));
+            floor = Math.max(floor, Math.ceil(maxHp * pct / 100));
+        }
+        return floor > 0 ? Math.min(maxHp, floor) : null;
+    },
+
+    applyEventBattleHpFloor: (unit, rules = Battle.getEventBattleRules()) => {
+        const floor = Battle.getEventBattleHpFloorValue(unit, rules);
+        if (floor == null || Number(unit?.hp || 0) > floor) return false;
+        unit.hp = floor;
+        unit.isDead = false;
+        unit.hasDiedThisTurn = false;
+        return true;
+    },
+
+    isEventBattleThresholdMet: (rules = Battle.getEventBattleRules()) => {
+        if (!rules?.active) return false;
+        const targets = Battle.getEventBattleTargetEnemies(rules);
+        if (Number.isFinite(Number(rules.endAtHpPercent)) && targets.length > 0) {
+            const pct = Math.max(0, Math.min(100, Number(rules.endAtHpPercent)));
+            const hpMet = targets.every(enemy => {
+                const maxHp = Math.max(1, Number(enemy.baseMaxHp || enemy.maxHp || enemy.hp || 1));
+                return (Math.max(0, Number(enemy.hp || 0)) / maxHp) * 100 <= pct + 0.000001;
+            });
+            if (hpMet) return true;
+        }
+        if (Number.isFinite(Number(rules.endAfterTurns))) {
+            const requiredTurns = Math.max(1, Math.floor(Number(rules.endAfterTurns)));
+            const completedTurns = Math.max(0, Math.floor(Number(App.data?.battle?.completedTurns || 0)));
+            if (completedTurns >= requiredTurns) return true;
+        }
+        return false;
+    },
+
+    getEventBattleFinishType: (rules = Battle.getEventBattleRules()) => rules?.forcedLoss === true ? 'loss' : 'win',
+
+    isBattleFinishConditionMet: (type) => {
+        const rules = Battle.getEventBattleRules();
+        if (rules.active) Battle.getEventBattleTargetEnemies(rules).forEach(enemy => Battle.applyEventBattleHpFloor(enemy, rules));
+        if (rules.active && Battle.isEventBattleThresholdMet(rules)) return type === Battle.getEventBattleFinishType(rules);
+        if (type === 'loss') {
+            if (Battle.party.every(p => p.isDead)) return true;
+            if (rules.active && rules.forcedLoss === true && Battle.enemies.every(e => e.isDead || e.isFled)) return true;
+            return false;
+        }
+        if (type === 'win') {
+            if (rules.active && rules.forcedLoss === true && Battle.enemies.every(e => e.isDead || e.isFled)) return false;
+            return Battle.enemies.every(e => e.isDead || e.isFled);
+        }
+        return false;
+    },
+
+    // 亀裂戦の報酬識別子は、勝利中にDungeon.onBossDefeated()が戦闘データを初期化する前に退避する。
+    // 未設定値同士の比較（null === null / undefined === undefined）を成立条件にしない。
+    captureAbyssRiftResultContext: (battleData = App.data?.battle, dungeonData = App.data?.dungeon) => {
+        const battleRewardId = String(battleData?.riftRewardId || '').trim();
+        const dungeonRewardId = String(dungeonData?.abyssRift?.rewardId || '').trim();
+        const riftEventId = (typeof Dungeon !== 'undefined') ? Dungeon.riftBattleEventId : null;
+        const isRiftBattle = battleData?.isRiftBattle === true
+            || !!battleRewardId
+            || (riftEventId != null && battleData?.eventId === riftEventId);
+        const rewardId = battleRewardId || dungeonRewardId;
+        if (!isRiftBattle || !rewardId) return null;
+        return { rewardId };
+    },
+
+    buildAbyssRiftResultOutcome: (context, dungeonData = App.data?.dungeon) => {
+        const expectedRewardId = String(context?.rewardId || '').trim();
+        if (!expectedRewardId) return null;
+        const pending = dungeonData?.pendingRiftReward;
+        if (!pending || pending.active !== true) return null;
+        const pendingRewardId = String(pending.rewardId || '').trim();
+        if (!pendingRewardId || pendingRewardId !== expectedRewardId) return null;
+        const itemName = String(pending.itemName || '').trim() || '輝く装備+3';
+        return { rewardId: expectedRewardId, itemName };
+    },
+
+    getEndlessBossWedgeDropRule: (data = App.data) => {
+        const master = globalThis.ABYSS_REGION_CONTENT?.randomDungeonPhase2IMaster?.endlessBossWedge || {};
+        const battle = data?.battle || {};
+        const mode = battle.abyssMode || data?.dungeon?.abyssMode || null;
+        const displayFloor = Math.max(1, Math.floor(Number(battle.abyssFloor || data?.dungeon?.floor || data?.progress?.floor || 1) || 1));
+        const minimumDisplayFloor = Math.max(1, Math.floor(Number(master.minimumDisplayFloor || 101) || 101));
+        const isRandomMode = globalThis.ABYSS_FLOOR_RULES?.isRandomMode
+            ? globalThis.ABYSS_FLOOR_RULES.isRandomMode(mode)
+            : String(mode) === 'random';
+        const excluded = battle.isSpecialBoss === true || battle.isEstark === true
+            || battle.randomAdventurerDuel != null || battle.randomHunter != null
+            || battle.randomRareAmbush != null || battle.riftRewardId != null
+            || battle.angelTrial != null || battle.guildQuestRun != null
+            || battle.storyBossTraining === true;
+        return {
+            itemId:Number(master.itemId || 98),
+            rate:Math.max(0, Math.min(1, Number(master.rate || 0.10))),
+            displayFloor,
+            minimumDisplayFloor,
+            eligible:data?.location?.area === 'ABYSS' && isRandomMode && battle.isBossBattle === true
+                && displayFloor >= minimumDisplayFloor && !excluded
+        };
+    },
+
+    applyEndlessBossWedgeDrop: (drops = [], options = {}) => {
+        const rule = Battle.getEndlessBossWedgeDropRule(options.data || App.data);
+        const random = typeof options.random === 'function' ? options.random : Math.random;
+        const outcome = {
+            version:1,
+            itemId:rule.itemId,
+            rate:rule.rate,
+            displayFloor:rule.displayFloor,
+            eligible:rule.eligible,
+            granted:false
+        };
+        if (!rule.eligible || random() >= rule.rate) return outcome;
+        const itemDef = DB.ITEMS.find(item => Number(item.id) === Number(rule.itemId));
+        if (!itemDef) return { ...outcome, missingItemMaster:true };
+        if (!App.data.items || typeof App.data.items !== 'object') App.data.items = {};
+        App.data.items[rule.itemId] = Math.max(0, Number(App.data.items[rule.itemId]) || 0) + 1;
+        if (Array.isArray(drops)) drops.push({ name:itemDef.name, isRare:true, type:'kai', kind:'item', endlessBossWedge:true });
+        return { ...outcome, granted:true, itemName:itemDef.name };
+    },
+
+    scaleEnemyCombatStats: (enemy, multiplier = 1, marker = null) => {
+        if (!enemy) return enemy;
+        const mult = Math.max(0.01, Number(multiplier || 1));
+        if (marker && enemy[marker]) return enemy;
+        enemy.hp = Math.max(1, Math.floor(Number(enemy.hp || 1) * mult));
+        enemy.baseMaxHp = Math.max(1, Math.floor(Number(enemy.baseMaxHp || enemy.hp || 1) * mult));
+        enemy.mp = Math.max(0, Math.floor(Number(enemy.mp || 0) * mult));
+        enemy.baseMaxMp = Math.max(0, Math.floor(Number(enemy.baseMaxMp || enemy.mp || 0) * mult));
+        ['atk','def','spd','mag','mdef'].forEach(key => {
+            if (enemy.baseStats?.[key] !== undefined) enemy.baseStats[key] = Math.max(0, Math.floor(Number(enemy.baseStats[key] || 0) * mult));
+            if (enemy[key] !== undefined) enemy[key] = Math.max(0, Math.floor(Number(enemy[key] || 0) * mult));
+        });
+        if (marker) enemy[marker] = mult;
+        return enemy;
+    },
+
+    getDeepNormalBaseCandidates: () => {
+        let candidates = [];
+        if (window.MonsterData && typeof window.MonsterData.getDeepFloorNormalBaseCandidates === 'function') {
+            candidates = window.MonsterData.getDeepFloorNormalBaseCandidates() || [];
+        }
+        if (!candidates.length && window.MonsterData && typeof window.MonsterData.generateBandMonster === 'function') {
+            const fallback = window.MonsterData.generateBandMonster(200);
+            if (fallback) candidates = [fallback];
+        }
+        return candidates.filter(base => base && !base.isBoss && !base.isRare && !Battle.isSpecialBossBase(base));
+    },
+
+    createDeepNormalEnemy: (targetFloor, options = {}) => {
+        const floor = Math.max(1, Number(targetFloor) || 1);
+        let base = null;
+        if (floor < 201 && window.MonsterData && typeof window.MonsterData.generateEnemyForFloor === 'function') {
+            base = window.MonsterData.generateEnemyForFloor(floor, { allowRare:false });
+        }
+        if (!base) {
+            const candidates = Battle.getDeepNormalBaseCandidates();
+            base = candidates[Math.floor(Math.random() * candidates.length)] || null;
+        }
+        if (!base && Array.isArray(DB.MONSTERS)) {
+            const candidates = DB.MONSTERS.filter(entry => entry && !entry.isBoss && !entry.isRare && !Battle.isSpecialBossBase(entry));
+            base = candidates[Math.floor(Math.random() * candidates.length)] || null;
+        }
+        if (!base) return null;
+        const enemy = Battle.createDeepFloorMonster(Battle.cloneMonsterBase(base), floor, false)
+            || Battle.createMonsterFromBase(base, { isBossBattle:false });
+        if (!enemy) return null;
+        if (options.statMultiplier) Battle.scaleEnemyCombatStats(enemy, options.statMultiplier, options.marker || null);
+        return enemy;
+    },
+
+    createStoryBossEchoEnemy: (targetFloor, index = 0, total = 1) => {
+        const master = globalThis.ABYSS_REGION_CONTENT?.randomDungeonPhase2IMaster || {};
+        const ids = Array.isArray(master.storyBossEchoIds) ? master.storyBossEchoIds : [];
+        const bossBase = Battle.getMonsterBaseById(ids[Math.floor(Math.random() * ids.length)]);
+        const reference = Battle.createDeepNormalEnemy(targetFloor);
+        if (!bossBase || !reference) return reference;
+        const enemy = Battle.createMonsterFromBase(bossBase, {
+            isBossBattle:false,
+            name:`${bossBase.name || '物語の残響'}${total > 1 ? String.fromCharCode(65 + index) : ''}`
+        });
+        if (!enemy) return reference;
+        const modifier = App.data?.battle?.randomDungeonModifier || {};
+        const statMult = Math.max(1, Number(modifier.normalStatMultiplier || 1.15));
+        const hpMult = Math.max(1, Number(modifier.hpNormalMultiplier || 2));
+        enemy.hp = Math.max(1, Math.floor(Number(reference.baseMaxHp || reference.hp || 1) * hpMult));
+        enemy.baseMaxHp = enemy.hp;
+        enemy.mp = Math.max(0, Math.floor(Number(reference.baseMaxMp || reference.mp || 0) * statMult));
+        enemy.baseMaxMp = enemy.mp;
+        ['atk','def','spd','mag','mdef'].forEach(key => {
+            const value = Math.max(0, Math.floor(Number(reference.baseStats?.[key] ?? reference[key] ?? 0) * statMult));
+            if (!enemy.baseStats) enemy.baseStats = {};
+            enemy.baseStats[key] = value;
+            enemy[key] = value;
+        });
+        enemy.exp = Math.max(1, Math.floor(Number(reference.exp || 0) * 1.5));
+        enemy.gold = Math.max(0, Math.floor(Number(reference.gold || 0) * 1.5));
+        enemy.isBoss = false;
+        enemy.isStoryBossEcho = true;
+        enemy.storyBossEchoSourceId = Number(bossBase.id);
+        delete enemy.phaseTransition;
+        delete enemy.phaseTransitionMonsterId;
+        delete enemy.phaseTransitionConversation;
+        return enemy;
+    },
+
+    applyRandomDungeonModifier: (enemy, modifier = App.data?.battle?.randomDungeonModifier) => {
+        if (!enemy || !modifier?.id) return enemy;
+        if (modifier.id === 'dangerTreasure') {
+            Battle.scaleEnemyCombatStats(enemy, Math.max(1, Number(modifier.enemyStatMultiplier || 1.35)), 'randomDungeonDangerScale');
+        }
+        enemy.randomDungeonModifierId = modifier.id;
+        return enemy;
     },
 
     getSurvivingPartyPassiveSum: (key) => {
@@ -174,46 +523,251 @@ const Battle = {
     abyssAzelgaragIds: Object.freeze([302100, 302101]),
     abyssSealedSkillIds: Object.freeze([166, 245, 700101]),
 
+    makeBattleUnitId: () => `enemy-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`,
+
+    ensureEnemyBattleIdentity: (enemy, options = {}) => {
+        if (!enemy) return null;
+        if (options.battleUnitId) enemy.battleUnitId = options.battleUnitId;
+        else if (!enemy.battleUnitId) enemy.battleUnitId = Battle.makeBattleUnitId();
+        enemy.phaseIndex = Math.max(1, Number(options.phaseIndex || enemy.phaseIndex || 1));
+        enemy.phaseRootId = Number(options.phaseRootId || enemy.phaseRootId || Battle.getUnitBaseId(enemy) || 0) || null;
+        return enemy;
+    },
+
+    getLinkedBattleGroup: (enemy) => {
+        if (!enemy) return null;
+        const base = Battle.getMonsterBaseById?.(Battle.getUnitBaseId(enemy));
+        return enemy.linkedBattleGroup || base?.linkedBattleGroup || null;
+    },
+
+    getSharedVisualGroup: (enemy) => {
+        if (!enemy) return null;
+        const base = Battle.getMonsterBaseById?.(Battle.getUnitBaseId(enemy));
+        return enemy.sharedVisualGroup || base?.sharedVisualGroup || null;
+    },
+
+    getSharedVisualMembers: (groupName) => {
+        if (!groupName) return [];
+        return (Battle.enemies || []).filter(enemy => Battle.getSharedVisualGroup(enemy) === groupName);
+    },
+
+    getSharedVisualProfile: (groupName) => {
+        const members = Battle.getSharedVisualMembers(groupName);
+        let name = '';
+        let title = '';
+        for (const enemy of members) {
+            const base = Battle.getMonsterBaseById?.(Battle.getUnitBaseId(enemy)) || {};
+            if (!name) name = String(enemy?.sharedVisualName || base.sharedVisualName || '');
+            if (!title) title = String(enemy?.sharedVisualTitle || base.sharedVisualTitle || '');
+            if (name && title) break;
+        }
+        return {
+            name: name || String(groupName || ''),
+            title
+        };
+    },
+
+    getSharedVisualHpSummary: (groupName) => {
+        const members = Battle.getSharedVisualMembers(groupName);
+        const fx = (typeof window !== 'undefined') ? window.PolishBattleFX : null;
+        const summary = members.reduce((result, enemy) => {
+            const maxHp = Math.max(1, Number(enemy?.baseMaxHp || enemy?.maxHp || enemy?.hp || 1));
+            const rawHp = (fx && typeof fx.hpDisplayForEnemy === 'function')
+                ? fx.hpDisplayForEnemy(enemy, enemy?.hp)
+                : enemy?.hp;
+            const currentHp = Math.max(0, Math.min(maxHp, Number(rawHp || 0)));
+            result.currentHp += currentHp;
+            result.maxHp += maxHp;
+            if (Battle.isBattleAlive(enemy)) result.aliveCount += 1;
+            return result;
+        }, { currentHp: 0, maxHp: 0, aliveCount: 0, totalCount: members.length });
+        summary.percent = summary.maxHp > 0
+            ? Math.max(0, Math.min(100, (summary.currentHp / summary.maxHp) * 100))
+            : 0;
+        return summary;
+    },
+
+    isVegnasisPillar: (enemy) => Battle.getLinkedBattleGroup(enemy) === 'vegnasis',
+
+    ensureLinkedInitialState: (enemy) => {
+        if (!enemy || !Battle.getLinkedBattleGroup(enemy)) return null;
+        if (!enemy.linkedInitialState) {
+            enemy.linkedInitialState = {
+                maxHp: Math.max(1, Number(enemy.baseMaxHp || enemy.maxHp || enemy.hp || 1)),
+                maxMp: Math.max(0, Number(enemy.baseMaxMp || enemy.maxMp || enemy.mp || 0)),
+                atk: Math.max(0, Number(enemy.atk ?? enemy.baseStats?.atk ?? 0)),
+                def: Math.max(0, Number(enemy.def ?? enemy.baseStats?.def ?? 0)),
+                spd: Math.max(0, Number(enemy.spd ?? enemy.baseStats?.spd ?? 0)),
+                mag: Math.max(0, Number(enemy.mag ?? enemy.baseStats?.mag ?? 0)),
+                mdef: Math.max(0, Number(enemy.mdef ?? enemy.baseStats?.mdef ?? 0)),
+                actCount: Math.max(1, Number(enemy.actCount || 1)),
+                acts: JSON.parse(JSON.stringify(enemy.acts || []))
+            };
+        }
+        return enemy.linkedInitialState;
+    },
+
+    initializeLinkedBattleGroups: () => {
+        (Battle.enemies || []).forEach(enemy => {
+            Battle.ensureEnemyBattleIdentity(enemy);
+            Battle.ensureLinkedInitialState(enemy);
+        });
+        const pillars = (Battle.enemies || []).filter(Battle.isVegnasisPillar);
+        if (!pillars.length) return;
+        const handled = pillars.filter(enemy => enemy.abyssFallHandled).length;
+        if (App.data?.battle) {
+            App.data.battle.vegnasisFallCount = Math.max(Number(App.data.battle.vegnasisFallCount || 0), handled);
+        }
+        const alive = pillars.filter(Battle.isBattleAlive);
+        if (alive.length === 1 && handled >= pillars.length - 1 && !alive[0].vegnasisFinalAwakened) {
+            Battle.awakenVegnasisFinalPillar(alive[0], { silent: true });
+        }
+    },
+
+    getVegnasisProfile: (enemy) => {
+        const base = Battle.getMonsterBaseById?.(Battle.getUnitBaseId(enemy)) || {};
+        return {
+            element: String(enemy?.vegnasisElement || base.vegnasisElement || ''),
+            elementKey: String(enemy?.vegnasisElementKey || base.vegnasisElementKey || 'chaos'),
+            powerName: String(enemy?.vegnasisPowerName || base.vegnasisPowerName || '深淵'),
+            lastStandConversation: enemy?.vegnasisLastStandConversation || base.vegnasisLastStandConversation || null
+        };
+    },
+
+    getLinkedBattleGroupSkillPool: (groupName) => {
+        const seen = new Set();
+        const result = [];
+        (DB.MONSTERS || []).filter(base => base?.linkedBattleGroup === groupName).forEach(base => {
+            (base.acts || []).forEach(raw => {
+                const act = (typeof raw === 'object' && raw) ? raw : { id: raw, rate: 100, condition: 0 };
+                const id = Number(act.id);
+                if (!Number.isFinite(id) || seen.has(id)) return;
+                seen.add(id);
+                result.push({ ...JSON.parse(JSON.stringify(act)), id });
+            });
+        });
+        return result;
+    },
+
+    awakenVegnasisFinalPillar: (enemy, options = {}) => {
+        if (!enemy || enemy.vegnasisFinalAwakened) return false;
+        const initial = Battle.ensureLinkedInitialState(enemy);
+        if (!initial) return false;
+        const scale = 1.5;
+        enemy.baseMaxHp = Math.max(1, Math.floor(initial.maxHp * scale));
+        enemy.maxHp = enemy.baseMaxHp;
+        enemy.hp = enemy.baseMaxHp;
+        enemy.baseMaxMp = Math.max(0, Math.floor(initial.maxMp * scale));
+        enemy.maxMp = enemy.baseMaxMp;
+        enemy.mp = enemy.baseMaxMp;
+        ['atk', 'def', 'spd', 'mag', 'mdef'].forEach(key => {
+            const value = Math.max(0, Math.floor(Number(initial[key] || 0) * scale));
+            enemy[key] = value;
+            if (enemy.baseStats) enemy.baseStats[key] = value;
+        });
+        const pooledActs = Battle.getLinkedBattleGroupSkillPool('vegnasis');
+        if (pooledActs.length) enemy.acts = pooledActs;
+        enemy.actCount = 3;
+        enemy.isDead = false;
+        enemy.isFled = false;
+        enemy.hasDiedThisTurn = false;
+        enemy.vegnasisFinalAwakened = true;
+        if (App.data?.battle) {
+            App.data.battle.vegnasisFinalAwakenedUnitId = enemy.battleUnitId || null;
+        }
+        if (!options.silent) {
+            Battle.log(`${enemy.name}は四柱の力を取り込み、完全に傷を癒した！`);
+            Battle.log(`${enemy.name}の全能力が初期値の1.5倍となり、3回行動を開始した！`);
+        }
+        return true;
+    },
+
     completeAbyssElementalTrial: (drops = []) => {
         const battleData = App.data?.battle || {};
-        const element = String(battleData.fixedTrialElement || battleData.abyssSpiritElement || '');
-        if (!element || !Number.isFinite(Number(battleData.fixedTrialRewardItemId))) return [];
+        const trial = battleData.elementalSpiritTrial && typeof battleData.elementalSpiritTrial === 'object'
+            ? battleData.elementalSpiritTrial
+            : {};
+        const element = String(trial.element || battleData.fixedTrialElement || battleData.abyssSpiritElement || '');
+        const rewardId = Number(trial.rewardItemId || battleData.fixedTrialRewardItemId || 0);
+        if (!element || !Number.isFinite(rewardId) || rewardId <= 0) return [];
 
-        const progress = App.ensureAbyssRegionProgress?.() || App.data.progress || {};
+        if (!App.data.items || typeof App.data.items !== 'object') App.data.items = {};
+        const progress = App.ensureAbyssSpiritTrialEvents?.() || App.ensureAbyssRegionProgress?.() || App.data.progress || {};
         progress.flags = progress.flags || {};
         progress.abyssSpiritBlessings = progress.abyssSpiritBlessings || {};
-        if (progress.abyssSpiritBlessings[element]) return [];
+        progress.abyssSpiritTrialEvents = progress.abyssSpiritTrialEvents || {};
+        const record = progress.abyssSpiritTrialEvents[element] || (progress.abyssSpiritTrialEvents[element] = {});
+        const battleId = battleData.battleId || null;
+        record.state = 'victory';
+        record.victoryBattleId = record.victoryBattleId || battleId;
+        record.lastVictoryAt = Date.now();
 
         const messages = [];
-        progress.abyssSpiritBlessings[element] = true;
-        const rewardId = Number(battleData.fixedTrialRewardItemId || 0);
-        if (rewardId > 0) {
-            App.data.items[rewardId] = Number(App.data.items[rewardId] || 0) + 1;
-            const item = (DB.ITEMS || []).find(entry => Number(entry.id) === rewardId);
-            drops.push({ name: item?.name || `${element}の結晶片`, isRare: true, type: 'boss', kind: 'item' });
+        let blessingGranted = false;
+        if (!progress.abyssSpiritBlessings[element]) {
+            progress.abyssSpiritBlessings[element] = true;
+            blessingGranted = true;
+            if (rewardId > 0) {
+                App.data.items[rewardId] = Number(App.data.items[rewardId] || 0) + 1;
+                const item = (DB.ITEMS || []).find(entry => Number(entry.id) === rewardId);
+                drops.push({ name: item?.name || `${element}の結晶片`, isRare: true, type: 'boss', kind: 'item' });
+            }
+            messages.push(`${element}の精霊に認められ、全員の${element}属性耐性が20%上昇した！`);
         }
-        messages.push(`${element}の精霊に認められ、全員の${element}属性耐性が20%上昇した！`);
 
-        const required = Array.isArray(battleData.fixedTrialRequiredElements)
-            ? battleData.fixedTrialRequiredElements.map(String)
-            : ['火', '水', '風', '雷', '光', '闇'];
-        if (required.length > 0 && required.every(key => progress.abyssSpiritBlessings[key])
-            && !progress.flags.abyssAllSpiritTrialsCleared) {
+        const required = Array.isArray(trial.requiredElements)
+            ? trial.requiredElements.map(String)
+            : (Array.isArray(battleData.fixedTrialRequiredElements)
+                ? battleData.fixedTrialRequiredElements.map(String)
+                : ['火', '水', '風', '雷', '光', '闇']);
+        if (required.length > 0 && required.every(key => progress.abyssSpiritBlessings[key])) {
             progress.flags.abyssAllSpiritTrialsCleared = true;
-            const completionId = Number(battleData.fixedTrialCompletionItemId || 0);
-            if (completionId > 0) {
-                App.data.items[completionId] = Number(App.data.items[completionId] || 0) + 1;
-                const item = (DB.ITEMS || []).find(entry => Number(entry.id) === completionId);
-                drops.push({ name: item?.name || 'オクタプリズマ', isRare: true, type: 'kai', kind: 'item' });
+            const completionId = Number(trial.completionItemId || battleData.fixedTrialCompletionItemId || 701008);
+            if (Number(App.data.items?.[completionId] || 0) <= 0) {
+                // 旧版で「演出済み」だけ残り、アイテム本体が欠けたセーブも授与イベントで救済する。
+                progress.flags.abyssOctaprismGrantPending = true;
             }
             messages.push('六属性すべての精霊に認められた。');
         }
+        battleData.elementalSpiritTrialOutcome = {
+            version: 1,
+            element,
+            rewardItemId: rewardId,
+            blessingGranted,
+            allCleared: required.length > 0 && required.every(key => progress.abyssSpiritBlessings[key]),
+            octaprismGrantPending: progress.flags.abyssOctaprismGrantPending === true,
+            victoryBattleId: battleId
+        };
         return messages;
+    },
+
+    recordAbyssElementalTrialLoss: () => {
+        const battleData = App.data?.battle || {};
+        const trial = battleData.elementalSpiritTrial && typeof battleData.elementalSpiritTrial === 'object'
+            ? battleData.elementalSpiritTrial
+            : {};
+        const element = String(trial.element || battleData.fixedTrialElement || battleData.abyssSpiritElement || '');
+        if (!element) return null;
+        const progress = App.ensureAbyssSpiritTrialEvents?.() || App.ensureAbyssRegionProgress?.() || App.data.progress || {};
+        progress.abyssSpiritTrialEvents = progress.abyssSpiritTrialEvents || {};
+        const record = progress.abyssSpiritTrialEvents[element] || (progress.abyssSpiritTrialEvents[element] = {});
+        record.state = 'lost';
+        record.lostOnce = true;
+        record.lastLossAt = Date.now();
+        record.lastLossBattleId = battleData.battleId || null;
+        battleData.elementalSpiritTrialOutcome = {
+            version: 1,
+            element,
+            lost: true,
+            lossBattleId: battleData.battleId || null
+        };
+        return battleData.elementalSpiritTrialOutcome;
     },
 
     getUnitBaseId: (unit) => Number(unit?.baseId || unit?.id || 0),
 
     ensureUnitBattleStatus: (unit) => {
+        if (!unit) return { buffs: {}, debuffs: {}, ailments: {} };
         unit.battleStatus = unit.battleStatus || { buffs: {}, debuffs: {}, ailments: {} };
         unit.battleStatus.buffs = unit.battleStatus.buffs || {};
         unit.battleStatus.debuffs = unit.battleStatus.debuffs || {};
@@ -227,9 +781,168 @@ const Battle = {
         return App.data.battle.cutsceneQueue;
     },
 
+    getPhaseTransitionJournal: () => {
+        const journal = App.data?.battle?.phaseTransitionJournal;
+        if (!journal || typeof journal !== 'object') return null;
+        if (!journal.version || Number(journal.version) < 2) {
+            journal.version = 2;
+            journal.preConversation = journal.preConversation || journal.conversation || null;
+            journal.postConversation = journal.postConversation || null;
+            journal.visual = journal.visual && typeof journal.visual === 'object' ? journal.visual : null;
+            journal.steps = journal.steps && typeof journal.steps === 'object' ? journal.steps : {};
+            if (!journal.status || journal.status === 'state_applied') journal.status = 'prepared';
+        } else {
+            journal.steps = journal.steps && typeof journal.steps === 'object' ? journal.steps : {};
+        }
+        return journal;
+    },
+
+    isPhaseTransitionInputReadyStatus: (status) =>
+        ['ready_for_input', 'input_starting', 'completed'].includes(String(status || '')),
+
+    hasPendingPhaseTransition: () => {
+        const journal = Battle.getPhaseTransitionJournal();
+        return !!(journal && !Battle.isPhaseTransitionInputReadyStatus(journal.status));
+    },
+
+    makePhaseTransitionToken: (enemy, nextForm) => {
+        const battleId = App.data?.battle?.battleId || 'battle';
+        const unitId = nextForm?.battleUnitId || enemy?.battleUnitId || Battle.makeBattleUnitId();
+        const phaseIndex = Math.max(1, Number(nextForm?.phaseIndex || enemy?.phaseIndex || 1));
+        return `${battleId}:phase:${unitId}:${phaseIndex}:${Date.now().toString(36)}`;
+    },
+
+    resetInputStateForPhaseTransition: () => {
+        Battle.commandQueue = [];
+        Battle.currentActorIndex = 0;
+        Battle.selectingAction = null;
+        Battle.selectedItemOrSkill = null;
+        Battle.isPreemptive = false;
+        Battle.isAmbushed = false;
+        Battle.inputGeneration = Math.max(0, Number(Battle.inputGeneration || 0)) + 1;
+        Battle.closeSubMenu?.();
+        Battle.closeStrategyModal?.();
+        Battle.closeStatusModal?.();
+        [...(Battle.party || []), ...(Battle.enemies || [])].forEach(unit => {
+            if (!unit) return;
+            unit.turnProcessed = false;
+            unit.hasDiedThisTurn = false;
+            if (unit.status) unit.status.defend = false;
+        });
+    },
+
+    invalidateRuntimeForPhaseTransition: () => {
+        Battle.runtimeGeneration = Math.max(0, Number(Battle.runtimeGeneration || 0)) + 1;
+        Battle.resetInputStateForPhaseTransition();
+        Battle.phase = 'battle_event';
+    },
+
+    beginPhaseTransitionJournal: (enemy, nextForm, config = {}) => {
+        if (!App.data?.battle) return null;
+        const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
+        const token = Battle.makePhaseTransitionToken(enemy, nextForm);
+        const journal = {
+            version: 2,
+            token,
+            status: 'prepared',
+            fromMonsterId: Battle.getUnitBaseId(enemy),
+            toMonsterId: Battle.getUnitBaseId(nextForm),
+            battleUnitId: nextForm?.battleUnitId || enemy?.battleUnitId || null,
+            phaseIndex: Math.max(1, Number(nextForm?.phaseIndex || 1)),
+            preConversation: config.preConversation || config.conversation || null,
+            postConversation: config.postConversation || null,
+            visual: clone(config.visual || null),
+            resumePhase: config.resumePhase || 'input',
+            fromSnapshot: clone(Battle.serializeEnemyState?.(enemy) || null),
+            toSnapshot: clone(Battle.serializeEnemyState?.(nextForm) || null),
+            steps: {},
+            createdAt: Date.now()
+        };
+        App.data.battle.phaseTransitionJournal = journal;
+        Battle.phaseTransitionResumeToken = token;
+        Battle.phaseTransitionRestartPending = true;
+        Battle.deferredPhaseTransitionResumeToken = null;
+        Battle.invalidateRuntimeForPhaseTransition();
+        return journal;
+    },
+
+    finalizePhaseTransitionForInput: (journal = Battle.getPhaseTransitionJournal()) => {
+        if (!journal || !App.data?.battle) return false;
+        if (!Battle.isPhaseTransitionInputReadyStatus(journal.status)) return false;
+        const currentEnemy = (Battle.enemies || []).find(enemy =>
+            (journal.battleUnitId && enemy?.battleUnitId === journal.battleUnitId) ||
+            Battle.getUnitBaseId(enemy) === Number(journal.toMonsterId)
+        );
+        if (!currentEnemy || !Battle.isBattleAlive(currentEnemy)) return false;
+
+        // 入力の再帰開始（特にAUTO）より先に、形態移行を完全に確定する。
+        // ここから先は通常の第二形態戦として扱い、移行ジャーナルと旧会話予約を残さない。
+        Battle.ensureUnitBattleStatus(currentEnemy);
+        const previousStatus = journal.status;
+        const previousQueue = Array.isArray(App.data.battle.cutsceneQueue)
+            ? App.data.battle.cutsceneQueue.slice()
+            : null;
+        journal.status = 'completed';
+        journal.completedAt = Date.now();
+        if (previousQueue) {
+            App.data.battle.cutsceneQueue = previousQueue.filter(entry =>
+                entry?.phaseTransitionToken !== journal.token
+            );
+        }
+        Battle.phaseTransitionResumeToken = null;
+        Battle.phaseTransitionRestartPending = false;
+        Battle.deferredPhaseTransitionResumeToken = null;
+        delete App.data.battle.phaseTransitionJournal;
+
+        try {
+            if (Battle.saveBattleState() === false) {
+                throw new Error('形態移行完了状態を保存できませんでした。');
+            }
+        } catch (error) {
+            // 保存に失敗した場合はジャーナルを戻し、入力開始前の安全な状態から再試行できるようにする。
+            journal.status = previousStatus === 'input_starting' ? 'ready_for_input' : previousStatus;
+            delete journal.completedAt;
+            App.data.battle.phaseTransitionJournal = journal;
+            if (previousQueue) App.data.battle.cutsceneQueue = previousQueue;
+            Battle.phaseTransitionResumeToken = journal.token;
+            Battle.phaseTransitionRestartPending = true;
+            throw error;
+        }
+
+        if (typeof document !== 'undefined') {
+            const container = Battle.getEl?.('enemy-container');
+            container?.classList.remove('phase-form-transition-active');
+            container?.querySelectorAll('.phase-form-transition-layer').forEach(node => node.remove());
+        }
+        return true;
+    },
+
+    completePhaseTransitionJournalOnInput: () =>
+        Battle.finalizePhaseTransitionForInput(Battle.getPhaseTransitionJournal()),
+
+    playBattleCutsceneVisual: (effect) => {
+        if (!effect || typeof document === 'undefined') return;
+        if (effect.type === 'vegnasis-fall' || effect.type === 'vegnasis-final') {
+            const stage = Math.max(0, Math.min(4, Number(effect.stage || App.data?.battle?.vegnasisFallCount || 0)));
+            if (App.data?.battle) App.data.battle.vegnasisFallCount = Math.max(Number(App.data.battle.vegnasisFallCount || 0), stage);
+            Battle.renderEnemies?.();
+            const scene = Battle.getEl('battle-scene');
+            if (!scene) return;
+            const old = scene.querySelector('.vegnasis-shift-flash');
+            if (old) old.remove();
+            const flash = document.createElement('div');
+            flash.className = `vegnasis-shift-flash ${effect.type === 'vegnasis-final' ? 'is-final' : ''}`;
+            flash.dataset.element = String(effect.elementKey || 'chaos');
+            flash.setAttribute('aria-hidden', 'true');
+            scene.appendChild(flash);
+            setTimeout(() => flash.remove(), effect.type === 'vegnasis-final' ? 1100 : 800);
+        }
+    },
+
     queueBattleConversation: (scriptKey, options = {}) => {
         if (!scriptKey || !globalThis.StoryManager?.showConversation) return Promise.resolve(false);
         const persistId = options.persistId || null;
+        const transitionStep = options.phaseTransitionStep || null;
         Battle.phase = 'battle_event';
         if (persistId) {
             const queue = Battle.ensureBattleCutsceneQueue();
@@ -239,6 +952,9 @@ const Battle = {
                     scriptKey,
                     status: 'queued',
                     resumePhase: options.resumePhase || 'input',
+                    phaseTransitionToken: options.phaseTransitionToken || null,
+                    phaseTransitionStep: transitionStep,
+                    visualEffect: options.visualEffect ? JSON.parse(JSON.stringify(options.visualEffect)) : null,
                     createdAt: Date.now()
                 });
                 Battle.saveBattleState();
@@ -257,43 +973,135 @@ const Battle = {
             const persistentEntry = persistId
                 ? Battle.ensureBattleCutsceneQueue().find(entry => entry?.id === persistId)
                 : null;
+            const journal = Battle.getPhaseTransitionJournal();
+            const transitionToken = persistentEntry?.phaseTransitionToken || options.phaseTransitionToken || null;
+            const stepName = persistentEntry?.phaseTransitionStep || transitionStep || null;
             if (persistentEntry) {
                 persistentEntry.status = 'running';
                 persistentEntry.startedAt = persistentEntry.startedAt || Date.now();
-                App.save();
             }
+            if (journal && transitionToken && journal.token === transitionToken && stepName) {
+                journal.steps = journal.steps || {};
+                journal.steps[stepName] = {
+                    ...(journal.steps[stepName] || {}),
+                    status: 'running',
+                    startedAt: journal.steps[stepName]?.startedAt || Date.now()
+                };
+            }
+            if (persistentEntry || (journal && transitionToken)) App.save();
+
+            Battle.playBattleCutsceneVisual(persistentEntry?.visualEffect || options.visualEffect || null);
             let conversationSucceeded = false;
             try {
-                await StoryManager.showConversation(scriptKey);
+                const activeConversation = App.data?.progress?.activeConversation;
+                const resumeLine = activeConversation?.key === scriptKey
+                    ? Math.max(0, Number(activeConversation.index || 0))
+                    : 0;
+                let conversationResult = await StoryManager.showConversation(scriptKey, resumeLine);
+                // 別会話の入力待ちと競合した場合は、完了扱いにせず終了まで待つ。
+                // 5秒などの固定上限で戦闘を再開すると、会話中に旧ターンが進むため上限を置かない。
+                while (conversationResult?.status === 'busy') {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    if (!Battle.active && Battle.phase !== 'result') break;
+                    conversationResult = await StoryManager.showConversation(scriptKey, resumeLine);
+                }
+                const conversationStatus = conversationResult?.status
+                    || (conversationResult === false ? 'error' : 'completed');
+                if (conversationStatus === 'busy') {
+                    if (persistentEntry) {
+                        persistentEntry.status = 'queued';
+                        persistentEntry.retryAt = Date.now();
+                    }
+                    if (journal && transitionToken && journal.token === transitionToken && stepName) {
+                        journal.steps = journal.steps || {};
+                        journal.steps[stepName] = {
+                            ...(journal.steps[stepName] || {}),
+                            status: 'queued',
+                            retryAt: Date.now()
+                        };
+                    }
+                    App.save();
+                    return false;
+                }
+                if (conversationStatus !== 'completed') {
+                    throw new Error(`戦闘会話を完了できませんでした: ${scriptKey} (${conversationStatus})`);
+                }
                 StoryManager.endConversation();
                 conversationSucceeded = true;
             } catch (error) {
                 console.error(`[Battle] cutscene failed: ${scriptKey}`, error);
                 try { StoryManager.endConversation(); } catch (_) {}
+                const priorAttempts = Math.max(
+                    Number(persistentEntry?.attempts || 0),
+                    Number(journal?.steps?.[stepName]?.attempts || 0)
+                );
+                const attempts = priorAttempts + 1;
+                const maxErrorAttempts = Math.max(1, Number(options.maxErrorAttempts || 1));
+                const skipAfterError = options.continueOnError === true && attempts >= maxErrorAttempts;
                 if (persistentEntry) {
-                    persistentEntry.status = 'error';
+                    persistentEntry.status = skipAfterError ? 'skipped_after_error' : 'error';
+                    persistentEntry.attempts = attempts;
                     persistentEntry.error = String(error?.message || error);
                     persistentEntry.lastFailedAt = Date.now();
-                    App.save();
                 }
+                if (journal && transitionToken && journal.token === transitionToken && stepName) {
+                    journal.steps = journal.steps || {};
+                    journal.steps[stepName] = {
+                        ...(journal.steps[stepName] || {}),
+                        status: skipAfterError ? 'skipped_after_error' : 'error',
+                        attempts,
+                        error: String(error?.message || error),
+                        lastFailedAt: Date.now()
+                    };
+                }
+                App.save();
             } finally {
-                if (persistId && App.data?.battle && conversationSucceeded) {
+                const persistentEntry = persistId
+                    ? Battle.ensureBattleCutsceneQueue().find(entry => entry?.id === persistId)
+                    : null;
+                const canDiscardFailedEntry = persistentEntry?.status === 'skipped_after_error';
+                if (persistId && App.data?.battle && (conversationSucceeded || canDiscardFailedEntry)) {
                     App.data.battle.cutsceneQueue = Battle.ensureBattleCutsceneQueue()
                         .filter(entry => entry?.id !== persistId);
-                    App.save();
                 }
+                if (journal && transitionToken && journal.token === transitionToken && stepName && conversationSucceeded) {
+                    journal.steps = journal.steps || {};
+                    journal.steps[stepName] = {
+                        ...(journal.steps[stepName] || {}),
+                        status: 'completed',
+                        completedAt: Date.now()
+                    };
+                }
+                if (persistId || (journal && transitionToken)) App.save();
             }
-            return true;
+            return conversationSucceeded;
         });
         return Battle.pendingBattleEvent;
     },
 
     awaitPendingBattleEvent: async () => {
-        if (!Battle.pendingBattleEvent) return;
+        // 形態移行はupdateDeadState()直後にはrunnerだけが予約され、
+        // 会話Promiseがまだ作られていない瞬間がある。ここでfalseを返すと
+        // 呼出側が旧ターンを再開し得るため、runnerそのものを完了まで待つ。
+        if (!Battle.pendingBattleEvent && Battle.hasPendingPhaseTransition() && !Battle.turnExecutionActive) {
+            const journal = Battle.getPhaseTransitionJournal();
+            if (journal?.token) {
+                if (Battle.phaseTransitionRunnerActive) {
+                    while (Battle.active && Battle.phaseTransitionRunnerActive &&
+                        Battle.getPhaseTransitionJournal()?.token === journal.token) {
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                } else {
+                    await Battle.runPhaseTransitionSequence(journal.token);
+                }
+                return true;
+            }
+        }
+        if (!Battle.pendingBattleEvent) return false;
+        let result = false;
         try {
-            await Battle.pendingBattleEvent;
+            result = await Battle.pendingBattleEvent;
         } catch (error) {
-            // 会話側の例外でコマンド進行全体を停止させない。
             console.error('[Battle] battle event wait failed:', error);
         } finally {
             Battle.pendingBattleEvent = null;
@@ -304,43 +1112,800 @@ const Battle = {
                 Battle.updateAutoButton?.();
             }
         }
+        return result;
     },
 
-    // 形態移行は「同じターンの残りコマンド」を継続すると、既に消えた第一形態の
-    // 行動・ターン終了処理・勝敗判定が混ざる。会話終了後に現在ターンを破棄し、
-    // 第二形態を先頭にした新しい入力フェーズとして再開する。
-    restartInputAfterPhaseTransition: () => {
-        if (!Battle.phaseTransitionRestartPending) return false;
-        Battle.phaseTransitionRestartPending = false;
-        Battle.commandQueue = [];
-        Battle.currentActorIndex = 0;
-        Battle.selectingAction = null;
-        Battle.selectedItemOrSkill = null;
+    waitForPhaseTransition: (ms, token) => new Promise(resolve => {
+        setTimeout(() => {
+            const journal = Battle.getPhaseTransitionJournal();
+            resolve(!!(Battle.active && journal && journal.token === token));
+        }, Math.max(0, Number(ms || 0)));
+    }),
+
+    resolvePhaseTransitionVisualSource: (snapshot, fallbackMonsterId) => {
+        const baseId = Number(snapshot?.baseId || fallbackMonsterId || 0);
+        const base = Battle.getMonsterBaseById?.(baseId) || {};
+        const visualMonster = {
+            ...base,
+            ...(snapshot || {}),
+            id: baseId || base.id,
+            baseId: baseId || base.id,
+            name: snapshot?.name || base.name || '',
+            imageId: snapshot?.imageId ?? base.imageId ?? base.baseImageId ?? null
+        };
+        const graphics = (typeof GRAPHICS !== 'undefined' && GRAPHICS.images) ? GRAPHICS.images : {};
+        return Battle.resolveMonsterImage?.(visualMonster, graphics) || { src: null, fallback: null };
+    },
+
+    showPhaseTransitionStill: (journal, form = 'from') => {
+        const visual = journal?.visual;
+        if (!visual || visual.type !== 'alternating-forms-flash' || typeof document === 'undefined') return false;
+        const container = Battle.getEl('enemy-container');
+        if (!container) return false;
+        const snapshot = form === 'to' ? journal.toSnapshot : journal.fromSnapshot;
+        const monsterId = form === 'to' ? journal.toMonsterId : journal.fromMonsterId;
+        const imageInfo = Battle.resolvePhaseTransitionVisualSource(snapshot, monsterId);
+        if (!imageInfo?.src) return false;
+
+        container.querySelectorAll('.phase-form-transition-layer').forEach(node => node.remove());
+        const layer = document.createElement('div');
+        layer.className = 'phase-form-transition-layer is-still';
+        layer.dataset.phaseTransitionToken = journal.token;
+        layer.setAttribute('aria-hidden', 'true');
+        const image = document.createElement('img');
+        image.className = `phase-form-transition-image ${form === 'to' ? 'is-second-form' : 'is-first-form'}`;
+        image.dataset.form = form === 'to' ? 'second' : 'first';
+        image.alt = '';
+        image.src = imageInfo.src;
+        image.onerror = () => {
+            const fallback = imageInfo.fallback;
+            image.onerror = null;
+            if (fallback && image.src !== fallback) image.src = fallback;
+        };
+        layer.appendChild(image);
+        container.classList.add('phase-form-transition-active');
+        container.appendChild(layer);
+        return true;
+    },
+
+    playPhaseTransitionVisual: async (journal) => {
+        const visual = journal?.visual;
+        if (!visual || visual.type !== 'alternating-forms-flash' || typeof document === 'undefined') {
+            Battle.renderEnemies?.();
+            return true;
+        }
+        const token = journal.token;
+        const container = Battle.getEl('enemy-container');
+        if (!container) {
+            Battle.renderEnemies?.();
+            return false;
+        }
+
+        const nextEnemy = (Battle.enemies || []).find(enemy =>
+            (journal.battleUnitId && enemy?.battleUnitId === journal.battleUnitId) ||
+            Battle.getUnitBaseId(enemy) === Number(journal.toMonsterId)
+        );
+        const fromImage = Battle.resolvePhaseTransitionVisualSource(journal.fromSnapshot, journal.fromMonsterId);
+        const toImage = Battle.resolvePhaseTransitionVisualSource(
+            journal.toSnapshot || Battle.serializeEnemyState?.(nextEnemy),
+            journal.toMonsterId
+        );
+        if (!fromImage?.src || !toImage?.src) {
+            Battle.renderEnemies?.();
+            return false;
+        }
+
+        container.querySelectorAll('.phase-form-transition-layer').forEach(node => node.remove());
+        const layer = document.createElement('div');
+        layer.className = 'phase-form-transition-layer';
+        layer.dataset.phaseTransitionToken = token;
+        layer.setAttribute('aria-hidden', 'true');
+
+        const image = document.createElement('img');
+        image.className = 'phase-form-transition-image is-first-form';
+        image.alt = '';
+        image.src = fromImage.src;
+        image.onerror = () => {
+            const fallback = image.dataset.form === 'second' ? toImage.fallback : fromImage.fallback;
+            image.onerror = null;
+            if (fallback && image.src !== fallback) image.src = fallback;
+        };
+
+        const flash = document.createElement('div');
+        flash.className = 'phase-form-transition-flash';
+        layer.appendChild(image);
+        layer.appendChild(flash);
+        container.classList.add('phase-form-transition-active');
+        container.appendChild(layer);
+
+        const stillCurrent = () => {
+            const current = Battle.getPhaseTransitionJournal();
+            return !!(Battle.active && current && current.token === token);
+        };
+        const showForm = (second) => {
+            image.dataset.form = second ? 'second' : 'first';
+            image.classList.toggle('is-first-form', !second);
+            image.classList.toggle('is-second-form', second);
+            image.src = second ? toImage.src : fromImage.src;
+        };
+        const swapWithFlash = async (second, strong = false) => {
+            flash.className = `phase-form-transition-flash is-active${strong ? ' is-strong' : ''}`;
+            void flash.offsetWidth;
+            const rise = strong ? 150 : 70;
+            const tail = strong ? 360 : 170;
+            if (!await Battle.waitForPhaseTransition(rise, token)) return false;
+            showForm(second);
+            if (!await Battle.waitForPhaseTransition(tail, token)) return false;
+            flash.className = 'phase-form-transition-flash';
+            return stillCurrent();
+        };
+
+        try {
+            if (!await Battle.waitForPhaseTransition(Number(visual.firstHoldMs || 240), token)) return false;
+            const alternations = Math.max(2, Math.min(5, Number(visual.alternations || 3)));
+            for (let i = 0; i < alternations; i++) {
+                if (!await swapWithFlash(true, false)) return false;
+                if (!await Battle.waitForPhaseTransition(Number(visual.formHoldMs || 150), token)) return false;
+                if (!await swapWithFlash(false, false)) return false;
+                if (!await Battle.waitForPhaseTransition(Number(visual.formHoldMs || 150), token)) return false;
+            }
+            if (!await swapWithFlash(true, true)) return false;
+            if (!await Battle.waitForPhaseTransition(Number(visual.finalHoldMs || 360), token)) return false;
+            return true;
+        } finally {
+            container.classList.remove('phase-form-transition-active');
+            layer.remove();
+            Battle.renderEnemies?.();
+        }
+    },
+
+    runPhaseTransitionConversationStep: async (journal, stepName, scriptKey) => {
+        if (!scriptKey) {
+            journal.steps = journal.steps || {};
+            journal.steps[stepName] = { status: 'completed', completedAt: Date.now(), skipped: true };
+            App.save();
+            return true;
+        }
+        if (!globalThis.StoryManager?.showConversation) {
+            journal.steps = journal.steps || {};
+            journal.steps[stepName] = {
+                status: 'skipped_after_error',
+                error: 'StoryManager.showConversation is unavailable',
+                completedAt: Date.now()
+            };
+            App.save();
+            return true;
+        }
+        const prior = journal.steps?.[stepName];
+        if (prior?.status === 'completed' || prior?.status === 'skipped_after_error') return true;
+        journal.status = `${stepName}_conversation`;
+        App.save();
+        Battle.queueBattleConversation(scriptKey, {
+            persistId: `${journal.token}:${stepName}:${scriptKey}`,
+            resumePhase: 'battle_event',
+            phaseTransitionToken: journal.token,
+            phaseTransitionStep: stepName,
+            continueOnError: true,
+            maxErrorAttempts: 3
+        });
+        await Battle.awaitPendingBattleEvent();
+        const finalStep = journal.steps?.[stepName];
+        return finalStep?.status === 'completed' || finalStep?.status === 'skipped_after_error';
+    },
+
+    rebuildRuntimeForNextPhase: (journal) => {
+        if (!journal || !Battle.active) return false;
+        const snapshots = (Battle.enemies || []).map(Battle.serializeEnemyState).filter(Boolean);
+        const rebuiltEnemies = snapshots.map(snapshot => {
+            const base = Battle.getMonsterBaseById?.(snapshot.baseId);
+            if (!base) return null;
+            // 生成経路を通常の動的モンスター生成へ統一し、状態コンテナ・識別子・
+            // 将来追加される初期化処理の取りこぼしを防ぐ。
+            const monster = Battle.createMonsterFromBase?.(base, { isBossBattle: true })
+                || (typeof Monster === 'function' ? new Monster(base, 1.0) : null);
+            if (!monster) return null;
+            return Battle.restoreEnemyState(monster, snapshot, base);
+        }).filter(Boolean);
+        if (rebuiltEnemies.length !== snapshots.length || rebuiltEnemies.length === 0) {
+            throw new Error('次形態の敵ランタイム再構築に失敗しました');
+        }
+
+        Battle.runtimeGeneration = Math.max(0, Number(Battle.runtimeGeneration || 0)) + 1;
+        const transitionedEnemy = rebuiltEnemies.find(enemy =>
+            (journal.battleUnitId && enemy?.battleUnitId === journal.battleUnitId) ||
+            Battle.getUnitBaseId(enemy) === Number(journal.toMonsterId)
+        );
+        if (!transitionedEnemy || !Battle.isBattleAlive(transitionedEnemy)) {
+            throw new Error('次形態の生存ランタイムを確認できませんでした');
+        }
+        Battle.ensureUnitBattleStatus(transitionedEnemy);
+
+        Battle.enemies = rebuiltEnemies;
+        Battle.assignDuplicateMonsterSuffixes(Battle.enemies);
+        Battle.resetInputStateForPhaseTransition();
+        Battle.pendingBattleEvent = null;
+        Battle.openingBattleConversations = (Battle.openingBattleConversations || [])
+            .filter(entry => entry?.phaseTransitionToken !== journal.token);
+        Battle.turnExecutionActive = false;
+        Battle.turnExecutionToken = null;
+        Battle.turnRecoveryAttempts = 0;
+        Battle.inputRecoveryAttempts = 0;
+        Battle.inputRecoveryScheduled = false;
+        Battle.deferredPhaseTransitionResumeToken = null;
         Battle.isPreemptive = false;
         Battle.isAmbushed = false;
-        Battle.closeSubMenu?.();
-        Battle.closeStrategyModal?.();
+        Battle.phase = 'phase_transition_ready';
         [...(Battle.party || []), ...(Battle.enemies || [])].forEach(unit => {
             if (!unit) return;
             unit.turnProcessed = false;
             unit.hasDiedThisTurn = false;
+            if (unit.status) unit.status.defend = false;
         });
-        Battle.phase = 'input';
-        Battle.renderEnemies();
-        Battle.renderPartyStatus();
-        Battle.saveBattleState();
-        // 旧ターンのasyncスタックを終了してから、必ず新しい入力を作り直す。
-        const resume = () => {
-            if (!Battle.active || Battle.phase === 'result') return;
-            Battle.startInputPhase();
-            // UI実装差で入力フェーズが作られなかった場合のフェイルセーフ。
-            setTimeout(() => {
-                if (Battle.active && Battle.phase === 'input' && Battle.currentActorIndex === 0 &&
-                    Battle.commandQueue.length === 0) Battle.findNextActor?.();
-            }, 50);
-        };
-        setTimeout(resume, 0);
+        journal.steps = journal.steps || {};
+        journal.steps.runtime = { status: 'completed', completedAt: Date.now() };
+        journal.status = 'ready_for_input';
+        journal.readyForInputAt = Date.now();
+        if (Battle.saveBattleState() === false) {
+            throw new Error('次形態ランタイムを保存できませんでした。');
+        }
+        Battle.renderEnemies?.();
+        Battle.renderPartyStatus?.();
         return true;
+    },
+
+    startInputAfterPhaseTransition: (token) => {
+        const journal = Battle.getPhaseTransitionJournal();
+        if (!journal || journal.token !== token || !Battle.isPhaseTransitionInputReadyStatus(journal.status)) return false;
+        if (!Battle.active || Battle.turnExecutionActive || Battle.phaseTransitionRunnerActive) return false;
+        try {
+            Battle.phase = 'phase_transition_ready';
+            return Battle.startInputPhase() === true;
+        } catch (error) {
+            console.error('[Battle] phase transition input start failed:', error);
+            const current = Battle.getPhaseTransitionJournal();
+            if (current && current.token === token) {
+                current.status = 'ready_for_input';
+                current.inputStartError = String(error?.message || error);
+                current.inputStartErrorAt = Date.now();
+                try { App.save(); } catch (_) {}
+            }
+            Battle.phase = 'phase_transition_ready';
+            Battle.commandQueue = [];
+            Battle.currentActorIndex = 0;
+            Battle.selectingAction = null;
+            Battle.selectedItemOrSkill = null;
+            Battle.closeSubMenu?.();
+            Battle.renderEnemies?.();
+            Battle.renderPartyStatus?.();
+            return false;
+        }
+    },
+
+    runPhaseTransitionSequence: async (token) => {
+        const journal = Battle.getPhaseTransitionJournal();
+        if (!journal || journal.token !== token || !Battle.active) return false;
+        if (Battle.turnExecutionActive) {
+            Battle.schedulePhaseTransitionRunner();
+            return false;
+        }
+        if (Battle.phaseTransitionRunnerActive) return false;
+
+        Battle.phaseTransitionRunnerActive = true;
+        Battle.phaseTransitionRunnerToken = token;
+        let shouldStartInput = false;
+        let shouldRetry = false;
+        try {
+            Battle.phase = 'battle_event';
+            Battle.resetInputStateForPhaseTransition();
+            Battle.showPhaseTransitionStill(journal, 'from');
+
+            if (!journal.steps?.pre?.status || !['completed', 'skipped_after_error'].includes(journal.steps.pre.status)) {
+                const preCompleted = await Battle.runPhaseTransitionConversationStep(journal, 'pre', journal.preConversation);
+                if (!preCompleted) {
+                    shouldRetry = true;
+                    return false;
+                }
+            }
+            if (!Battle.active || Battle.getPhaseTransitionJournal()?.token !== token) return false;
+
+            if (!journal.steps?.visual || journal.steps.visual.status !== 'completed') {
+                journal.status = 'visual_running';
+                journal.steps = journal.steps || {};
+                journal.steps.visual = { ...(journal.steps.visual || {}), status: 'running', startedAt: Date.now() };
+                App.save();
+                try {
+                    const visualCompleted = await Battle.playPhaseTransitionVisual(journal);
+                    if (visualCompleted !== true) throw new Error('形態移行演出を完了できませんでした。');
+                    journal.steps.visual = { status: 'completed', completedAt: Date.now(), attempts: Number(journal.steps.visual?.attempts || 0) };
+                } catch (error) {
+                    console.error('[Battle] phase transition visual failed:', error);
+                    const attempts = Math.max(0, Number(journal.steps.visual?.attempts || 0)) + 1;
+                    journal.steps.visual = {
+                        status: attempts >= 3 ? 'skipped_after_error' : 'retry',
+                        attempts,
+                        error: String(error?.message || error),
+                        lastFailedAt: Date.now()
+                    };
+                    journal.status = attempts >= 3 ? 'visual_skipped' : 'visual_pending';
+                    Battle.renderEnemies?.();
+                    App.save();
+                    if (attempts < 3) {
+                        shouldRetry = true;
+                        return false;
+                    }
+                }
+                App.save();
+            }
+            if (!Battle.active || Battle.getPhaseTransitionJournal()?.token !== token) return false;
+
+            if (!journal.steps?.post?.status || !['completed', 'skipped_after_error'].includes(journal.steps.post.status)) {
+                const postCompleted = await Battle.runPhaseTransitionConversationStep(journal, 'post', journal.postConversation);
+                if (!postCompleted) {
+                    shouldRetry = true;
+                    return false;
+                }
+            }
+            if (!Battle.active || Battle.getPhaseTransitionJournal()?.token !== token) return false;
+
+            Battle.rebuildRuntimeForNextPhase(journal);
+            shouldStartInput = true;
+            return true;
+        } catch (error) {
+            console.error('[Battle] phase transition sequence failed:', error);
+            const current = Battle.getPhaseTransitionJournal();
+            if (current && current.token === token) {
+                current.status = 'recovery';
+                current.lastError = String(error?.message || error);
+                current.lastErrorAt = Date.now();
+                try {
+                    Battle.rebuildRuntimeForNextPhase(current);
+                    shouldStartInput = true;
+                } catch (recoveryError) {
+                    current.status = 'recovery_error';
+                    current.recoveryError = String(recoveryError?.message || recoveryError);
+                    current.recoveryErrorAt = Date.now();
+                    try { App.save(); } catch (_) {}
+                    console.error('[Battle] phase transition recovery failed:', recoveryError);
+                }
+            }
+            return false;
+        } finally {
+            if (Battle.phaseTransitionRunnerToken === token) {
+                Battle.phaseTransitionRunnerActive = false;
+                Battle.phaseTransitionRunnerToken = null;
+            }
+            if (shouldStartInput) {
+                // runnerロックは直前で解除済み。タイマーや別microtaskへ委ねず、
+                // この形態移行Promiseの完了条件として入力再構築まで確定する。
+                Battle.startInputAfterPhaseTransition(token);
+            } else if (shouldRetry) {
+                setTimeout(() => {
+                    const current = Battle.getPhaseTransitionJournal();
+                    if (Battle.active && current?.token === token) Battle.schedulePhaseTransitionRunner();
+                }, 100);
+            }
+        }
+    },
+
+    schedulePhaseTransitionRunner: () => {
+        const journal = Battle.getPhaseTransitionJournal();
+        if (!journal || !Battle.active || Battle.phase === 'result') return false;
+        if (Battle.isPhaseTransitionInputReadyStatus(journal.status)) {
+            if (!Battle.turnExecutionActive && !Battle.phaseTransitionRunnerActive) {
+                const resume = () => Battle.startInputAfterPhaseTransition(journal.token);
+                if (typeof queueMicrotask === 'function') queueMicrotask(resume);
+                else Promise.resolve().then(resume);
+            }
+            return true;
+        }
+        if (Battle.turnExecutionActive || Battle.phaseTransitionRunnerActive || Battle.phaseTransitionRunnerScheduled) return true;
+        Battle.phaseTransitionRunnerScheduled = true;
+        const token = journal.token;
+        const start = () => {
+            Battle.phaseTransitionRunnerScheduled = false;
+            const current = Battle.getPhaseTransitionJournal();
+            if (!Battle.active || !current || current.token !== token || Battle.turnExecutionActive) return;
+            Battle.runPhaseTransitionSequence(token);
+        };
+        if (typeof queueMicrotask === 'function') queueMicrotask(start);
+        else Promise.resolve().then(start);
+        return true;
+    },
+
+    resumeInputAfterPhaseTransition: () => Battle.schedulePhaseTransitionRunner(),
+    restartInputAfterPhaseTransition: () => Battle.schedulePhaseTransitionRunner(),
+
+    getPhaseTransitionConfig: (enemy) => {
+        if (!enemy) return null;
+        const base = Battle.getMonsterBaseById?.(Battle.getUnitBaseId(enemy));
+        if (!base) return null;
+        const nested = (base.phaseTransition && typeof base.phaseTransition === 'object') ? base.phaseTransition : {};
+        const nextMonsterId = Number(nested.monsterId ?? base.phaseTransitionMonsterId);
+        if (!Number.isFinite(nextMonsterId) || nextMonsterId <= 0) return null;
+        return {
+            nextMonsterId,
+            conversation: nested.conversation || base.phaseTransitionConversation || null,
+            preConversation: nested.preConversation || nested.conversation || base.phaseTransitionConversation || null,
+            postConversation: nested.postConversation || base.phaseTransitionPostConversation || null,
+            visual: nested.visual && typeof nested.visual === 'object'
+                ? JSON.parse(JSON.stringify(nested.visual))
+                : (base.phaseTransitionVisual && typeof base.phaseTransitionVisual === 'object'
+                    ? JSON.parse(JSON.stringify(base.phaseTransitionVisual))
+                    : null),
+            effects: nested.effects || base.phaseTransitionEffects || null,
+            preserveOctaprism: nested.preserveOctaprism === true || base.phaseTransitionPreserveOctaprism === true,
+            resumePhase: nested.resumePhase || 'input'
+        };
+    },
+
+    recordDefeatedPhase: (enemy) => {
+        if (!enemy || !App.data?.battle) return null;
+        Battle.ensureEnemyBattleIdentity(enemy);
+        if (!Array.isArray(App.data.battle.defeatedPhases)) App.data.battle.defeatedPhases = [];
+        const baseId = Battle.getUnitBaseId(enemy);
+        const key = `${enemy.battleUnitId}:${enemy.phaseIndex}:${baseId}`;
+        const existing = App.data.battle.defeatedPhases.find(entry => entry?.key === key);
+        if (existing) return existing;
+        const snapshot = Battle.serializeEnemyState(enemy);
+        snapshot.hp = 0;
+        const entry = {
+            key,
+            battleUnitId: enemy.battleUnitId,
+            phaseIndex: Math.max(1, Number(enemy.phaseIndex || 1)),
+            baseId,
+            snapshot,
+            defeatedAt: Date.now()
+        };
+        App.data.battle.defeatedPhases.push(entry);
+        return entry;
+    },
+
+    collectDefeatedEnemiesForResult: () => {
+        const results = [];
+        const seen = new Set();
+        const add = (enemy, key) => {
+            if (!enemy || seen.has(key)) return;
+            seen.add(key);
+            results.push(enemy);
+        };
+        (App.data?.battle?.defeatedPhases || []).forEach(entry => {
+            const snapshot = entry?.snapshot;
+            if (!snapshot) return;
+            add({
+                ...JSON.parse(JSON.stringify(snapshot)),
+                id: Number(snapshot.baseId || entry.baseId),
+                baseId: Number(snapshot.baseId || entry.baseId),
+                baseMaxHp: Math.max(1, Number(snapshot.maxHp || 1)),
+                baseMaxMp: Math.max(0, Number(snapshot.maxMp || 0)),
+                isDead: true,
+                isFled: false,
+                battleUnitId: entry.battleUnitId,
+                phaseIndex: entry.phaseIndex,
+                isPhaseRewardSnapshot: true
+            }, entry.key || `${entry.battleUnitId}:${entry.phaseIndex}:${entry.baseId}`);
+        });
+        (Battle.enemies || []).forEach(enemy => {
+            if (!enemy?.isDead || enemy.isFled) return;
+            Battle.ensureEnemyBattleIdentity(enemy);
+            add(enemy, `${enemy.battleUnitId}:${enemy.phaseIndex}:${Battle.getUnitBaseId(enemy)}`);
+        });
+        return results;
+    },
+
+    applyPhaseTransitionEffects: (effects) => {
+        if (!effects || typeof effects !== 'object') return;
+        const partyEffect = effects.party;
+        if (partyEffect && typeof partyEffect === 'object') {
+            (Battle.party || []).forEach(member => {
+                if (!member) return;
+                if (partyEffect.revive === true) {
+                    member.isDead = false;
+                    member.isFled = false;
+                    member.hasDiedThisTurn = false;
+                }
+                if (partyEffect.fullRestore === true) {
+                    member.hp = Math.max(1, Number(member.baseMaxHp || member.maxHp || member.hp || 1));
+                    member.mp = Math.max(0, Number(member.baseMaxMp || member.maxMp || member.mp || 0));
+                }
+                const status = Battle.ensureUnitBattleStatus(member);
+                Object.entries(partyEffect.buffs || {}).forEach(([key, raw]) => {
+                    const val = Number(raw);
+                    if (!Number.isFinite(val) || val <= 0) return;
+                    status.buffs[key] = {
+                        val,
+                        turns: partyEffect.turns ?? null,
+                        source: partyEffect.source || 'phase_transition'
+                    };
+                });
+            });
+        }
+        if (effects.log) Battle.log(String(effects.log));
+    },
+
+    transitionEnemyPhase: (enemy, index, config) => {
+        if (!enemy || !config || enemy.phaseTransitioned || enemy.abyssPhaseTransitioned) return false;
+        // 一つの戦闘で複数の形態移行が同時に成立しても、単一ジャーナルを上書きしない。
+        // 先行する移行が完了した次の死亡更新で、残った対象を順に処理する。
+        if (Battle.getPhaseTransitionJournal()) return false;
+        const nextBase = Battle.getMonsterBaseById?.(config.nextMonsterId);
+        if (!nextBase) {
+            console.error(`[Battle] phase transition target is missing: ${config.nextMonsterId}`);
+            return false;
+        }
+        // 次形態の生成に成功してから旧形態を確定する。
+        // マスタ不整合や生成例外で、旧形態だけが移行済みになる状態を作らない。
+        const nextForm = Battle.createMonsterFromBase(nextBase, { isBossBattle: true, name: nextBase.name });
+        if (!nextForm) return false;
+        Battle.ensureEnemyBattleIdentity(enemy);
+        Battle.recordDefeatedPhase(enemy);
+        enemy.phaseTransitioned = true;
+        enemy.abyssPhaseTransitioned = true;
+        Battle.ensureEnemyBattleIdentity(nextForm, {
+            battleUnitId: enemy.battleUnitId,
+            phaseIndex: Number(enemy.phaseIndex || 1) + 1,
+            phaseRootId: enemy.phaseRootId || Battle.getUnitBaseId(enemy)
+        });
+        nextForm.isDead = false;
+        nextForm.isFled = false;
+        nextForm.hasDiedThisTurn = false;
+        Battle.ensureUnitBattleStatus(nextForm);
+        nextForm.hp = Math.max(1, Number(nextForm.baseMaxHp || nextForm.maxHp || nextForm.hp || nextBase.hp || 1));
+        nextForm.mp = Math.max(0, Number(nextForm.baseMaxMp || nextForm.maxMp || nextForm.mp || nextBase.mp || 0));
+        if ((config.preserveOctaprism || App.data?.battle?.abyssOctaprismUsed) &&
+            App.data?.battle?.abyssOctaprismUsed && Battle.abyssAzelgaragIds.includes(Battle.getUnitBaseId(nextForm))) {
+            Battle.applyOctaprismToEnemy(nextForm);
+        }
+        Battle.enemies[index] = nextForm;
+        Battle.assignDuplicateMonsterSuffixes(Battle.enemies);
+
+        if (App.data?.battle) {
+            const fixedBossId = App.data.battle.fixedBossId;
+            const oldId = Battle.getUnitBaseId(enemy);
+            if (Array.isArray(fixedBossId)) {
+                App.data.battle.fixedBossId = fixedBossId.map(id => Number(id) === oldId ? config.nextMonsterId : id);
+            } else if (Number(fixedBossId) === oldId) {
+                App.data.battle.fixedBossId = config.nextMonsterId;
+            }
+            App.data.battle.phaseTransitionCount = Math.max(1, Number(App.data.battle.phaseTransitionCount || 0) + 1);
+            App.data.battle.currentPhaseMonsterId = config.nextMonsterId;
+        }
+        Battle.applyPhaseTransitionEffects(config.effects);
+        const transitionJournal = Battle.beginPhaseTransitionJournal(enemy, nextForm, config);
+        Battle.saveBattleState();
+        if (transitionJournal && !Battle.turnExecutionActive) Battle.schedulePhaseTransitionRunner();
+        return true;
+    },
+
+    getOctaprismSupportMaster: () => globalThis.ABYSS_REGION_CONTENT?.octaprismSupportMaster || null,
+
+    isAzelgaragBattle: () => {
+        if (Battle.isStoryBossTrainingBattle?.()) return false;
+        const master = Battle.getOctaprismSupportMaster();
+        const targetIds = Array.isArray(master?.azelgaragMonsterIds)
+            ? master.azelgaragMonsterIds.map(Number)
+            : Battle.abyssAzelgaragIds.slice();
+        const fixedIds = (Array.isArray(App.data?.battle?.fixedBossId)
+            ? App.data.battle.fixedBossId
+            : [App.data?.battle?.fixedBossId]).map(Number).filter(Number.isFinite);
+        if (fixedIds.some(id => targetIds.includes(id))) return true;
+        return (Battle.enemies || []).some(enemy => targetIds.includes(Battle.getUnitBaseId(enemy)));
+    },
+
+    initializeOctaprismBattleState: () => {
+        const battleData = App.data?.battle;
+        const master = Battle.getOctaprismSupportMaster();
+        if (!battleData || !master) return null;
+        const eligible = Battle.isAzelgaragBattle();
+        const itemId = Number(master.itemId || 701008);
+        const legacyActivated = battleData.abyssOctaprismUsed === true;
+        const previous = battleData.octaprismState && typeof battleData.octaprismState === 'object'
+            ? battleData.octaprismState
+            : null;
+        // 一度戦闘状態を作成した後は、現在の所持数を再参照しない。
+        // 再読込や形態移行で途中から有効化・無効化されないよう、開始時判定を正本にする。
+        const hasPossessionSnapshot = previous && typeof previous.possessedAtBattleStart === 'boolean';
+        const possessedAtBattleStart = hasPossessionSnapshot
+            ? previous.possessedAtBattleStart === true
+            : (legacyActivated || Number(App.data?.items?.[itemId] || 0) > 0);
+        const state = previous || {
+            version: 1,
+            startedAt: Date.now(),
+            supportHistory: [],
+            lastSpirit: null,
+            turnSupport: null
+        };
+        state.version = 1;
+        state.eligible = eligible;
+        state.possessedAtBattleStart = possessedAtBattleStart;
+        state.active = eligible && possessedAtBattleStart;
+        if (legacyActivated) state.legacyManualUseConverted = true;
+        if (!Array.isArray(state.supportHistory)) state.supportHistory = [];
+        battleData.octaprismState = state;
+        if (state.active) Battle.applyOctaprismHeroChaosResistance(state);
+        return state;
+    },
+
+    getOctaprismHero: () => {
+        const master = Battle.getOctaprismSupportMaster();
+        const heroId = Number(master?.heroCharacterId || 301);
+        return (Battle.party || []).find(member => Number(member?.originData?.charId || member?.charId || 0) === heroId) || null;
+    },
+
+    applyOctaprismHeroChaosResistance: (state = App.data?.battle?.octaprismState) => {
+        if (!state?.active) return false;
+        const master = Battle.getOctaprismSupportMaster();
+        const hero = Battle.getOctaprismHero();
+        if (!hero) return false;
+        if (!hero.elmRes || typeof hero.elmRes !== 'object') hero.elmRes = {};
+        const floor = Math.max(0, Number(master?.heroChaosResistanceFloor || 90));
+        const before = Number(hero.elmRes['混沌'] || 0);
+        hero.elmRes['混沌'] = Math.max(before, floor);
+        state.heroChaosResistance = {
+            characterId: Number(hero?.originData?.charId || hero?.charId || 0),
+            before,
+            after: Number(hero.elmRes['混沌'] || 0),
+            applied: before < floor
+        };
+        return before < floor;
+    },
+
+    getOctaprismCurrentPhaseId: () => {
+        const current = (Battle.enemies || []).find(enemy => Battle.isBattleAlive(enemy))
+            || (Battle.enemies || [])[0];
+        return Battle.getUnitBaseId(current) || Number(App.data?.battle?.currentPhaseMonsterId || 0);
+    },
+
+    mergeOctaprismStatusEffect: (target, category, key, value, turns, mode = 'replace') => {
+        if (!target) return null;
+        const status = Battle.ensureUnitBattleStatus(target);
+        const bucket = status[category] || (status[category] = {});
+        const current = bucket[key];
+        let mergedValue = Number(value);
+        if (current && Number.isFinite(Number(current.val))) {
+            if (mode === 'max') mergedValue = Math.max(Number(current.val), Number(value));
+            else if (mode === 'min') mergedValue = Math.min(Number(current.val), Number(value));
+        }
+        bucket[key] = {
+            val: mergedValue,
+            turns: Math.max(Number(current?.turns || 0), Math.max(1, Number(turns || 1))),
+            source: `octaprism_${String(key)}`
+        };
+        return bucket[key];
+    },
+
+    showOctaprismSpiritEffect: (support, targets) => {
+        const fx = (typeof window !== 'undefined') ? window.PolishBattleFX : null;
+        if (!fx || typeof fx.screenEffect !== 'function') return;
+        try {
+            fx.screenEffect(support.fx || 'light', {
+                big: true,
+                targets: Array.isArray(targets) ? targets.filter(Boolean) : []
+            });
+        } catch (error) {
+            console.warn('[Battle] octaprism spirit effect skipped:', error);
+        }
+    },
+
+    applyOctaprismSpiritSupport: (element, turnNumber) => {
+        const master = Battle.getOctaprismSupportMaster();
+        const support = master?.supports?.[element];
+        const state = App.data?.battle?.octaprismState;
+        if (!state?.active || !support) return null;
+        const livingParty = (Battle.party || []).filter(member => Battle.isBattleAlive(member));
+        const allParty = (Battle.party || []).filter(Boolean);
+        const livingEnemies = (Battle.enemies || []).filter(enemy => Battle.isBattleAlive(enemy));
+        let effected = 0;
+        let total = 0;
+        let targets = [];
+
+        if (support.type === 'hpRecovery') {
+            targets = livingParty;
+            targets.forEach(member => {
+                const maxHp = Math.max(1, Number(member.baseMaxHp || member.maxHp || member.hp || 1));
+                const amount = Math.max(Number(support.minimum || 1), Math.floor(maxHp * Number(support.maxHpRate || 0)));
+                const healed = Math.max(0, Math.min(amount, maxHp - Number(member.hp || 0)));
+                member.hp = Math.min(maxHp, Number(member.hp || 0) + healed);
+                total += healed;
+                if (healed > 0) effected += 1;
+            });
+            Battle.log(`<span style="color:#9fffe0;">風の大精霊の支援！ 味方全体のHPが${total}回復した！</span>`);
+        } else if (support.type === 'mpRecovery') {
+            targets = allParty;
+            targets.forEach(member => {
+                const maxMp = Math.max(0, Number(member.baseMaxMp || member.maxMp || member.mp || 0));
+                const amount = maxMp > 0
+                    ? Math.max(Number(support.minimum || 1), Math.floor(maxMp * Number(support.maxMpRate || 0)))
+                    : 0;
+                const recovered = Math.max(0, Math.min(amount, maxMp - Number(member.mp || 0)));
+                member.mp = Math.min(maxMp, Number(member.mp || 0) + recovered);
+                total += recovered;
+                if (recovered > 0) effected += 1;
+            });
+            Battle.log(`<span style="color:#8fd8ff;">水の大精霊の支援！ 味方全体のMPが${total}回復した！</span>`);
+        } else if (support.type === 'elementResistance') {
+            targets = livingParty;
+            targets.forEach(member => {
+                Battle.mergeOctaprismStatusEffect(member, 'buffs', 'elmResUp', Number(support.value || 50), support.turns || 1, 'max');
+                effected += 1;
+            });
+            Battle.log(`<span style="color:#fff3a8;">光の大精霊の支援！ このターン、味方全体の全属性耐性が${Number(support.value || 50)}%上昇！</span>`);
+        } else if (support.type === 'allStatDown') {
+            targets = livingEnemies;
+            targets.forEach(enemy => {
+                (support.stats || ['atk','def','spd','mag','mdef']).forEach(key => {
+                    Battle.mergeOctaprismStatusEffect(enemy, 'debuffs', key, Number(support.multiplier || 0.9), support.turns || 2, 'min');
+                });
+                effected += 1;
+            });
+            Battle.log('<span style="color:#d7a6ff;">闇の大精霊の支援！ 深淵王の全能力が低下した！</span>');
+        } else if (support.type === 'damage' || support.type === 'damageAndDefenseDown') {
+            targets = livingEnemies;
+            const phaseId = Battle.getOctaprismCurrentPhaseId();
+            const cap = Math.max(1, Number(support.damageCapByPhase?.[phaseId] || Number.MAX_SAFE_INTEGER));
+            targets.forEach(enemy => {
+                const maxHp = Math.max(1, Number(enemy.baseMaxHp || enemy.maxHp || enemy.hp || 1));
+                const damage = Math.max(1, Math.min(cap, Math.floor(maxHp * Number(support.maxHpRate || 0))));
+                const applied = Math.min(Math.max(0, Number(enemy.hp || 0)), damage);
+                enemy.hp = Math.max(0, Number(enemy.hp || 0) - applied);
+                total += applied;
+                if (applied > 0) effected += 1;
+                if (support.type === 'damageAndDefenseDown' && enemy.hp > 0) {
+                    Battle.mergeOctaprismStatusEffect(enemy, 'debuffs', 'octaprismDef', Number(support.defenseMultiplier || 0.85), support.turns || 1, 'min');
+                }
+                if (enemy.hp <= 0) Battle.markDefeated(enemy, false);
+            });
+            if (support.type === 'damageAndDefenseDown') {
+                Battle.log(`<span style="color:#fff07a;">雷の大精霊の支援！ 深淵王へ${total}ダメージを与え、守備力を低下させた！</span>`);
+            } else {
+                Battle.log(`<span style="color:#ff9b72;">炎の大精霊の支援！ 深淵王へ${total}ダメージ！</span>`);
+            }
+        }
+
+        Battle.showOctaprismSpiritEffect(support, targets);
+        Battle.renderEnemies?.();
+        Battle.renderPartyStatus?.();
+        const outcome = {
+            turnNumber: Math.max(1, Number(turnNumber || 1)),
+            element,
+            type: support.type,
+            effected,
+            total,
+            appliedAt: Date.now()
+        };
+        state.lastSpirit = element;
+        state.turnSupport = outcome;
+        state.supportHistory.push(outcome);
+        if (state.supportHistory.length > 24) state.supportHistory.splice(0, state.supportHistory.length - 24);
+        return outcome;
+    },
+
+    processOctaprismTurnStart: (options = {}) => {
+        const state = App.data?.battle?.octaprismState || Battle.initializeOctaprismBattleState();
+        const master = Battle.getOctaprismSupportMaster();
+        if (!state?.active || !master) return null;
+        const turnNumber = Math.max(1, Number(options.turnNumber || App.data?.battle?.turnNumber || 1));
+        // エラー復旧や形態移行再開で同じターン実行経路へ戻っても、支援を二重適用しない。
+        if (Number(state.turnSupport?.turnNumber || 0) === turnNumber) return state.turnSupport;
+        const rng = typeof options.rng === 'function' ? options.rng : Math.random;
+        const triggerRoll = Math.max(0, Math.min(0.999999999, Number(rng()) || 0));
+        if (triggerRoll >= Number(master.triggerRate || 0.5)) {
+            state.turnSupport = { turnNumber, triggered:false, triggerRoll, appliedAt:Date.now() };
+            return state.turnSupport;
+        }
+        let elements = Object.keys(master.supports || {});
+        if (master.avoidImmediateRepeat && state.lastSpirit && elements.length > 1) {
+            elements = elements.filter(element => element !== state.lastSpirit);
+        }
+        if (!elements.length) return null;
+        const selectRoll = Math.max(0, Math.min(0.999999999, Number(rng()) || 0));
+        const index = Math.min(elements.length - 1, Math.floor(selectRoll * elements.length));
+        const outcome = Battle.applyOctaprismSpiritSupport(elements[index], turnNumber);
+        if (outcome) {
+            outcome.triggered = true;
+            outcome.triggerRoll = triggerRoll;
+            outcome.selectRoll = selectRoll;
+        }
+        return outcome;
     },
 
     applyOctaprismToEnemy: (enemy) => {
@@ -388,6 +1953,7 @@ const Battle = {
     // 最大ダメージ記録の共通処理。
     // ストーリー演出用の一時LB99中も、裏技的な達成として記録対象にする。
     recordMaxDamage: (actor, skillData, dmg, cmd = {}) => {
+        if (Battle.isStoryBossTrainingBattle()) return;
         if (cmd && cmd.isEnemy) return;
         if (!Number.isFinite(Number(dmg)) || Number(dmg) <= 0) return;
         if (Number(dmg) > (App.data.stats.maxDamage?.val || 0)) {
@@ -473,18 +2039,74 @@ const Battle = {
         if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('battle_heal');
     },
 
-    playResultSeAndWait: async (key) => {
+    updateResultLevelSkipButton: () => {
+        const button = Battle.getEl?.('btn-result-level-skip') || document.getElementById('btn-result-level-skip');
+        if (!button) return;
+        const visible = Battle.phase === 'result' && Battle.resultLevelSkipActive === true && Battle.resultReadyToEnd !== true;
+        button.style.display = visible ? 'block' : 'none';
+        button.disabled = !visible || Battle.resultSkipRequested === true;
+        button.textContent = Battle.resultSkipRequested ? 'スキップ中' : 'スキップ';
+    },
+
+    setResultAdvanceIndicatorVisible: (visible) => {
+        const indicator = Battle.getEl?.('battle-result-advance-indicator') || document.getElementById('battle-result-advance-indicator');
+        if (!indicator) return;
+        const shouldShow = visible === true && Battle.phase === 'result' && Battle.resultReadyToEnd !== true;
+        indicator.classList.toggle('is-visible', shouldShow);
+        indicator.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+    },
+
+    setResultLevelSkipActive: (active) => {
+        Battle.resultLevelSkipActive = active === true;
+        if (!Battle.resultLevelSkipActive) {
+            Battle.resultSkipRequested = false;
+            Battle.setResultAdvanceIndicatorVisible(false);
+        }
+        Battle.updateResultLevelSkipButton();
+    },
+
+    requestResultLevelSkip: () => {
+        if (Battle.phase !== 'result' || Battle.resultLevelSkipActive !== true) return false;
+        Battle.resultSkipRequested = true;
+        Battle.setResultAdvanceIndicatorVisible(false);
+        Battle.updateResultLevelSkipButton();
+        if (typeof Battle.resultAdvanceResolver === 'function') {
+            const resolveAdvance = Battle.resultAdvanceResolver;
+            Battle.resultAdvanceResolver = null;
+            try { resolveAdvance(); } catch (error) {}
+        }
+        if (Array.isArray(Battle.resultWaiters)) {
+            const waiters = Battle.resultWaiters.splice(0);
+            waiters.forEach(resolve => { try { resolve(); } catch (error) {} });
+        }
+        return true;
+    },
+
+    playResultSeAndWait: async (key, options = {}) => {
         if (typeof AudioManager === 'undefined') return false;
-        if (typeof AudioManager.playSeAndWait === 'function') return AudioManager.playSeAndWait(key);
-        AudioManager.playSe?.(key);
-        return false;
+        const playback = typeof AudioManager.playSeAndWait === 'function'
+            ? Promise.resolve(AudioManager.playSeAndWait(key))
+            : Promise.resolve(AudioManager.playSe?.(key));
+        if (options.levelSkippable !== true || Battle.resultSkipRequested) return Battle.resultSkipRequested ? false : playback;
+        return Promise.race([
+            playback,
+            new Promise(resolve => {
+                if (!Array.isArray(Battle.resultWaiters)) Battle.resultWaiters = [];
+                Battle.resultWaiters.push(() => resolve(false));
+            })
+        ]);
     },
 
     waitForResultAdvance: () => {
-        if (Battle.phase !== 'result') return Promise.resolve();
+        if (Battle.phase !== 'result' || (Battle.resultLevelSkipActive && Battle.resultSkipRequested)) {
+            Battle.setResultAdvanceIndicatorVisible(false);
+            return Promise.resolve();
+        }
+        Battle.setResultAdvanceIndicatorVisible(true);
         return new Promise(resolve => {
             Battle.resultAdvanceResolver = () => {
                 Battle.resultAdvanceResolver = null;
+                Battle.setResultAdvanceIndicatorVisible(false);
                 resolve();
             };
         });
@@ -506,7 +2128,7 @@ const Battle = {
         return App?.data?.settings?.battleAutoStart === true;
     },
 
-    init: () => {
+    init: (options = {}) => {
         const fixedBossIds = (Array.isArray(App.data?.battle?.fixedBossId)
             ? App.data.battle.fixedBossId
             : [App.data?.battle?.fixedBossId]).map(Number).filter(Number.isFinite);
@@ -517,16 +2139,27 @@ const Battle = {
             if (!App.data.battle.battleId) {
                 App.data.battle.battleId = `battle-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
             }
+            // preparingは報酬適用前のactive戦闘を保存した印。再読込時は通常戦闘へ戻す。
+            if (App.data.battle.active && App.data.battle.resultJournal?.status === 'preparing') {
+                delete App.data.battle.resultJournal;
+            }
             App.data.battle.abyssSpiritFinalBlessing = isVegnasisBattle && recognizedSpirits.length > 0;
             if (!isVegnasisBattle) delete App.data.battle.abyssSpiritFinalBlessing;
         }
+        const persistedTransitionToken = Battle.getPhaseTransitionJournal()?.token || null;
         const persistedCutscenes = Array.isArray(App.data?.battle?.cutsceneQueue)
-            ? App.data.battle.cutsceneQueue.filter(entry => entry?.scriptKey && entry.status !== 'completed')
+            ? App.data.battle.cutsceneQueue.filter(entry =>
+                entry?.scriptKey &&
+                entry.status !== 'completed' &&
+                (!persistedTransitionToken || entry.phaseTransitionToken !== persistedTransitionToken)
+            )
             : [];
         Battle.openingBattleConversations = persistedCutscenes.map(entry => ({
             scriptKey: entry.scriptKey,
             persistId: entry.id,
-            resumePhase: entry.resumePhase || 'input'
+            resumePhase: entry.resumePhase || 'input',
+            phaseTransitionToken: entry.phaseTransitionToken || null,
+            visualEffect: entry.visualEffect || null
         }));
         if (isVegnasisBattle && recognizedSpirits.length > 0 && !App.data?.battle?.abyssSpiritFinalBlessingShown) {
             Battle.openingBattleConversations.push({ scriptKey: 'ABYSS_SPIRIT_FINAL_BLESSING', persistId: null });
@@ -535,11 +2168,29 @@ const Battle = {
         Battle.pendingBattleEvent = null;
         Battle.specialCutsceneAutoBefore = undefined;
         Battle.phaseTransitionRestartPending = false;
+        Battle.phaseTransitionResumeToken = Battle.getPhaseTransitionJournal()?.token || null;
+        Battle.deferredPhaseTransitionResumeToken = null;
+        Battle.phaseTransitionRunnerActive = false;
+        Battle.phaseTransitionRunnerToken = null;
+        Battle.phaseTransitionRunnerScheduled = false;
+        Battle.turnExecutionActive = false;
+        Battle.turnExecutionToken = null;
+        if (Battle.finishTimerId) clearTimeout(Battle.finishTimerId);
+        Battle.finishState = 'idle';
+        Battle.finishToken = null;
+        Battle.finishTimerId = null;
+        Battle.deferredInputStart = false;
+        Battle.inputRecoveryScheduled = false;
+        Battle.inputRecoveryAttempts = 0;
+        Battle.turnRecoveryAttempts = 0;
+        Battle.runtimeGeneration = Math.max(0, Number(Battle.runtimeGeneration || 0)) + 1;
+        Battle.inputGeneration = Math.max(0, Number(Battle.inputGeneration || 0)) + 1;
         Battle.active = true;
         Battle.phase = 'init';
         Battle.commandQueue = [];
         Battle.currentActorIndex = 0;
-        Battle.auto = Battle.getAutoStartSetting();
+        Battle.auto = options.forceManual === true ? false : Battle.getAutoStartSetting();
+        if (App.data?.battle?.forceAutoOff === true) Battle.auto = false;
         Battle.runAttemptCount = 0; 
         Battle.skillScrollPositions = {};
         Battle.updateAutoButton();
@@ -550,7 +2201,10 @@ const Battle = {
         Battle.resultInputLocked = false;
         Battle.resultAdvanceResolver = null;
         Battle.resultSkipRequested = false;
+        Battle.resultLevelSkipActive = false;
         Battle.resultWaiters = [];
+        Battle.updateResultLevelSkipButton?.();
+        Battle.setResultAdvanceIndicatorVisible?.(false);
         
         const logEl = Battle.getEl('battle-log');
         if(logEl) logEl.innerHTML = '';
@@ -689,6 +2343,9 @@ const Battle = {
             Battle.assignDuplicateMonsterSuffixes(Battle.enemies);
         } else {
             Battle.enemies = Battle.generateNewEnemies(isBoss || isSpecialBoss, fixedId);
+            if (App.data?.battle?.randomDungeonModifier) {
+                Battle.enemies.forEach(enemy => Battle.applyRandomDungeonModifier(enemy, App.data.battle.randomDungeonModifier));
+            }
             Battle.assignDuplicateMonsterSuffixes(Battle.enemies);
             Battle.enemies.forEach(e => Battle.initBattleStatus(e));
             
@@ -710,8 +2367,26 @@ const Battle = {
                 keyReward: keyReward,
                 isAmbushed: Battle.isAmbushed, // フラグ維持用
                 isPreemptive: Battle.isPreemptive,
+                defeatedPhases: [],
+                phaseTransitionCount: 0,
+                currentPhaseMonsterId: null,
+                ...(isVegnasisBattle ? {
+                    vegnasisFallCount: 0,
+                    vegnasisFinalAwakenedUnitId: null
+                } : {}),
                 enemies: Battle.enemies.map(Battle.serializeEnemyState).filter(Boolean)
             };
+            App.save();
+        }
+
+        Battle.initializeLinkedBattleGroups();
+        const octaprismState = Battle.initializeOctaprismBattleState();
+        if (octaprismState?.active && !octaprismState.activationLogged) {
+            const resistanceApplied = octaprismState.heroChaosResistance?.applied === true;
+            Battle.log(resistanceApplied
+                ? '<span style="color:#ffe78f;">オクタプリズマが六精霊の道を開き、主人公の混沌属性耐性を90%まで高めた！</span>'
+                : '<span style="color:#ffe78f;">オクタプリズマが輝き、六精霊が戦いを見守っている。</span>');
+            octaprismState.activationLogged = true;
             App.save();
         }
 
@@ -728,9 +2403,11 @@ const Battle = {
         const scene = document.getElementById('battle-scene');
         if(scene) scene.onclick = () => { if (Battle.phase === 'result') Battle.handleResultTap(); };
 
-        // ★修正: 不意打ちの場合は入力フェーズを飛ばして即ターン実行へ
-        // それ以外（通常・先制攻撃）は入力を受け付ける
-        if (Battle.isAmbushed) {
+        // 形態移行の途中保存から復帰した場合は、通常入力より先に専用シーケンスを再開する。
+        // 旧ターンの実行スタックはページ再読込で失われているため、ここでも同じ再構築経路へ統一する。
+        if (Battle.hasPendingPhaseTransition()) {
+            Battle.schedulePhaseTransitionRunner();
+        } else if (Battle.isAmbushed) {
             Battle.schedule(() => {
                 if (Battle.active) Battle.executeTurn();
             }, 1000);
@@ -856,6 +2533,11 @@ const Battle = {
         
         if (b.buffs[key]) val = Math.floor(val * b.buffs[key].val);
         if (b.debuffs[key]) val = Math.floor(val * b.debuffs[key].val);
+        // 雷精霊の守備低下は闇精霊の全能力低下と別枠にし、1ターン後に
+        // 雷分だけが切れて闇分が正しく残るようにする。
+        if (key === 'def' && b.debuffs.octaprismDef) {
+            val = Math.floor(val * b.debuffs.octaprismDef.val);
+        }
         return val;
     },
 	
@@ -962,10 +2644,22 @@ const Battle = {
             isRare: !!enemy.isRare,
             isSpecialBoss: !!enemy.isSpecialBoss,
             isEstark: !!enemy.isEstark,
+            specialBossScale: Number.isFinite(Number(enemy.specialBossScale)) ? Number(enemy.specialBossScale) : undefined,
+            specialBossDefeatsAtStart: Number.isFinite(Number(enemy.specialBossDefeatsAtStart)) ? Number(enemy.specialBossDefeatsAtStart) : undefined,
             gutsLevel: Number(enemy.gutsLevel || 0),
             linkedDeathIndex: Number.isFinite(Number(enemy.linkedDeathIndex)) ? Number(enemy.linkedDeathIndex) : null,
             linkedBattleGroup: enemy.linkedBattleGroup || null,
             sharedVisualGroup: enemy.sharedVisualGroup || null,
+            vegnasisElement: enemy.vegnasisElement || null,
+            vegnasisElementKey: enemy.vegnasisElementKey || null,
+            vegnasisPowerName: enemy.vegnasisPowerName || null,
+            vegnasisLastStandConversation: enemy.vegnasisLastStandConversation || null,
+            battleUnitId: enemy.battleUnitId || null,
+            phaseIndex: Math.max(1, Number(enemy.phaseIndex || 1)),
+            phaseRootId: Number(enemy.phaseRootId || enemy.baseId || enemy.id || 0) || null,
+            phaseTransitioned: enemy.phaseTransitioned === true,
+            linkedInitialState: clone(enemy.linkedInitialState || null),
+            vegnasisFinalAwakened: enemy.vegnasisFinalAwakened === true,
             abyssFallHandled: enemy.abyssFallHandled === true,
             abyssPhaseTransitioned: enemy.abyssPhaseTransitioned === true,
             abyssSealedSkillIds: clone(enemy.abyssSealedSkillIds || []),
@@ -1027,14 +2721,27 @@ const Battle = {
         enemy.isRare = !!(snapshot.isRare || base.isRare);
         enemy.isEstark = !!(snapshot.isEstark || base.isEstark);
         enemy.isSpecialBoss = !!(snapshot.isSpecialBoss || base.isSpecialBoss || enemy.isEstark);
+        enemy.specialBossScale = finiteOr(snapshot.specialBossScale, enemy.specialBossScale ?? 1);
+        enemy.specialBossDefeatsAtStart = Math.max(0, Math.floor(finiteOr(snapshot.specialBossDefeatsAtStart, enemy.specialBossDefeatsAtStart ?? 0)));
         enemy.gutsLevel = finiteOr(snapshot.gutsLevel, enemy.gutsLevel ?? base.gutsLevel ?? 0);
         enemy.linkedDeathIndex = Number.isFinite(Number(snapshot.linkedDeathIndex)) ? Number(snapshot.linkedDeathIndex) : (base.linkedDeathIndex ?? null);
         enemy.linkedBattleGroup = snapshot.linkedBattleGroup || enemy.linkedBattleGroup || base.linkedBattleGroup || null;
         enemy.sharedVisualGroup = snapshot.sharedVisualGroup || enemy.sharedVisualGroup || base.sharedVisualGroup || null;
+        enemy.vegnasisElement = snapshot.vegnasisElement || enemy.vegnasisElement || base.vegnasisElement || null;
+        enemy.vegnasisElementKey = snapshot.vegnasisElementKey || enemy.vegnasisElementKey || base.vegnasisElementKey || null;
+        enemy.vegnasisPowerName = snapshot.vegnasisPowerName || enemy.vegnasisPowerName || base.vegnasisPowerName || null;
+        enemy.vegnasisLastStandConversation = snapshot.vegnasisLastStandConversation || enemy.vegnasisLastStandConversation || base.vegnasisLastStandConversation || null;
+        enemy.battleUnitId = snapshot.battleUnitId || enemy.battleUnitId || Battle.makeBattleUnitId();
+        enemy.phaseIndex = Math.max(1, finiteOr(snapshot.phaseIndex, enemy.phaseIndex || 1));
+        enemy.phaseRootId = finiteOr(snapshot.phaseRootId, enemy.phaseRootId || base.id || enemy.baseId || enemy.id || 0) || null;
+        enemy.phaseTransitioned = snapshot.phaseTransitioned === true || snapshot.abyssPhaseTransitioned === true;
+        enemy.linkedInitialState = clone(snapshot.linkedInitialState || enemy.linkedInitialState || null);
+        enemy.vegnasisFinalAwakened = snapshot.vegnasisFinalAwakened === true;
         enemy.abyssFallHandled = snapshot.abyssFallHandled === true;
         enemy.abyssPhaseTransitioned = snapshot.abyssPhaseTransitioned === true;
         enemy.abyssSealedSkillIds = clone(snapshot.abyssSealedSkillIds || []);
         enemy.battleStatus = clone(snapshot.battleStatus || { buffs: {}, debuffs: {}, ailments: {} });
+        Battle.ensureUnitBattleStatus(enemy);
         enemy.isDead = enemy.hp <= 0;
         return enemy;
     },
@@ -1058,6 +2765,182 @@ const Battle = {
     },
 
     isSpecialBossBase: (base) => !!(base && (base.isSpecialBoss || base.isEstark || Number(base.id) === 902000)),
+
+    // 裏ボス固有ルールはモンスターマスターの specialBossRules を正本とする。
+    // 通常の深層強化とは分離し、討伐回数補正・勝利時消費・加入率を一か所で扱う。
+    getSpecialBossRules: (baseOrEnemy) => {
+        if (!baseOrEnemy) return null;
+        const baseId = Number(baseOrEnemy.baseId || baseOrEnemy.id);
+        const base = Battle.getMonsterBaseById(baseId) || baseOrEnemy;
+        const raw = base?.specialBossRules;
+        if (!raw || typeof raw !== 'object') return null;
+        return {
+            statScalePerDefeat: Math.max(0, Number(raw.statScalePerDefeat) || 0),
+            requiredItemId: Number.isFinite(Number(raw.requiredItemId)) ? Number(raw.requiredItemId) : null,
+            consumeRequiredItemOnVictory: raw.consumeRequiredItemOnVictory === true,
+            gemReward: Math.max(0, Math.floor(Number(raw.gemReward) || 0)),
+            linkedRareDropItemId: Number.isFinite(Number(raw.linkedRareDropItemId)) ? Number(raw.linkedRareDropItemId) : null,
+            recruitBaseRate: Math.max(0, Number(raw.recruitBaseRate) || 0),
+            recruitRatePerDefeat: Math.max(0, Number(raw.recruitRatePerDefeat) || 0),
+            recruitMaxRate: Math.max(0, Math.min(1, Number(raw.recruitMaxRate) || 1)),
+            guaranteedEquipment: raw.guaranteedEquipment && typeof raw.guaranteedEquipment === 'object'
+                ? JSON.parse(JSON.stringify(raw.guaranteedEquipment))
+                : null
+        };
+    },
+
+    getSpecialBossScale: (baseOrEnemy, previousDefeats = 0) => {
+        const rules = Battle.getSpecialBossRules(baseOrEnemy);
+        const count = Math.max(0, Math.floor(Number(previousDefeats) || 0));
+        return 1 + count * Math.max(0, Number(rules?.statScalePerDefeat) || 0);
+    },
+
+    // completedDefeats は今回の勝利を含む討伐数。ギルガメッシュは 1回目5%、2回目10%…。
+    getSpecialBossRecruitChance: (baseOrEnemy, completedDefeats = 1) => {
+        const rules = Battle.getSpecialBossRules(baseOrEnemy);
+        if (!rules) return 0;
+        const count = Math.max(1, Math.floor(Number(completedDefeats) || 1));
+        const chance = rules.recruitBaseRate + Math.max(0, count - 1) * rules.recruitRatePerDefeat;
+        return Math.max(0, Math.min(rules.recruitMaxRate, chance));
+    },
+
+    applySpecialBossEquipmentBalance: (equipment, options = {}) => {
+        if (!equipment || typeof equipment !== 'object') return equipment;
+        const scale = Math.max(0.01, Number(options.baseStatScale || 0.55));
+        const version = Math.max(2, Number(options.version || 2));
+        if (Number(equipment.specialBossEquipmentBalanceVersion || 0) >= version) return equipment;
+        const keys = ['hp','mp','atk','def','spd','mag','mdef'];
+        if (equipment.data && typeof equipment.data === 'object') {
+            keys.forEach(key => {
+                if (!Number.isFinite(Number(equipment.data[key]))) return;
+                const minimum = key === 'mp' ? 0 : 1;
+                equipment.data[key] = Math.max(minimum, Math.floor(Number(equipment.data[key]) * scale));
+            });
+        }
+        equipment.specialBossEquipmentBalanceVersion = version;
+        equipment.specialBossEquipmentBaseStatScale = scale;
+        equipment.specialBossMonsterId = Number(options.monsterId || equipment.specialBossMonsterId || 902000);
+        return equipment;
+    },
+
+    applySpecialBossVictoryOutcome: (specialEnemy, options = {}) => {
+        if (!specialEnemy || !App.data) return null;
+        if (!App.data.battle) App.data.battle = {};
+        if (!App.data.items) App.data.items = {};
+        if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+        const specialId = Number(specialEnemy.baseId || specialEnemy.id);
+        const base = Battle.getMonsterBaseById(specialId) || specialEnemy;
+        const rules = Battle.getSpecialBossRules(base);
+        if (!rules) return null;
+
+        const battleId = String(App.data.battle.battleId || Battle.finishToken || 'active-special-battle');
+        const prior = App.data.battle.specialBossOutcome;
+        if (prior && String(prior.battleId) === battleId && Number(prior.monsterId) === specialId && prior.applied === true) {
+            return { ...prior, reused: true, recruitResult: null };
+        }
+
+        const completedDefeats = Math.max(1, Math.floor(Number(options.completedDefeats) || 1));
+        const drops = Array.isArray(options.drops) ? options.drops : [];
+        const createEquipment = options.createEquipment;
+        const bonusRare = Number(options.bonusRare || 0);
+        const bonusNormal = Number(options.bonusNormal || 0);
+        let requiredItemConsumed = false;
+        let requiredItemName = '';
+
+        if (rules.consumeRequiredItemOnVictory && rules.requiredItemId != null) {
+            const current = Math.max(0, Math.floor(Number(App.data.items[rules.requiredItemId]) || 0));
+            if (current < 1) throw new Error(`勝利時消費アイテム(ID:${rules.requiredItemId})がありません。`);
+            App.data.items[rules.requiredItemId] = current - 1;
+            const itemDef = DB.ITEMS.find(item => Number(item.id) === rules.requiredItemId);
+            requiredItemName = itemDef?.name || `アイテム${rules.requiredItemId}`;
+            requiredItemConsumed = true;
+        }
+
+        let equipmentName = '';
+        let equipmentRewardFloor = null;
+        let equipmentBaseStatScale = null;
+        const equipRule = rules.guaranteedEquipment;
+        if (equipRule && typeof createEquipment === 'function') {
+            const phase2IMaster = globalThis.ABYSS_REGION_CONTENT?.randomDungeonPhase2IMaster?.specialBossEquipment || {};
+            const floorBase = Math.max(1, Number(equipRule.rewardFloorBase || phase2IMaster.rewardFloorBase || 250));
+            const floorPerDefeat = Math.max(0, Number(equipRule.rewardFloorPerDefeat || phase2IMaster.rewardFloorPerDefeat || 5));
+            const floorCap = Math.max(floorBase, Number(equipRule.rewardFloorCap || phase2IMaster.rewardFloorCap || 400));
+            const rewardFloor = Math.min(floorCap, floorBase + Math.max(0, completedDefeats - 1) * floorPerDefeat);
+            equipmentRewardFloor = rewardFloor;
+            equipmentBaseStatScale = Number(equipRule.baseStatScale || phase2IMaster.baseStatScale || 0.55);
+            const eq = createEquipment(
+                rewardFloor,
+                Math.max(0, Math.floor(Number(equipRule.plus) || 3)),
+                Array.isArray(equipRule.minRarities) && equipRule.minRarities.length ? equipRule.minRarities : ['UR', 'EX']
+            );
+            if (eq) {
+                Battle.applySpecialBossEquipmentBalance(eq, {
+                    baseStatScale:equipmentBaseStatScale,
+                    monsterId:specialId,
+                    version:2
+                });
+                if (Number.isFinite(Number(eq.val))) eq.val = Math.floor(Number(eq.val) * Math.max(1, Number(equipRule.valueMultiplier) || 1));
+                eq.name = `${equipRule.namePrefix || ''}${eq.name || '特殊装備'}`;
+                equipmentName = eq.name;
+                App.data.inventory.push(eq);
+                window.EquipAcquisitionCard?.enqueue(eq, { source:'specialBoss' });
+                drops.push({ name:eq.name, isRare:true, isUltra:true, isSpecialBoss:true, isEstark:true, kind:'equip' });
+            }
+        }
+
+        if (rules.gemReward > 0) App.data.gems = Math.max(0, Number(App.data.gems) || 0) + rules.gemReward;
+
+        const monsterDrops = base.drops || specialEnemy.drops || null;
+        const grantConfiguredItem = (drop, bonus, linked = false) => {
+            if (!drop || drop.id == null || !Battle.rollConfiguredDrop(drop, bonus)) return null;
+            const itemDef = DB.ITEMS.find(item => Number(item.id) === Number(drop.id));
+            if (!itemDef) return null;
+            App.data.items[itemDef.id] = (App.data.items[itemDef.id] || 0) + 1;
+            const isRare = linked || Number(itemDef.id) === 107 || drop === monsterDrops?.rare;
+            drops.push({ name:itemDef.name, isRare, type:isRare ? 'kai' : 'item', kind:'item' });
+            return itemDef.id;
+        };
+
+        const rareDropId = grantConfiguredItem(monsterDrops?.rare, bonusRare);
+        const normalDropId = grantConfiguredItem(monsterDrops?.normal, bonusNormal);
+        let linkedRareDropId = null;
+        if (rules.linkedRareDropItemId != null && monsterDrops?.rare) {
+            linkedRareDropId = grantConfiguredItem({ ...monsterDrops.rare, id:rules.linkedRareDropItemId }, bonusRare, true);
+        }
+
+        const recruitChance = Battle.getSpecialBossRecruitChance(base, completedDefeats);
+        let recruitResult = null;
+        let recruitSucceeded = false;
+        if (recruitChance > 0 && Math.random() < recruitChance && typeof App.addOrLimitBreakMonsterAlly === 'function') {
+            recruitResult = App.addOrLimitBreakMonsterAlly(specialEnemy, base);
+            recruitSucceeded = recruitResult?.ok === true;
+        }
+
+        const outcome = {
+            version:1,
+            battleId,
+            monsterId:specialId,
+            applied:true,
+            completedDefeats,
+            statScale:Number(specialEnemy.specialBossScale || Battle.getSpecialBossScale(base, Math.max(0, completedDefeats - 1))),
+            requiredItemId:rules.requiredItemId,
+            requiredItemConsumed,
+            requiredItemName,
+            gemReward:rules.gemReward,
+            equipmentName,
+            equipmentRewardFloor,
+            equipmentBaseStatScale,
+            rareDropId,
+            normalDropId,
+            linkedRareDropId,
+            recruitChance,
+            recruitSucceeded,
+            recruitExisting:recruitResult?.existing === true,
+            limitBreakChanged:recruitResult?.lbChanged === true
+        };
+        App.data.battle.specialBossOutcome = outcome;
+        return { ...outcome, recruitResult };
+    },
     isNormalEncounterBase: (base) => !!(base && !base.isBoss && !base.isRare && !Battle.isSpecialBossBase(base)),
     isAbyssRandomBossBase: (base) => {
         if (!base) return false;
@@ -1117,6 +3000,13 @@ const Battle = {
         m.elmRes = JSON.parse(JSON.stringify(base.elmRes || {}));
         m.image = base.image || base.img || m.image || null;
         m.imageId = base.imageId ?? base.baseImageId ?? m.imageId ?? null;
+        m.linkedDeathIndex = Number.isFinite(Number(base.linkedDeathIndex)) ? Number(base.linkedDeathIndex) : (m.linkedDeathIndex ?? null);
+        m.linkedBattleGroup = base.linkedBattleGroup || m.linkedBattleGroup || null;
+        m.sharedVisualGroup = base.sharedVisualGroup || m.sharedVisualGroup || null;
+        m.vegnasisElement = base.vegnasisElement || m.vegnasisElement || null;
+        m.vegnasisElementKey = base.vegnasisElementKey || m.vegnasisElementKey || null;
+        m.vegnasisPowerName = base.vegnasisPowerName || m.vegnasisPowerName || null;
+        m.vegnasisLastStandConversation = base.vegnasisLastStandConversation || m.vegnasisLastStandConversation || null;
         m.finDmg = 0;
         m.finRed = 0;
 
@@ -1150,6 +3040,10 @@ const Battle = {
         m.baseId = clone.id;
         m.actCount = clone.actCount || 1;
         Battle.setupEnemyStats(m, clone, !!options.isBossBattle);
+        // 動的生成（形態変化・増援・再構築）でも、AI決定前に必ず状態コンテナを持たせる。
+        Battle.ensureUnitBattleStatus(m);
+        Battle.ensureEnemyBattleIdentity(m, options);
+        Battle.ensureLinkedInitialState(m);
         if (options.forceSpecialBoss) {
             m.isSpecialBoss = true;
             m.isEstark = clone.isEstark || true;
@@ -1157,30 +3051,11 @@ const Battle = {
         return m;
     },
 
-    applyRiftEnemyBoost: (enemy) => {
+    applyRiftEnemyBoost: (enemy, multiplier = null) => {
         if (!enemy) return enemy;
-        const scaleNumber = (value, rate, min = 0) => {
-            const n = Number(value || 0);
-            if (!Number.isFinite(n)) return value;
-            const scaled = Math.floor(n * rate);
-            return Math.max(min, scaled);
-        };
-
+        const masterMultiplier = globalThis.ABYSS_REGION_CONTENT?.randomDungeonPhase2IMaster?.abyssRift?.statMultiplier || 1.25;
+        Battle.scaleEnemyCombatStats(enemy, Math.max(1, Number(multiplier || masterMultiplier)), 'riftStatMultiplier');
         enemy.isRiftEnemy = true;
-        enemy.hp = scaleNumber(enemy.hp, 1.5, 1);
-        enemy.baseMaxHp = scaleNumber(enemy.baseMaxHp || enemy.hp, 1.5, enemy.hp);
-        enemy.mp = scaleNumber(enemy.mp, 1.1, 0);
-        enemy.baseMaxMp = scaleNumber(enemy.baseMaxMp || enemy.mp, 1.1, enemy.mp);
-
-        if (enemy.baseStats) {
-            ['atk', 'def', 'spd', 'mag', 'mdef'].forEach(key => {
-                enemy.baseStats[key] = scaleNumber(enemy.baseStats[key], 1.1, 0);
-            });
-        }
-        ['atk', 'def', 'spd', 'mag', 'mdef'].forEach(key => {
-            if (enemy[key] !== undefined) enemy[key] = scaleNumber(enemy[key], 1.1, 0);
-        });
-
         return enemy;
     },
 
@@ -1267,12 +3142,12 @@ const Battle = {
         const normalCount = 1 + Math.floor(Math.random() * 4);
         const deepBossCount = 1 + Math.floor(Math.random() * 3);
         const suffix = (index, total) => total > 1 ? String.fromCharCode(65 + index) : '';
-        const bossStatMultiplier = Math.max(1, Number(battleData.bossStatMultiplier || battleData.bossScale || 1) || 1);
+        const bossStatMultiplier = Math.max(0.1, Number(battleData.bossStatMultiplier || battleData.bossScale || 1) || 1);
         const pushBase = (base, index, total, options = {}) => {
             const name = (base.name || '\u4e0d\u660e\u306a\u9b54\u7269') + suffix(index, total);
             const m = Battle.createMonsterFromBase(base, { ...options, name });
-            if (m && Number(options.storyBossStatMultiplier || 1) > 1) {
-                const mult = Number(options.storyBossStatMultiplier || 1);
+            if (m && Math.abs(Number(options.storyBossStatMultiplier || 1) - 1) > 0.000001) {
+                const mult = Math.max(0.1, Number(options.storyBossStatMultiplier || 1) || 1);
                 m.hp = Math.max(1, Math.floor(Number(m.hp || 1) * mult));
                 m.baseMaxHp = Math.max(1, Math.floor(Number(m.baseMaxHp || m.hp || 1) * mult));
                 m.mp = Math.max(0, Math.floor(Number(m.mp || 0) * mult));
@@ -1291,7 +3166,95 @@ const Battle = {
                 Battle.applyMapEnemyBoost(m, options.trialEnemyBoost);
             }
             if (m) newEnemies.push(m);
+            return m;
         };
+
+        // 試練の天使は現在階層の固定モンスターIDではなく、正式マスターの
+        // 階層差・個体数・倍率を使った通常深層敵として生成する。
+        if (!isBoss && battleData.angelTrial) {
+            const trial = battleData.angelTrial;
+            const total = Math.max(1, Number(trial.enemyCount || 3));
+            const targetFloor = Math.max(1, Number(trial.targetFloor || abyssBalanceFloor + 15));
+            Battle.log('<span style="color:#fff3a6;font-weight:bold;">天使の試練を担う強敵が現れた！</span>');
+            for (let i = 0; i < total; i++) {
+                const enemy = Battle.createDeepNormalEnemy(targetFloor, {
+                    statMultiplier:Math.max(1, Number(trial.statMultiplier || 1.35)),
+                    marker:'angelTrialStatMultiplier'
+                });
+                if (!enemy) continue;
+                Battle.applyMapEnemyBoost(enemy, trial.enemyBoost || null);
+                if (total > 1) enemy.name += String.fromCharCode(65 + i);
+                enemy.isAngelTrialEnemy = true;
+                newEnemies.push(enemy);
+            }
+            return newEnemies;
+        }
+
+        // 冒険者の腕試し。現行マスター上の正式ID302001（深淵門将ガレオン）を、
+        // 現在階層+10相当の深層ボスとして再構築する。
+        if (isBoss && battleData.randomAdventurerDuel) {
+            const duel = battleData.randomAdventurerDuel;
+            const base = Battle.getMonsterBaseById(Number(duel.bossId || 302001));
+            const targetFloor = Math.max(1, Number(duel.targetFloor || abyssBalanceFloor + 10));
+            if (base) {
+                const enemy = Battle.createDeepFloorMonster(Battle.cloneMonsterBase(base), targetFloor, true)
+                    || Battle.createMonsterFromBase(base, { isBossBattle:true });
+                if (enemy) {
+                    enemy.name = `${base.name || '深淵門将ガレオン'}・腕試し`;
+                    enemy.isRandomAdventurerDuel = true;
+                    delete enemy.phaseTransition;
+                    delete enemy.phaseTransitionMonsterId;
+                    delete enemy.phaseTransitionConversation;
+                    newEnemies.push(enemy);
+                }
+            }
+            return newEnemies;
+        }
+
+        // 冒険者が呼び出した追跡者は、階層+20相当の通常深層敵3体で構成する。
+        if (!isBoss && battleData.randomHunter) {
+            const context = battleData.randomHunter;
+            const total = Math.max(1, Number(context.enemyCount || 3));
+            const targetFloor = Math.max(1, Number(context.targetFloor || abyssBalanceFloor + 20));
+            for (let i = 0; i < total; i++) {
+                const enemy = Battle.createDeepNormalEnemy(targetFloor);
+                if (!enemy) continue;
+                enemy.name += total > 1 ? String.fromCharCode(65 + i) : '';
+                enemy.isRandomHunterEnemy = true;
+                newEnemies.push(enemy);
+            }
+            return newEnemies;
+        }
+
+        // レアモンスター5体との即時戦闘。レア抽選率は使わず正式レア帯から直接選び、
+        // 深層階層へ能力を正規化する。先制・オート解除はBattle.initで確定する。
+        if (!isBoss && battleData.randomRareAmbush) {
+            const context = battleData.randomRareAmbush;
+            const total = Math.max(1, Number(context.enemyCount || 5));
+            const targetFloor = Math.max(1, Number(context.targetFloor || abyssBalanceFloor));
+            for (let i = 0; i < total; i++) {
+                let base = window.MonsterData?.tryGenerateRareMonster?.(targetFloor, { force:true }) || null;
+                let enemy = base ? Battle.createDeepFloorMonster(Battle.cloneMonsterBase(base), targetFloor, false) : null;
+                if (!enemy) enemy = Battle.createDeepNormalEnemy(targetFloor);
+                if (!enemy) continue;
+                enemy.isRare = true;
+                enemy.isRandomRareAmbushEnemy = true;
+                enemy.name += total > 1 ? String.fromCharCode(65 + i) : '';
+                newEnemies.push(enemy);
+            }
+            return newEnemies;
+        }
+
+        // 「物語の残響」階では通常敵抽選を完全に置き換え、能力だけを同階層雑魚基準へ
+        // ナーフした物語ボス1～2体を出す。
+        if (!isBoss && battleData.storyBossEchoFloor) {
+            const total = 1 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < total; i++) {
+                const enemy = Battle.createStoryBossEchoEnemy(abyssBalanceFloor, i, total);
+                if (enemy) newEnemies.push(enemy);
+            }
+            return newEnemies;
+        }
 
         // 深淵の裂け目戦は「10フロア先相当の通常強敵3体」を出す。
         // fixedBossId にIDを詰める方式だと、201階以降で generateEnemyForFloor() が null になり、
@@ -1301,47 +3264,45 @@ const Battle = {
         const isRiftBattle = !!(battleData.isRiftBattle || battleData.eventId === riftEventId);
         if (isRiftBattle) {
             const riftFloor = Math.max(1, Number(battleData.riftFloor) || (floor + 10));
+            const total = Math.max(1, Number(battleData.riftEnemyCount || 3));
+            const multiplier = Math.max(1, Number(battleData.riftStatMultiplier || 1.25));
             Battle.log('<span style="color:#c78cff; font-weight:bold;">亀裂の根源から強敵が現れた！</span>');
-            const total = 5;
-
-            if (riftFloor >= 201) {
-                let candidates = [];
-                if (window.MonsterData && typeof window.MonsterData.getDeepFloorNormalBaseCandidates === 'function') {
-                    candidates = window.MonsterData.getDeepFloorNormalBaseCandidates() || [];
-                }
-                if (candidates.length === 0 && window.MonsterData && typeof window.MonsterData.generateBandMonster === 'function') {
-                    const fallback = window.MonsterData.generateBandMonster(200);
-                    if (fallback) candidates = [fallback];
-                }
-
-                for (let i = 0; i < total; i++) {
-                    const base = candidates[Math.floor(Math.random() * candidates.length)];
-                    if (!base) continue;
-                    const m = Battle.applyRiftEnemyBoost(Battle.createDeepFloorMonster(Battle.cloneMonsterBase(base), riftFloor, false));
-                    if (m && total > 1) m.name += String.fromCharCode(65 + i);
-                    if (m) newEnemies.push(m);
-                }
-                return newEnemies;
-            }
-
             for (let i = 0; i < total; i++) {
-                let base = null;
-                if (window.MonsterData && typeof window.MonsterData.generateEnemyForFloor === 'function') {
-                    base = window.MonsterData.generateEnemyForFloor(riftFloor, { allowRare: false });
-                }
-                if (!base && window.MonsterData && typeof window.MonsterData.generateBandMonster === 'function') {
-                    base = window.MonsterData.generateBandMonster(Math.min(200, riftFloor));
-                }
-                if (!base && Array.isArray(DB.MONSTERS) && DB.MONSTERS.length) {
-                    const candidates = DB.MONSTERS.filter(m => !m.isBoss && !m.isRare && !Battle.isSpecialBossBase(m));
-                    base = candidates[Math.floor(Math.random() * candidates.length)] || null;
-                }
-                if (base) {
-                    const name = (base.name || '\u4e0d\u660e\u306a\u9b54\u7269') + suffix(i, total);
-                    const m = Battle.applyRiftEnemyBoost(Battle.createMonsterFromBase(base, { isBossBattle: false, name }));
-                    if (m) newEnemies.push(m);
-                }
+                const enemy = Battle.createDeepNormalEnemy(riftFloor);
+                if (!enemy) continue;
+                Battle.applyRiftEnemyBoost(enemy, multiplier);
+                enemy.name += total > 1 ? String.fromCharCode(65 + i) : '';
+                newEnemies.push(enemy);
             }
+            return newEnemies;
+        }
+
+        // ストーリーボス訓練所は、正式マスターのボスをPhase2Dの深層強化規則で再現する。
+        // fixedBossIdを使わず専用コンテキストから生成し、本編進行と完全に分離する。
+        const storyBossTraining = battleData.storyBossTraining;
+        if (isBoss && storyBossTraining && Array.isArray(storyBossTraining.monsterIds)) {
+            const trainingIds = storyBossTraining.monsterIds.map(Number).filter(Number.isFinite);
+            const trainingFloor = Math.max(101, Number(storyBossTraining.strengthFloor || 101));
+            Battle.log(`<span style="color:#d8b5ff;font-weight:bold;">${Battle.escapeHtml(storyBossTraining.opponentName || '物語の強敵')}が訓練用に再現された！</span>`);
+            trainingIds.forEach((id, index) => {
+                const base = Battle.getMonsterBaseById(id);
+                if (!base) return;
+                const enemy = Battle.createDeepFloorMonster(Battle.cloneMonsterBase(base), trainingFloor, true);
+                if (!enemy) return;
+                enemy.exp = 0;
+                enemy.gold = 0;
+                enemy.drops = null;
+                enemy.isSpecialBoss = false;
+                enemy.isEstark = false;
+                enemy.isStoryBossTrainingEnemy = true;
+                enemy.storyBossTrainingId = storyBossTraining.trainingId || null;
+                enemy.storyBossTrainingFloor = trainingFloor;
+                delete enemy.phaseTransition;
+                delete enemy.phaseTransitionMonsterId;
+                delete enemy.phaseTransitionConversation;
+                if (trainingIds.length > 1) enemy.name += String.fromCharCode(65 + index);
+                newEnemies.push(enemy);
+            });
             return newEnemies;
         }
 
@@ -1384,10 +3345,18 @@ const Battle = {
                 storedIds.forEach((id, i) => {
                     const base = Battle.getMonsterBaseById(id);
                     if (!base) return;
+                    const guildBossBoost = storedAbyssBoss.source === 'guild-quest'
+                        ? (battleData.guildChallengeBossBoost || {
+                            ...(battleData.guildChallengeEnemyBoost || {}),
+                            statMultiplier: 1,
+                            rareStatMultiplier: 1,
+                            applyToRares: false
+                        })
+                        : (battleData.guildChallengeEnemyBoost || null);
                     pushBase(base, i, storedIds.length, {
                         isBossBattle: true,
                         storyBossStatMultiplier: battleData.bossStatMultiplier || 1,
-                        trialEnemyBoost: battleData.guildChallengeEnemyBoost || null
+                        trialEnemyBoost: guildBossBoost
                     });
                 });
             }
@@ -1397,12 +3366,25 @@ const Battle = {
         if (isBoss && targetId) {
             const bases = Battle.getMonsterBasesByIds(targetId);
             if (bases.length > 0) {
-                bases.forEach((base, i) => pushBase(base, i, bases.length, {
-                    isBossBattle: true,
-                    forceSpecialBoss: Battle.isSpecialBossBase(base),
-                    storyBossStatMultiplier: bossStatMultiplier,
-                    trialEnemyBoost: battleData.trialEnemyBoost || null,
-                }));
+                bases.forEach((base, i) => {
+                    const special = Battle.isSpecialBossBase(base);
+                    const previousDefeats = special
+                        ? Math.max(0, Math.floor(Number(App.data.book?.killCounts?.[base.id]) || 0))
+                        : 0;
+                    const specialScale = special ? Battle.getSpecialBossScale(base, previousDefeats) : 1;
+                    const enemy = pushBase(base, i, bases.length, {
+                        isBossBattle: true,
+                        forceSpecialBoss: special,
+                        scale: specialScale,
+                        // 裏ボスは専用の討伐回数補正だけを使用し、深層・試練倍率と重複させない。
+                        storyBossStatMultiplier: special ? 1 : bossStatMultiplier,
+                        trialEnemyBoost: special ? null : (battleData.trialEnemyBoost || null),
+                    });
+                    if (enemy && special) {
+                        enemy.specialBossScale = specialScale;
+                        enemy.specialBossDefeatsAtStart = previousDefeats;
+                    }
+                });
                 return newEnemies;
             }
         }
@@ -1416,10 +3398,15 @@ const Battle = {
                 const gilgamesh = Battle.getMonsterBaseById(902000);
                 if (gilgamesh) bases = [gilgamesh];
             }
-            const specialId = bases[0]?.id || 902000;
-            const kills = (App.data.book && App.data.book.killCounts) ? (App.data.book.killCounts[specialId] || 0) : 0;
-            const scale = 1.0 + (kills * 0.05);
-            bases.forEach((base, i) => pushBase(base, i, bases.length, { isBossBattle: true, forceSpecialBoss: true, scale }));
+            bases.forEach((base, i) => {
+                const previousDefeats = Math.max(0, Math.floor(Number(App.data.book?.killCounts?.[base.id]) || 0));
+                const scale = Battle.getSpecialBossScale(base, previousDefeats);
+                const enemy = pushBase(base, i, bases.length, { isBossBattle:true, forceSpecialBoss:true, scale });
+                if (enemy) {
+                    enemy.specialBossScale = scale;
+                    enemy.specialBossDefeatsAtStart = previousDefeats;
+                }
+            });
             return newEnemies;
         }
 
@@ -1465,8 +3452,10 @@ const Battle = {
         const hasConfiguredEncounterPool = !isBoss && Array.isArray(battleData.monsters) && battleData.monsters.length > 0;
         const rareEncounterRank = Math.max(1, Number(battleData.abyssBalanceFloor || battleData.encounterRank || floor) || 1);
         if (!isBoss && abyssMode !== 'memory' && window.MonsterData && typeof window.MonsterData.tryGenerateRareMonster === 'function') {
-            const rareBase = window.MonsterData.tryGenerateRareMonster(rareEncounterRank);
-            if (rareBase && Battle.isNormalEncounterBase(rareBase)) {
+            const rareBase = window.MonsterData.tryGenerateRareMonster(rareEncounterRank, {
+                rateMultiplier:Math.max(0, Number(battleData.rareEncounterRateMultiplier || 1))
+            });
+            if (rareBase && rareBase.isRare === true && !Battle.isSpecialBossBase(rareBase)) {
                 const rareEnemy = Battle.createMonsterFromBase(rareBase, { name: rareBase.name || '\u4e0d\u660e\u306a\u9b54\u7269' });
                 if (rareEnemy) {
                     newEnemies.push(rareEnemy);
@@ -1488,7 +3477,7 @@ const Battle = {
                         .map(base => [Number(base.id), base])
                 ).values());
                 if (candidates.length === 0) {
-                    const fallback = Battle.getMonsterBaseById(401200) || Battle.getMonsterBaseById(401100);
+                    const fallback = Battle.getMonsterBaseById(401200);
                     if (fallback) candidates = [fallback];
                 }
                 const count = Math.min(deepBossCount, candidates.length);
@@ -1815,33 +3804,165 @@ const Battle = {
     },
 
 /**
-     * 深層モンスターの個別生成・スケーリング (命中・回避・会心抑制 & ランダム特性付与版)
+     * 深層ボス強化用の正式マスターを取得する。
+     * マスター未読込時は空配列・空オブジェクトで安全に処理する。
+     */
+    getDeepBossEnhancementMaster: () => {
+        const content = globalThis.ABYSS_REGION_CONTENT || {};
+        return {
+            skillFamilies: Array.isArray(content.deepBossSkillFamilies) ? content.deepBossSkillFamilies : [],
+            roleTraitPools: content.deepBossRoleTraitPools || {},
+            statusResistKeys: Array.isArray(content.deepBossStatusResistKeys) ? content.deepBossStatusResistKeys : []
+        };
+    },
+
+    getDeepBossEnhancementStage: (floor) => {
+        const numericFloor = Math.max(101, Math.floor(Number(floor) || 101));
+        return Math.max(1, Math.min(8, 1 + Math.floor((numericFloor - 101) / 50)));
+    },
+
+    getDeepBossSkillFamily: (skillId) => {
+        const numericId = Number(skillId);
+        return Battle.getDeepBossEnhancementMaster().skillFamilies.find(family =>
+            Array.isArray(family?.skillIds) && family.skillIds.some(id => Number(id) === numericId)
+        ) || null;
+    },
+
+    getDeepBossUpgradeSkillIds: (baseActs, floor) => {
+        const acts = Array.isArray(baseActs) ? baseActs : [];
+        const stage = Battle.getDeepBossEnhancementStage(floor);
+        const step = Math.min(4, 1 + Math.floor((stage - 1) / 2));
+        const candidates = [];
+        acts.forEach(act => {
+            const currentId = Number(act?.id);
+            if (!Number.isFinite(currentId) || currentId <= 0) return;
+            const family = Battle.getDeepBossSkillFamily(currentId);
+            if (!family) return;
+            const ids = family.skillIds.map(Number).filter(id => Number.isFinite(id) && id > 0);
+            const currentIndex = ids.indexOf(currentId);
+            if (currentIndex < 0 || currentIndex >= ids.length - 1) return;
+            const upgradeId = ids[Math.min(ids.length - 1, currentIndex + step)];
+            if (upgradeId === currentId || acts.some(existing => Number(existing?.id) === upgradeId)) return;
+            if (!DB?.SKILLS?.some(skill => Number(skill?.id) === upgradeId)) return;
+            if (!candidates.some(entry => entry.id === upgradeId)) {
+                candidates.push({ id:upgradeId, sourceAct:act, familyId:family.id });
+            }
+        });
+        const maxAdditions = Math.min(3, 1 + Math.floor((stage - 1) / 2));
+        const selected = [];
+        const pool = candidates.slice();
+        while (pool.length && selected.length < maxAdditions) {
+            const index = Math.floor(Math.random() * pool.length);
+            selected.push(pool.splice(index, 1)[0]);
+        }
+        return selected;
+    },
+
+    applyDeepBossSkillEnhancements: (monster, base, floor) => {
+        const originalActs = JSON.parse(JSON.stringify(base?.acts || [{ id:1, rate:100, condition:0 }]));
+        monster.acts = originalActs;
+        const stage = Battle.getDeepBossEnhancementStage(floor);
+        Battle.getDeepBossUpgradeSkillIds(originalActs, floor).forEach(entry => {
+            const sourceRate = Math.max(1, Number(entry.sourceAct?.rate || 10));
+            monster.acts.push({
+                id: entry.id,
+                rate: Math.max(8, Math.min(20, Math.floor(sourceRate * 0.65) + stage)),
+                condition: Number(entry.sourceAct?.condition || 0),
+                deepUpgradeOf: Number(entry.sourceAct?.id),
+                deepSkillFamily: entry.familyId
+            });
+        });
+        monster.deepOriginalActIds = originalActs.map(act => Number(act?.id)).filter(Number.isFinite);
+    },
+
+    getDeepBossRoleKeys: (base) => {
+        const stats = {
+            physical: Math.max(0, Number(base?.atk || 0)),
+            magic: Math.max(0, Number(base?.mag || 0)),
+            tank: (Math.max(0, Number(base?.def || 0)) + Math.max(0, Number(base?.mdef || base?.mag || 0))) / 2,
+            speed: Math.max(0, Number(base?.spd || 0))
+        };
+        const roleKeys = Object.entries(stats).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([key]) => key);
+        const skills = (Array.isArray(base?.acts) ? base.acts : [])
+            .map(act => DB?.SKILLS?.find(skill => Number(skill?.id) === Number(act?.id)))
+            .filter(Boolean);
+        if (skills.some(skill => skill.type === 'ブレス')) roleKeys.unshift('breath');
+        if (skills.some(skill => ['回復','蘇生','強化','弱体'].includes(skill.type))) roleKeys.push('support');
+        return [...new Set(roleKeys)].slice(0, 3);
+    },
+
+    applyDeepBossTraitEnhancements: (monster, base, floor) => {
+        const master = Battle.getDeepBossEnhancementMaster();
+        const stage = Battle.getDeepBossEnhancementStage(floor);
+        const levelBonus = Math.min(5, 1 + Math.floor((stage - 1) / 2));
+        monster.traits = JSON.parse(JSON.stringify(base?.traits || [])).map(trait => ({
+            ...trait,
+            id: Number(trait?.id),
+            level: Math.min(10, Math.max(1, Number(trait?.level || trait?.lv || 1) + levelBonus))
+        }));
+
+        const roleKeys = Battle.getDeepBossRoleKeys(base);
+        const existingIds = new Set(monster.traits.map(trait => Number(trait?.id)));
+        const candidateIds = [...new Set(roleKeys.flatMap(role =>
+            Array.isArray(master.roleTraitPools?.[role]) ? master.roleTraitPools[role] : []
+        ).map(Number).filter(id =>
+            Number.isInteger(id) && id > 0 && !existingIds.has(id) && !!PassiveSkill?.MASTER?.[id]
+        ))];
+        const additionCount = Math.min(3, 1 + Math.floor((stage - 1) / 2));
+        const addedTraitLevel = Math.min(10, 3 + stage);
+        for (let i = 0; i < additionCount && candidateIds.length; i++) {
+            const index = Math.floor(Math.random() * candidateIds.length);
+            const id = candidateIds.splice(index, 1)[0];
+            monster.traits.push({ id, level:addedTraitLevel, deepAdded:true });
+            existingIds.add(id);
+        }
+        monster.deepBossRoles = roleKeys;
+    },
+
+    applyDeepBossResistanceEnhancements: (monster, base, floor) => {
+        const master = Battle.getDeepBossEnhancementMaster();
+        const stage = Battle.getDeepBossEnhancementStage(floor);
+        const statusBonus = Math.min(50, 5 + (stage - 1) * 5);
+        const elementBonus = Math.min(40, 5 + (stage - 1) * 5);
+        const baseResists = JSON.parse(JSON.stringify(base?.resists || {}));
+        monster.resists = { ...baseResists };
+        master.statusResistKeys.forEach(key => {
+            const baseValue = Number(baseResists[key] ?? 0);
+            monster.resists[key] = Math.min(200, Math.max(-100, baseValue + statusBonus));
+        });
+
+        const baseElementResists = JSON.parse(JSON.stringify(base?.elmRes || {}));
+        monster.elmRes = {};
+        CONST.ELEMENTS.forEach(element => {
+            const baseValue = Number(baseElementResists[element] ?? 0);
+            monster.elmRes[element] = Math.min(100, Math.max(-100, baseValue + elementBonus));
+        });
+        monster.deepStatusResistBonus = statusBonus;
+        monster.deepElementResistBonus = elementBonus;
+    },
+
+    /**
+     * 深層モンスターの個別生成・スケーリング。
+     * ボスのみ、元マスターの耐性・技・特性を基準に順当強化する。
      */
     createDeepFloorMonster: (base, floor, isBoss) => {
         const m = new Monster(base, 1.0);
         const rank = Math.max(1, base.rank || 1);
-        
-        // ステータス倍率の決定
         const randMult = isBoss ? 2.0 : (0.9 + Math.random() * 0.4);
-        
-        // 基本ステータスのスケーリング（HP, MP, ATK, DEF, SPD, MAG, MDEF）
+
         m.hp = Math.floor((base.hp / rank) * floor * randMult);
         m.baseMaxHp = m.hp;
         m.mp = Math.floor((base.mp / rank) * floor * randMult);
         m.baseMaxMp = m.mp;
-
         m.baseStats.atk = Math.floor((base.atk / rank) * floor * randMult);
         m.baseStats.def = Math.floor((base.def / rank) * floor * randMult);
         m.baseStats.spd = Math.floor((base.spd / rank) * floor * randMult);
         m.baseStats.mag = Math.floor((base.mag / rank) * floor * randMult);
-        m.mdef           = Math.floor(((base.mdef || base.mag) / rank) * floor * randMult);
+        m.mdef = Math.floor(((base.mdef || base.mag) / rank) * floor * randMult);
 
-        // ★修正: 命中・回避・会心は階層倍率を適用せず、0〜20のランダム加算に留める
         m.hit = Battle.normalizeMonsterHitRate(base.hit, 100) + Math.floor(Math.random() * 21);
-        m.eva = (base.eva || 0)   + Math.floor(Math.random() * 21);
-        m.cri = (base.cri || 0)   + Math.floor(Math.random() * 21);
-
-        // 各種フラグ・データの継承
+        m.eva = (base.eva || 0) + Math.floor(Math.random() * 21);
+        m.cri = (base.cri || 0) + Math.floor(Math.random() * 21);
         m.id = base.id;
         m.baseId = base.id;
         m.rank = base.rank || rank;
@@ -1853,79 +3974,49 @@ const Battle = {
         m.isSpecialBoss = base.isSpecialBoss || base.isEstark || Number(base.id) === 902000;
         m.image = base.image || base.img || m.image || null;
         m.drops = JSON.parse(JSON.stringify(base.drops || null));
-        
-        // マスタ側の特性を継承
-        m.traits = JSON.parse(JSON.stringify(base.traits || []));
 
-        // ★新規追加: 武器以外の特性をランダムで 1〜3 つ付与 (Lv 1〜5)
-        if (typeof PassiveSkill !== 'undefined' && PassiveSkill.MASTER) {
-            const traitCount = 1 + Math.floor(Math.random() * 3); // 1〜3個
-            // 「武器」タイプ以外の特性IDを抽出
-            const availableTraitIds = Object.keys(PassiveSkill.MASTER).filter(tid => {
-                return PassiveSkill.MASTER[tid].type !== '武器';
-            });
-
-            for (let i = 0; i < traitCount; i++) {
-                const randomId = availableTraitIds[Math.floor(Math.random() * availableTraitIds.length)];
-                const randomLv = 1 + Math.floor(Math.random() * 5); // Lv 1〜5
-                
-                // 重複習得を避けるチェック
-                if (!m.traits.some(t => t.id === parseInt(randomId))) {
-                    m.traits.push({ id: parseInt(randomId), level: randomLv });
+        if (isBoss) {
+            Battle.applyDeepBossTraitEnhancements(m, base, floor);
+            Battle.applyDeepBossResistanceEnhancements(m, base, floor);
+            Battle.applyDeepBossSkillEnhancements(m, base, floor);
+            m.deepEnhancementVersion = 2;
+        } else {
+            m.traits = JSON.parse(JSON.stringify(base.traits || []));
+            if (typeof PassiveSkill !== 'undefined' && PassiveSkill.MASTER) {
+                const traitCount = 1 + Math.floor(Math.random() * 3);
+                const availableTraitIds = Object.keys(PassiveSkill.MASTER).filter(tid => PassiveSkill.MASTER[tid].type !== '武器' && !PassiveSkill.MASTER[tid].bossOnly);
+                for (let i = 0; i < traitCount; i++) {
+                    const randomId = availableTraitIds[Math.floor(Math.random() * availableTraitIds.length)];
+                    const randomLv = 1 + Math.floor(Math.random() * 5);
+                    if (!m.traits.some(t => Number(t.id) === Number(randomId))) m.traits.push({ id:Number(randomId), level:randomLv });
                 }
             }
+            m.resists = base.isRare
+                ? JSON.parse(JSON.stringify(base.resists || {}))
+                : { Poison:50, ToxicPoison:50, Shock:50, Fear:50, Debuff:50, InstantDeath:50, SkillSeal:50, SpellSeal:50, HealSeal:50 };
+            m.elmRes = {};
+            CONST.ELEMENTS.forEach(element => {
+                if (base.isRare && base.elmRes && base.elmRes[element] !== undefined) m.elmRes[element] = base.elmRes[element];
+                else m.elmRes[element] = -50 + Math.floor(Math.random() * 101);
+            });
+            m.acts = JSON.parse(JSON.stringify(base.acts || [{ id:1, rate:100, condition:0 }]));
+            const candidates = DB.SKILLS.filter(skill => skill.mp >= 150 && ['物理','魔法','特殊'].includes(skill.type));
+            for (let i = 0; i < 2; i++) {
+                const skill = candidates[Math.floor(Math.random() * candidates.length)];
+                if (skill && !m.acts.some(act => Number(act.id) === Number(skill.id))) m.acts.push({ id:skill.id, rate:20, condition:0 });
+            }
         }
 
-        // 報酬計算
         m.exp = Math.floor(((base.exp || 10) / rank) * floor * randMult);
         m.gold = Math.floor(((base.gold || 10) / rank) * floor * randMult);
-
-        // 耐性設定
-        if (!isBoss && !base.isRare) {
-            m.resists = { 
-                Poison:50, ToxicPoison:50, Shock:50, Fear:50,
-                Debuff:50, InstantDeath:50, SkillSeal:50, SpellSeal:50, HealSeal:50 
-            };
-        } else {
-            m.resists = JSON.parse(JSON.stringify(base.resists || {}));
-        }
-
-        // 属性耐性
-        m.elmRes = {};
-        CONST.ELEMENTS.forEach(el => {
-            if (base.isRare && base.elmRes && base.elmRes[el] !== undefined) {
-                m.elmRes[el] = base.elmRes[el];
-            } else {
-                const min = isBoss ? -30 : -50;
-                const max = isBoss ? 80 : 50;
-                m.elmRes[el] = min + Math.floor(Math.random() * (max - min + 1));
-            }
-        });
-
-        // 名前のクリーニング
         m.name = base.name.replace(/^(神・|強・|真・|極・)+/, '').replace(/\s?Lv\d+[A-Z]?$/, '').trim();
 
-        // スキルの追加
-        const skillCount = isBoss ? 4 : 2;
-        const candidates = DB.SKILLS.filter(s => s.mp >= 150 && ['物理', '魔法', '特殊'].includes(s.type));
-        
-        m.acts = JSON.parse(JSON.stringify(base.acts || [{id:1, rate:100}]));
-        for(let i=0; i<skillCount; i++) {
-            const sk = candidates[Math.floor(Math.random() * candidates.length)];
-            if (sk && !m.acts.some(a => a.id === sk.id)) {
-                m.acts.push({ id: sk.id, rate: 20, condition: 0 });
-            }
-        }
-        
-        // ★特性による最終ステータス補正の適用 (ランダム付与分も含む)
         if (typeof PassiveSkill !== 'undefined' && PassiveSkill.getSumValue) {
-            m.baseStats.atk  = Math.floor(m.baseStats.atk  * (1 + PassiveSkill.getSumValue(m, 'atk_pct') / 100));
-            m.baseStats.def  = Math.floor(m.baseStats.def  * (1 + PassiveSkill.getSumValue(m, 'def_pct') / 100));
-            m.baseStats.mag  = Math.floor(m.baseStats.mag  * (1 + PassiveSkill.getSumValue(m, 'mag_pct') / 100));
-            m.mdef           = Math.floor(m.mdef           * (1 + PassiveSkill.getSumValue(m, 'mdef_pct') / 100));
-            m.baseStats.spd  = Math.floor(m.baseStats.spd  * (1 + PassiveSkill.getSumValue(m, 'spd_pct') / 100));
-            
-            // 命中・回避・会心の特性補正を加算
+            m.baseStats.atk = Math.floor(m.baseStats.atk * (1 + PassiveSkill.getSumValue(m, 'atk_pct') / 100));
+            m.baseStats.def = Math.floor(m.baseStats.def * (1 + PassiveSkill.getSumValue(m, 'def_pct') / 100));
+            m.baseStats.mag = Math.floor(m.baseStats.mag * (1 + PassiveSkill.getSumValue(m, 'mag_pct') / 100));
+            m.mdef = Math.floor(m.mdef * (1 + PassiveSkill.getSumValue(m, 'mdef_pct') / 100));
+            m.baseStats.spd = Math.floor(m.baseStats.spd * (1 + PassiveSkill.getSumValue(m, 'spd_pct') / 100));
             m.hit += PassiveSkill.getSumValue(m, 'hit_pct');
             m.eva += PassiveSkill.getSumValue(m, 'eva_pct');
             m.cri += PassiveSkill.getSumValue(m, 'cri_pct');
@@ -1933,7 +4024,6 @@ const Battle = {
 
         m.passive = base.passive || {};
         Battle.initBattleStatus(m);
-        
         return m;
     },
 
@@ -1948,32 +4038,186 @@ const Battle = {
         console.log(`[Battle] ${msg}`);
     },
 
+    recoverInputPhaseWithoutAuto: (reason = null) => {
+        if (!Battle.active || Battle.phase === 'result') return false;
+        Battle.auto = false;
+        Battle.updateAutoButton?.();
+        Battle.phase = 'input';
+        Battle.commandQueue = [];
+        Battle.currentActorIndex = 0;
+        Battle.inputGeneration = Math.max(0, Number(Battle.inputGeneration || 0)) + 1;
+        Battle.selectingAction = null;
+        Battle.selectedItemOrSkill = null;
+        Battle.closeSubMenu?.();
+        while (Battle.currentActorIndex < Battle.party.length) {
+            const actor = Battle.party[Battle.currentActorIndex];
+            if (actor && !actor.isDead && !actor.isFled && Number(actor.hp || 0) > 0) break;
+            Battle.commandQueue.push({
+                type: 'skip',
+                actor,
+                speed: 0,
+                runtimeGeneration: Number(Battle.runtimeGeneration || 0),
+                inputGeneration: Number(Battle.inputGeneration || 0)
+            });
+            Battle.currentActorIndex++;
+        }
+        if (Battle.currentActorIndex >= Battle.party.length) {
+            Battle.checkFinish?.();
+            return false;
+        }
+        const actor = Battle.party[Battle.currentActorIndex];
+        const nameDiv = Battle.getEl?.('battle-actor-name');
+        if (nameDiv) {
+            nameDiv.style.display = 'block';
+            nameDiv.innerText = `${actor.name}の行動`;
+        }
+        Battle.renderEnemies?.();
+        Battle.renderPartyStatus?.();
+        Battle.updateCommandButtons?.();
+        if (reason) console.error('[Battle] manual input fallback:', reason);
+        return true;
+    },
+
+    recoverBattleRuntimeAfterResultError: (reason = null) => {
+        Battle.resultProcessing = false;
+        Battle.resultReadyToEnd = false;
+        Battle.resultEndIsGameOver = false;
+        Battle.resultInputLocked = false;
+        Battle.resultAdvanceResolver = null;
+        Battle.resultSkipRequested = false;
+        Battle.resultLevelSkipActive = false;
+        Battle.resultWaiters = [];
+        Battle.updateResultLevelSkipButton?.();
+        Battle.setResultAdvanceIndicatorVisible?.(false);
+        Battle.finishState = 'idle';
+        Battle.finishToken = null;
+        Battle.finishTimerId = null;
+        Battle.active = true;
+        Battle.phase = 'rollback_recovery';
+        if (App.data?.battle) App.data.battle.active = true;
+
+        // 結果計算中には所持金・経験値だけでなく、敵・味方のランタイムや
+        // 固定MAPの一時状態も変更され得る。入力UIだけを戻すのではなく、
+        // 保存済みの戦闘スナップショットから戦闘全体を再構築する。
+        try {
+            Battle.init({ forceManual: true });
+            Battle.auto = false;
+            Battle.updateAutoButton?.();
+            if (reason) console.error('[Battle] battle runtime rebuilt after result error:', reason);
+            return true;
+        } catch (initError) {
+            console.error('[Battle] battle runtime rebuild after result error failed:', initError);
+            Battle.active = true;
+            Battle.phase = 'input_recovery';
+            return Battle.recoverInputPhaseWithoutAuto(reason || initError);
+        }
+    },
+
+    scheduleInputRecovery: (reason = null) => {
+        if (!Battle.active || Battle.phase === 'result' || Battle.hasPendingPhaseTransition() ||
+            Battle.phaseTransitionRunnerActive || Battle.turnExecutionActive) return false;
+        if (Battle.inputRecoveryScheduled) return true;
+        Battle.inputRecoveryAttempts = Math.max(0, Number(Battle.inputRecoveryAttempts || 0)) + 1;
+        if (Battle.inputRecoveryAttempts > 2) {
+            return Battle.recoverInputPhaseWithoutAuto(reason);
+        }
+        Battle.inputRecoveryScheduled = true;
+        const resume = () => {
+            Battle.inputRecoveryScheduled = false;
+            if (!Battle.active || Battle.phase === 'result' || Battle.hasPendingPhaseTransition() ||
+                Battle.phaseTransitionRunnerActive || Battle.turnExecutionActive) return;
+            try {
+                Battle.startInputPhase();
+            } catch (error) {
+                Battle.scheduleInputRecovery(error);
+            }
+        };
+        if (typeof queueMicrotask === 'function') queueMicrotask(resume);
+        else Promise.resolve().then(resume);
+        return true;
+    },
+
     startInputPhase: () => {
-        if (!Battle.active) return;
+        if (!Battle.active) return false;
+        const transitionJournal = Battle.getPhaseTransitionJournal();
+        if (transitionJournal && !Battle.isPhaseTransitionInputReadyStatus(transitionJournal.status)) {
+            Battle.schedulePhaseTransitionRunner();
+            return false;
+        }
+        if (Battle.turnExecutionActive || Battle.phaseTransitionRunnerActive) {
+            Battle.deferredInputStart = true;
+            return false;
+        }
+        Battle.deferredInputStart = false;
         if (Array.isArray(Battle.openingBattleConversations) && Battle.openingBattleConversations.length) {
             const entry = Battle.openingBattleConversations.shift();
             Battle.queueBattleConversation(entry.scriptKey, {
                 persistId: entry.persistId || null,
-                resumePhase: entry.resumePhase || 'input'
+                resumePhase: entry.resumePhase || 'input',
+                phaseTransitionToken: entry.phaseTransitionToken || null,
+                visualEffect: entry.visualEffect || null
             });
-            Battle.awaitPendingBattleEvent().then(() => {
-                if (Battle.active) Battle.startInputPhase();
+            Battle.awaitPendingBattleEvent().then(completed => {
+                if (completed && Battle.active) Battle.startInputPhase();
             });
-            return;
+            return false;
         }
-        Battle.phase = 'input';
-        Battle.commandQueue = [];
-        Battle.currentActorIndex = 0;
-        Battle.closeSubMenu();
-        Battle.findNextActor();
+
+        const inputTransition = transitionJournal && transitionJournal.status !== 'completed'
+            ? transitionJournal
+            : null;
+        if (inputTransition) {
+            try {
+                if (!Battle.finalizePhaseTransitionForInput(inputTransition)) {
+                    Battle.schedulePhaseTransitionRunner();
+                    return false;
+                }
+            } catch (error) {
+                console.error('[Battle] phase transition finalization failed:', error);
+                Battle.phase = 'phase_transition_ready';
+                Battle.schedulePhaseTransitionRunner();
+                return false;
+            }
+        }
+
+        try {
+            Battle.phase = 'input';
+            Battle.commandQueue = [];
+            Battle.currentActorIndex = 0;
+            Battle.inputGeneration = Math.max(0, Number(Battle.inputGeneration || 0)) + 1;
+            Battle.selectingAction = null;
+            Battle.selectedItemOrSkill = null;
+            Battle.closeSubMenu();
+            Battle.findNextActor();
+            Battle.inputRecoveryAttempts = 0;
+            return true;
+        } catch (error) {
+            console.error('[Battle] input phase initialization failed:', error);
+            Battle.commandQueue = [];
+            Battle.currentActorIndex = 0;
+            Battle.selectingAction = null;
+            Battle.selectedItemOrSkill = null;
+            Battle.phase = 'input_recovery';
+            Battle.closeSubMenu?.();
+            Battle.renderEnemies?.();
+            Battle.renderPartyStatus?.();
+            Battle.scheduleInputRecovery(error);
+            return false;
+        }
     },
 
 	/* battle.js: オート設定とスキル非表示の完全反映版 */
 findNextActor: () => {
         while (Battle.currentActorIndex < Battle.party.length) {
             const actor = Battle.party[Battle.currentActorIndex];
-            if (!actor || actor.isDead) {
-                Battle.commandQueue.push({ type:'skip', actor:actor, speed:0 });
+            if (!actor || actor.isDead || actor.isFled || Number(actor.hp || 0) <= 0) {
+                Battle.commandQueue.push({
+                    type: 'skip',
+                    actor,
+                    speed: 0,
+                    runtimeGeneration: Number(Battle.runtimeGeneration || 0),
+                    inputGeneration: Number(Battle.inputGeneration || 0)
+                });
                 Battle.currentActorIndex++;
                 continue; 
             }
@@ -2592,7 +4836,7 @@ findNextActor: () => {
         const btn = Battle.getEl('btn-run');
         const strategyBtn = Battle.getEl('btn-strategy');
         if(btn) {
-            const firstAlive = Battle.party.findIndex(p => p && !p.isDead);
+            const firstAlive = Battle.party.findIndex(p => p && !p.isDead && !p.isFled && Number(p.hp || 0) > 0);
             if (Battle.currentActorIndex === firstAlive) {
                 if (strategyBtn) strategyBtn.style.display = '';
                 btn.innerText = "にげる";
@@ -2724,6 +4968,9 @@ findNextActor: () => {
         win.style.display = 'flex';
         list.innerHTML = '';
         Battle.phase = 'target_select';
+        const targetInputGeneration = Math.max(0, Number(Battle.inputGeneration || 0));
+        const targetActor = Battle.party[Battle.currentActorIndex];
+        win.dataset.inputGeneration = String(targetInputGeneration);
 
         let targets = [];
         let actualTargetType = targetType;
@@ -2754,7 +5001,7 @@ findNextActor: () => {
         }
 
         if (['all_enemy', 'all_ally', 'random', 'self'].includes(actualTargetType)) {
-            const actor = Battle.party[Battle.currentActorIndex];
+            const actor = targetActor;
             let targetObj = actualTargetType;
             if (actualTargetType === 'self') targetObj = actor;
 
@@ -2763,7 +5010,8 @@ findNextActor: () => {
                 actor: actor, 
                 target: targetObj, 
                 data: Battle.selectedItemOrSkill,
-                targetScope: actionData ? actionData.target : null 
+                targetScope: actionData ? actionData.target : null,
+                inputGeneration: targetInputGeneration
             });
             return;
         }
@@ -2783,24 +5031,31 @@ findNextActor: () => {
             btn.className = 'battle-target-btn';
             btn.innerText = t.name;
             if(t.isDead && actualTargetType !== 'ally_dead') btn.disabled = true;
-            btn.onclick = (e) => { e.stopPropagation(); Battle.selectTarget(t); };
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                Battle.selectTarget(t, targetInputGeneration, targetActor);
+            };
             list.appendChild(btn);
         });
     },
 
-    selectTarget: (target) => {
-        if (Battle.phase !== 'target_select') return;
+    selectTarget: (target, inputGeneration = Battle.inputGeneration, expectedActor = null) => {
+        if (Battle.phase !== 'target_select' ||
+            Number(inputGeneration) !== Number(Battle.inputGeneration || 0)) return false;
         const actor = Battle.party[Battle.currentActorIndex];
-        Battle.registerAction({
+        if (expectedActor && actor !== expectedActor) return false;
+        return Battle.registerAction({
             type: Battle.selectingAction,
             actor: actor,
             target: target,
-            data: Battle.selectedItemOrSkill
+            data: Battle.selectedItemOrSkill,
+            inputGeneration
         });
     },
 
 	openSkillList: () => {
         const actor = Battle.party[Battle.currentActorIndex];
+        const listInputGeneration = Math.max(0, Number(Battle.inputGeneration || 0));
         const win = Battle.getEl('battle-list-window');
         const title = Battle.getEl('battle-list-title');
         const content = Battle.getEl('battle-list-content');
@@ -2868,6 +5123,8 @@ findNextActor: () => {
 
             div.onclick = (e) => {
                 e.stopPropagation();
+                if (Number(Battle.inputGeneration || 0) !== listInputGeneration ||
+                    Battle.party[Battle.currentActorIndex] !== actor || Battle.phase !== 'skill_select') return;
                 if (isDisabled) { 
                     const message = note === "(MP不足)" ? 'この特技を使うにはMPが足りない！' : '封印されていて使えない！';
                     Battle.showNoticeOverlay('', message, 'ＯＫ');
@@ -2906,6 +5163,8 @@ findNextActor: () => {
 
 
     openItemList: () => {
+        const itemActor = Battle.party[Battle.currentActorIndex];
+        const listInputGeneration = Math.max(0, Number(Battle.inputGeneration || 0));
 		const win = Battle.getEl('battle-list-window');
 		const title = Battle.getEl('battle-list-title');
 		const content = Battle.getEl('battle-list-content');
@@ -2967,6 +5226,8 @@ findNextActor: () => {
 
 			div.onclick = (e) => {
 				e.stopPropagation();
+                if (Number(Battle.inputGeneration || 0) !== listInputGeneration ||
+                    Battle.party[Battle.currentActorIndex] !== itemActor || Battle.phase !== 'item_select') return;
 
 				Battle.selectedItemOrSkill = it;
 
@@ -3042,7 +5303,24 @@ findNextActor: () => {
     },
 
     registerAction: (actionObj) => {
+        const validInputPhases = ['input', 'skill_select', 'item_select', 'target_select'];
+        if (!actionObj || !validInputPhases.includes(Battle.phase) ||
+            Battle.turnExecutionActive || Battle.phaseTransitionRunnerActive ||
+            Battle.hasPendingPhaseTransition()) return false;
+        if (actionObj.inputGeneration !== undefined &&
+            Number(actionObj.inputGeneration) !== Number(Battle.inputGeneration || 0)) return false;
         const actor = actionObj.actor;
+        const expectedActor = Battle.party[Battle.currentActorIndex];
+        // 形態移行前に開いていた対象ボタン等の古いクロージャから、
+        // 別の行動者・旧入力世代のコマンドが混入するのを防ぐ。
+        if (!actor || actor !== expectedActor || actor.isDead || actor.isFled) {
+            Battle.closeSubMenu();
+            Battle.selectingAction = null;
+            Battle.selectedItemOrSkill = null;
+            Battle.phase = 'input';
+            Battle.findNextActor();
+            return false;
+        }
         const spd = Battle.getBattleStat(actor, 'spd');
         
         let finalSpeed = spd * (0.9 + Math.random() * 0.2);
@@ -3052,11 +5330,14 @@ findNextActor: () => {
         else if (actionObj.data && actionObj.data.priority) priority = actionObj.data.priority;
 
         actionObj.speed = finalSpeed + (priority * 100000);
+        actionObj.runtimeGeneration = Math.max(0, Number(Battle.runtimeGeneration || 0));
+        actionObj.inputGeneration = Math.max(0, Number(Battle.inputGeneration || 0));
 
         Battle.commandQueue.push(actionObj);
         Battle.closeSubMenu();
         Battle.currentActorIndex++;
         Battle.findNextActor();
+        return true;
     },
 
     run: () => {
@@ -3081,7 +5362,15 @@ findNextActor: () => {
             Battle.log(`しかし、回り込まれてしまった！`);
             Battle.commandQueue = [];
             Battle.party.forEach(p => {
-                if(p && !p.isDead) Battle.commandQueue.push({ type:'defend', actor:p, speed: Battle.getBattleStat(p, 'spd') });
+                if (p && !p.isDead && !p.isFled && Number(p.hp || 0) > 0) {
+                    Battle.commandQueue.push({
+                        type: 'defend',
+                        actor: p,
+                        speed: Battle.getBattleStat(p, 'spd'),
+                        runtimeGeneration: Number(Battle.runtimeGeneration || 0),
+                        inputGeneration: Number(Battle.inputGeneration || 0)
+                    });
+                }
             });
             Battle.executeTurn();
         }
@@ -3190,6 +5479,8 @@ findNextActor: () => {
 
 // ★追加: 敵の行動を決定する関数 (再評価用)
     decideEnemyAction: (e) => {
+        if (!e) return { type: 'defend', data: null, targetScope: '自分', priority: 1 };
+        const enemyBattleStatus = Battle.ensureUnitBattleStatus(e);
         // 生の行動データを取得
         let rawActs = e.acts || [];
         const sealedSkillIds = new Set([
@@ -3212,8 +5503,8 @@ findNextActor: () => {
             } else if (condition === 2) { // HP<=50%
                 if ((e.hp / e.baseMaxHp) > 0.5) return false;
             } else if (condition === 3) { // 状態異常時
-                const hasAilment = Object.keys(e.battleStatus.ailments).length > 0;
-                const hasDebuff = Object.keys(e.battleStatus.debuffs).length > 0;
+                const hasAilment = Object.keys(enemyBattleStatus.ailments).length > 0;
+                const hasDebuff = Object.keys(enemyBattleStatus.debuffs).length > 0;
                 if (!hasAilment && !hasDebuff) return false;
             }
 
@@ -3226,9 +5517,9 @@ findNextActor: () => {
             if (e.mp < Battle.getSkillMpCost(e, s)) return false;
 
             // Seal Check (現在の状態を参照)
-            if (e.battleStatus.ailments['SpellSeal'] && (['魔法','強化','弱体'].includes(s.type))) return false;
-            if (e.battleStatus.ailments['SkillSeal'] && (['物理','特殊'].includes(s.type))) return false;
-            if (e.battleStatus.ailments['HealSeal'] && Battle.isHealSealBlockedSkill(s)) return false;
+            if (enemyBattleStatus.ailments['SpellSeal'] && (['魔法','強化','弱体'].includes(s.type))) return false;
+            if (enemyBattleStatus.ailments['SkillSeal'] && (['物理','特殊'].includes(s.type))) return false;
+            if (enemyBattleStatus.ailments['HealSeal'] && Battle.isHealSealBlockedSkill(s)) return false;
 			// ※通常攻撃(ID:1)は除外済
             if (!Battle.isEnemySkillContextuallyUseful(e, s)) return false;
 
@@ -3301,126 +5592,156 @@ findNextActor: () => {
     },
 
 	executeTurn: async () => {
-        Battle.phase = 'execution';
-        const nameDiv = Battle.getEl('battle-actor-name');
-        if(nameDiv) nameDiv.style.display = 'none';
-        Battle.log("--- ターン開始 ---");
-		
-		// ★追加: 先制攻撃時のメッセージ
-        if (Battle.isPreemptive) {
-            Battle.log("<span style='color:#44ff44; font-weight:bold;'>まものたちは おどろき とまどっている！</span>");
+        if (!Battle.active) return false;
+        if (Battle.hasPendingPhaseTransition()) {
+            Battle.schedulePhaseTransitionRunner();
+            return false;
         }
+        if (Battle.turnExecutionActive || Battle.phaseTransitionRunnerActive) return false;
 
-        // [準備]全員のターン経過フラグと「今ターンの死亡フラグ」をリセット
-        [...Battle.party, ...Battle.enemies].forEach(a => { 
-            if(a) {
-                a.turnProcessed = false;
-                a.hasDiedThisTurn = false; 
+        const executionToken = `turn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        const executionGeneration = Math.max(0, Number(Battle.runtimeGeneration || 0));
+        const executionInputGeneration = Math.max(0, Number(Battle.inputGeneration || 0));
+        let startNextInput = false;
+        let recoverInputAfterError = false;
+        Battle.turnExecutionActive = true;
+        Battle.turnExecutionToken = executionToken;
+        Battle.deferredInputStart = false;
+
+        const isCurrentTurn = () =>
+            Battle.active &&
+            Battle.turnExecutionToken === executionToken &&
+            Number(Battle.runtimeGeneration || 0) === executionGeneration &&
+            !Battle.hasPendingPhaseTransition();
+
+        try {
+            Battle.phase = 'execution';
+            const nameDiv = Battle.getEl('battle-actor-name');
+            if (nameDiv) nameDiv.style.display = 'none';
+            Battle.log("--- ターン開始 ---");
+
+            if (Battle.isPreemptive) {
+                Battle.log("<span style='color:#44ff44; font-weight:bold;'>まものたちは おどろき とまどっている！</span>");
             }
-        });
 
-        // 1. 敵の行動決定 (★先制攻撃フラグが立っている場合は、敵の行動をキューに入れない)
-        if (!Battle.isPreemptive) {
-            Battle.enemies.forEach(e => {
-                if (!e.isDead && !e.isFled) {
-                    const count = e.actCount || 1;
-                    for(let i=0; i<count; i++) {
-                        const decision = Battle.decideEnemyAction(e);
-                        let spd = Battle.getBattleStat(e, 'spd');
+            [...Battle.party, ...Battle.enemies].forEach(actor => {
+                if (!actor) return;
+                Battle.ensureUnitBattleStatus(actor);
+                actor.turnProcessed = false;
+                actor.hasDiedThisTurn = false;
+            });
+
+            // 入力キューをこのターン専用のローカル配列へ切り離す。
+            // 精霊支援で形態移行した場合、旧形態へ入力済みだった命令は持ち越さない。
+            const queuedCommands = Battle.commandQueue.slice();
+            Battle.commandQueue = [];
+
+            if (App.data?.battle) {
+                App.data.battle.turnNumber = Math.max(0, Number(App.data.battle.turnNumber || 0)) + 1;
+                Battle.processOctaprismTurnStart({ turnNumber:App.data.battle.turnNumber });
+                Battle.updateDeadState();
+                if (Battle.hasPendingPhaseTransition()) return false;
+                if (Battle.checkFinish()) return false;
+            }
+
+            if (!Battle.isPreemptive) {
+                Battle.enemies.forEach(enemy => {
+                    if (!Battle.isBattleAlive(enemy)) return;
+                    const count = Math.max(1, Number(enemy.actCount || 1));
+                    for (let i = 0; i < count; i++) {
+                        const decision = Battle.decideEnemyAction(enemy);
+                        const spd = Battle.getBattleStat(enemy, 'spd');
                         const finalSpeed = (spd * (0.8 + Math.random() * 0.4)) + (decision.priority * 100000);
-                        Battle.commandQueue.push({
-                            type: decision.type, actor: e, speed: finalSpeed, isEnemy: true,
-                            data: decision.data, targetScope: decision.targetScope, target: null 
+                        queuedCommands.push({
+                            type: decision.type,
+                            actor: enemy,
+                            speed: finalSpeed,
+                            isEnemy: true,
+                            data: decision.data,
+                            targetScope: decision.targetScope,
+                            target: null,
+                            runtimeGeneration: executionGeneration
                         });
                     }
+                });
+            }
+
+            const playerCommands = queuedCommands.filter(command =>
+                !command.isEnemy && command.type !== 'skip' && command.type !== 'defend'
+            );
+            const turnCommands = queuedCommands.filter(command =>
+                command.isEnemy || command.type === 'skip' || command.type === 'defend'
+            );
+
+            for (const command of playerCommands) {
+                const actor = command.actor;
+                const isDouble = !!(actor?.passive?.doubleAction && Math.random() < 0.2);
+                const isFast = !!(actor?.passive?.fastestAction && Math.random() < 0.2);
+                command.runtimeGeneration = executionGeneration;
+
+                if (isFast) {
+                    command.speed = Number(command.speed || 0) + (10 * 100000);
+                    Battle.log(`${actor.name}は最速で行動する！`);
                 }
-            });
-        }
-        
-        // 2. プレイヤーコマンドの整理
-        const playerCommands = Battle.commandQueue.filter(c => !c.isEnemy && c.type !== 'skip' && c.type !== 'defend');
-        Battle.commandQueue = Battle.commandQueue.filter(c => c.isEnemy || c.type === 'skip' || c.type === 'defend'); 
-        
-        for(let cmd of playerCommands) {
-            const actor = cmd.actor;
-            // ★特性 8, 47, 48 等の追加行動系は別途フラグ管理されるが、ここでは既存の doubleAction/fastestAction を維持
-            // 確率（ここでは20%）を判定に加える
-			const isDouble = (actor.passive && actor.passive.doubleAction && Math.random() < 0.2); 
-            const isFast = (actor.passive && actor.passive.fastestAction && Math.random() < 0.2);
-			
-            if (isFast) { 
-                // 元のスキル優先度を失わず、優先度を10段階ぶん加算する。
-                cmd.speed = Number(cmd.speed || 0) + (10 * 100000); 
-                Battle.log(`${actor.name}は最速で行動する！`); 
+                turnCommands.push(command);
+                if (isDouble) {
+                    const extra = { ...command, speed: command.speed - 1 };
+                    turnCommands.push(extra);
+                    Battle.log(`${actor.name}は2回行動する！`);
+                }
             }
-            Battle.commandQueue.push(cmd);
-            if (isDouble) { 
-                let extra = { ...cmd }; 
-                extra.speed = cmd.speed - 1; 
-                Battle.commandQueue.push(extra); 
-                Battle.log(`${actor.name}は2回行動する！`); 
-            }
-        }
 
-        // 3. 行動順の確定
-        Battle.commandQueue.sort((a, b) => b.speed - a.speed);
+            turnCommands.sort((a, b) => b.speed - a.speed);
 
-        // 4. 行動実行ループ
-        for (const cmd of Battle.commandQueue) {
-            if (!Battle.active) break;
-            const actor = cmd.actor;
-            
-            // ★修正：死亡中、逃走済み、または「このターン中に一度でも死んだ」場合はスキップ
-            if (cmd.type === 'skip' || !actor || actor.hp <= 0 || actor.isFled || actor.hasDiedThisTurn) continue;
+            for (const cmd of turnCommands) {
+                if (!isCurrentTurn()) return false;
+                const actor = cmd.actor;
+                if (cmd.runtimeGeneration !== undefined &&
+                    Number(cmd.runtimeGeneration) !== executionGeneration) continue;
+                if (!cmd.isEnemy && cmd.inputGeneration !== undefined &&
+                    Number(cmd.inputGeneration) !== executionInputGeneration) continue;
+                if (cmd.type === 'skip' || !actor || actor.hp <= 0 || actor.isFled || actor.hasDiedThisTurn) continue;
 
-            // --- AI再評価ロジック等は既存維持 ---
-            if (Battle.auto && cmd.isAuto && !cmd.isEnemy && cmd.type === 'skill') {
-                if (Battle.shouldReevaluateAutoCommand(cmd)) {
-                    const reAction = Battle.decideAutoAction(actor);
-                    cmd.type = reAction.type; cmd.target = reAction.target; cmd.data = reAction.data; cmd.targetScope = reAction.targetScope;
+                if (Battle.auto && cmd.isAuto && !cmd.isEnemy && cmd.type === 'skill') {
+                    if (Battle.shouldReevaluateAutoCommand(cmd)) {
+                        const reAction = Battle.decideAutoAction(actor);
+                        cmd.type = reAction.type;
+                        cmd.target = reAction.target;
+                        cmd.data = reAction.data;
+                        cmd.targetScope = reAction.targetScope;
+                        Battle.log(`<span style="color:#aaa; font-size:0.9em;">(状況の変化により ${actor.name} は行動を変更)</span>`);
+                    }
+                }
+
+                if (Battle.shouldReevaluateEnemyCommand(cmd)) {
+                    const reDecision = Battle.decideEnemyAction(actor);
+                    cmd.type = reDecision.type;
+                    cmd.data = reDecision.data;
+                    cmd.targetScope = reDecision.targetScope;
+                    cmd.target = null;
                     Battle.log(`<span style="color:#aaa; font-size:0.9em;">(状況の変化により ${actor.name} は行動を変更)</span>`);
                 }
-            }
-            
-            // 敵行動は原則としてキュー登録時の決定を維持する。
-            // 蘇生・回復対象の消失、MP不足、封印などで実行不能になった場合だけ再決定する。
-            if (Battle.shouldReevaluateEnemyCommand(cmd)) {
-                const reD = Battle.decideEnemyAction(actor); 
-                cmd.type = reD.type; 
-                cmd.data = reD.data; 
-                cmd.targetScope = reD.targetScope; 
-                cmd.target = null; 
-                Battle.log(`<span style="color:#aaa; font-size:0.9em;">(状況の変化により ${actor.name} は行動を変更)</span>`);
-            }
 
-            // ★修正: ターゲット選定（特性 43:挑発 / 44:潜伏 を考慮）
-            if (cmd.isEnemy && !cmd.target) {
-                const isSupport = Battle.isSupportSkill(cmd.data);
-                if (cmd.targetScope === '自分') {
-                    cmd.target = actor;
-                } else if (cmd.targetScope === '全体') {
-                    cmd.target = isSupport ? 'all_enemy' : 'all_party';
-                } else if (cmd.targetScope === 'ランダム') {
-                    cmd.target = 'random';
-                } else {
-                    // 単体スキルの場合
-                    if (isSupport) {
-                        // 補助対象は欠損量・状態・残り効果時間を比較して選ぶ。
+                if (cmd.isEnemy && !cmd.target) {
+                    const isSupport = Battle.isSupportSkill(cmd.data);
+                    if (cmd.targetScope === '自分') {
+                        cmd.target = actor;
+                    } else if (cmd.targetScope === '全体') {
+                        cmd.target = isSupport ? 'all_enemy' : 'all_party';
+                    } else if (cmd.targetScope === 'ランダム') {
+                        cmd.target = 'random';
+                    } else if (isSupport) {
                         cmd.target = Battle.chooseEnemySupportTarget(actor, cmd.data);
                     } else {
-                        // 攻撃スキルの場合はプレイヤー側（パーティ陣営）を狙う
-                        const aliveParty = Battle.party.filter(p => Battle.isBattleAlive(p));
+                        const aliveParty = Battle.party.filter(member => Battle.isBattleAlive(member));
                         if (aliveParty.length > 0) {
-                            // --- ヘイト（狙われやすさ）計算 ---
-                            const weights = aliveParty.map(p => {
-                                let w = 100; // 基礎値
+                            const weights = aliveParty.map(member => {
+                                let weight = 100;
                                 if (typeof PassiveSkill !== 'undefined') {
-                                    // 特性 43:挑発 (+) と 特性 44:潜伏 (-) を加算
-                                    w += PassiveSkill.getSumValue(p, 'target_rate_mult');
+                                    weight += PassiveSkill.getSumValue(member, 'target_rate_mult');
                                 }
-                                return Math.max(1, w); // 最低値を1に設定
+                                return Math.max(1, weight);
                             });
-
                             const totalWeight = weights.reduce((a, b) => a + b, 0);
                             let random = Math.random() * totalWeight;
                             let selectedIndex = 0;
@@ -3437,85 +5758,151 @@ findNextActor: () => {
                         }
                     }
                 }
-            }
 
-            // ★修正：怯え判定（特例：行動時にのみ消費）
-            if (actor.battleStatus.ailments['Fear']) {
-                const f = actor.battleStatus.ailments['Fear'];
-                f.turns--; // 行動を試みた時点で1消費
-                
-                let fearWoreOff = false;
-                if (f.turns <= 0) {
-                    delete actor.battleStatus.ailments['Fear'];
-                    fearWoreOff = true;
-                }
-
-                const fearStopChance = Number.isFinite(Number(f.chance)) ? Number(f.chance) : 0.5;
-                if (Math.random() < fearStopChance) {
-                    Battle.log(`${actor.name}は 怯えて動けない！`);
+                const fear = actor.battleStatus?.ailments?.Fear;
+                if (fear) {
+                    fear.turns--;
+                    let fearWoreOff = false;
+                    if (fear.turns <= 0) {
+                        delete actor.battleStatus.ailments.Fear;
+                        fearWoreOff = true;
+                    }
+                    const fearStopChance = Number.isFinite(Number(fear.chance)) ? Number(fear.chance) : 0.5;
+                    if (Math.random() < fearStopChance) {
+                        Battle.log(`${actor.name}は 怯えて動けない！`);
+                        if (fearWoreOff) Battle.log(`${actor.name}の 怯え が解けた！`);
+                        await Battle.onActionEnd(actor);
+                        if (!Battle.active) return false;
+                        Battle.updateDeadState();
+                        if (Battle.hasPendingPhaseTransition()) return false;
+                        if (typeof Battle.awaitPendingBattleEvent === 'function') {
+                            const cutsceneCompleted = await Battle.awaitPendingBattleEvent();
+                            if (cutsceneCompleted === false && Battle.phase === 'battle_event') return false;
+                        }
+                        if (!isCurrentTurn()) return false;
+                        Battle.renderEnemies();
+                        Battle.renderPartyStatus();
+                        if (Battle.checkFinish()) return false;
+                        continue;
+                    }
                     if (fearWoreOff) Battle.log(`${actor.name}の 怯え が解けた！`);
-                    await Battle.onActionEnd(actor); // 行動直後のダメージ/リジェネ
-                    // 怯え停止でも継続ダメージ後の死亡確定・画面更新・勝敗判定は省略しない。
-                    Battle.updateDeadState();
-                    if (typeof Battle.awaitPendingBattleEvent === 'function') await Battle.awaitPendingBattleEvent();
-                    if (Battle.restartInputAfterPhaseTransition?.()) return;
+                }
+
+                if (cmd.type === 'flee') {
+                    Battle.log(`${cmd.actor.name}は逃げ出した！`);
+                    cmd.actor.isFled = true;
+                    cmd.actor.hp = 0;
                     Battle.renderEnemies();
-                    Battle.renderPartyStatus();
-                    if (Battle.checkFinish()) return;
+                    if (Battle.checkFinish()) return false;
                     continue;
-                } else if (fearWoreOff) {
-                    Battle.log(`${actor.name}の 怯え が解けた！`);
                 }
-            }
 
-            // 敵の逃走
-            if (cmd.type === 'flee') {
-                Battle.log(`${cmd.actor.name}は逃げ出した！`);
-                cmd.actor.isFled = true; cmd.actor.hp = 0; Battle.renderEnemies();
-                if (Battle.checkFinish()) return; continue;
-            }
-
-            // ターゲット再チェック（死んでいる対象を避ける）
-            if (cmd.target && typeof cmd.target === 'object' && (cmd.target.isDead || cmd.target.isFled)) {
-                if (Battle.enemies.includes(cmd.target)) {
-                    cmd.target = Battle.getRandomAliveEnemy();
-                } else if (Battle.party.includes(cmd.target) && cmd.data?.type !== '蘇生') {
-                    const aliveParty = Battle.party.filter(p => Battle.isBattleAlive(p));
-                    cmd.target = aliveParty.length > 0 ? aliveParty[Math.floor(Math.random() * aliveParty.length)] : null;
+                if (cmd.target && typeof cmd.target === 'object' && (cmd.target.isDead || cmd.target.isFled)) {
+                    if (Battle.enemies.includes(cmd.target)) {
+                        cmd.target = Battle.getRandomAliveEnemy();
+                    } else if (Battle.party.includes(cmd.target) && cmd.data?.type !== '蘇生') {
+                        const aliveParty = Battle.party.filter(member => Battle.isBattleAlive(member));
+                        cmd.target = aliveParty.length > 0
+                            ? aliveParty[Math.floor(Math.random() * aliveParty.length)]
+                            : null;
+                    }
                 }
+
+                await Battle.processAction(cmd);
+                if (!isCurrentTurn()) return false;
+
+                await Battle.onActionEnd(actor);
+                if (!Battle.active) return false;
+
+                Battle.updateDeadState();
+                if (Battle.hasPendingPhaseTransition()) return false;
+
+                if (typeof Battle.awaitPendingBattleEvent === 'function') {
+                    const cutsceneCompleted = await Battle.awaitPendingBattleEvent();
+                    if (cutsceneCompleted === false && Battle.phase === 'battle_event') return false;
+                }
+                if (!isCurrentTurn()) return false;
+
+                Battle.renderEnemies();
+                Battle.renderPartyStatus();
+                if (Battle.checkFinish()) return false;
+                await Battle.resultWait(500);
+                if (!isCurrentTurn()) return false;
+                Battle.log("<br>");
+                await Battle.resultWait(50);
             }
 
-            // 行動実行
-            await Battle.processAction(cmd);
-            
-            // 行動直後のダメージ/リジェネ処理
-            await Battle.onActionEnd(actor);
-            
-            // 死亡状態の更新
+            if (!isCurrentTurn()) return false;
+            await Battle.processEndOfRound();
+            if (!isCurrentTurn()) return false;
+            if (App.data?.battle) {
+                App.data.battle.completedTurns = Math.max(0, Number(App.data.battle.completedTurns || 0)) + 1;
+            }
             Battle.updateDeadState();
-            if (typeof Battle.awaitPendingBattleEvent === 'function') await Battle.awaitPendingBattleEvent();
-            if (Battle.restartInputAfterPhaseTransition?.()) return;
+            Battle.getEventBattleTargetEnemies().forEach(enemy => Battle.applyEventBattleHpFloor(enemy));
+            Battle.renderEnemies();
+            Battle.renderPartyStatus();
+            if (Battle.checkFinish()) return false;
 
-            Battle.renderEnemies(); Battle.renderPartyStatus();
-            if (Battle.checkFinish()) return;
-            await Battle.resultWait(500);
-			Battle.log("<br>"); 
-            await Battle.resultWait(50);
+            Battle.isPreemptive = false;
+            Battle.isAmbushed = false;
+            Battle.turnRecoveryAttempts = 0;
+            Battle.inputRecoveryAttempts = 0;
+            Battle.saveBattleState();
+            startNextInput = true;
+            return true;
+        } catch (error) {
+            console.error('[Battle] turn execution failed:', error);
+            Battle.commandQueue = [];
+            Battle.turnRecoveryAttempts = Math.max(0, Number(Battle.turnRecoveryAttempts || 0)) + 1;
+            [...(Battle.party || []), ...(Battle.enemies || [])].forEach(Battle.ensureUnitBattleStatus);
+            if (App.data?.battle) {
+                App.data.battle.lastTurnExecutionError = String(error?.message || error);
+                App.data.battle.lastTurnExecutionErrorAt = Date.now();
+                App.data.battle.turnRecoveryAttempts = Battle.turnRecoveryAttempts;
+            }
+            if (Battle.active && !Battle.hasPendingPhaseTransition() && Battle.phase !== 'result') {
+                Battle.phase = 'input_recovery';
+                // 同じ例外がAUTOで再帰し続ける場合だけ手動へ退避する。
+                // 一回目は設定を維持し、二回目以降は操作可能な入力画面を優先する。
+                if (Battle.turnRecoveryAttempts >= 2 && Battle.auto) {
+                    Battle.auto = false;
+                    Battle.updateAutoButton?.();
+                }
+                recoverInputAfterError = true;
+                try { Battle.saveBattleState(); } catch (_) {}
+            }
+            return false;
+        } finally {
+            if (Battle.turnExecutionToken === executionToken) {
+                Battle.turnExecutionActive = false;
+                Battle.turnExecutionToken = null;
+            }
+
+            if (Battle.hasPendingPhaseTransition()) {
+                Battle.deferredInputStart = false;
+                const journal = Battle.getPhaseTransitionJournal();
+                // 旧ターンのfinally内でロックを解除した後、次形態の会話・演出・
+                // ランタイム再構築・入力開始まで同じawait鎖で完了させる。
+                // 背景runnerへ投げっぱなしにしないことでAUTO/手動双方の競合を防ぐ。
+                if (journal?.token && Battle.active) {
+                    await Battle.runPhaseTransitionSequence(journal.token);
+                }
+            } else if (Battle.active && Battle.phase !== 'result' &&
+                (startNextInput || recoverInputAfterError || Battle.deferredInputStart)) {
+                Battle.deferredInputStart = false;
+                const resume = () => {
+                    if (Battle.active && !Battle.turnExecutionActive &&
+                        !Battle.phaseTransitionRunnerActive && !Battle.hasPendingPhaseTransition()) {
+                        Battle.startInputPhase();
+                    }
+                };
+                if (typeof queueMicrotask === 'function') queueMicrotask(resume);
+                else Promise.resolve().then(resume);
+            }
         }
-        
-        // 全行動終了後に一括で持続時間および再生特性を更新
-        await Battle.processEndOfRound();
-
-        // ★修正: ボス自然回復（重複）を削除 (processEndOfRound 内に統合済みのため)
-		
-        // ★追加: ターン終了時に先制・不意打ちフラグをリセットして次ターンから通常通りにする
-        Battle.isPreemptive = false;
-        Battle.isAmbushed = false;
-		
-        Battle.saveBattleState();
-		Battle.startInputPhase();
     },
-	
+
     // ターン終了時に全員の状態異常・バフの持続時間を更新する
     processEndOfRound: async () => {
         const allParticipants = [...Battle.party, ...Battle.enemies];
@@ -3616,8 +6003,7 @@ findNextActor: () => {
 	
 	onActionEnd: async (actor) => {
         if (!actor || actor.hp <= 0) return;
-        const b = actor.battleStatus;
-        if (!b) return;
+        const b = Battle.ensureUnitBattleStatus(actor);
         const forcedAilments = Array.isArray(App.data.battle?.guildChallengeAllyAilments)
             ? App.data.battle.guildChallengeAllyAilments
             : [];
@@ -3674,10 +6060,13 @@ findNextActor: () => {
             if (stats.elmRes) member.elmRes = stats.elmRes;
             if (stats.resists) member.resists = stats.resists;
         });
+        // 編成オーラ再計算でelmResが通常値へ戻るため、対象戦では混沌耐性下限を再適用する。
+        Battle.applyOctaprismHeroChaosResistance?.();
     },
 
     markDefeated: (unit, message) => {
         if (!unit || unit.isFled || Number(unit.hp || 0) > 0) return false;
+        if (Battle.applyEventBattleHpFloor(unit)) return false;
         const alreadyDead = !!unit.isDead;
         unit.hp = 0;
         unit.isDead = true;
@@ -3692,12 +6081,13 @@ findNextActor: () => {
         const actor = cmd.actor;
         const data = cmd.data;
         if (!actor || (cmd.type !== 'item' && !Battle.isBattleAlive(actor))) return;
+        const actorBattleStatus = Battle.ensureUnitBattleStatus(actor);
         const actorName = Battle.getColoredName(actor);
 
         // --- [1] 実行時の封印チェック ---
         if (cmd.type !== 'item' && cmd.type !== 'defend') {
             const type = data ? data.type : '通常攻撃';
-            const ailments = actor.battleStatus.ailments;
+            const ailments = actorBattleStatus.ailments;
 
             if (ailments['SpellSeal']) {
                 if (['魔法', '強化', '弱体'].includes(type)) {
@@ -3814,6 +6204,7 @@ findNextActor: () => {
         }
 
         // --- [4] 攻撃/スキル準備 ---
+        if (Battle.tryHandleEventBattleSkillFailure(cmd)) return;
         if (typeof AudioManager !== 'undefined') AudioManager.playSe?.(Battle.resolveActionSeKey(cmd, data));
         let skillName = "攻撃";
         let isPhysical = true;
@@ -4701,48 +7092,13 @@ findNextActor: () => {
     },
 	
     updateDeadState: () => {
-        // 深淵王第一形態は通常の死亡処理へ入れず、同じ戦闘内で第二形態へ置換する。
-        const phaseIndex = (Battle.enemies || []).findIndex(enemy =>
-            Battle.getUnitBaseId(enemy) === 302100 && Number(enemy.hp || 0) <= 0 && !enemy.abyssPhaseTransitioned
-        );
-        if (phaseIndex >= 0) {
-            const oldForm = Battle.enemies[phaseIndex];
-            oldForm.abyssPhaseTransitioned = true;
-            const base = Battle.getMonsterBaseById?.(302101) || globalThis.MonsterData?.getMonsterById?.(302101);
-            const finalForm = base ? Battle.createMonsterFromBase(base, { isBossBattle: true, name: base.name }) : null;
-            if (finalForm) {
-                finalForm.isDead = false;
-                finalForm.isFled = false;
-                finalForm.hasDiedThisTurn = false;
-                finalForm.hp = Math.max(1, Number(finalForm.baseMaxHp || finalForm.maxHp || finalForm.hp || base.hp || 1));
-                finalForm.mp = Math.max(0, Number(finalForm.baseMaxMp || finalForm.maxMp || finalForm.mp || base.mp || 0));
-                if (App.data?.battle?.abyssOctaprismUsed) Battle.applyOctaprismToEnemy(finalForm);
-                Battle.enemies[phaseIndex] = finalForm;
-                Battle.assignDuplicateMonsterSuffixes(Battle.enemies);
-                if (App.data?.battle) {
-                    App.data.battle.fixedBossId = 302101;
-                    App.data.battle.abyssAzelgaragPhase = 2;
-                }
-                Battle.party.forEach(member => {
-                    if (!member) return;
-                    member.isDead = false;
-                    member.isFled = false;
-                    member.hp = Math.max(1, Number(member.baseMaxHp || member.maxHp || member.hp || 1));
-                    member.mp = Math.max(0, Number(member.baseMaxMp || member.maxMp || member.mp || 0));
-                    member.hasDiedThisTurn = false;
-                    const status = Battle.ensureUnitBattleStatus(member);
-                    ['atk', 'def', 'spd', 'mag', 'mdef'].forEach(key => {
-                        status.buffs[key] = { val: 1.3, turns: null, source: 'light_god' };
-                    });
-                });
-                Battle.phaseTransitionRestartPending = true;
-                Battle.queueBattleConversation('ABYSS_AZELGARAG_TRANSFORM', {
-                    persistId: 'ABYSS_AZELGARAG_TRANSFORM',
-                    resumePhase: 'input'
-                });
-                Battle.log('光の神の加護が一行を満たした！');
-            }
-        }
+        // 形態変化はモンスターIDを個別判定せず、マスタの phaseTransition 設定を正本にする。
+        // これにより第二・第三形態が追加されても同じ戦闘チェーンと図鑑記録で処理できる。
+        (Battle.enemies || []).slice().forEach((enemy, index) => {
+            if (!enemy || Number(enemy.hp || 0) > 0 || enemy.isFled || enemy.phaseTransitioned || enemy.abyssPhaseTransitioned) return;
+            const config = Battle.getPhaseTransitionConfig(enemy);
+            if (config) Battle.transitionEnemyPhase(enemy, index, config);
+        });
 
         let partyAuraDirty = false;
         [...Battle.party, ...Battle.enemies].forEach(e => {
@@ -4759,23 +7115,44 @@ findNextActor: () => {
         });
         if (partyAuraDirty) Battle.refreshPartyFormationAuras();
 
-        // ダメージ確定側の markDefeated() が updateDeadState() より先に isDead を立てるため、
-        // 「直前まで生存していた柱」ではなく「未処理の死亡柱」を正本にする。
-        // これにより単体・全体攻撃、継続ダメージ、戦闘途中セーブ復帰のすべてで発火する。
-        const newlyFallenPillars = (Battle.enemies || []).filter(enemy =>
-            Battle.abyssVegnasisIds.includes(Battle.getUnitBaseId(enemy))
-            && enemy.isDead && !enemy.isFled && !enemy.abyssFallHandled
-        );
-        newlyFallenPillars
+        const pillars = (Battle.enemies || []).filter(Battle.isVegnasisPillar);
+        if (!pillars.length) return;
+
+        // 全体攻撃で全柱が同時に0になっても、最後に残る一柱の専用段階を必ず作る。
+        // 未覚醒の段階で生存柱が0になった場合は、未処理柱の最後の一体をHP1で残す。
+        const unhandledDead = pillars
+            .filter(enemy => enemy.isDead && !enemy.isFled && !enemy.abyssFallHandled)
             .sort((a, b) => Number(a.linkedDeathIndex ?? Battle.getMonsterBaseById?.(Battle.getUnitBaseId(a))?.linkedDeathIndex ?? 0)
-                - Number(b.linkedDeathIndex ?? Battle.getMonsterBaseById?.(Battle.getUnitBaseId(b))?.linkedDeathIndex ?? 0))
-            .forEach(enemy => {
-                enemy.abyssFallHandled = true;
-                const remaining = Battle.enemies.filter(other =>
-                    Battle.abyssVegnasisIds.includes(Battle.getUnitBaseId(other))
-                    && !other.isDead && !other.isFled && Number(other.hp || 0) > 0
-                );
+                - Number(b.linkedDeathIndex ?? Battle.getMonsterBaseById?.(Battle.getUnitBaseId(b))?.linkedDeathIndex ?? 0));
+        const finalAlreadyAwakened = pillars.some(enemy => enemy.vegnasisFinalAwakened);
+        if (!finalAlreadyAwakened && !pillars.some(Battle.isBattleAlive) && unhandledDead.length > 0) {
+            const survivor = unhandledDead.pop();
+            survivor.hp = 1;
+            survivor.isDead = false;
+            survivor.isFled = false;
+            survivor.hasDiedThisTurn = false;
+        }
+
+        // markDefeated() が先に isDead を立てるため、「未処理の死亡柱」を正本にする。
+        // 複数同時撃破時も、崩壊会話は柱番号順に積み、最後の覚醒会話は全崩壊会話の後へ積む。
+        const newlyFallenPillars = pillars
+            .filter(enemy => enemy.isDead && !enemy.isFled && !enemy.abyssFallHandled)
+            .sort((a, b) => Number(a.linkedDeathIndex ?? Battle.getMonsterBaseById?.(Battle.getUnitBaseId(a))?.linkedDeathIndex ?? 0)
+                - Number(b.linkedDeathIndex ?? Battle.getMonsterBaseById?.(Battle.getUnitBaseId(b))?.linkedDeathIndex ?? 0));
+
+        newlyFallenPillars.forEach(enemy => {
+            enemy.abyssFallHandled = true;
+            const remaining = pillars.filter(other => Battle.isBattleAlive(other));
+            const fallCount = pillars.filter(other => other.abyssFallHandled).length;
+            if (App.data?.battle) {
+                App.data.battle.vegnasisFallCount = Math.max(Number(App.data.battle.vegnasisFallCount || 0), fallCount);
+            }
+
+            // 最終一柱になる前だけ、従来の段階強化を残す。
+            // 最終一柱は後段で「初期値の1.5倍」へ再構築するため、累積倍率を持ち込まない。
+            if (remaining.length > 1) {
                 remaining.forEach(other => {
+                    Battle.ensureLinkedInitialState(other);
                     const hpBeforeStrengthening = Math.max(1, Number(other.hp || 1));
                     other.baseMaxHp = Math.max(1, Math.floor(Number(other.baseMaxHp || other.maxHp || other.hp || 1) * 1.18));
                     other.maxHp = other.baseMaxHp;
@@ -4785,23 +7162,130 @@ findNextActor: () => {
                     other.hp = Math.min(other.baseMaxHp, hpBeforeStrengthening + recovery);
                     other.mp = other.baseMaxMp;
                     ['atk', 'def', 'spd', 'mag', 'mdef'].forEach(key => {
-                        if (other.baseStats?.[key] !== undefined) other.baseStats[key] = Math.max(1, Math.floor(Number(other.baseStats[key]) * 1.18));
+                        if (other.baseStats?.[key] !== undefined) {
+                            other.baseStats[key] = Math.max(1, Math.floor(Number(other.baseStats[key]) * 1.18));
+                        }
                         if (other[key] !== undefined) other[key] = Math.max(1, Math.floor(Number(other[key]) * 1.18));
                     });
                 });
-                const linkedIndex = Number(enemy.linkedDeathIndex ?? Battle.getMonsterBaseById?.(Battle.getUnitBaseId(enemy))?.linkedDeathIndex ?? 0) + 1;
-                const fallScriptKey = `ABYSS_VEGNASIS_FALL_${Math.max(1, Math.min(5, linkedIndex))}`;
-                Battle.queueBattleConversation(fallScriptKey, {
-                    persistId: `${fallScriptKey}:${Battle.getUnitBaseId(enemy)}`,
-                    resumePhase: 'input'
-                });
-                if (remaining.length) Battle.log('倒れた魔柱の力が残る柱へ流れ、傷が塞がり、力が増した！');
+            }
+
+            const linkedIndex = Number(
+                enemy.linkedDeathIndex ??
+                Battle.getMonsterBaseById?.(Battle.getUnitBaseId(enemy))?.linkedDeathIndex ??
+                0
+            ) + 1;
+            const baseFallScriptKey = `ABYSS_VEGNASIS_FALL_${Math.max(1, Math.min(5, linkedIndex))}`;
+            const profile = Battle.getVegnasisProfile(enemy);
+            const fallScriptKey = remaining.length ? `${baseFallScriptKey}_ABSORB` : baseFallScriptKey;
+            Battle.saveBattleState();
+            Battle.queueBattleConversation(fallScriptKey, {
+                persistId: `${fallScriptKey}:${enemy.battleUnitId || Battle.getUnitBaseId(enemy)}:${fallCount}`,
+                resumePhase: 'input',
+                visualEffect: {
+                    type: 'vegnasis-fall',
+                    stage: Math.min(4, fallCount),
+                    elementKey: profile.elementKey
+                }
             });
+            if (remaining.length) {
+                Battle.log(`${profile.powerName}の力がヴェグナシス本体へ流れ込んだ！`);
+            }
+        });
+
+        // 四柱の崩壊会話をすべて予約した後で、最後の一柱を専用形態へ覚醒させる。
+        const remainingAfterFalls = pillars.filter(Battle.isBattleAlive);
+        const handledCount = pillars.filter(enemy => enemy.abyssFallHandled).length;
+        if (remainingAfterFalls.length === 1 && handledCount >= pillars.length - 1 &&
+            !remainingAfterFalls[0].vegnasisFinalAwakened) {
+            const finalPillar = remainingAfterFalls[0];
+            Battle.awakenVegnasisFinalPillar(finalPillar);
+            const finalProfile = Battle.getVegnasisProfile(finalPillar);
+            Battle.saveBattleState();
+            if (finalProfile.lastStandConversation) {
+                Battle.queueBattleConversation(finalProfile.lastStandConversation, {
+                    persistId: `${finalProfile.lastStandConversation}:${finalPillar.battleUnitId || Battle.getUnitBaseId(finalPillar)}`,
+                    resumePhase: 'input',
+                    visualEffect: {
+                        type: 'vegnasis-final',
+                        stage: 4,
+                        elementKey: finalProfile.elementKey
+                    }
+                });
+            }
+        }
+
+    },
+
+    scheduleBattleFinish: (type, delay = 800) => {
+        if (!['win', 'loss'].includes(type)) return false;
+        if (Battle.finishState !== 'idle') return true;
+        const token = `finish-${type}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        const battleId = App.data?.battle?.battleId || null;
+        const runtimeGeneration = Number(Battle.runtimeGeneration || 0);
+        Battle.finishState = 'scheduled';
+        Battle.finishToken = token;
+        Battle.finishTimerId = Battle.schedule(async () => {
+            Battle.finishTimerId = null;
+            if (Battle.finishToken !== token || Battle.finishState !== 'scheduled') return;
+            const cancelStaleFinish = () => {
+                if (Battle.finishToken !== token) return;
+                Battle.finishState = 'idle';
+                Battle.finishToken = null;
+            };
+            if (!Battle.active || Battle.phase === 'result') {
+                cancelStaleFinish();
+                return;
+            }
+            if (battleId && App.data?.battle?.battleId && String(App.data.battle.battleId) !== String(battleId)) {
+                cancelStaleFinish();
+                return;
+            }
+            if (Number(Battle.runtimeGeneration || 0) !== runtimeGeneration) {
+                cancelStaleFinish();
+                return;
+            }
+            const stillFinished = Battle.isBattleFinishConditionMet(type);
+            if (!stillFinished) {
+                Battle.finishState = 'idle';
+                Battle.finishToken = null;
+                if (Battle.active && Battle.phase !== 'result' && !Battle.hasPendingPhaseTransition()) {
+                    Battle.scheduleInputRecovery?.('勝敗条件が確定待機中に変化しました。');
+                }
+                return;
+            }
+            Battle.finishState = 'processing';
+            try {
+                if (type === 'loss') await Battle.lose({ finishToken: token });
+                else await Battle.win({ finishToken: token });
+            } catch (error) {
+                console.error(`[Battle] ${type} finalization failed:`, error);
+                if (Battle.finishToken === token && Battle.phase !== 'result') {
+                    Battle.finishState = 'idle';
+                    Battle.finishToken = null;
+                }
+            }
+        }, delay);
+        return true;
     },
 
     checkFinish: () => {
-		if (Battle.party.every(p => p.isDead)) { Battle.schedule(Battle.lose, 800); return true; }
-        if (Battle.enemies.every(e => e.isDead || e.isFled)) { Battle.schedule(Battle.win, 800); return true; }
+        if (Battle.finishState !== 'idle') return true;
+        if (Battle.party.every(p => p.isDead)) return Battle.scheduleBattleFinish('loss', 800);
+        const eventRules = Battle.getEventBattleRules();
+        if (eventRules.active) {
+            let clamped = false;
+            Battle.getEventBattleTargetEnemies(eventRules).forEach(enemy => {
+                if (Battle.applyEventBattleHpFloor(enemy, eventRules)) clamped = true;
+            });
+            if (clamped) Battle.renderEnemies?.();
+        }
+        if (eventRules.active && Battle.isEventBattleThresholdMet(eventRules)) {
+            return Battle.scheduleBattleFinish(Battle.getEventBattleFinishType(eventRules), 800);
+        }
+        if (Battle.enemies.every(e => e.isDead || e.isFled)) {
+            return Battle.scheduleBattleFinish(eventRules.active && eventRules.forcedLoss ? 'loss' : 'win', 800);
+        }
         return false;
     },
 
@@ -4834,6 +7318,49 @@ findNextActor: () => {
         return weighted[weighted.length - 1].enemy;
     },
 	
+
+    isStoryBossTrainingBattle: () => !!App.data?.battle?.storyBossTraining,
+
+    getStoryBossTrainingContext: () => {
+        const context = App.data?.battle?.storyBossTraining;
+        return context && typeof context === 'object' ? context : null;
+    },
+
+    getStoryBossTrainingJournalContext: () => {
+        const context = Battle.getStoryBossTrainingContext();
+        if (!context) return null;
+        return {
+            version: Math.max(1, Number(context.version || 1)),
+            trainingId: context.trainingId || null,
+            opponentName: context.opponentName || null,
+            monsterIds: Array.isArray(context.monsterIds) ? context.monsterIds.map(Number).filter(Number.isFinite) : [],
+            strengthFloor: Math.max(101, Number(context.strengthFloor || 101)),
+            difficultyId: context.difficultyId || null,
+            difficultyLabel: context.difficultyLabel || null,
+            startedAt: Number(context.startedAt || 0) || null
+        };
+    },
+
+    restoreStoryBossTrainingPartyState: () => {
+        const context = Battle.getStoryBossTrainingContext();
+        const snapshot = Array.isArray(context?.partySnapshot) ? context.partySnapshot : [];
+        if (!snapshot.length) return false;
+        snapshot.forEach(entry => {
+            const character = entry?.uid ? App.getChar?.(entry.uid) : null;
+            if (!character) return;
+            character.currentHp = Math.max(0, Number(entry.currentHp || 0));
+            character.currentMp = Math.max(0, Number(entry.currentMp || 0));
+            delete character.battleStatus;
+            const runtime = Battle.party.find(member => member?.uid === entry.uid);
+            if (runtime) {
+                runtime.hp = character.currentHp;
+                runtime.mp = character.currentMp;
+                runtime.isDead = runtime.hp <= 0;
+                delete runtime.battleStatus;
+            }
+        });
+        return true;
+    },
 
     getQuestProgressContext: () => {
         const currentMap = (typeof Field !== 'undefined') ? Field.currentMapData : null;
@@ -4901,7 +7428,7 @@ findNextActor: () => {
             const d = (typeof App.getChar === 'function') ? App.getChar(p.uid) : null;
             if(d) { d.currentHp = p.hp; d.currentMp = p.mp; d.battleStatus = p.battleStatus; } 
         }); 
-        App.save(); 
+        return App.save();
     },
 
     escapeAttr: (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'),
@@ -4950,7 +7477,7 @@ findNextActor: () => {
             const raceFallbacks = {
                 '粘体': 'ジェリー',
                 '獣': 'ホーンラビット',
-                '獣人': 'レオン将軍',
+                '獣人': 'ガレオン将軍',
                 '精霊': 'ライトウィスプ',
                 '植物': 'アビスヴァイン',
                 '死霊': 'ゴースト',
@@ -4971,96 +7498,79 @@ findNextActor: () => {
 	
 	renderEnemies: () => {
 		const container = Battle.getEl('enemy-container');
-		if(!container) return;
-        const retainedVegnasisVisual = container.querySelector('.vegnasis-shared-visual');
-        if (retainedVegnasisVisual) retainedVegnasisVisual.remove();
-		container.innerHTML = ''; // 戦闘対象UIだけを再構築し、共有画像ノードは再利用する
+		if (!container) return;
+		container.innerHTML = '';
 		const g = (typeof GRAPHICS !== 'undefined' && GRAPHICS.images) ? GRAPHICS.images : {};
-		
-		// 【判定準備】敵の総数とボスバトルフラグを取得
+
 		const totalCount = Battle.enemies.length;
 		const isBoss = App.data.battle ? App.data.battle.isBossBattle : false;
-        // 1〜4体は既存の横並びを維持。
-        // 5体だけ、亀裂・イベント・一部ボス用の特別隊形にする。
-        const useFiveEnemyFormation = totalCount === 5;
+        const vegnasisEnemies = Battle.getSharedVisualMembers('vegnasis');
+        const isVegnasisBattle = vegnasisEnemies.length > 0;
+        const useFiveEnemyFormation = totalCount === 5 && !isVegnasisBattle;
 
         container.classList.toggle('enemy-five-formation', useFiveEnemyFormation);
+        container.classList.toggle('vegnasis-formation', isVegnasisBattle);
         container.classList.toggle('enemy-two-row-layout', false);
         container.style.position = 'relative';
         container.style.justifyContent = 'center';
         container.style.alignItems = 'flex-end';
-        container.style.display = useFiveEnemyFormation ? 'block' : 'flex';
+        container.style.display = (useFiveEnemyFormation || isVegnasisBattle) ? 'block' : 'flex';
 
-		// Special boss layout: ギルガメッシュは単体の巨大表示を維持。
 		const hasShowcaseBoss = Battle.enemies.some(enemy => {
             const id = Number(enemy.id);
             const baseId = Number(enemy.baseId);
-            return enemy.isSpecialBoss || enemy.isEstark || id === 902000 || baseId === 902000 || id === 401200 || baseId === 401200 || id === 401100 || baseId === 401100 || id === 302101 || baseId === 302101;
+            return enemy.isSpecialBoss || enemy.isEstark || id === 902000 || baseId === 902000 ||
+                id === 401200 || baseId === 401200 ||
+                id === 302101 || baseId === 302101;
         });
         const hasSpecialBoss = hasShowcaseBoss && totalCount === 1;
 
-		// デフォルトのレイアウト変数（ここを以下のif文で上書きしていく）
-		let widthPerEnemy = 20; 
-		let scaleFactor = 1.0; 
+		let widthPerEnemy = 20;
+		let scaleFactor = 1.0;
 		let maxPixelWidth = 100;
-		let paddingBottomVal = "30px"; 
+		let paddingBottomVal = "30px";
 		let marginTopVal = "5px";
 
-		/* --- レイアウト決定の優先順位ロジック --- */
-
-		// 1位：特殊ボスがいる場合（最優先・巨大表示）
 		if (hasSpecialBoss) {
 			widthPerEnemy = 65;
 			maxPixelWidth = 450;
 			paddingBottomVal = "15px";
 			marginTopVal = "-30px";
 			scaleFactor = 1.2;
-		} 
-		// 2位：ボスが1体だけの場合
-		else if (isBoss && totalCount === 1) {
-			widthPerEnemy = 40;  
-			scaleFactor = 1.0;   
+		} else if (isBoss && totalCount === 1) {
+			widthPerEnemy = 40;
+			scaleFactor = 1.0;
 			maxPixelWidth = 200;
 			paddingBottomVal = "5px";
 			marginTopVal = "-10px";
-		} 
-		// 3位：ボスが4体並ぶ場合（現行維持）
-		else if (isBoss && totalCount === 4) { 
+		} else if (isBoss && totalCount === 4) {
 			widthPerEnemy = 22;
 			scaleFactor = 0.8;
 			paddingBottomVal = "0px";
-		}
-		// 4位：ボスが3体の場合
-		else if (isBoss && totalCount === 3) { 
+		} else if (isBoss && totalCount === 3) {
 			widthPerEnemy = 29;
-			scaleFactor = 0.95; 
+			scaleFactor = 0.95;
 			maxPixelWidth = 155;
 			paddingBottomVal = "5px";
 			marginTopVal = "-10px";
-		}
-		// 5位：ボスが2体の場合
-		else if (isBoss && totalCount === 2) { 
+		} else if (isBoss && totalCount === 2) {
 			widthPerEnemy = 37;
-			scaleFactor = 1.0; 
+			scaleFactor = 1.0;
 			maxPixelWidth = 200;
 			paddingBottomVal = "5px";
 			marginTopVal = "10px";
-		}
-		// 5体編成だけ、前3＋後2の特別隊形。1〜4体は既存と同じ。
-		else if (useFiveEnemyFormation) { 
+		} else if (useFiveEnemyFormation) {
 			widthPerEnemy = 24;
 			scaleFactor = 0.86;
             maxPixelWidth = 118;
             paddingBottomVal = "0px";
             marginTopVal = "-4px";
-		}
-		else { 
+		} else {
 			widthPerEnemy = 30;
-			scaleFactor = 1.0; 
+			scaleFactor = 1.0;
 		}
 
         const fiveEnemyPosition = (index) => {
-            // 5体編成: 前列中央を主役として少し大きく、左右と後列はやや小さくする。
             const positions = [
                 { left: 24, bottom: 4,  z: 42, width: 22, maxWidth: 108, scale: 0.80, labelTop: '-7px', imgY: '8px' },
                 { left: 50, bottom: 0,  z: 52, width: 28, maxWidth: 138, scale: 0.94, labelTop: '-5px', imgY: '9px' },
@@ -5071,13 +7581,20 @@ findNextActor: () => {
             return positions[index] || positions[1];
         };
 
-        // 実際の描画ループ
         Battle.enemies.forEach((e, index) => {
+            const sharedVisualGroup = Battle.getSharedVisualGroup(e);
+            // ヴェグナシスは内部の五柱を個別管理するが、戦場上は一体のボスとして描画する。
+            // 単体対象の選択肢は battle-target-window 側に残すため、ここでは五つのカードを作らない。
+            if (isVegnasisBattle && sharedVisualGroup === 'vegnasis') return;
+
             const div = document.createElement('div');
-            div.className = `enemy-sprite`;
+            const isSharedVisualTarget = !!sharedVisualGroup;
+            div.className = `enemy-sprite${isSharedVisualTarget ? ' shared-visual-target' : ''}`;
             div.dataset.battleIndex = String(index);
             if (e.id !== undefined) div.dataset.enemyId = String(e.id);
-            
+            if (e.battleUnitId) div.dataset.battleUnitId = String(e.battleUnitId);
+            if (sharedVisualGroup) div.dataset.sharedVisualGroup = String(sharedVisualGroup);
+
             let perEnemyWidth = widthPerEnemy;
             let perEnemyMaxPixelWidth = maxPixelWidth;
             let perEnemyScaleFactor = scaleFactor;
@@ -5116,10 +7633,10 @@ findNextActor: () => {
                 `;
             } else {
                 div.style.cssText = `
-                    position: relative; 
-                    width: ${perEnemyWidth}%; 
+                    position: relative;
+                    width: ${perEnemyWidth}%;
                     max-width: ${perEnemyMaxPixelWidth}px;
-                    margin: 0 1% -0px 1%;
+                    margin: 0 1%;
                     overflow: visible;
                     display: flex;
                     flex-direction: column;
@@ -5129,83 +7646,142 @@ findNextActor: () => {
                 `;
             }
 
-            // 死んでいる、または逃げた場合は表示を隠す。
-            // ただし、screen方式の全体エフェクトで遅延ダメージ演出を待っている敵は、
-            // 演出より先に消えないよう一時的に表示を保持する。
             const keepDefeatedVisible = !e.isFled && window.PolishBattleFX &&
                 typeof window.PolishBattleFX.shouldKeepDefeatedVisible === 'function' &&
                 window.PolishBattleFX.shouldKeepDefeatedVisible(e);
-            if (e.isFled || (e.hp <= 0 && !keepDefeatedVisible)) {
+            const defeated = e.isFled || (Number(e.hp || 0) <= 0 && !keepDefeatedVisible);
+
+            if (defeated && !isSharedVisualTarget) {
                 div.style.visibility = 'hidden';
                 container.appendChild(div);
                 return;
             }
             if (keepDefeatedVisible) div.classList.add('enemy-defeat-hold');
-            
+            if (defeated && isSharedVisualTarget) div.classList.add('is-defeated');
+
             const imageInfo = Battle.resolveMonsterImage(e, g);
             const src = Battle.escapeAttr(imageInfo.src);
             const fallback = Battle.escapeAttr(imageInfo.fallback);
             div.style.border = 'none';
             div.style.background = 'transparent';
-            const imgHtml = `<img src="${src}" onerror="this.onerror=null;this.src='${fallback}';" style="
-                width: 100%; 
-                aspect-ratio: 1/1; 
-                object-fit: contain; 
-                object-position: center bottom;
-                filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); 
-                display: block;
-                --enemy-img-y: ${imgTranslateY};
-                transform: translateY(var(--enemy-img-y));
-            ">`;
+
+            const imgHtml = isSharedVisualTarget
+                ? ''
+                : `<img src="${src}" onerror="this.onerror=null;this.src='${fallback}';" style="
+                    width: 100%;
+                    aspect-ratio: 1/1;
+                    object-fit: contain;
+                    object-position: center bottom;
+                    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+                    display: block;
+                    --enemy-img-y: ${imgTranslateY};
+                    transform: translateY(var(--enemy-img-y));
+                ">`;
+
             const displayHp = (window.PolishBattleFX && typeof window.PolishBattleFX.hpDisplayForEnemy === 'function')
                 ? window.PolishBattleFX.hpDisplayForEnemy(e, e.hp)
                 : e.hp;
-            const hpPer = (e.baseMaxHp > 0) ? Math.max(0, Math.min(100, (displayHp / e.baseMaxHp) * 100)) : 0;
+            const hpPer = (e.baseMaxHp > 0)
+                ? Math.max(0, Math.min(100, (displayHp / e.baseMaxHp) * 100))
+                : 0;
             const hpRatio = e.baseMaxHp > 0 ? displayHp / e.baseMaxHp : 0;
-            const nameColor = hpRatio < 0.5 ? '#ff4' : '#fff';
-            
+            const nameColor = defeated ? '#8b8b8b' : (hpRatio < 0.5 ? '#ff4' : '#fff');
+            const statusText = defeated
+                ? '<div class="enemy-defeated-label">解放済</div>'
+                : '';
+
             div.innerHTML = `
                 ${imgHtml}
-                <div style="
-                    width: 140%;
+                <div class="enemy-status-panel" style="
+                    width: ${isSharedVisualTarget ? '100%' : '140%'};
                     margin-top: ${perEnemyMarginTopVal};
-                    display: flex; 
-                    flex-direction: column; 
-                    align-items: center; 
-                    z-index: 10; 
-                    pointer-events: none; 
-                    transform: scale(${perEnemyScaleFactor}); 
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    z-index: 10;
+                    pointer-events: none;
+                    transform: scale(${perEnemyScaleFactor});
                     transform-origin: top center;
                     text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;">
-                    <div class="enemy-name" style="font-size: 10px; color: ${nameColor}; font-weight:bold; white-space: nowrap; margin-bottom: 2px;">${e.name}</div>
-                    <div class="enemy-hp-bar" style="width: 60%; height: 4px; border: 1px solid #000; background: #333; border-radius: 2px;">
-                        <div class="enemy-hp-val" style="width:${hpPer}%; height:100%; background:#ff4444; transition:width 0.2s; border-radius: 1px;"></div>
+                    <div class="enemy-name" style="font-size:${isSharedVisualTarget ? '9px' : '10px'}; color:${nameColor}; font-weight:bold; white-space:nowrap; margin-bottom:2px;">${e.name}</div>
+                    <div class="enemy-hp-bar" style="width:${isSharedVisualTarget ? '92%' : '60%'}; height:${isSharedVisualTarget ? '7px' : '4px'}; border:1px solid #000; background:#333; border-radius:3px;">
+                        <div class="enemy-hp-val" style="width:${defeated ? 0 : hpPer}%; height:100%; background:#ff4444; transition:width 0.2s; border-radius:2px;"></div>
                     </div>
+                    ${statusText}
                 </div>`;
-                
-            div.onclick = (event) => { 
-                event.stopPropagation(); 
-                if(Battle.phase==='target_select' && (Battle.selectingAction==='attack'||Battle.selectingAction==='skill')) { 
-                    Battle.selectTarget(e); 
-                } 
-            };
+
+            if (!defeated) {
+                div.onclick = (event) => {
+                    event.stopPropagation();
+                    if (Battle.phase === 'target_select' &&
+                        (Battle.selectingAction === 'attack' || Battle.selectingAction === 'skill')) {
+                        Battle.selectTarget(e);
+                    }
+                };
+            }
             container.appendChild(div);
         });
 
-        // ヴェグナシスは戦闘対象を五つ持つが、外見は一体の魔柱として描く。
-        const pillarEnemies = Battle.enemies.filter(enemy => Battle.abyssVegnasisIds.includes(Battle.getUnitBaseId(enemy)));
-        if (pillarEnemies.length) {
-            container.querySelectorAll('.enemy-sprite img').forEach(image => { image.style.opacity = '0'; });
-            const sourceEnemy = pillarEnemies.find(enemy => !enemy.isDead) || pillarEnemies[0];
-            const imageInfo = Battle.resolveMonsterImage?.(sourceEnemy, g);
-            if (imageInfo?.src) {
-                const sharedImage = retainedVegnasisVisual || document.createElement('img');
-                sharedImage.className = 'vegnasis-shared-visual';
-                sharedImage.alt = '死幻の魔柱ヴェグナシス';
-                sharedImage.src = imageInfo.src;
-                sharedImage.onerror = () => { if (imageInfo.fallback) sharedImage.src = imageInfo.fallback; };
-                sharedImage.style.cssText = 'position:absolute;left:50%;bottom:58px;width:min(52%,310px);height:auto;aspect-ratio:1/1;object-fit:contain;object-position:center bottom;transform:translateX(-50%);filter:drop-shadow(0 8px 10px rgba(0,0,0,.75));z-index:30;pointer-events:none;';
-                container.appendChild(sharedImage);
+        if (isVegnasisBattle) {
+            const visibleMembers = vegnasisEnemies.filter(enemy => {
+                if (Battle.isBattleAlive(enemy)) return true;
+                return !enemy.isFled && window.PolishBattleFX &&
+                    typeof window.PolishBattleFX.shouldKeepDefeatedVisible === 'function' &&
+                    window.PolishBattleFX.shouldKeepDefeatedVisible(enemy);
+            });
+            const sourceEnemy = visibleMembers[0] || null;
+
+            // 五柱は一枚の画像を共有する。1〜4柱目の撃破では残し、
+            // 最後の柱の撃破エフェクトが完了した時だけ共有画像と統合HP表示を消す。
+            if (sourceEnemy) {
+                const profile = Battle.getSharedVisualProfile('vegnasis');
+                const hpSummary = Battle.getSharedVisualHpSummary('vegnasis');
+                const imageInfo = Battle.resolveMonsterImage?.(sourceEnemy, g);
+                if (imageInfo?.src) {
+                    const sharedVisual = document.createElement('div');
+                    sharedVisual.className = 'shared-enemy-visual vegnasis-shared-visual';
+                    sharedVisual.dataset.sharedVisualGroup = 'vegnasis';
+                    sharedVisual.setAttribute('aria-label', [profile.title, profile.name].filter(Boolean).join(' '));
+                    const sharedImage = document.createElement('img');
+                    sharedImage.alt = [profile.title, profile.name].filter(Boolean).join(' ');
+                    sharedImage.src = imageInfo.src;
+                    sharedImage.onerror = () => {
+                        if (imageInfo.fallback) sharedImage.src = imageInfo.fallback;
+                    };
+                    sharedVisual.appendChild(sharedImage);
+                    container.appendChild(sharedVisual);
+                }
+
+                const bossHud = document.createElement('div');
+                bossHud.className = 'vegnasis-boss-hud';
+                bossHud.dataset.sharedVisualGroup = 'vegnasis';
+                bossHud.setAttribute('role', 'group');
+                bossHud.setAttribute('aria-label', profile.name);
+                const hpRatio = hpSummary.maxHp > 0 ? hpSummary.currentHp / hpSummary.maxHp : 0;
+                const nameColor = hpRatio < 0.5 ? '#ff4' : '#fff';
+                bossHud.innerHTML = `
+                    <div class="enemy-status-panel" style="
+                        width:140%;
+                        margin-top:-30px;
+                        display:flex;
+                        flex-direction:column;
+                        align-items:center;
+                        z-index:10;
+                        pointer-events:none;
+                        transform:scale(1.2);
+                        transform-origin:top center;
+                        text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;">
+                        <div class="enemy-name" style="font-size:10px;color:${nameColor};font-weight:bold;white-space:nowrap;margin-bottom:2px;">${Battle.escapeHtml(profile.name)}</div>
+                        <div class="enemy-hp-bar vegnasis-aggregate-hp-bar" role="progressbar"
+                            aria-label="${Battle.escapeAttr(profile.name)}のHP"
+                            aria-valuemin="0"
+                            aria-valuemax="${hpSummary.maxHp}"
+                            aria-valuenow="${hpSummary.currentHp}"
+                            style="width:60%;height:4px;border:1px solid #000;background:#333;border-radius:3px;">
+                            <div class="enemy-hp-val vegnasis-aggregate-hp-value" style="width:${hpSummary.percent}%;height:100%;background:#ff4444;transition:width 0.2s;border-radius:2px;"></div>
+                        </div>
+                    </div>`;
+                container.appendChild(bossHud);
             }
         }
     },
@@ -5409,8 +7985,9 @@ findNextActor: () => {
         contentEl.innerHTML = html;
     },
 	
-    tryCreateSkillBookDrop: (enemy, drops) => {
-        if (!enemy || enemy.isFled || !enemy.isDead || Math.random() >= 0.005) return false;
+    tryCreateSkillBookDrop: (enemy, drops, rateMultiplier = 1) => {
+        const chance = Math.min(1, 0.005 * Math.max(0, Number(rateMultiplier || 1)));
+        if (!enemy || enemy.isFled || !enemy.isDead || Math.random() >= chance) return false;
         if (typeof App === 'undefined' || typeof App.extractMonsterSkillIds !== 'function' || typeof App.getSkillBookItemId !== 'function') return false;
         const base = Battle.getMonsterBaseById(enemy.baseId || enemy.id) || enemy;
         const skillIds = Array.from(new Set([
@@ -5506,7 +8083,35 @@ findNextActor: () => {
         return true;
     },
 
-	win: async () => {
+	win: async (options = {}) => {
+        const requestedToken = options.finishToken || Battle.finishToken ||
+            `finish-win-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        if (Battle.finishState === 'finalized' || Battle.finishState === 'committed') return false;
+        if (Battle.finishState === 'processing' && Battle.finishToken && Battle.finishToken !== requestedToken) return false;
+        Battle.finishState = 'processing';
+        Battle.finishToken = requestedToken;
+
+        let rollbackSerialized = null;
+        let transactionCommitted = false;
+        try {
+            rollbackSerialized = (typeof App.serializeSaveData === 'function')
+                ? App.serializeSaveData(App.data)
+                : JSON.stringify(App.data);
+            if (!App.data.battle) App.data.battle = { active: true };
+            if (!App.data.battle.battleId) {
+                App.data.battle.battleId = `battle-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+            }
+            App.data.battle.resultJournal = {
+                version: 2,
+                battleId: App.data.battle.battleId || null,
+                type: 'win',
+                status: 'preparing',
+                finishToken: requestedToken,
+                startedAt: Date.now()
+            };
+            // preparingは戦闘activeのまま保存する。保存できなければ副作用へ進まない。
+            if (App.save() === false) throw new Error('勝利結果の準備状態を保存できませんでした。');
+            if (typeof App.beginSaveTransaction === 'function') App.beginSaveTransaction();
 		// --- [修正の要点] 演出前に戦闘を「非アクティブ」にし、内部処理を完結させる ---
 		// これにより、演出中のリロード時に戦闘シーンに戻る（＝再度報酬が貰える）のを防ぎます
 		Battle.phase = 'result'; 
@@ -5517,9 +8122,12 @@ findNextActor: () => {
         Battle.resultInputLocked = false;
         Battle.resultAdvanceResolver = null;
 		Battle.resultSkipRequested = false;
+        Battle.resultLevelSkipActive = false;
 		Battle.resultWaiters = [];
+        Battle.updateResultLevelSkipButton?.();
+        Battle.setResultAdvanceIndicatorVisible?.(false);
 		if (App.data.battle) App.data.battle.active = false;
-        if (typeof App.beginSaveTransaction === 'function') App.beginSaveTransaction();
+        // 保存トランザクションは開始済み。
 
         const isEstark = App.data.battle && (App.data.battle.isSpecialBoss || App.data.battle.isEstark);
         const isBossBattle = App.data.battle && App.data.battle.isBossBattle;
@@ -5529,6 +8137,10 @@ findNextActor: () => {
         const keyReward = App.data.battle?.keyReward || App.data.battle?.fixedKeyReward || null;
         const fixedHunter = App.data.battle?.fixedHunter || null;
         const guildPromotionTarget = App.data.battle?.guildPromotionTarget || null;
+        const isTrainingBattle = Battle.isStoryBossTrainingBattle();
+        const eventBattleRules = Battle.getEventBattleRules(App.data?.battle);
+        const trainingJournalContext = Battle.getStoryBossTrainingJournalContext();
+        const abyssRiftResultContext = Battle.captureAbyssRiftResultContext(App.data?.battle, App.data?.dungeon);
         let guildPromotionMessage = null;
 		
 		// 戦闘データはフィールド復帰時に初期化されるため、勝利後会話で使う
@@ -5583,34 +8195,42 @@ findNextActor: () => {
 		// 4. 物語深淵・ギルド依頼迷宮は従来どおり表示階層を使用する。
 
 			let totalExp = 0, totalGold = 0;
-			const drops = []; 
+			const drops = [];
+            // 形態変化前に倒した形態も、最終形態と同じ戦闘結果へ含める。
+            // マスタの phaseTransition 設定だけで第二・第三形態以降も図鑑・討伐数・報酬へ記録される。
+            const defeatedResultEnemies = Battle.collectDefeatedEnemiesForResult();
+            const rewardResultEnemies = isTrainingBattle ? [] : defeatedResultEnemies;
+            const dropResultEnemies = eventBattleRules.noDrops ? [] : rewardResultEnemies;
 			const defeatedMonsterIds = [];
 		let hasRareDrop = false;      // 白フラッシュ用
 		let hasUltraRareDrop = false; // 赤黒フラッシュ用
 
 		// --- [1] 内部データ集計（討伐数・図鑑・経験値・ゴールドの計算） ---
-		Battle.enemies.forEach(e => {
+		rewardResultEnemies.forEach(e => {
 			if (e.isDead && !e.isFled) {
 				const id = e.baseId || e.id;
-					if (id) {
-						defeatedMonsterIds.push(Number(id));
-						if (!App.data.book.killCounts) App.data.book.killCounts = {};
-					App.data.book.killCounts[id] = (App.data.book.killCounts[id] || 0) + 1;
-					if (!App.data.book.monsters.includes(id)) App.data.book.monsters.push(id);
+                const base = Battle.getMonsterBaseById(id);
+                const excludeFromBestiary = eventBattleRules.bestiaryExcluded || base?.bestiaryExcluded === true;
+				if (id) {
+                    if (!eventBattleRules.noQuestProgress) defeatedMonsterIds.push(Number(id));
+                    if (!excludeFromBestiary) {
+                        if (!App.data.book.killCounts) App.data.book.killCounts = {};
+                        App.data.book.killCounts[id] = (App.data.book.killCounts[id] || 0) + 1;
+                        if (!App.data.book.monsters.includes(id)) App.data.book.monsters.push(id);
+                    }
 				}
-				const base = Battle.getMonsterBaseById(id);
 				if(base) {
 					// 深層生成・裂け目・マップ補正で個体報酬が設定された場合は、その確定値を使う。
 					// 固定敵はインスタンスに報酬を持たないため、従来どおりマスタ値へフォールバックする。
-					totalExp += Battle.getEnemyRewardValue(e, base, 'exp');
-					totalGold += Battle.getEnemyRewardValue(e, base, 'gold');
+                    if (!eventBattleRules.noExp) totalExp += Battle.getEnemyRewardValue(e, base, 'exp');
+                    if (!eventBattleRules.noGold) totalGold += Battle.getEnemyRewardValue(e, base, 'gold');
 				}
 			}
 		});
 
 		// 討伐系クエストの進捗は、勝利時に確定した全撃破個体から一度だけ更新する。
 		// ダンジョン指定のギルド依頼は戦闘場所も判定し、施設内で開始する昇格試験は除外する。
-		if (typeof App.noteQuestKills === 'function') {
+		if (!isTrainingBattle && !eventBattleRules.noQuestProgress && typeof App.noteQuestKills === 'function') {
 			App.noteQuestKills(defeatedMonsterIds, Battle.getQuestProgressContext(), { save: false });
 		}
 
@@ -5633,12 +8253,27 @@ findNextActor: () => {
                     rate: active ? (alive ? 1 : 0.5) : 0.25
                 };
             });
-		const lbGrowthLogs = (typeof App.noteBattleVictory === 'function')
+		const lbGrowthLogs = (!isTrainingBattle && typeof App.noteBattleVictory === 'function')
 			? App.noteBattleVictory(Battle.party.filter(p => p))
 			: [];
-        if (typeof Dungeon !== 'undefined' && typeof Dungeon.completeAngelTrialIfNeeded === 'function') {
+        if (!isTrainingBattle && typeof Dungeon !== 'undefined' && typeof Dungeon.completeAngelTrialIfNeeded === 'function') {
             lbGrowthLogs.push(...Dungeon.completeAngelTrialIfNeeded());
         }
+        const randomHunterContext = !isTrainingBattle && App.data?.battle?.randomHunter
+            ? JSON.parse(JSON.stringify(App.data.battle.randomHunter))
+            : null;
+        const randomHunterDefeated = randomHunterContext && typeof Dungeon !== 'undefined'
+            && typeof Dungeon.completeRandomHunterBattle === 'function'
+            ? Dungeon.completeRandomHunterBattle(randomHunterContext)
+            : false;
+        const randomHunterOutcome = randomHunterContext ? {
+            hunterId:String(randomHunterContext.id || ''),
+            defeated:randomHunterDefeated === true,
+            targetFloor:Math.max(1, Number(randomHunterContext.targetFloor || 1)),
+            enemyCount:Math.max(1, Number(randomHunterContext.enemyCount || 3))
+        } : null;
+        const battleRewardRateModifiers = Battle.getBattleRewardRateModifiers(App.data?.battle);
+        const rareDropMultiplier = battleRewardRateModifiers.rareDropMultiplier;
 		
 		// 特性「56:解体」のパーティ合計値算出
 		let bonusNormal = 0, bonusRare = 0, bonusPlus3 = 0;
@@ -5650,6 +8285,8 @@ findNextActor: () => {
 				bonusPlus3  += PassiveSkill.getSumValue(charData, 'equip_plus3_pct');
 			}
 		});
+        // 特殊階層の「+3抽選加算」は、装備特性による加算と同じ百分率ポイントとして扱う。
+        bonusPlus3 += battleRewardRateModifiers.equipPlus3BonusPct;
 
 		// オプション再抽選サブ関数 (内部用)
 		const createEquipWithMinRarity = (floor, plus, minRarityList, forcePart = null) => {
@@ -5682,53 +8319,24 @@ findNextActor: () => {
 		};
 
 		// --- [2] 報酬アイテムの生成と確定 ---
-		if (isEstark) {
-			const specialEnemy = Battle.enemies.find(e => e.isSpecialBoss || e.isEstark || Number(e.id) === 902000 || Number(e.baseId) === 902000);
+		let specialBossOutcome = null;
+		if (isEstark && !eventBattleRules.noDrops) {
+			const specialEnemy = dropResultEnemies.find(e => e.isSpecialBoss || e.isEstark || Number(e.id) === 902000 || Number(e.baseId) === 902000);
 			if (specialEnemy) {
-				const specialId = specialEnemy.baseId || specialEnemy.id || 902000;
-				const killCount = (App.data.book.killCounts && App.data.book.killCounts[specialId]) ? App.data.book.killCounts[specialId] : 1;
-				const baseRank = specialEnemy.rank || 999; 
-				const rewardFloor = baseRank + (killCount * 5);
-				const eq = createEquipWithMinRarity(rewardFloor, 3, ['UR', 'EX']);
-				eq.val *= 3;
-				eq.name = "【EX】" + eq.name;
-				App.data.gems = (App.data.gems || 0) + 10000;
-				App.data.inventory.push(eq);
-				drops.push({ name: eq.name, isRare: true, isUltra: true, isSpecialBoss: true, isEstark: true, kind: 'equip' });
-				hasUltraRareDrop = true;
-
-				// 特殊ボス（ギルガメッシュ等）専用報酬だけで終わらせず、
-				// monsters.js 側に個別設定された drops も同じ勝利で判定する。
-				// 以前は isEstark 分岐に入ると通常ボス用の drops 処理へ進まなかったため、
-				// ギルガメッシュの drops.normal / drops.rare が実質無視されていた。
-				// 今後、特殊ボスを追加する場合も固有ドロップは monsters.js の drops に統一すること。
-				const specialBase = Battle.getMonsterBaseById(specialId) || specialEnemy;
-				const monsterDrops = specialBase.drops || specialEnemy.drops;
-
-				if (monsterDrops && monsterDrops.rare && monsterDrops.rare.id != null) {
-					if (Battle.rollConfiguredDrop(monsterDrops.rare, bonusRare)) {
-						const itemDef = DB.ITEMS.find(i => i.id === monsterDrops.rare.id);
-						if (itemDef) {
-							App.data.items[itemDef.id] = (App.data.items[itemDef.id] || 0) + 1;
-							hasRareDrop = true;
-							const type = (itemDef.id === 107) ? 'kai' : 'boss';
-							drops.push({ name: itemDef.name, isRare: true, type: type, kind: 'item' });
-						}
-					}
-				}
-
-				if (monsterDrops && monsterDrops.normal && monsterDrops.normal.id != null) {
-					if (Battle.rollConfiguredDrop(monsterDrops.normal, bonusNormal)) {
-						const itemDef = DB.ITEMS.find(i => i.id === monsterDrops.normal.id);
-						if (itemDef) {
-							App.data.items[itemDef.id] = (App.data.items[itemDef.id] || 0) + 1;
-							drops.push({ name: itemDef.name, isRare: false, type: 'item', kind: 'item' });
-						}
-					}
-				}
+				const specialId = Number(specialEnemy.baseId || specialEnemy.id || 902000);
+				const completedDefeats = Math.max(1, Math.floor(Number(App.data.book?.killCounts?.[specialId]) || 1));
+				specialBossOutcome = Battle.applySpecialBossVictoryOutcome(specialEnemy, {
+					completedDefeats,
+					drops,
+					bonusRare,
+					bonusNormal,
+					createEquipment:createEquipWithMinRarity
+				});
+				if (specialBossOutcome?.equipmentName || specialBossOutcome?.linkedRareDropId) hasUltraRareDrop = true;
+				if (specialBossOutcome?.rareDropId || specialBossOutcome?.linkedRareDropId) hasRareDrop = true;
 			}
 		} else {
-			Battle.enemies.forEach(e => {
+			dropResultEnemies.forEach(e => {
 				if (e.isFled) return;
 				const base = Battle.getMonsterBaseById(e.baseId || e.id) || e;
 				// 追憶の魔境では元モンスター固有の低Rank／物語ボス報酬を持ち込まず、
@@ -5738,7 +8346,7 @@ findNextActor: () => {
 
 				// 1. レアドロップ判定 (独立)
 				if (monsterDrops && monsterDrops.rare) {
-					if (Battle.rollConfiguredDrop(monsterDrops.rare, bonusRare)) {
+					if (Battle.rollConfiguredDrop(monsterDrops.rare, bonusRare, rareDropMultiplier)) {
 						const itemDef = DB.ITEMS.find(i => i.id === monsterDrops.rare.id);
 						if (itemDef) {
 							App.data.items[itemDef.id] = (App.data.items[itemDef.id] || 0) + 1;
@@ -5748,7 +8356,7 @@ findNextActor: () => {
 						}
 					}
 				} else if (floor >= 100) {
-					if (Math.random() * 100 < (0.5 + bonusRare)) {
+					if (Math.random() * 100 < Math.min(100, (0.5 + bonusRare) * rareDropMultiplier)) {
 						let sid = 100 + Math.floor(Math.random() * 6);
 						if (Math.random() < 0.1) sid = 106;
 						if (Math.random() < 0.05) sid = 107;
@@ -5764,7 +8372,7 @@ findNextActor: () => {
 				
 				// 2. 装備ドロップ判定 (独立)
 				// 雑魚枠で出た物語ボスは、外見と仲間化IDだけを保持し報酬上は通常敵として扱う。
-				const isBoss = e.memoryRealm ? !!e.isBoss : !!(base.isBoss || e.isBoss);
+				const isBoss = e.isStoryBossEcho ? false : (e.memoryRealm ? !!e.isBoss : !!(base.isBoss || e.isBoss));
 				const equipChance = isBoss ? 100 : 8;
 				if (Math.random() * 100 < equipChance) {
 					let eq;
@@ -5794,6 +8402,7 @@ findNextActor: () => {
 						drops.push({ name: eq.name, isRare: (isPlus3 || isBoss), type: isBoss ? 'boss' : 'normal', kind: 'equip' });
 					}
 					App.data.inventory.push(eq);
+                    window.EquipAcquisitionCard?.enqueue(eq, { source:'battleDrop' });
 				}
 				
 				// 3. 通常ドロップ判定 (独立)
@@ -5821,12 +8430,19 @@ findNextActor: () => {
 			});
 		}
 
+        // ランダム深淵101階以降の通常ボスは、勝利結果確定時に10%で災厄の楔を追加する。
+        // 専用ボス・裂け目・冒険者イベント等は対象外とし、結果ジャーナルへ抽選結果を残す。
+        const endlessBossWedgeOutcome = (isTrainingBattle || eventBattleRules.noDrops)
+            ? null
+            : Battle.applyEndlessBossWedgeDrop(drops);
+        if (endlessBossWedgeOutcome?.granted) hasRareDrop = true;
+
 		// 敵ごとに0.5%で、その個体が所持するID100以上のスキル書を抽選する。
-		Battle.enemies.forEach(enemy => {
-		    if (Battle.tryCreateSkillBookDrop(enemy, drops)) hasRareDrop = true;
+		dropResultEnemies.forEach(enemy => {
+		    if (Battle.tryCreateSkillBookDrop(enemy, drops, rareDropMultiplier)) hasRareDrop = true;
 		});
 
-        const elementalTrialMessages = Battle.completeAbyssElementalTrial(drops);
+        const elementalTrialMessages = (isTrainingBattle || eventBattleRules.noDrops) ? [] : Battle.completeAbyssElementalTrial(drops);
         if (elementalTrialMessages.length) hasRareDrop = true;
 
         // クリア後の通常ランダムダンジョンでは、合成の壺をごく低確率で追加する。
@@ -5834,7 +8450,7 @@ findNextActor: () => {
             && App.data?.location?.area === 'ABYSS'
             && globalThis.ABYSS_FLOOR_RULES?.isRandomMode?.(App.data?.battle?.abyssMode || App.data?.dungeon?.abyssMode) === true
             && !App.data?.dungeon?.guildQuestRun;
-        if (isPostgameRandomDungeon && Math.random() < 0.0005) {
+        if (!isTrainingBattle && !eventBattleRules.noDrops && isPostgameRandomDungeon && Math.random() < 0.0005) {
             const potId = Number(window.PRISMA_SYNTHESIS_POT_ITEM_ID || 599999);
             const pot = DB.ITEMS.find(item => Number(item.id) === potId);
             if (pot) {
@@ -5844,10 +8460,13 @@ findNextActor: () => {
             }
         }
 
-		// --- [3] 深淵系ダンジョン限定：撃破した対象1体ごとに1%の仲間加入判定 ---
-		const monsterRecruitResult = (typeof App.tryRecruitMonsterAfterBattle === 'function')
+		// --- [3] 深淵系ダンジョン限定：通常魔物は1%、裏ボスは専用の累積加入率で判定 ---
+		const normalMonsterRecruitResult = (!isTrainingBattle && !eventBattleRules.noRecruit && typeof App.tryRecruitMonsterAfterBattle === 'function')
 			? App.tryRecruitMonsterAfterBattle(Battle.enemies)
 			: null;
+		const monsterRecruitResult = specialBossOutcome?.recruitResult?.ok
+			? specialBossOutcome.recruitResult
+			: normalMonsterRecruitResult;
 
 		const resultLevelEvents = [];
         const resultLevelLooseLogs = [];
@@ -5887,7 +8506,7 @@ findNextActor: () => {
             // 戦闘後の特性成長・回復は、従来どおり生存して戦ったメンバーだけ。
             if (active && alive) {
                 let traitGrowthLog = null;
-                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.checkTraitGrowth) {
+                if (!isTrainingBattle && typeof PassiveSkill !== 'undefined' && PassiveSkill.checkTraitGrowth) {
                     traitGrowthLog = PassiveSkill.checkTraitGrowth(charData);
                 }
                 if (traitGrowthLog) {
@@ -5938,7 +8557,7 @@ findNextActor: () => {
 
 		// --- [4] 世界状態・フラグの先行確定 ---
 		// 演出中のリロード対策として、ボスマスを階段にする等の処理をログ表示前に完結させます
-		if ((isBossBattle && !isEstark) || fixedHunter) {
+		if (!isTrainingBattle && !App.data?.battle?.randomAdventurerDuel && ((isBossBattle && !isEstark) || fixedHunter)) {
 			if (typeof Dungeon !== 'undefined' && typeof Dungeon.onBossDefeated === 'function') {
 				Dungeon.onBossDefeated(); // ここで mapChanges 等が更新される
 			}
@@ -5948,7 +8567,7 @@ findNextActor: () => {
 
         // ギルド昇格試験は通常の固定マップボス進行から分離し、
         // 勝利時にだけ冒険者ランクを確定する。
-        if (guildPromotionTarget && typeof Guild !== 'undefined' && typeof Guild.completePromotionTrial === 'function') {
+        if (!isTrainingBattle && guildPromotionTarget && typeof Guild !== 'undefined' && typeof Guild.completePromotionTrial === 'function') {
             guildPromotionMessage = Guild.completePromotionTrial(guildPromotionTarget);
         }
 		const keyRewards = keyReward
@@ -5960,7 +8579,7 @@ findNextActor: () => {
 				: [keyReward])
 			: [];
 
-		if (keyRewards.length > 0 && typeof Dungeon !== 'undefined' && typeof Dungeon.completeKeyGuardianReward === 'function') {
+		if (!isTrainingBattle && keyRewards.length > 0 && typeof Dungeon !== 'undefined' && typeof Dungeon.completeKeyGuardianReward === 'function') {
 			keyRewards.forEach(reward => {
 				Dungeon.completeKeyGuardianReward(reward);
 			});
@@ -5972,19 +8591,22 @@ findNextActor: () => {
 		}
 
         // 演出前に参加者の最終HP/MPと全報酬を同じcommitへ含める。
-        Battle.party.forEach(member => {
-            const charData = member?.uid ? App.getChar(member.uid) : null;
-            if (!charData) return;
-            charData.currentHp = Math.max(0, Number(member.hp || 0));
-            charData.currentMp = Math.max(0, Number(member.mp || 0));
-            delete charData.battleStatus;
-        });
-        const pendingMonsterSkillEvolution = Battle.prepareMonsterSkillEvolutionAfterBattle();
-        const battleId = App.data.battle?.battleId ||
-            `battle-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
-        App.data.battle.battleId = battleId;
+        if (isTrainingBattle) {
+            Battle.restoreStoryBossTrainingPartyState();
+        } else {
+            Battle.party.forEach(member => {
+                const charData = member?.uid ? App.getChar(member.uid) : null;
+                if (!charData) return;
+                charData.currentHp = Math.max(0, Number(member.hp || 0));
+                charData.currentMp = Math.max(0, Number(member.mp || 0));
+                delete charData.battleStatus;
+            });
+        }
+        const pendingMonsterSkillEvolution = isTrainingBattle ? null : Battle.prepareMonsterSkillEvolutionAfterBattle();
+        const abyssRiftOutcome = Battle.buildAbyssRiftResultOutcome(abyssRiftResultContext, App.data?.dungeon);
+        const battleId = App.data.battle.battleId;
         App.data.battle.resultJournal = {
-            version: 1,
+            version: 2,
             battleId,
             type: 'win',
             status: 'committed',
@@ -5995,16 +8617,33 @@ findNextActor: () => {
             worldApplied: true,
             eventQueued: !!(storyWinEventId || fixedStoryEventId || eventId),
             pendingMonsterSkillEvolution,
+            storyBossTraining: trainingJournalContext,
+            specialBossOutcome: specialBossOutcome ? { ...specialBossOutcome, recruitResult: undefined } : null,
+            elementalSpiritTrialOutcome: App.data.battle.elementalSpiritTrialOutcome
+                ? { ...App.data.battle.elementalSpiritTrialOutcome }
+                : null,
+            randomHunterOutcome,
+            endlessBossWedgeOutcome,
+            abyssRiftOutcome,
+            angelTrialOutcome: App.data?.battle?.angelTrialOutcome
+                ? JSON.parse(JSON.stringify(App.data.battle.angelTrialOutcome))
+                : null,
             summary: {
                 gold: totalGold,
                 exp: totalExp,
+                gems: Math.max(0, Number(specialBossOutcome?.gemReward) || 0),
                 drops: drops.map(drop => ({ name: drop.name, kind: drop.kind || drop.type || null }))
             }
         };
 
 		// --- [5] 全状態を一回の保存で確定し、その後は表示だけを行う ---
         App.save();
-        if (typeof App.commitSaveTransaction === 'function') App.commitSaveTransaction();
+        if (typeof App.commitSaveTransaction === 'function') {
+            const committed = App.commitSaveTransaction();
+            if (committed === false) throw new Error('勝利結果の保存に失敗しました。');
+        }
+        transactionCommitted = true;
+        Battle.finishState = 'committed';
 
 		// --- [6] ここから勝利演出（ログ表示、レベルアップ、待機など） ---
 		Battle.log(`<br><span style="color:#ffff00; font-size:1em; font-weight:bold;">戦闘に勝利した！</span>`);
@@ -6014,16 +8653,23 @@ findNextActor: () => {
         } finally {
             Battle.resultInputLocked = false;
         }
-		Battle.log(`${totalGold} Goldを獲得！`);
-		Battle.log(`${totalExp} ポイントの経験値を 獲得した！`);
-        if (expRecipients.some(recipient => recipient.active && !recipient.alive)) {
+        if (isTrainingBattle) {
+            Battle.log('<span style="color:#d8b5ff;font-weight:bold;">訓練戦のため報酬・討伐記録は発生しない。HP・MPは開始前の状態へ戻った。</span>');
+        } else {
+		    Battle.log(`${totalGold} Goldを獲得！`);
+		    Battle.log(`${totalExp} ポイントの経験値を 獲得した！`);
+        }
+        if (!isTrainingBattle && expRecipients.some(recipient => recipient.active && !recipient.alive)) {
             Battle.log('<span style="color:#bbb;">戦闘不能の仲間は経験値を50%取得した。</span>');
         }
-        if (expRecipients.some(recipient => !recipient.active)) {
+        if (!isTrainingBattle && expRecipients.some(recipient => !recipient.active)) {
             Battle.log('<span style="color:#bbb;">控えの仲間は経験値を25%取得した。</span>');
         }
         if (guildPromotionMessage) {
             Battle.log(`<span style="color:#ffd56b; font-weight:bold;">${Battle.escapeHtml(guildPromotionMessage).replace(/\n/g, '<br>')}</span>`);
+        }
+        if (specialBossOutcome?.requiredItemConsumed) {
+            Battle.log(`<span style="color:#d8b5ff; font-weight:bold;">${Battle.escapeHtml(specialBossOutcome.requiredItemName || '災厄の楔')}が砕け散った。</span>`);
         }
 		if (monsterRecruitResult && monsterRecruitResult.message) {
 			Battle.log(`<span style="color:#7fffd4; font-weight:bold;">${monsterRecruitResult.message}</span>`);
@@ -6033,28 +8679,36 @@ findNextActor: () => {
         });
 
 
-        for (const event of resultLevelEvents) {
-            Battle.log(event.notification);
-            Battle.resultInputLocked = true;
-            try {
-                await Battle.playResultSeAndWait('battle_level_up');
-            } finally {
-                Battle.resultInputLocked = false;
+        Battle.setResultLevelSkipActive(resultLevelEvents.length > 0 || resultLevelLooseLogs.length > 0 || resultTraitGrowthLogs.length > 0);
+        try {
+            for (const event of resultLevelEvents) {
+                Battle.log(event.notification);
+                Battle.resultInputLocked = true;
+                try {
+                    await Battle.playResultSeAndWait('battle_level_up', { levelSkippable:true });
+                } finally {
+                    Battle.resultInputLocked = false;
+                }
+                for (const detail of event.details) Battle.log(detail);
+                // ステータス上昇ログと入力待ち表示が詰まらないよう、必ず1行分の余白を置く。
+                Battle.log('<span class="battle-result-level-spacer" aria-hidden="true">&nbsp;</span>');
+                if (!Battle.resultSkipRequested) {
+                    await Battle.waitForResultAdvance();
+                }
             }
-            for (const detail of event.details) Battle.log(detail);
-            Battle.log(`<span style="color:#aaa; font-size:0.85em;">▼</span>`);
-            await Battle.waitForResultAdvance();
-        }
 
-        for (const msg of resultLevelLooseLogs) {
-            Battle.log(msg);
-            await Battle.resultWait(350);
-        }
+            for (const msg of resultLevelLooseLogs) {
+                Battle.log(msg);
+                await Battle.resultWait(350);
+            }
 
-		for (const msg of resultTraitGrowthLogs) {
-			Battle.log(msg);
-			await Battle.resultWait(250);
-		}
+		    for (const msg of resultTraitGrowthLogs) {
+			    Battle.log(msg);
+			    await Battle.resultWait(250);
+		    }
+        } finally {
+            Battle.setResultLevelSkipActive(false);
+        }
 
         const monsterSkillEvolutionLog = await Battle.tryMonsterSkillEvolutionAfterBattle();
         if (monsterSkillEvolutionLog) {
@@ -6160,6 +8814,49 @@ findNextActor: () => {
 		//		await StoryManager.onBattleWin(eventId);
 		//	}
 		//}
+        } catch (error) {
+            console.error('[Battle] win transaction failed:', error);
+            if (!transactionCommitted) {
+                try { App.cancelSaveTransaction?.(); } catch (_) {}
+                try {
+                    if (!rollbackSerialized) throw new Error('戦闘結果処理前の復元スナップショットがありません。');
+                    const restored = JSON.parse(rollbackSerialized);
+                    App.data = restored;
+                    App.totalGoldGem?.();
+                    if (!App.data.battle) App.data.battle = { active: true };
+                    App.data.battle.active = true;
+                    App.data.battle.lastResultError = String(error?.message || error);
+                    App.data.battle.lastResultErrorAt = Date.now();
+                    delete App.data.battle.resultJournal;
+                    Battle.active = true;
+                    Battle.phase = 'input_recovery';
+                    Battle.resultProcessing = false;
+                    Battle.resultReadyToEnd = false;
+                    Battle.finishState = 'idle';
+                    Battle.finishToken = null;
+                    App.save();
+                    Battle.recoverBattleRuntimeAfterResultError(error);
+                } catch (rollbackError) {
+                    console.error('[Battle] win rollback failed:', rollbackError);
+                    try { App.load?.(); } catch (loadError) { console.error('[Battle] last committed save reload failed:', loadError); }
+                    if (App.data?.battle) App.data.battle.active = true;
+                    Battle.finishState = 'idle';
+                    Battle.finishToken = null;
+                    Battle.active = true;
+                    Battle.phase = 'input_recovery';
+                    Battle.recoverBattleRuntimeAfterResultError(rollbackError);
+                }
+                return false;
+            }
+            // commit後の表示例外では報酬を巻き戻さず、終了操作だけ復旧する。
+            Battle.finishState = 'committed';
+            Battle.resultProcessing = false;
+            Battle.resultReadyToEnd = true;
+            Battle.log('<span style="color:#ffb36b;">勝利演出の一部を省略しました。結果は保存済みです。</span>');
+            Battle.log("\n▼ 画面タップ / Enterキーで終了 ▼");
+            return true;
+        }
+
 	},
 	
     recoverCommittedBattleResult: () => {
@@ -6190,20 +8887,41 @@ findNextActor: () => {
         return true;
     },
 
-    lose: () => {
+    lose: async (options = {}) => {
+        const requestedToken = options.finishToken || Battle.finishToken ||
+            `finish-loss-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        if (Battle.finishState === 'finalized' || Battle.finishState === 'committed') return false;
+        if (Battle.finishState === 'processing' && Battle.finishToken && Battle.finishToken !== requestedToken) return false;
+        Battle.finishState = 'processing';
+        Battle.finishToken = requestedToken;
+        let rollbackSerialized = null;
+        let transactionCommitted = false;
+        try {
+        rollbackSerialized = (typeof App.serializeSaveData === 'function')
+            ? App.serializeSaveData(App.data)
+            : JSON.stringify(App.data);
+        const isTrainingBattle = Battle.isStoryBossTrainingBattle();
+        const prologueStage = Math.max(0, Number(App.data?.progress?.worldState?.prologueStage || 0));
+        const isPlayablePrologue = prologueStage > 0 && prologueStage < 100;
+        const sceneContext = typeof App.getActiveSceneContext === 'function' ? App.getActiveSceneContext() : null;
+        const sceneWipeoutEventId = sceneContext?.restartOnWipeout === true ? String(sceneContext.wipeoutEventId || '') : '';
+        const isSceneContextWipeout = !!sceneWipeoutEventId;
+        const trainingJournalContext = Battle.getStoryBossTrainingJournalContext();
         Battle.phase = 'result';
         Battle.active = false;
         Battle.resultProcessing = true;
         Battle.resultReadyToEnd = false;
-        Battle.resultEndIsGameOver = true;
+        Battle.resultEndIsGameOver = !isTrainingBattle && !isPlayablePrologue && !isSceneContextWipeout;
         Battle.resultInputLocked = false;
         Battle.resultAdvanceResolver = null;
         Battle.resultSkipRequested = false;
+        Battle.resultLevelSkipActive = false;
         Battle.resultWaiters = [];
+        Battle.updateResultLevelSkipButton?.();
         if (!App.data.battle) App.data.battle = {};
         App.data.battle.active = false;
         if (typeof App.beginSaveTransaction === 'function') App.beginSaveTransaction();
-        Battle.log("全滅した...");
+        Battle.log(isTrainingBattle ? "訓練戦に敗北した..." : "全滅した...");
 
         if (App.data.battle?.isChestTrapBattle && App.data.battle?.fixedChestTrap &&
             typeof Dungeon !== 'undefined' && typeof Dungeon.rollbackFixedChestTrap === 'function') {
@@ -6213,7 +8931,8 @@ findNextActor: () => {
         if (App.data.battle?.guildPromotionTarget && App.data.progress?.guild) {
             App.data.progress.guild.pendingPromotion = null;
         }
-        if (App.data.stats) App.data.stats.wipeoutCount = (App.data.stats.wipeoutCount || 0) + 1;
+        if (!isTrainingBattle && !isPlayablePrologue && !isSceneContextWipeout && App.data.stats) App.data.stats.wipeoutCount = (App.data.stats.wipeoutCount || 0) + 1;
+        const elementalSpiritTrialOutcome = !isTrainingBattle ? Battle.recordAbyssElementalTrialLoss() : null;
 
         const eventId = App.data.battle?.eventId || null;
         const storyLossEventId = App.data.battle?.storyLossEventId || null;
@@ -6227,6 +8946,9 @@ findNextActor: () => {
             Battle.resultEndIsGameOver = false;
         } else if (storyLossEventId) {
             queuedLossEventId = storyLossEventId;
+            Battle.resultEndIsGameOver = false;
+        } else if (sceneWipeoutEventId) {
+            queuedLossEventId = sceneWipeoutEventId;
             Battle.resultEndIsGameOver = false;
         }
         if (queuedLossEventId) {
@@ -6242,13 +8964,29 @@ findNextActor: () => {
             }
         }
 
-        Battle.party.forEach(member => {
-            const charData = member?.uid ? App.getChar(member.uid) : null;
-            if (!charData) return;
-            charData.currentHp = Math.max(0, Number(member.hp || 0));
-            charData.currentMp = Math.max(0, Number(member.mp || 0));
-            delete charData.battleStatus;
-        });
+        if (isTrainingBattle) {
+            Battle.restoreStoryBossTrainingPartyState();
+        } else {
+            Battle.party.forEach(member => {
+                const charData = member?.uid ? App.getChar(member.uid) : null;
+                if (!charData) return;
+                charData.currentHp = Math.max(0, Number(member.hp || 0));
+                charData.currentMp = Math.max(0, Number(member.mp || 0));
+                delete charData.battleStatus;
+            });
+        }
+
+        if (isPlayablePrologue) {
+            (App.data.characters || []).forEach(character => {
+                if (!(App.data.party || []).includes(character.uid)) return;
+                const stats = typeof App.calcStats === 'function' ? App.calcStats(character) : null;
+                character.currentHp = Math.max(1, Number(stats?.maxHp || character.hp || 1));
+                character.currentMp = Math.max(0, Number(stats?.maxMp || character.mp || 0));
+                delete character.battleStatus;
+            });
+            Battle.resultEndIsGameOver = false;
+            Battle.log('<span style="color:#f4e8a8;font-weight:bold;">古き光の加護がアルスを立ち上がらせた。</span>');
+        }
 
         let returnPoint = null;
         if (Battle.resultEndIsGameOver) {
@@ -6285,7 +9023,7 @@ findNextActor: () => {
             `battle-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
         App.data.battle.battleId = battleId;
         App.data.battle.resultJournal = {
-            version: 1,
+            version: 2,
             battleId,
             type: 'loss',
             status: 'committed',
@@ -6293,19 +9031,86 @@ findNextActor: () => {
             committedAt: Date.now(),
             gameOver: Battle.resultEndIsGameOver,
             returnPoint,
-            eventQueued: !!queuedLossEventId
+            eventQueued: !!queuedLossEventId,
+            storyBossTraining: trainingJournalContext,
+            elementalSpiritTrialOutcome: elementalSpiritTrialOutcome ? { ...elementalSpiritTrialOutcome } : null
         };
         App.save();
-        if (typeof App.commitSaveTransaction === 'function') App.commitSaveTransaction();
+        if (typeof App.commitSaveTransaction === 'function') {
+            const committed = App.commitSaveTransaction();
+            if (committed === false) throw new Error('敗北結果の保存に失敗しました。');
+        }
+        transactionCommitted = true;
+        Battle.finishState = 'committed';
 
         if (typeof AudioManager !== 'undefined') AudioManager.playBgm?.('battle_wipeout', { resume: false });
+        if (isTrainingBattle) {
+            Battle.log('<span style="color:#d8b5ff;font-weight:bold;">訓練開始前のHP・MPへ戻った。</span>');
+        }
         Battle.resultProcessing = false;
         Battle.resultReadyToEnd = true;
         Battle.log("\n▼ 画面タップ / Enterキーで終了 ▼");
+        return true;
+        } catch (error) {
+            console.error('[Battle] loss transaction failed:', error);
+            if (!transactionCommitted) {
+                try { App.cancelSaveTransaction?.(); } catch (_) {}
+                try {
+                    if (!rollbackSerialized) throw new Error('戦闘結果処理前の復元スナップショットがありません。');
+                    App.data = JSON.parse(rollbackSerialized);
+                    App.totalGoldGem?.();
+                    if (!App.data.battle) App.data.battle = { active: true };
+                    App.data.battle.active = true;
+                    App.data.battle.lastResultError = String(error?.message || error);
+                    App.data.battle.lastResultErrorAt = Date.now();
+                    delete App.data.battle.resultJournal;
+                    Battle.active = true;
+                    Battle.phase = 'input_recovery';
+                    Battle.resultProcessing = false;
+                    Battle.resultReadyToEnd = false;
+                    Battle.finishState = 'idle';
+                    Battle.finishToken = null;
+                    App.save();
+                    Battle.recoverBattleRuntimeAfterResultError(error);
+                } catch (rollbackError) {
+                    console.error('[Battle] loss rollback failed:', rollbackError);
+                    try { App.load?.(); } catch (loadError) { console.error('[Battle] last committed save reload failed:', loadError); }
+                    if (App.data?.battle) App.data.battle.active = true;
+                    Battle.finishState = 'idle';
+                    Battle.finishToken = null;
+                    Battle.active = true;
+                    Battle.phase = 'input_recovery';
+                    Battle.recoverBattleRuntimeAfterResultError(rollbackError);
+                }
+                return false;
+            }
+            Battle.finishState = 'committed';
+            Battle.resultProcessing = false;
+            Battle.resultReadyToEnd = true;
+            Battle.log('敗北結果は保存済みです。画面を押して戻ってください。');
+            return true;
+        }
+
     },
 
     endBattle: (isGameOver = false) => {
         Battle.phaseTransitionRestartPending = false;
+        Battle.phaseTransitionResumeToken = null;
+        Battle.deferredPhaseTransitionResumeToken = null;
+        Battle.phaseTransitionRunnerActive = false;
+        Battle.phaseTransitionRunnerToken = null;
+        Battle.phaseTransitionRunnerScheduled = false;
+        Battle.turnExecutionActive = false;
+        Battle.turnExecutionToken = null;
+        if (Battle.finishTimerId) clearTimeout(Battle.finishTimerId);
+        Battle.finishState = 'finalized';
+        Battle.finishToken = null;
+        Battle.finishTimerId = null;
+        Battle.deferredInputStart = false;
+        Battle.pendingBattleEvent = null;
+        Battle.specialCutsceneAutoBefore = undefined;
+        Battle.runtimeGeneration = Math.max(0, Number(Battle.runtimeGeneration || 0)) + 1;
+        Battle.inputGeneration = Math.max(0, Number(Battle.inputGeneration || 0)) + 1;
         const committedJournal = App.data?.battle?.resultJournal;
         if (committedJournal?.status === 'committed') {
             committedJournal.finalized = true;
@@ -6319,6 +9124,10 @@ findNextActor: () => {
             Battle.resultEndIsGameOver = false;
             Battle.resultInputLocked = false;
             Battle.resultSkipRequested = false;
+            Battle.resultLevelSkipActive = false;
+            Battle.resultWaiters = [];
+            Battle.updateResultLevelSkipButton?.();
+            Battle.setResultAdvanceIndicatorVisible?.(false);
             App.save();
             Battle.schedule(() => {
                 App.changeScene('field');
@@ -6335,6 +9144,9 @@ findNextActor: () => {
         Battle.resultEndIsGameOver = false;
         Battle.resultInputLocked = false;
         Battle.resultSkipRequested = false;
+        Battle.resultLevelSkipActive = false;
+        Battle.updateResultLevelSkipButton?.();
+        Battle.setResultAdvanceIndicatorVisible?.(false);
         if (typeof Battle.resultAdvanceResolver === 'function') {
             const resolveAdvance = Battle.resultAdvanceResolver;
             Battle.resultAdvanceResolver = null;
@@ -6408,6 +9220,12 @@ findNextActor: () => {
         }
     },
     toggleAuto: () => {
+        if (App.data?.battle?.forceAutoOff === true) {
+            Battle.auto = false;
+            Battle.updateAutoButton();
+            Battle.log('この戦闘ではオート戦闘を使用できない。');
+            return;
+        }
         const shouldStartAuto = !Battle.auto;
         Battle.auto = shouldStartAuto;
 
@@ -6439,7 +9257,10 @@ findNextActor: () => {
                 btn.innerText = `AUTO: ${Battle.auto?'ON':'OFF'}`;
                 btn.style.background = Battle.auto ? '#d00' : '#333';
                 btn.setAttribute('aria-pressed', Battle.auto ? 'true' : 'false');
-                btn.title = Battle.auto ? 'オート戦闘: ON' : 'オート戦闘: OFF';
+                const forceAutoOff = App.data?.battle?.forceAutoOff === true;
+                btn.disabled = forceAutoOff;
+                btn.style.opacity = forceAutoOff ? '0.45' : '1';
+                btn.title = forceAutoOff ? 'このイベント戦闘ではオート戦闘を使用できません' : (Battle.auto ? 'オート戦闘: ON' : 'オート戦闘: OFF');
             }
         });
     },
@@ -6454,12 +9275,6 @@ findNextActor: () => {
         }
         if (Battle.resultReadyToEnd) {
             Battle.endBattle(Battle.resultEndIsGameOver === true);
-            return;
-        }
-        Battle.resultSkipRequested = true;
-        if (Array.isArray(Battle.resultWaiters)) {
-            const waiters = Battle.resultWaiters.splice(0);
-            waiters.forEach(fn => { try { fn(); } catch(e) {} });
         }
     },
 
@@ -6468,7 +9283,7 @@ findNextActor: () => {
         // ただし戦闘中に resultWait() を使っている箇所は従来通り battleSpeed の影響を受ける。
         if (Battle.phase !== 'result') return Battle.wait(ms);
         const waitMs = Math.max(0, Math.floor(Number(ms) || 0));
-        if (waitMs <= 0 || Battle.resultSkipRequested) return Promise.resolve();
+        if (waitMs <= 0 || (Battle.resultLevelSkipActive && Battle.resultSkipRequested)) return Promise.resolve();
         return new Promise(resolve => {
             let done = false;
             const finish = () => {
