@@ -46,7 +46,7 @@ assert(!azMonster?.phaseTransition && !azMonster?.phaseTransitionMonsterId, 'Fiv
 for (const eventId of ['prologue_hidden_special_end_win', 'prologue_hidden_special_end_loss']) {
   const end = events[eventId];
   assert(end?.actions?.some(a => a.type === 'TEMP_LB_CLEAR' && a.id === 'prologue_divine_lb99'), `${eventId} does not clear temporary divine LB wrapper.`);
-  assert(end?.actions?.some(a => a.type === 'RESET_HERO_BASELINE'), `${eventId} does not reset ordinary prologue leveling before special carry.`);
+  assert(!end?.actions?.some(a => a.type === 'RESET_HERO_BASELINE'), `${eventId} must preserve prologue leveling into the present.`);
   assert(end?.actions?.some(a => a.type === 'PROMOTE_TEMP_ALLY' && Number(a.charId) === 403), `${eventId} removes prologue Luna instead of carrying her.`);
   for (const id of [301, 403, 501, 402]) {
     assert(end?.actions?.some(a => a.type === 'SET_CHARACTER_LB' && Number(a.charId) === id && Number(a.limitBreak) === 99), `${eventId} does not carry LB99 for ${id}.`);

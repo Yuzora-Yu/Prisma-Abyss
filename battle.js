@@ -199,6 +199,7 @@ const Battle = {
             endAfterTurns:null, endAtHpPercent:null, storyVariantOf:null, targetMonsterIds:[], skillFailureRules:[]
         };
         const toFiniteOrNull = value => {
+            if (value === null || value === undefined || value === '') return null;
             const num = Number(value);
             return Number.isFinite(num) ? num : null;
         };
@@ -3062,6 +3063,8 @@ const Battle = {
     applyMapEnemyBoost: (enemy, boost) => {
         if (!enemy || !boost || (enemy.isRare && boost.applyToRares !== true)) return enemy;
         const scale = Math.max(0.1, Number(enemy.isRare ? (boost.rareStatMultiplier || boost.statMultiplier || boost.scale || 1) : (boost.statMultiplier || boost.scale || 1)) || 1);
+        const hpScale = Math.max(0.1, Number(enemy.isRare ? (boost.rareHpMultiplier || boost.hpMultiplier || scale) : (boost.hpMultiplier || scale)) || scale);
+        const mpScale = Math.max(0.1, Number(enemy.isRare ? (boost.rareMpMultiplier || boost.mpMultiplier || scale) : (boost.mpMultiplier || scale)) || scale);
         const scaleNumber = (value, rate, min = 0) => {
             const n = Number(value || 0);
             if (!Number.isFinite(n)) return value;
@@ -3071,10 +3074,14 @@ const Battle = {
         if (boost.nameSuffix && !String(enemy.name || '').endsWith(boost.nameSuffix)) {
             enemy.name = `${enemy.name || '魔物'}${boost.nameSuffix}`;
         }
-        enemy.hp = scaleNumber(enemy.hp, scale, 1);
-        enemy.baseMaxHp = scaleNumber(enemy.baseMaxHp || enemy.hp, scale, enemy.hp);
-        enemy.mp = scaleNumber(enemy.mp, scale, 0);
-        enemy.baseMaxMp = scaleNumber(enemy.baseMaxMp || enemy.mp, scale, enemy.mp);
+        const originalHp = Number(enemy.hp || 1);
+        const originalBaseHp = Number(enemy.baseMaxHp || originalHp);
+        const originalMp = Number(enemy.mp || 0);
+        const originalBaseMp = Number(enemy.baseMaxMp || originalMp);
+        enemy.hp = scaleNumber(originalHp, hpScale, 1);
+        enemy.baseMaxHp = scaleNumber(originalBaseHp, hpScale, enemy.hp);
+        enemy.mp = scaleNumber(originalMp, mpScale, 0);
+        enemy.baseMaxMp = scaleNumber(originalBaseMp, mpScale, enemy.mp);
 
         if (enemy.baseStats) {
             ['atk', 'def', 'spd', 'mag', 'mdef'].forEach(key => {
@@ -8867,7 +8874,7 @@ findNextActor: () => {
         // 勝敗のゲーム状態は表示前に確定済み。再読込時は表示層だけを破棄する。
         journal.finalized = true;
         journal.finalizedAt = Date.now();
-        if (App.data?.progress?.tempStoryPower && typeof App.clearTemporaryStoryPower === 'function') {
+        if (App.data?.progress?.tempStoryPower && App.data.progress.tempStoryPower.persistAcrossBattles !== true && typeof App.clearTemporaryStoryPower === 'function') {
             App.clearTemporaryStoryPower({ id: App.data.progress.tempStoryPower.id });
         }
         if (journal.type === 'win' && journal.pendingMonsterSkillEvolution?.status === 'pending') {
@@ -8950,6 +8957,9 @@ findNextActor: () => {
         } else if (sceneWipeoutEventId) {
             queuedLossEventId = sceneWipeoutEventId;
             Battle.resultEndIsGameOver = false;
+        } else if (isPlayablePrologue) {
+            queuedLossEventId = 'prologue_field_wipeout_recover';
+            Battle.resultEndIsGameOver = false;
         }
         if (queuedLossEventId) {
             if (typeof StoryManager !== 'undefined' && typeof StoryManager.queueEvent === 'function') {
@@ -8974,18 +8984,6 @@ findNextActor: () => {
                 charData.currentMp = Math.max(0, Number(member.mp || 0));
                 delete charData.battleStatus;
             });
-        }
-
-        if (isPlayablePrologue) {
-            (App.data.characters || []).forEach(character => {
-                if (!(App.data.party || []).includes(character.uid)) return;
-                const stats = typeof App.calcStats === 'function' ? App.calcStats(character) : null;
-                character.currentHp = Math.max(1, Number(stats?.maxHp || character.hp || 1));
-                character.currentMp = Math.max(0, Number(stats?.maxMp || character.mp || 0));
-                delete character.battleStatus;
-            });
-            Battle.resultEndIsGameOver = false;
-            Battle.log('<span style="color:#f4e8a8;font-weight:bold;">古き光の加護がアルスを立ち上がらせた。</span>');
         }
 
         let returnPoint = null;
@@ -9115,7 +9113,7 @@ findNextActor: () => {
         if (committedJournal?.status === 'committed') {
             committedJournal.finalized = true;
             committedJournal.finalizedAt = Date.now();
-            if (App.data?.progress?.tempStoryPower && typeof App.clearTemporaryStoryPower === 'function') {
+            if (App.data?.progress?.tempStoryPower && App.data.progress.tempStoryPower.persistAcrossBattles !== true && typeof App.clearTemporaryStoryPower === 'function') {
                 App.clearTemporaryStoryPower({ id: App.data.progress.tempStoryPower.id });
             }
             App.data.battle = { active: false };
@@ -9186,7 +9184,7 @@ findNextActor: () => {
 
         // ストーリー専用の一時強化は戦闘終了時点で必ず解除する。
         // これにより、勝利後イベントが中断・リロードされてもLB99がフィールドへ漏れない。
-        if (App.data?.progress?.tempStoryPower && typeof App.clearTemporaryStoryPower === 'function') {
+        if (App.data?.progress?.tempStoryPower && App.data.progress.tempStoryPower.persistAcrossBattles !== true && typeof App.clearTemporaryStoryPower === 'function') {
             App.clearTemporaryStoryPower({ id: App.data.progress.tempStoryPower.id });
         }
 

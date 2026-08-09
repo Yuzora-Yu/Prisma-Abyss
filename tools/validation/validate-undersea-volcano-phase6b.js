@@ -75,7 +75,9 @@ assert(travel.missingFlag==='underseaVolcanoCleared', 'Undersea Volcano travel a
 assert(dungeonSource.includes("case 'UNDERSEA_VOLCANO':"), 'Dungeon entry gate for Undersea Volcano is missing.');
 assert(dungeonSource.includes("'locked_light_palace_volcano'") && dungeonSource.includes('flags.underseaVolcanoCleared'), 'Light Palace must use the layered lighthouse/volcano gate.');
 assert(mainSource.includes('underseaVolcanoState: 0') && databaseSource.includes('underseaVolcanoState: 0'), 'WorldState defaults are not synchronized.');
-assert(mainSource.includes('storyStateSchemaVersion: 6') && databaseSource.includes('storyStateSchemaVersion: 6'), 'StoryState schema version must be 6.');
+const mainSchema = Number((mainSource.match(/storyStateSchemaVersion:\s*(\d+)/) || [])[1] || 0);
+const databaseSchema = Number((databaseSource.match(/storyStateSchemaVersion:\s*(\d+)/) || [])[1] || 0);
+assert(mainSchema >= 6 && databaseSchema >= 6, 'StoryState schema version must remain at least 6 for Undersea Volcano saves.');
 assert(mainSource.includes('reconcileUnderseaVolcanoWorldState') && mainSource.includes('underseaVolcanoLegacyBypass'), 'Undersea Volcano old-save reconciliation/bypass is missing.');
 
 const routeText=[...(scripts.LIGHTHOUSE_CLEAR||[]), ...(scripts.THUNDER_GUILD_UNDERSEA_VOLCANO_BRIEFING||[])].map(x=>x.text||'').join('\n');

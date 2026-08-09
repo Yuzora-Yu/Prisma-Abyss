@@ -719,7 +719,6 @@ const Dungeon = {
         App.data.dungeon.abyssBossEncounter = null;
         App.save();
         Dungeon.loadFloor();
-        App.log(`${challenge.themeLabel || '変異'}の依頼迷宮へ入った。`);
         return true;
     },
 	
@@ -1133,7 +1132,6 @@ const Dungeon = {
 
         App.save();
         App.changeScene('field');
-        App.log(`${nextDef.displayName || nextDef.name}へ移動した。`);
     },
 
     followFixedFloorLink: (link, mapDef = null) => {
@@ -1205,7 +1203,6 @@ const Dungeon = {
                 }
                 return true;
             }
-            if (link?.openLog || link?.log) App.log(link.openLog || link.log);
             if (link) return Dungeon.followFixedFloorLink(link, Field.currentMapData);
             const exitPoint = Field.currentMapData.exitPoint;
             const forced = exitPoint ? {
@@ -1222,7 +1219,6 @@ const Dungeon = {
         if (link.requiredFlag && !flags[link.requiredFlag]) {
             return false;
         }
-        if (link.openLog || link.log) App.log(link.openLog || link.log);
         return Dungeon.followFixedFloorLink(link, Field.currentMapData);
     },
 
@@ -1264,7 +1260,6 @@ const Dungeon = {
                 const label = (typeof MapRegistry !== 'undefined' && MapRegistry.getFixedFloorActionLabel)
                     ? MapRegistry.getFixedFloorActionLabel(mapDef, link, App.data?.progress?.floor || mapDef.floor || 1, Field.getCurrentAreaKey())
                     : (link.to === 'EXIT' ? (link.label || '外に出る') : (link.label || '進む'));
-                logIfNeeded(link.openLog || link.log || (link.to === 'EXIT' ? '外への出口がある。' : (link.toDungeon ? '奥へ続く入口がある。' : '階段がある。')));
                 App.setAction(label, () => Dungeon.followFixedFloorLink(link, mapDef));
                 return true;
             }
@@ -1775,7 +1770,6 @@ const Dungeon = {
         if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('floor_move');
         App.save();
         App.changeScene('field');
-        App.log(`${areaDef.displayName || areaDef.name}に入った。`);
         return true;
     },
 
@@ -2150,8 +2144,6 @@ const Dungeon = {
                 App.log('依頼迷宮を攻略し、帰還した。');
             } else if (leavingGuildQuestRun) {
                 App.log('依頼迷宮から撤退した。依頼は再挑戦できる。');
-            } else {
-                App.log("ダンジョンから脱出した");
             }
         }
         if (options.clearAction !== false) App.clearAction();

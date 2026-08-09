@@ -36,11 +36,14 @@ assert(bossAction.lossEventId === 'prologue_first_boss_loss' && bossAction.winEv
 assert(bossAction.forceAutoOff === true, 'First boss must force manual battle.');
 assert(bossAction.noExp === true && bossAction.noDrops === true && bossAction.bestiaryExcluded === true, 'First boss event rewards/bestiary rules are incomplete.');
 assert(boss?.actions?.some(a => a.type === 'TEMP_LB_START' && Number(a.value) === 99), 'First boss does not activate temporary LB99 blessing.');
+const prologueLb = boss.actions.find(a => a.type === 'TEMP_LB_START');
+assert(prologueLb.persistAcrossBattles === true, 'Prologue LB99 must persist from the first boss into Illuminacia.');
+assert(battleSource.includes('tempStoryPower.persistAcrossBattles !== true'), 'Battle end still clears persistent story LB between chained battles.');
 
 const normal = events.prologue_first_boss_loss;
 assert(normal?.actions?.some(a => a.type === 'ITEM' && Number(a.id) === 701009), 'Normal route does not grant burned pendant.');
 assert(normal?.actions?.some(a => a.type === 'RESET_TEMP_ALLY' && Number(a.charId) === 403), 'Normal route does not remove prologue Luna.');
-assert(normal?.actions?.some(a => a.type === 'RESET_HERO_BASELINE'), 'Normal route does not reset prologue growth from Ars.');
+assert(!normal?.actions?.some(a => a.type === 'RESET_HERO_BASELINE'), 'Normal route must carry Ars level/EXP/equipment into the present.');
 assert(normal?.actions?.some(a => a.type === 'START_FIXED_MAP' && a.value === 'REES_MOUNTAIN_HUT'), 'Normal route does not transition to Rees hut.');
 
 const win = events.prologue_first_boss_win;
@@ -59,7 +62,7 @@ for (const key of ['PROLOGUE_HOME_LOST','PROLOGUE_SOUTH_EXIT_BOSS','PROLOGUE_COL
 assert(mainSource.includes('resetTemporaryStoryAlly:'), 'Runtime lacks temporary ally reset helper.');
 assert(mainSource.includes('resetHeroAfterPlayablePrologue:'), 'Runtime lacks prologue hero reset helper.');
 assert(logicSource.includes("action.type === 'RESET_TEMP_ALLY'"), 'Story runtime lacks RESET_TEMP_ALLY adapter.');
-assert(logicSource.includes("action.type === 'RESET_HERO_BASELINE'"), 'Story runtime lacks RESET_HERO_BASELINE adapter.');
+assert(logicSource.includes("action.type === 'RESET_HERO_BASELINE'"), 'Legacy RESET_HERO_BASELINE adapter may remain for compatibility, but prologue routes must not invoke it.');
 assert(battleSource.includes("if (App.data?.battle?.forceAutoOff === true)"), 'Battle auto toggle is not locked for forced-manual story battles.');
 
 console.log('PASS validate-playable-prologue-phase2b');

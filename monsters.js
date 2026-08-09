@@ -1351,6 +1351,35 @@ const ALL_FIXED_BOSS_MONSTERS = FIXED_BOSS_MONSTERS;
 
 const STORY_EVENT_MONSTERS = [
   (() => {
+    const source = MONSTER_BANDS_1_200.flatMap(band => band.monsters || []).find(monster => Number(monster?.id) === 2) || {};
+    return {
+      ...JSON.parse(JSON.stringify(source)),
+      id:802000,
+      imageId:2,
+      name:'狂乱した魔物',
+      race:source.race || '獣',
+      rank:2,
+      minF:1,
+      hp:48,
+      mp:24,
+      atk:12,
+      def:7,
+      spd:6,
+      mag:8,
+      mdef:6,
+      gold:0,
+      exp:18,
+      actCount:1,
+      acts:[{id:1,rate:80,condition:0},{id:203,rate:20,condition:0}],
+      drops:{ normal:{id:null,rate:0}, rare:{id:null,rate:0} },
+      archives:['五年前の崩壊直後、異常な興奮状態で人へ襲いかかった魔物。'],
+      storyOnly:true,
+      prologueEventVariant:true,
+      bestiaryExcluded:true,
+      storyVariantOf:2
+    };
+  })(),
+  (() => {
     const source = ALL_FIXED_BOSS_MONSTERS.find(monster => Number(monster?.id) === 301010);
     return {
       ...JSON.parse(JSON.stringify(source)),

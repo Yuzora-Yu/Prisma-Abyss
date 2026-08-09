@@ -827,14 +827,15 @@ const App = {
     },
 
     // --- 新シナリオ共通状態 (WorldState / StoryState) ---
-    storyStateSchemaVersion: 6,
+    storyStateSchemaVersion: 7,
 
     getDefaultWorldState: () => ({
         prologueStage: 0,
         fireVillageRecovery: 0,
         waterCityState: 0, // 0:未到達/未確定 1:暗黒騎士占拠 2:解放後 3:後期変化
-        thunderFortState: 0, // 0:未到達 1:機械暴走 2:要塞確保・大灯台期 3:大灯台後・海底火山期 4:海底火山後
+        thunderFortState: 0, // 0:未到達 1:機械暴走 2:要塞確保・大灯台期 3:大灯台後・海底火山期 4:海底火山後 5:魔王軍急襲警戒 6:防衛中 7:防衛成功/ルーナ覚醒後
         underseaVolcanoState: 0, // 0:未発見 1:位置判明 2:侵入 3:研究区画 4:最奥 5:攻略済み
+        lightPalaceState: 0, // 0:攻略前 1:回想完了 2:現在攻略中 3:地下牢確認 4:祭壇戦後/アラン離脱 5:宮殿解放
         lunaPublicIdentityKnown: false,
         lunaMemoryStage: 0,
         leonJosephRelationStage: 0,
@@ -865,11 +866,17 @@ const App = {
         const flags = data?.progress?.flags || {};
         const current = Math.max(0, Math.floor(Number(worldState.thunderFortState || 0)));
         let next = current;
-        if (flags.underseaVolcanoCleared === true) next = Math.max(next, 4);
+        if (flags.thunderFortDemonAssaultCleared === true || flags.lunaAwakenedAtThunderFort === true) next = Math.max(next, 7);
+        else if (flags.thunderFortDemonAssaultArrivalSeen === true || flags.thunderFortDefenseWave1Cleared === true) next = Math.max(next, 6);
+        else if (flags.thunderFortDemonAssaultAlert === true) next = Math.max(next, 5);
+        else if (flags.underseaVolcanoCleared === true) next = Math.max(next, 4);
         else if (flags.bigTowerCleared === true || flags.lighthouseCleared === true) next = Math.max(next, 3);
         else if (flags.thunderFortCleared === true) next = Math.max(next, 2);
         else if (flags.josephJoinedAtThunderFort === true) next = Math.max(next, 1);
         worldState.thunderFortState = next;
+        if (flags.lunaMemoryLossRevealed === true) {
+            worldState.lunaMemoryStage = Math.max(1, Math.floor(Number(worldState.lunaMemoryStage || 0)));
+        }
         return next;
     },
 
@@ -898,6 +905,27 @@ const App = {
         else if (flags.underseaVolcanoEntered === true) next = Math.max(next, 2);
         else if (flags.underseaVolcanoRouteOpened === true) next = Math.max(next, 1);
         worldState.underseaVolcanoState = next;
+        return next;
+    },
+
+
+    reconcileLightPalaceWorldState: (data = App.data) => {
+        const worldState = App.ensureWorldState(data);
+        if (!worldState) return null;
+        if (!data.progress.flags || typeof data.progress.flags !== 'object') data.progress.flags = {};
+        const flags = data.progress.flags;
+        const storyStep = Math.max(0, Math.floor(Number(data.progress.storyStep || 0)));
+        const current = Math.max(0, Math.floor(Number(worldState.lightPalaceState || 0)));
+        let next = current;
+
+        // 旧実装で既に光の宮殿を越えているsaveは巻き戻さない。
+        if (flags.lightPalaceCleared === true || storyStep >= 8) next = Math.max(next, 5);
+        else if (flags.alanBetrayedLightPalace === true) next = Math.max(next, 4);
+        else if (flags.lightPalacePrisonRescueSecured === true) next = Math.max(next, 3);
+        else if (flags.lightPalacePresentAssaultEntrySeen === true) next = Math.max(next, 2);
+        else if (flags.lightPalaceFlashbackCompleted === true) next = Math.max(next, 1);
+
+        worldState.lightPalaceState = next;
         return next;
     },
 
@@ -1703,68 +1731,105 @@ const App = {
     // --- 初期データ構造の定義 ---
     // セーブデータが全くない場合や、マイグレーション時のデフォルト参照用
     getInitialData: () => {
+        // NEW GAME と migration fallback が別の初期値を持つと、復旧経路だけ
+        // HP / 所持品 / 通貨が変わってしまう。INITIAL_DATA_TEMPLATE を唯一の基準にする。
+        const template = (typeof INITIAL_DATA_TEMPLATE !== 'undefined' && INITIAL_DATA_TEMPLATE)
+            ? JSON.parse(JSON.stringify(INITIAL_DATA_TEMPLATE))
+            : {};
+        const templateProgress = (template.progress && typeof template.progress === 'object') ? template.progress : {};
+        const templateHero = Array.isArray(template.characters) && template.characters[0]
+            ? JSON.parse(JSON.stringify(template.characters[0]))
+            : { uid:'p1', charId:301, name:'アルス', job:'勇者', level:1, hp:32, mp:10, atk:10, def:8, mag:8, spd:8, mdef:8, equips:{} };
+        const templateStats = (template.stats && typeof template.stats === 'object') ? template.stats : {};
         return {
-            location: { area: 'PROLOGUE_WEST_HILL', x: 8, y: 7 },
-            settings: App.getDefaultSettings(),
-            system: { monsterIdSchemaVersion: 4, abyssFloorSchemaVersion: 2, monsterAllySkillPointSchemaVersion: 1, monsterAllyGrowthSchemaVersion: 1, storyStateSchemaVersion: 6 },
-            progress: { 
-                floor: 0, 
-                storyStep: 0, 
-                flags: { hasShip: false, luminaVillageTopWallRowV1: true },
-                worldState: App.getDefaultWorldState(),
-                storyCharacters: {},
-                storyRewards: {},
-                unlocked: { ...App.getDefaultUnlockState(), boat: false },
-                clearedDungeons: [],
-                openedChests: {},  
-                defeatedBosses: {},
-                visitedFixedMaps: {},
-                quests: {},
-                guild: { rank: 'G', exp: 0, points: 0, offers: [], questStates: {}, completionCounts: {}, refreshCount: 0 },
-                coinSpendingRewards: { claimedMilestones: [] }
+            ...template,
+            location: template.location || { area: 'PROLOGUE_WEST_HILL', x: 8, y: 7 },
+            settings: { ...App.getDefaultSettings(), ...(template.settings || {}) },
+            system: {
+                ...(template.system || {}),
+                monsterIdSchemaVersion: 4,
+                abyssFloorSchemaVersion: 2,
+                monsterAllySkillPointSchemaVersion: 1,
+                monsterAllyGrowthSchemaVersion: 1,
+                storyStateSchemaVersion: 7
             },
-            inventory: [],
-            items: { "1": 3, "701009": 1 },
-            characters: [
-                { uid: 'p1', charId: 301, name: 'アルス', job: '勇者', level: 1, exp: 0, hp: 50, mp: 20, atk: 15, def: 10, mag: 10, spd: 10, equips: { '武器':null, '盾':null, '頭':null, '体':null, '足':null }, sp: 0, tree: {}, skillBookSkills: [], config: { fullAuto: false, hiddenSkills: [], autoDisabledSkills: [], skillUsageConfigVersion: 2, strategy: 'balanced' } }
-            ],
-            party: ['p1', null, null, null],
-            gold: 500,
-            gems: 0,
-			// ★追加：鍛冶データの初期値
-            blacksmith: { 
-                level: 1, 
-                exp: 0 
+            progress: {
+                ...templateProgress,
+                floor: Number(templateProgress.floor || 0),
+                storyStep: Number(templateProgress.storyStep || 0),
+                flags: { hasShip: false, luminaVillageTopWallRowV1: true, ...(templateProgress.flags || {}) },
+                worldState: { ...App.getDefaultWorldState(), ...(templateProgress.worldState || {}) },
+                storyCharacters: templateProgress.storyCharacters || {},
+                storyRewards: templateProgress.storyRewards || {},
+                unlocked: { ...App.getDefaultUnlockState(), ...(templateProgress.unlocked || {}), boat: false },
+                clearedDungeons: Array.isArray(templateProgress.clearedDungeons) ? templateProgress.clearedDungeons : [],
+                openedChests: templateProgress.openedChests || {},
+                defeatedBosses: templateProgress.defeatedBosses || {},
+                visitedFixedMaps: templateProgress.visitedFixedMaps || {},
+                quests: templateProgress.quests || {},
+                guild: templateProgress.guild || { rank: 'G', exp: 0, points: 0, offers: [], questStates: {}, completionCounts: {}, refreshCount: 0 },
+                coinSpendingRewards: templateProgress.coinSpendingRewards || { claimedMilestones: [] }
             },
-            dungeon: { 
+            inventory: Array.isArray(template.inventory) ? template.inventory : [],
+            items: (template.items && typeof template.items === 'object') ? template.items : { '1': 5 },
+            characters: [{
+                ...templateHero,
+                uid: templateHero.uid || 'p1',
+                charId: Number(templateHero.charId || 301),
+                level: Math.max(1, Number(templateHero.level || 1)),
+                exp: Math.max(0, Number(templateHero.exp || 0)),
+                equips: templateHero.equips && typeof templateHero.equips === 'object' ? templateHero.equips : {},
+                tree: templateHero.tree && typeof templateHero.tree === 'object' ? templateHero.tree : {},
+                skillBookSkills: Array.isArray(templateHero.skillBookSkills) ? templateHero.skillBookSkills : [],
+                config: {
+                    fullAuto: false,
+                    hiddenSkills: [],
+                    autoDisabledSkills: [],
+                    skillUsageConfigVersion: 2,
+                    strategy: 'balanced',
+                    ...(templateHero.config || {})
+                }
+            }],
+            party: Array.isArray(template.party) ? template.party : ['p1', null, null, null],
+            gold: Number(template.gold ?? 0),
+            gems: Number(template.gems ?? 0),
+            blacksmith: template.blacksmith || { level: 1, exp: 0 },
+            dungeon: template.dungeon || {
                 maxFloor: 0,
                 storyMaxFloor: 0,
                 tryCount: 0,
                 storyTryCount: 0,
                 randomTryCount: 0,
-                abyssMode: 'story', 
+                abyssMode: 'story',
                 returnPoint: null,
                 map: null,
                 width: 30,
                 height: 30
             },
-            stats: { 
-                wipeoutCount: 0,
-                totalSteps: 0, totalBattles: 0, totalChestsOpened: 0, totalMedals: 0, totalCoinsSpent: 0,
-                totalQuestCompletions: 0, totalGuildQuestCompletions: 0,
-                totalAlchemyCrafts: 0, totalAlchemyItemsCrafted: 0,
-                totalBlacksmithActions: 0, blacksmithSynthesisCount: 0,
-                blacksmithRefineAttempts: 0, blacksmithRefineSuccesses: 0,
-                blacksmithEnhanceAttempts: 0, blacksmithEnhanceSuccesses: 0,
-                playTimeMs: 0,
-                maxGold: 0, 
-                maxGems: 0, 
-                maxDamage: { val: 0, actor: '未記録', skill: '-' } 
+            stats: {
+                ...templateStats,
+                wipeoutCount: Number(templateStats.wipeoutCount || 0),
+                totalSteps: Number(templateStats.totalSteps || 0),
+                totalBattles: Number(templateStats.totalBattles || 0),
+                totalChestsOpened: Number(templateStats.totalChestsOpened || 0),
+                totalMedals: Number(templateStats.totalMedals || 0),
+                totalCoinsSpent: Number(templateStats.totalCoinsSpent || 0),
+                totalQuestCompletions: Number(templateStats.totalQuestCompletions || 0),
+                totalGuildQuestCompletions: Number(templateStats.totalGuildQuestCompletions || 0),
+                totalAlchemyCrafts: Number(templateStats.totalAlchemyCrafts || 0),
+                totalAlchemyItemsCrafted: Number(templateStats.totalAlchemyItemsCrafted || 0),
+                totalBlacksmithActions: Number(templateStats.totalBlacksmithActions || 0),
+                blacksmithSynthesisCount: Number(templateStats.blacksmithSynthesisCount || 0),
+                blacksmithRefineAttempts: Number(templateStats.blacksmithRefineAttempts || 0),
+                blacksmithRefineSuccesses: Number(templateStats.blacksmithRefineSuccesses || 0),
+                blacksmithEnhanceAttempts: Number(templateStats.blacksmithEnhanceAttempts || 0),
+                blacksmithEnhanceSuccesses: Number(templateStats.blacksmithEnhanceSuccesses || 0),
+                playTimeMs: Number(templateStats.playTimeMs || 0),
+                maxGold: Number(templateStats.maxGold || 0),
+                maxGems: Number(templateStats.maxGems || 0),
+                maxDamage: templateStats.maxDamage || { val: 0, actor: '未記録', skill: '-' }
             },
-            book: { 
-                monsters: [], 
-                killCounts: {} 
-            }
+            book: template.book || { monsters: [], killCounts: {} }
         };
     },
 
@@ -3347,9 +3412,9 @@ const App = {
         const targetName = info.def.name || areaKey;
         const suffix = localDest ? 'の入口' : (dest.parentAreaKey && dest.parentAreaKey !== areaKey ? 'の入口付近' : 'の入口');
         const message = `${targetName}${suffix}へ移動した！`;
-        if (typeof App.log === 'function') App.log(message);
+        // 移動完了そのものはフィールドログへ出さない。
 
-        // スカイプリズム成功時はログ表示のみ。
+        // スカイプリズム成功時は追加モーダルを出さず呼び出し側へ通知する。
         // 使用確認の後に追加のOKモーダルを出さないため、呼び出し側へ通知する。
         return { ok: true, message, silentSuccess: true };
     },
@@ -3440,7 +3505,6 @@ const App = {
         Field.render?.();
         Field.refreshCurrentAction?.({ silent: true });
         Field.startIdleStep?.();
-        App.log?.('ライザーク要塞1階、冒険者ギルド受付前へ移動した！');
         return { ok: true };
     },
 
@@ -8322,7 +8386,17 @@ load: () => {
         App.ensureWorldState(data);
         App.reconcileThunderFortWorldState(data);
         App.reconcileUnderseaVolcanoWorldState(data);
+        App.reconcileLightPalaceWorldState(data);
         App.ensureStoryCharacterStates(data);
+
+        // 旧開発版では焼け焦げたペンダントがNEW GAME初期所持に混入していた。
+        // 崩落前のプロローグ途中データだけを対象に除去し、5年後へ進行済みのセーブは保持する。
+        const migratedPrologueStage = Math.max(0, Number(data.progress?.worldState?.prologueStage || 0));
+        const migratedPrologueFlags = data.progress?.flags || {};
+        if (migratedPrologueStage < 100 && !migratedPrologueFlags.prologueFirstBossResolved && data.items && Number(data.items[701009] || 0) > 0) {
+            delete data.items[701009];
+            delete data.items['701009'];
+        }
 
         if (data.characters && Array.isArray(data.characters)) {
             data.characters.forEach(char => {
@@ -9299,7 +9373,6 @@ const Field = {
         if (App.data.location.worldKey === 'ABYSS_WORLD' && typeof App.discoverFixedMap === 'function') {
             App.discoverFixedMap('ABYSS_WORLD', { save: false, silent: true });
         }
-        if (options.silentLog !== true) App.log(`${areaDef.name}に入った`);
         App.save();
         App.changeScene('field');
         return true;
@@ -10656,6 +10729,11 @@ const Field = {
         return eventIds[count % eventIds.length];
     },
 
+    isNavigationMapAction: (action) => {
+        if (!action) return false;
+        return action.type === 'fixedMap' || action.type === 'returnPortal';
+    },
+
     isMapActionAvailable: (action) => {
         if (!action || !App.evaluateGameConditions(action)) return false;
         if (action.hideWhenNoEvent && !Field.resolveMapActionEventId(action)) return false;
@@ -11257,7 +11335,7 @@ const Field = {
             return;
         }
 
-        if (action.log && action.type !== 'quest' && action.type !== 'questBoard' && action.type !== 'guildBoard') App.log(action.log);
+        if (action.log && !Field.isNavigationMapAction(action) && action.type !== 'quest' && action.type !== 'questBoard' && action.type !== 'guildBoard') App.log(action.log);
 
         const progressEventId = Field.resolveMapActionEventId(action);
         if (progressEventId && typeof StoryManager !== 'undefined') {
@@ -11537,7 +11615,8 @@ const Field = {
                     : null;
                 if (mapAction) {
                     if (!Field.isMapActionAvailable(mapAction)) return false;
-                    if (mapAction.log) logIfNeeded(mapAction.log);
+                    if (mapAction.triggerOnStep === true) return false;
+                    if (mapAction.log && !Field.isNavigationMapAction(mapAction)) logIfNeeded(mapAction.log);
                     if (mapAction.type === 'abyssDungeon') {
                         App.setFeatureAction(mapAction.label || '魔窟に入る', 'abyss', () => Field.executeMapAction(mapAction));
                     } else {
@@ -11562,7 +11641,8 @@ const Field = {
                     : null;
                 if (fixedMapAction) {
                     if (!Field.isMapActionAvailable(fixedMapAction)) return false;
-                    if (fixedMapAction.log) logIfNeeded(fixedMapAction.log);
+                    if (fixedMapAction.triggerOnStep === true) return false;
+                    if (fixedMapAction.log && !Field.isNavigationMapAction(fixedMapAction)) logIfNeeded(fixedMapAction.log);
                     App.setAction(fixedMapAction.label || '調べる', () => Field.executeMapAction(fixedMapAction));
                     return true;
                 }
@@ -11991,7 +12071,7 @@ const Field = {
                 tile = 'T';
             }
 
-            if (tile === 'S' && !Field.currentMapData.isDungeon) {
+            if (tile === 'S' && !Field.currentMapData.isDungeon && !targetMapAction) {
                 const areaKey = App.data.location.area;
                 if (typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[areaKey]) {
                     const mapDef = FIXED_MAPS[areaKey];
@@ -12042,7 +12122,6 @@ const Field = {
                     Field.x = Number(exit.x); Field.y = Number(exit.y);
                     App.data.location.x = Field.x; App.data.location.y = Field.y;
                     Field.currentMapData = null;
-                    App.log("フィールドへ出た");
                     App.save(); Field.render();
                     if (typeof Field.startIdleStep === 'function') Field.startIdleStep();
                     return;
@@ -12051,6 +12130,14 @@ const Field = {
 
             Field.x = nx; Field.y = ny;
             App.data.location.x = nx; App.data.location.y = ny;
+
+            // 同一MAP内の区画境界などは、床を踏んだ瞬間に遷移する。
+            // 別MAPへの主要な出入口は従来どおりアクションボタンを使う。
+            if (targetMapAction?.triggerOnStep === true && Field.isMapActionAvailable(targetMapAction)) {
+                Field.executeMapAction(targetMapAction);
+                return;
+            }
+
             if (Field.currentMapData?.isFixed && typeof Dungeon !== 'undefined' && typeof Dungeon.markFixedVisibleArea === 'function') {
                 Dungeon.markFixedVisibleArea(Field.x, Field.y, Field.currentMapData.revealRadius || 3);
             }

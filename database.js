@@ -313,7 +313,7 @@ window.generateEnemy = function(floor) {
 const INITIAL_DATA_TEMPLATE = {
     gold: 0, gems: 9000,
     settings: { battleSpeed: 'normal', battleAutoStart: false },
-    items: { 1: 5, 701009: 1 },
+    items: { 1: 5 },
     inventory: [], 
     location: { 
         area: 'PROLOGUE_WEST_HILL', 
@@ -321,7 +321,7 @@ const INITIAL_DATA_TEMPLATE = {
     },
     transportMode: null, // null / "boat" / "flying"
     mapReturnPoint: null,
-    system: { storyStateSchemaVersion: 6 },
+    system: { storyStateSchemaVersion: 7 },
     progress: { 
         floor: 0,
         storyStep: 0,        // ストーリー進行フラグ
@@ -332,6 +332,7 @@ const INITIAL_DATA_TEMPLATE = {
             waterCityState: 0,
             thunderFortState: 0,
             underseaVolcanoState: 0,
+            lightPalaceState: 0,
             lunaPublicIdentityKnown: false,
             lunaMemoryStage: 0,
             leonJosephRelationStage: 0,

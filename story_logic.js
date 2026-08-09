@@ -80,16 +80,17 @@ const StoryManager = {
         const flags = progress.flags || {};
         const prologueStage = Math.max(0, Number(progress.worldState?.prologueStage || 0));
         if (prologueStage >= 100 && flags.prologuePresentWakeSeen) {
-            if (!flags.prologueDepartedReesHut) return 'リースの山小屋を出て、リュミナ地方へ向かおう';
-            if (!flags.presentLuminaRescueSeen) return '現在のリュミナ村で起きている異変を確かめよう';
+            if (!flags.prologueDepartedReesHut) return '山小屋を出よう';
+            if (!flags.presentLuminaRescueSeen) return '山を下りた先の村の様子を確かめよう';
+            if (!flags.luminaVillageNameKnown) return '村の長老と話そう';
             if (Number(progress.storyStep || 0) === 0) return 'リュミナ村の長老に話を聞こう';
         }
         if (prologueStage > 0 && prologueStage < 100) {
-            if (prologueStage <= 1) return 'ルーナを追って村の南側へ戻ろう';
+            if (prologueStage <= 1) return 'ルーナを追って村へ戻ろう';
             if (prologueStage === 2) return '悲鳴のした方へ急ごう';
-            if (prologueStage === 3) return 'ルーナと一緒に南エリアの家へ向かおう';
-            if (prologueStage === 4) return '崩れ続ける村を離れ、南の入口へ急ごう';
-            if (prologueStage >= 5) return '南の入口を塞ぐ深淵の気配に立ち向かおう';
+            if (prologueStage === 3) return 'ルーナと家族を探しに家へ戻ろう';
+            if (prologueStage === 4) return '崩れ続ける村から逃げよう';
+            if (prologueStage >= 5) return '出口を塞ぐ巨大な影に立ち向かおう';
         }
         const currentArea = (typeof Field !== 'undefined' && typeof Field.getCurrentAreaKey === 'function')
             ? Field.getCurrentAreaKey()
@@ -264,6 +265,7 @@ const StoryManager = {
                 if (existing && existing.id === id && Array.isArray(existing.targets)) {
                     existing.limitBreak = targetLb;
                     existing.reason = options.reason || existing.reason || 'story_event';
+                    existing.persistAcrossBattles = options.persistAcrossBattles === true || existing.persistAcrossBattles === true;
                     App.applyTemporaryStoryPower();
                     if (!options.skipSave && typeof App.save === 'function') App.save();
                     return true;
@@ -276,6 +278,7 @@ const StoryManager = {
                     id,
                     limitBreak: targetLb,
                     reason: options.reason || 'story_event',
+                    persistAcrossBattles: options.persistAcrossBattles === true,
                     startedAt: Date.now(),
                     targets: targets.map(c => ({
                         uid: c.uid,
@@ -1943,6 +1946,26 @@ const StoryManager = {
             this.refreshFieldAfterStoryStateChange();
         }
 
+        if (action.type === 'DEPART_ALLY') {
+            const charId = Number(action.charId ?? action.value);
+            if (Number.isFinite(charId) && typeof App.departStoryAlly === 'function') {
+                const result = App.departStoryAlly(charId, {
+                    returnEquipment: action.returnEquipment !== false,
+                    permanent: action.permanent === true,
+                    save: !deferSave
+                });
+                if (result?.ok && action.equipmentReturnedFlag) {
+                    if (!data.flags || typeof data.flags !== 'object') data.flags = {};
+                    data.flags[String(action.equipmentReturnedFlag)] = true;
+                }
+                if (result?.ok && action.departedFlag) {
+                    if (!data.flags || typeof data.flags !== 'object') data.flags = {};
+                    data.flags[String(action.departedFlag)] = true;
+                }
+                this.refreshFieldAfterStoryStateChange();
+            }
+        }
+
         if (action.type === 'TEMP_ALLY') {
             const charId = Number(action.charId ?? action.value);
             if (Number.isFinite(charId)) {
@@ -2053,6 +2076,7 @@ const StoryManager = {
                     id: action.id || 'story_temp_power',
                     limitBreak: action.value ?? 99,
                     reason: eventId || 'story_event',
+                    persistAcrossBattles: action.persistAcrossBattles === true,
                     skipSave: deferSave
                 });
             }

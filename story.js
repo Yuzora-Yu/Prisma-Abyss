@@ -3,7 +3,7 @@ const STORY_MANAGER_DATA = {
     maxMainStoryProgress: { storyStep: 10, subStep: 2 },
 
     storyObjectives: {
-        "0-0": "山を下り、現在のリュミナ村方面へ向かおう",
+        "0-0": "山を下り、見えてきた村へ向かおう",
         "0-1": "リュミナ村の長老に話を聞こう",
         "0-2": "リュミナ村で次の手がかりを探そう",
         "1-0": "始まりの村の奥で話を聞こう",
@@ -41,7 +41,13 @@ const STORY_MANAGER_DATA = {
         "6-5": "第二結界源を破壊した。雷の要塞へ戻ろう",
         "6-6": "救護所のルーナを確認し、ギルド区画でクロードの話を聞こう",
         "6-7": "クロードの回想から、光の宮殿で起きたことを追体験しよう",
-        "7-0": "光の神殿へ入り、儀式の真相を追おう",
+        "7-0": "光の宮殿地下牢で、国王・レイラ・レオンの所在を確認しよう",
+        "7-1": "地下牢の主要な生存者を確認した。光の祭壇へ進もう",
+        "7-2": "アランが離脱した。地下牢へ戻り、捕らわれていた人々を保護しよう",
+        "7-3": "雷の要塞へ急行し、救護区画のルーナを守ろう",
+        "7-4": "バロンたちと合流し、救護区画へ進む魔王軍を退けよう",
+        "7-5": "ルーナとレオンを救う手掛かりを求め、水上都市のソフィアを訪ねよう",
+        "7-6": "ソフィアから聞いたミネルバと、結晶樹の秘跡への道を探ろう",
         "8-0": "魔王城へ向かい、闇のプリズムの真実を確かめよう",
         "9-0": "世界の中心に開いた深淵への亀裂を調べよう",
         "10-0": "深淵の魔窟の先に広がる異界を探索しよう",
@@ -79,73 +85,74 @@ const STORY_MANAGER_DATA = {
                 }
         ],
         "PROLOGUE_WEST_HILL_OPENING": [
-                { "name": "システム", "text": "――5年前。名もなき山奥の村、西の高台。" },
-                { "name": "ルーナ", "charId": 403, "text": "この花なら、今日の祈りにちょうどよさそう。あと少しだけ摘んで帰ろう、アルス。" },
-                { "name": "システム", "text": "東の空が、昼より白く明滅した。" },
-                { "name": "システム", "text": "数瞬遅れて、山全体を叩くような爆発音が届く。足元の大地が激しく揺れ、遠くで地面が裂けた。" },
-                { "name": "ルーナ", "charId": 403, "text": "……村が！　先に戻る！" },
-                { "name": "システム", "text": "ルーナは花を落とし、南エリアへ駆けていった。" }
+                { "name": "システム", "text": "――5年前。山奥の小さな村。" },
+                { "name": "ルーナ", "charId": 403, "text": "今日のお供え、これならきっと喜んでもらえるね。あと少しだけ摘んで帰ろう、アルス。" },
+                { "name": "システム", "text": "東の空が、白く弾けた。" },
+                { "name": "ルーナ", "charId": 403, "text": "……え？" },
+                { "name": "システム", "text": "遅れて、腹の底まで響く轟音。高台が大きく跳ね、山のどこかで土砂が崩れる音がした。" },
+                { "name": "ルーナ", "charId": 403, "text": "村……！　アルス、私、先に行く！" }
         ],
         "PROLOGUE_SOUTH_AMBUSH": [
                 { "name": "ルーナ", "charId": 403, "text": "きゃあっ……！" },
-                { "name": "システム", "text": "南エリアへ入った直後、凶暴化した魔物がルーナへ襲いかかっている。" },
-                { "name": "システム", "text": "ルーナを助けなければ！" }
+                { "name": "システム", "text": "道の先で、毛を逆立てた魔物がルーナへ飛びかかった。" },
+                { "name": "アルス", "charId": 301, "text": "ルーナ！" }
         ],
         "PROLOGUE_LUCION_RECOVER": [
-                { "name": "？？？？", "text": "まだ、ここで倒れてはなりません。" },
-                { "name": "システム", "text": "淡い光が傷を塞いだ。意識が戻り、身体に力が満ちていく。" }
+                { "name": "？？？？", "text": "……立って。" },
+                { "name": "システム", "text": "閉じかけた視界に、淡い光がにじむ。痛みが引き、指先に力が戻った。" }
         ],
         "PROLOGUE_SOUTH_AFTER_BATTLE": [
-                { "name": "ルーナ", "charId": 403, "text": "アルス……ありがとう。けど、村が……。家に戻ろう。みんなを探さなきゃ。" },
-                { "name": "システム", "text": "ルーナがパーティに加わった。南エリアでは凶暴化した魔物が徘徊している。" }
+                { "name": "ルーナ", "charId": 403, "text": "……ありがとう。" },
+                { "name": "ルーナ", "charId": 403, "text": "家へ行こう。お父さんたちが心配……。" }
         ],
         "PROLOGUE_HOME_LOST": [
-                { "name": "システム", "text": "二人が家のあった場所へ駆けつける。だが、そこには家も道もなかった。" },
-                { "name": "システム", "text": "大地は深く裂け、底の見えない暗闇だけが口を開けている。家族の姿も、声もない。" },
-                { "name": "ルーナ", "charId": 403, "text": "……そんな……。アルスの家も……私の家も……。" },
-                { "name": "システム", "text": "再び地面が大きく揺れ、裂け目が二人の足元へ広がってきた。ここに留まることはできない。" },
-                { "name": "ルーナ", "charId": 403, "text": "南の入口から外へ出よう。ここにいたら、私たちまで……！" }
+                { "name": "システム", "text": "家へ続いていた道は、途中で途切れていた。" },
+                { "name": "システム", "text": "その先には、底の見えない裂け目しかない。" },
+                { "name": "ルーナ", "charId": 403, "text": "……うそ。" },
+                { "name": "ルーナ", "charId": 403, "text": "アルスの家も……私の家も、ここにあったのに……。" },
+                { "name": "システム", "text": "足元で石が崩れ、闇の中へ吸い込まれていく。" },
+                { "name": "ルーナ", "charId": 403, "text": "ここも崩れる。外へ……早く！" }
         ],
         "PROLOGUE_SOUTH_EXIT_BOSS": [
-                { "name": "システム", "text": "南の村口は、もう目の前だった。" },
-                { "name": "システム", "text": "その時、裂けた大地の底から、形の定まらない巨大な影が這い上がる。" },
-                { "name": "ルーナ", "charId": 403, "text": "アルス……あれは、さっきまでの魔物とは違う……！" },
-                { "name": "？？？？", "text": "――まだ、二人をここで終わらせはしません。" },
-                { "name": "システム", "text": "眩い光が二人を包み、限界を越えた力が一時的に解放された。" }
+                { "name": "システム", "text": "村を抜ける道へ駆け込んだ、その時。" },
+                { "name": "システム", "text": "裂け目の底から、形の定まらない巨大な影が這い上がった。" },
+                { "name": "ルーナ", "charId": 403, "text": "……アルス。来る。" },
+                { "name": "？？？？", "text": "――まだ、ここでは終わらせません。" },
+                { "name": "システム", "text": "白い光が胸の奥へ沈み、冷えていた手が熱を取り戻した。" }
         ],
         "PROLOGUE_COLLAPSE_AND_PENDANT": [
-                { "name": "システム", "text": "戦いの余波で地面が崩れ、村の大半が深い闇へ沈んでいく。" },
+                { "name": "システム", "text": "大きな亀裂が走り、足場が一気に傾いた。" },
                 { "name": "ルーナ", "charId": 403, "text": "アルス、これ……持ってて。お願い。" },
                 { "name": "システム", "text": "ルーナが首元のペンダントを外し、アルスの手へ押し込んだ。" },
                 { "name": "ルーナ", "charId": 403, "text": "忘れないで。私たちが、ここにいたこと……。" },
-                { "name": "システム", "text": "二人は互いの手を掴んだまま崩落へ巻き込まれ、意識を失った。" }
+                { "name": "システム", "text": "掴んだ手が離れる。次の瞬間、視界が暗闇に呑まれた。" }
         ],
         "PROLOGUE_FIRST_BOSS_WIN": [
-                { "name": "システム", "text": "信じ難いことに、深淵の化け物が崩れ落ちた。" },
-                { "name": "ルーナ", "charId": 403, "text": "アルス……勝った、の……？" },
-                { "name": "システム", "text": "だが、崩落した地の底から、さらに濃い混沌が立ち上る。" },
-                { "name": "混沌姫イルミナシア", "text": "……面白い。五年前の小さな光が、ここまで抗うなんて。" }
+                { "name": "システム", "text": "巨大な影が揺らぎ、裂け目の縁へ崩れ落ちた。" },
+                { "name": "ルーナ", "charId": 403, "text": "……倒した、の？" },
+                { "name": "システム", "text": "返事の代わりに、地の底から冷たい気配が吹き上がる。" },
+                { "name": "混沌姫イルミナシア", "text": "……面白い。そんな小さな身体で、まだ立つのね。" }
         ],
         "PROLOGUE_PRESENT_WAKE": [
                 { "name": "システム", "text": "――5年後。山中の小さな山小屋。" },
-                { "name": "システム", "text": "十八歳になったアルスは、五年間静かだった山を揺らす地鳴りに目を覚ました。焼け焦げたペンダントは、今日も手元にある。" },
-                { "name": "リース", "text": "……聞こえたね。五年前から眠っていたものが、また動き始めたのかもしれない。" },
-                { "name": "リース", "text": "君はもう、自分の身を守れる。あの日の真実を知りたいなら、行きなさい。ルーナのことも――死んだと決めつける必要はない。" },
-                { "name": "システム", "text": "アルスは、五年前の崩壊の真相と、ルーナが生きている可能性を追うため山を下りることを決めた。" }
+                { "name": "システム", "text": "地鳴りで目が覚めた。枕元では、焼け焦げたペンダントが小さく揺れている。" },
+                { "name": "リース", "text": "起きたかい。……今の揺れ、あの日と少し似てたね。" },
+                { "name": "リース", "text": "気になるなら見ておいで。もう、私がここへ縛っておく歳でもない。" },
+                { "name": "リース", "text": "ただし山道は昨日の雨で滑るよ。急ぐなら、なおさら足元を見な。" }
         ],
         "PRESENT_REES_DEPART": [
-                { "name": "リース", "text": "まずは山を下りなさい。人の集まる場所なら、五年前から続く異変の噂も拾えるはずだ。" },
-                { "name": "リース", "text": "答えを急いで決めないこと。見たものと、聞いたものを自分で繋ぎなさい。" },
-                { "name": "システム", "text": "アルスはリュミナ地方へ続く山道を下り、現在のリュミナ村へ向かった。" }
+                { "name": "リース", "text": "忘れ物は？　薬草くらいは持ったね。" },
+                { "name": "リース", "text": "下りた先で何を聞いても、すぐ答えを決めるんじゃないよ。" },
+                { "name": "リース", "text": "……行ってらっしゃい、アルス。" }
         ],
         "PRESENT_LUMINA_RESCUE": [
-                { "name": "システム", "text": "山を下りて最初に辿り着いたリュミナ村。だが、村の奥から悲鳴が響いた。" },
-                { "name": "村人", "charId": 1003, "text": "誰か！　子どもたちが魔物に……！" },
-                { "name": "システム", "text": "五年前とは違う。今のアルスには、自分の意思で誰かを守る力がある。" }
+                { "name": "システム", "text": "山を下りて最初に見えた村から、鋭い悲鳴が上がった。" },
+                { "name": "村人", "charId": 1003, "text": "誰か！　子どもたちが魔物に……！" }
         ],
         "PRESENT_LUMINA_RESCUE_AFTER": [
                 { "name": "長老", "charId": 1001, "text": "旅のお方……助かりました。あの子たちを救ってくださり、本当にありがとうございます。" },
-                { "name": "長老", "charId": 1001, "text": "村の北東に突然大穴が開き、そこから魔物が出るようになったのです。よろしければ、奥の家で話を聞いてくだされ。" }
+                { "name": "長老", "charId": 1001, "text": "ここはリュミナ村です。村の北東に、少し前から妙な穴が開いておりましてな。" },
+                { "name": "長老", "charId": 1001, "text": "立ち話もなんです。よろしければ、奥の家へ。" }
         ],
         "PRESENT_LUMINA_RESCUE_RETRY": [
                 { "name": "システム", "text": "倒れかけたアルスは息を整え、もう一度剣を握った。子どもたちはまだ逃げ切れていない。" }
@@ -2666,6 +2673,83 @@ const STORY_MANAGER_DATA = {
                 { "name": "アルス", "charId": 301, "text": "ルーナは生きてる。今は、それで十分だ。……あいつをあんな目に遭わせた理由を、ここで確かめる。" },
                 { "name": "ジョセフ", "charId": 101, "text": "宮殿の中は回想と同じとは限らん。焦るな。生きて戻って、全部聞き出すぞ。" }
         ],
+        "LIGHT_PALACE_LEON_CURSED_PRESENT": [
+                {
+                        "name": "システム",
+                        "text": "別の牢にはレオンが倒れている。レイラより深い光の呪いが生命魔力の流れそのものへ食い込み、通常の治癒では触れられない。"
+                }
+        ],
+        "LIGHT_PALACE_FINAL_LOCKED_PRISON": [
+                {
+                        "name": "システム",
+                        "text": "祭壇へ続く濁った光が脈打っている。地下牢に残された国王、レイラ、レオンの所在を確認してから進むべきだ。"
+                }
+        ],
+        "LIGHT_PALACE_PRESENT_FINAL_SKELETON": [
+                {
+                        "name": "システム",
+                        "text": "現在時間の光の祭壇。二つの結界源を失ったジャスパーとヴェルドが、濁った光の前に立ちはだかる。"
+                }
+        ],
+        "LIGHT_PALACE_ALAN_BETRAYAL_SKELETON": [
+                {
+                        "name": "システム",
+                        "text": "二人を追い詰めた瞬間、背後から光が走った。味方の列へ向けて放たれたのは、アランの魔力だった。"
+                },
+                {
+                        "name": "アラン",
+                        "charId": 201,
+                        "text": "これで準備は整った。"
+                },
+                {
+                        "name": "システム",
+                        "text": "ジャスパーとヴェルドは深淵の闇へ退き、アランも光プリズムの力を抱えてその後を追った。"
+                }
+        ],
+        "LIGHT_PALACE_LIBERATION_SKELETON": [
+                {
+                        "name": "システム",
+                        "text": "祭壇の抵抗が途絶え、地下牢の封鎖も崩れた。国王、レオン、レイラと拘束されていた王国派の人々を保護する。"
+                }
+        ],
+        "LIGHT_PALACE_THUNDER_EMERGENCY_SKELETON": [
+                {
+                        "name": "システム",
+                        "text": "その直後、雷の要塞から急報が届く。魔王軍が救護区画へ向けて侵入し、昏睡中のルーナが危険に晒されている。"
+                }
+        ],
+        "THUNDER_FORT_DEMON_ASSAULT_ARRIVAL": [
+                { "name": "システム", "text": "雷の要塞へ戻ると、戦闘は救護区画へ向かう通路へ集中していた。商店や避難所を無視し、魔族たちは奥だけを目指している。" },
+                { "name": "バロン", "charId": 205, "text": "狙いは砦じゃねえ。あいつら、最初から救護所だけ見てやがる。ルーナを渡す気はねえぞ。" }
+        ],
+        "THUNDER_FORT_DEMON_ASSAULT_WAVE1": [
+                { "name": "魔人兵士", "text": "聖女を渡せ。人間どもに、あの娘を預けてはおけん。" },
+                { "name": "システム", "text": "魔族の部隊が避難する市民を追わず、救護区画へ続く通路を突破しようとしている。" }
+        ],
+        "THUNDER_FORT_DEMON_ASSAULT_WAVE1_CLEAR": [
+                { "name": "バロン", "charId": 205, "text": "一陣は止めた！　だが別働隊が救護所側へ回った。次を止めるぞ！" }
+        ],
+        "THUNDER_FORT_DEMON_ASSAULT_WAVE2": [
+                { "name": "魔人兵士", "text": "その娘を渡せ。これ以上、人間の手に置くわけにはいかない。" },
+                { "name": "マリー", "charId": 102, "text": "理由が何であれ、意識のない子を力ずくで連れていかせない。ここで止めるよ。" }
+        ],
+        "THUNDER_FORT_LUNA_AWAKENING_SKELETON": [
+                { "name": "システム", "text": "魔王軍が退いた後。救護所の静けさの中で、ルーナがゆっくりと目を開いた。" },
+                { "name": "システム", "text": "救護班に支えられたレイラは涙をこぼしながら謝り、ルーナを抱きしめた。" },
+                { "name": "システム", "text": "アルスは五年間探し続けた幼馴染へ、震える声で呼びかける。だがルーナの瞳に、幼馴染を見る色はない。" },
+                { "name": "ルーナ", "charId": 401, "text": "冒険者様、助けてくださってありがとうございます。" },
+                { "name": "システム", "text": "ルーナは教団に保護される以前――五年前より前の記憶を失っている。" },
+                { "name": "ケイト", "charId": 104, "text": "ルーナさんの力を安定させることと、レオンさんの深い光の呪い。どちらも普通の治療では届きません。結晶樹の根源に近い力を探す必要があります。" },
+                { "name": "システム", "text": "まず水上都市のソフィアを訪ね、結晶樹へ至る手掛かりを聞くことになった。" }
+        ],
+        "THUNDER_FORT_LUNA_POST_AWAKENING": [
+                { "name": "システム", "text": "ルーナはまだ衰弱している。記憶を無理に問いたださず、今は救護所で休ませる必要がある。" }
+        ],
+        "WATER_CITY_CRYSTAL_TREE_BRIEFING": [
+                { "name": "ソフィア", "charId": 202, "text": "結晶樹の秘跡なら、プリズム崩壊と六属性の循環を調べている知人がいます。ミネルバという研究者です。" },
+                { "name": "ソフィア", "charId": 202, "text": "ルーナさんとレオンさん、二人とも普通の治療では届かないなら、結晶樹の根源を知る彼女を訪ねる価値があります。" },
+                { "name": "システム", "text": "ミネルバと結晶樹の秘跡が、次の本編目的として繋がった。" }
+        ],
         "LIGHT_PALACE_FINAL_ENCOUNTER": [
                 {
                         "name": "システム",
@@ -3551,7 +3635,7 @@ const STORY_MANAGER_DATA = {
                         {
                                 "type": "BOSS",
                                 "battleBg": "battle_bg_first",
-                                "value": 100002,
+                                "value": 802000,
                                 "lossEventId": "prologue_south_ambush_retry",
                                 "bestiaryExcluded": true,
                                 "noDrops": true,
@@ -3573,7 +3657,7 @@ const STORY_MANAGER_DATA = {
                         {
                                 "type": "BOSS",
                                 "battleBg": "battle_bg_first",
-                                "value": 100002,
+                                "value": 802000,
                                 "lossEventId": "prologue_south_ambush_retry",
                                 "bestiaryExcluded": true,
                                 "noDrops": true,
@@ -3588,6 +3672,12 @@ const STORY_MANAGER_DATA = {
                         { "type": "CONV", "value": "PROLOGUE_SOUTH_AFTER_BATTLE" }
                 ]
         },
+        "prologue_field_wipeout_recover": {
+                "actions": [
+                        { "type": "HEAL" },
+                        { "type": "CONV", "value": "PROLOGUE_LUCION_RECOVER" }
+                ]
+        },
         "prologue_home_loss": {
                 "actions": [
                         { "type": "CONV", "value": "PROLOGUE_HOME_LOST" },
@@ -3599,7 +3689,7 @@ const STORY_MANAGER_DATA = {
                 "actions": [
                         { "type": "WORLD_STATE", "key": "prologueStage", "value": 5 },
                         { "type": "CONV", "value": "PROLOGUE_SOUTH_EXIT_BOSS" },
-                        { "type": "TEMP_LB_START", "value": 99, "id": "prologue_divine_lb99" },
+                        { "type": "TEMP_LB_START", "value": 99, "id": "prologue_divine_lb99", "persistAcrossBattles": true },
                         { "type": "HEAL" },
                         {
                                 "type": "BOSS",
@@ -3626,7 +3716,6 @@ const STORY_MANAGER_DATA = {
                         { "type": "TEMP_LB_CLEAR", "id": "prologue_divine_lb99" },
                         { "type": "ITEM", "id": 701009, "count": 1, "silent": true },
                         { "type": "RESET_TEMP_ALLY", "charId": 403 },
-                        { "type": "RESET_HERO_BASELINE" },
                         { "type": "WORLD_STATE", "key": "prologueStage", "value": 100 },
                         { "type": "START_FIXED_MAP", "value": "REES_MOUNTAIN_HUT", "targetX": 5, "targetY": 5, "replaceReturnPoint": true }
                 ]
@@ -3661,7 +3750,6 @@ const STORY_MANAGER_DATA = {
                         { "type": "TEMP_LB_CLEAR", "id": "prologue_divine_lb99" },
                         { "type": "ITEM", "id": 701009, "count": 1, "silent": true },
                         { "type": "RESET_TEMP_ALLY", "charId": 403 },
-                        { "type": "RESET_HERO_BASELINE" },
                         { "type": "WORLD_STATE", "key": "prologueStage", "value": 100 },
                         { "type": "START_FIXED_MAP", "value": "REES_MOUNTAIN_HUT", "targetX": 5, "targetY": 5, "replaceReturnPoint": true }
                 ]
@@ -3706,7 +3794,6 @@ const STORY_MANAGER_DATA = {
                         { "type": "FLAG", "key": "prologueHiddenAzelgaragWon", "state": true },
                         { "type": "CONV", "value": "PROLOGUE_HIDDEN_END_WIN" },
                         { "type": "TEMP_LB_CLEAR", "id": "prologue_divine_lb99" },
-                        { "type": "RESET_HERO_BASELINE" },
                         { "type": "PROMOTE_TEMP_ALLY", "charId": 403 },
                         { "type": "SET_CHARACTER_LB", "charId": 301, "limitBreak": 99 },
                         { "type": "SET_CHARACTER_LB", "charId": 403, "limitBreak": 99 },
@@ -3724,7 +3811,6 @@ const STORY_MANAGER_DATA = {
                         { "type": "FLAG", "key": "prologueHiddenAzelgaragLost", "state": true },
                         { "type": "CONV", "value": "PROLOGUE_HIDDEN_END_LOSS" },
                         { "type": "TEMP_LB_CLEAR", "id": "prologue_divine_lb99" },
-                        { "type": "RESET_HERO_BASELINE" },
                         { "type": "PROMOTE_TEMP_ALLY", "charId": 403 },
                         { "type": "SET_CHARACTER_LB", "charId": 301, "limitBreak": 99 },
                         { "type": "SET_CHARACTER_LB", "charId": 403, "limitBreak": 99 },
@@ -3763,7 +3849,8 @@ const STORY_MANAGER_DATA = {
                         { "type": "FLAG", "key": "presentLuminaRescueSeen", "state": true },
                         { "type": "SUB", "value": 1 },
                         { "type": "HEAL" },
-                        { "type": "CONV", "value": "PRESENT_LUMINA_RESCUE_AFTER" }
+                        { "type": "CONV", "value": "PRESENT_LUMINA_RESCUE_AFTER" },
+                        { "type": "FLAG", "key": "luminaVillageNameKnown", "state": true }
                 ]
         },
         "present_lumina_rescue_retry": {
@@ -3781,7 +3868,8 @@ const STORY_MANAGER_DATA = {
                         { "type": "FLAG", "key": "presentLuminaRescueSeen", "state": true },
                         { "type": "SUB", "value": 1 },
                         { "type": "HEAL" },
-                        { "type": "CONV", "value": "PRESENT_LUMINA_RESCUE_AFTER" }
+                        { "type": "CONV", "value": "PRESENT_LUMINA_RESCUE_AFTER" },
+                        { "type": "FLAG", "key": "luminaVillageNameKnown", "state": true }
                 ]
         },
         "game_start_retry": {
@@ -4254,35 +4342,35 @@ const STORY_MANAGER_DATA = {
         },
         "light_palace_present_assault_entry": {
                 "actions": [
-                        { "type": "CONV", "value": "LIGHT_PALACE_PRESENT_ASSAULT_ENTRY" }
+                        { "type": "CONV", "value": "LIGHT_PALACE_PRESENT_ASSAULT_ENTRY" },
+                        { "type": "WORLD_STATE", "key": "lightPalaceState", "value": 2 },
+                        { "type": "SUB", "value": 0 }
+                ],
+                "winActions": []
+        },
+        "light_palace_final_locked_prison": {
+                "actions": [
+                        { "type": "CONV", "value": "LIGHT_PALACE_FINAL_LOCKED_PRISON" },
+                        { "type": "LOG", "value": "地下牢で国王、レイラ、レオンの所在を確認しよう。" }
                 ],
                 "winActions": []
         },
         "light_palace_final_encounter": {
                 "actions": [
-                        {
-                                "type": "CONV",
-                                "value": "LIGHT_PALACE_FINAL_ENCOUNTER"
-                        },
+                        { "type": "CONV", "value": "LIGHT_PALACE_PRESENT_FINAL_SKELETON" },
                         {
                                 "type": "BOSS",
-                                "value": [
-                                        301070,
-                                        301050
-                                ],
-                                "bossStatMultiplier": 3,
-                                "winEventId": "light_palace_overpower_clear",
-                                "lossEventId": "light_palace_blessing_retry"
+                                "value": [301070, 301050],
+                                "winEventId": "light_palace_alan_betrayal"
                         }
                 ],
                 "winActions": []
         },
         "light_palace_prison_king": {
                 "actions": [
-                        {
-                                "type": "CONV",
-                                "value": "LIGHT_PALACE_PRISON_KING"
-                        }
+                        { "type": "CONV", "value": "LIGHT_PALACE_PRISON_KING" },
+                        { "type": "FLAG", "key": "lightPalaceKingLocated", "refreshField": true },
+                        { "type": "EVENT", "value": "light_palace_check_prison_rescue" }
                 ],
                 "winActions": []
         },
@@ -4368,6 +4456,162 @@ const STORY_MANAGER_DATA = {
                                 ],
                                 "else": [
                                         { "type": "CONV", "value": "LIGHT_PALACE_LEILA_CURSED" }
+                                ]
+                        },
+                        { "type": "FLAG", "key": "lightPalaceLeilaLocated", "refreshField": true },
+                        { "type": "EVENT", "value": "light_palace_check_prison_rescue" }
+                ],
+                "winActions": []
+        },
+        "light_palace_prison_leon": {
+                "actions": [
+                        { "type": "CONV", "value": "LIGHT_PALACE_LEON_CURSED_PRESENT" },
+                        { "type": "FLAG", "key": "lightPalaceLeonLocated", "refreshField": true },
+                        { "type": "EVENT", "value": "light_palace_check_prison_rescue" }
+                ],
+                "winActions": []
+        },
+        "light_palace_check_prison_rescue": {
+                "actions": [
+                        {
+                                "type": "IF_FLAG",
+                                "key": "lightPalacePrisonRescueSecured",
+                                "then": [],
+                                "else": [
+                                        {
+                                                "type": "IF_FLAG",
+                                                "key": "lightPalaceKingLocated",
+                                                "then": [
+                                                        {
+                                                                "type": "IF_FLAG",
+                                                                "key": "lightPalaceLeilaLocated",
+                                                                "then": [
+                                                                        {
+                                                                                "type": "IF_FLAG",
+                                                                                "key": "lightPalaceLeonLocated",
+                                                                                "then": [
+                                                                                        { "type": "FLAG", "key": "lightPalacePrisonRescueSecured", "refreshField": true },
+                                                                                        { "type": "WORLD_STATE", "key": "lightPalaceState", "value": 3 },
+                                                                                        { "type": "SUB", "value": 1 },
+                                                                                        { "type": "LOG", "value": "地下牢の主要な生存者を確認した。光の祭壇へ進もう。" }
+                                                                                ],
+                                                                                "else": []
+                                                                        }
+                                                                ],
+                                                                "else": []
+                                                        }
+                                                ],
+                                                "else": []
+                                        }
+                                ]
+                        }
+                ],
+                "winActions": []
+        },
+        "light_palace_alan_betrayal": {
+                "actions": [
+                        {
+                                "type": "IF_FLAG",
+                                "key": "alanBetrayedLightPalace",
+                                "then": [],
+                                "else": [
+                                        { "type": "CONV", "value": "LIGHT_PALACE_ALAN_BETRAYAL_SKELETON" },
+                                        { "type": "FLAG", "key": "lightPalacePresentBossDefeated" },
+                                        { "type": "DEPART_ALLY", "value": 201, "returnEquipment": true, "equipmentReturnedFlag": "alanEquipmentReturnedAtBetrayal", "departedFlag": "alanBetrayedLightPalace" },
+                                        { "type": "WORLD_STATE", "key": "alanOutcome", "value": "betrayed" },
+                                        { "type": "WORLD_STATE", "key": "lightPalaceState", "value": 4 },
+                                        { "type": "SUB", "value": 2 },
+                                        { "type": "LOG", "value": "アランが離脱した。地下牢へ戻り、捕らわれていた人々を保護しよう。" }
+                                ]
+                        }
+                ],
+                "winActions": []
+        },
+        "light_palace_liberation_after_betrayal": {
+                "actions": [
+                        { "type": "CONV", "value": "LIGHT_PALACE_LIBERATION_SKELETON" },
+                        { "type": "FLAG", "key": "lightPalaceLiberationSeen" },
+                        { "type": "FLAG", "key": "lightPalaceCleared", "refreshField": true },
+                        { "type": "WORLD_STATE", "key": "lightPalaceState", "value": 5 },
+                        { "type": "CONV", "value": "LIGHT_PALACE_THUNDER_EMERGENCY_SKELETON" },
+                        { "type": "FLAG", "key": "thunderFortDemonAssaultAlert" },
+                        { "type": "WORLD_STATE", "key": "thunderFortState", "value": 5 },
+                        { "type": "SUB", "value": 3 },
+                        { "type": "LOG", "value": "魔王軍が雷の要塞へ侵入した。ルーナのいる救護区画へ急ごう。" }
+                ],
+                "winActions": []
+        },
+        "thunder_fort_demon_assault_arrival": {
+                "actions": [
+                        { "type": "CONV", "value": "THUNDER_FORT_DEMON_ASSAULT_ARRIVAL" },
+                        { "type": "WORLD_STATE", "key": "thunderFortState", "value": 6 },
+                        { "type": "SUB", "value": 4 },
+                        { "type": "LOG", "value": "バロンたちと合流し、救護区画へ進む魔王軍を退けよう。" }
+                ],
+                "winActions": []
+        },
+        "thunder_fort_demon_assault_wave1": {
+                "actions": [
+                        { "type": "CONV", "value": "THUNDER_FORT_DEMON_ASSAULT_WAVE1" },
+                        { "type": "BOSS", "value": [652, 652, 651], "winEventId": "thunder_fort_demon_assault_wave1_clear" }
+                ],
+                "winActions": []
+        },
+        "thunder_fort_demon_assault_wave1_clear": {
+                "actions": [
+                        { "type": "FLAG", "key": "thunderFortDefenseWave1Cleared", "refreshField": true },
+                        { "type": "CONV", "value": "THUNDER_FORT_DEMON_ASSAULT_WAVE1_CLEAR" },
+                        { "type": "LOG", "value": "別働隊が救護区画へ回った。マリーたちと合流しよう。" }
+                ],
+                "winActions": []
+        },
+        "thunder_fort_demon_assault_wave2": {
+                "actions": [
+                        { "type": "CONV", "value": "THUNDER_FORT_DEMON_ASSAULT_WAVE2" },
+                        { "type": "BOSS", "value": [652, 651, 652], "winEventId": "thunder_fort_luna_awakening" }
+                ],
+                "winActions": []
+        },
+        "thunder_fort_luna_awakening": {
+                "actions": [
+                        {
+                                "type": "IF_FLAG",
+                                "key": "lunaAwakenedAtThunderFort",
+                                "then": [],
+                                "else": [
+                                        { "type": "FLAG", "key": "thunderFortDefenseWave2Cleared" },
+                                        { "type": "FLAG", "key": "thunderFortDemonAssaultCleared", "refreshField": true },
+                                        { "type": "CONV", "value": "THUNDER_FORT_LUNA_AWAKENING_SKELETON" },
+                                        { "type": "FLAG", "key": "lunaAwakenedAtThunderFort" },
+                                        { "type": "FLAG", "key": "lunaMemoryLossRevealed" },
+                                        { "type": "FLAG", "key": "crystalTreeMainRouteOpened", "refreshField": true },
+                                        { "type": "WORLD_STATE", "key": "thunderFortState", "value": 7 },
+                                        { "type": "WORLD_STATE", "key": "lunaMemoryStage", "value": 1 },
+                                        { "type": "SUB", "value": 5 },
+                                        { "type": "LOG", "value": "水上都市のソフィアを訪ね、結晶樹へ至る手掛かりを聞こう。" }
+                                ]
+                        }
+                ],
+                "winActions": []
+        },
+        "thunder_fort_luna_post_awakening": {
+                "actions": [
+                        { "type": "CONV", "value": "THUNDER_FORT_LUNA_POST_AWAKENING" }
+                ],
+                "winActions": []
+        },
+        "water_city_crystal_tree_briefing": {
+                "actions": [
+                        {
+                                "type": "IF_FLAG",
+                                "key": "crystalTreeRouteBriefed",
+                                "then": [],
+                                "else": [
+                                        { "type": "CONV", "value": "WATER_CITY_CRYSTAL_TREE_BRIEFING" },
+                                        { "type": "FLAG", "key": "crystalTreeRouteBriefed", "refreshField": true },
+                                        { "type": "FLAG", "key": "minervaCrystalTreeLeadKnown" },
+                                        { "type": "SUB", "value": 6 },
+                                        { "type": "LOG", "value": "ミネルバと結晶樹の秘跡への道を探ろう。" }
                                 ]
                         }
                 ],

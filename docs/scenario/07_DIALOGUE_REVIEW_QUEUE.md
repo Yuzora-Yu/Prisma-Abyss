@@ -670,3 +670,47 @@ Updated: 2026-06-26
 - 状態: 解決済み
 - ユーザー承認: 2026-07-29「深淵の会話は実装してOK。どんどん住人増やして」
 - 実装: 現在の `story.js`（旧 `abyss_story.js`）の四専用スクリプト、`map.js` の四固有住民へ置換
+
+## DR-20260810-light-palace-present-final
+
+Status: pending
+Created: 2026-08-10
+
+### Target
+- file: `story.js`
+- legacy script keys: `LIGHT_PALACE_FINAL_ENCOUNTER`, `LIGHT_PALACE_BLESSING_RETRY`, `LIGHT_PALACE_OVERPOWER_CLEAR`, `LIGHT_PALACE_CLEAR`
+- map / area: 光の宮殿グランプリズマ・現在時間
+- storyStep-subStep: 7-x
+
+### Current issue
+旧実装は「ジャスパー＋ヴェルド3倍戦→敗北→リュシオンの加護で弱体化→再戦勝利」を前提とする。
+新版v8は、回想後の現在攻略、地下牢の国王／レイラ／レオン確認、祭壇戦後のアラン不意打ちと離脱を正本とするため進行構造が衝突する。
+
+### Handling in Phase 6E
+旧会話本文は削除・改稿せず legacy source として残す。
+新ルートは最小骨格用の別script keyを使用し、旧強制敗北ルートを呼ばない。
+
+### User decision
+- 長台詞の最終稿: pending
+- Phase 6Eでは進行骨格のみ実装可
+
+## DR-20260810-thunder-fort-luna-awakening
+
+Status: pending  
+Created: 2026-08-10
+
+### Target
+- new script keys: `THUNDER_FORT_DEMON_ASSAULT_*`, `THUNDER_FORT_LUNA_AWAKENING_SKELETON`
+- map / area: 雷の要塞ライザーク・救護区画周辺
+- storyStep-subStep: 7-3〜7-5
+
+### Fixed canon
+- 魔王軍は市民虐殺ではなくルーナ確保を優先。
+- 現時点では誘拐目的に聞こえる言葉を使う。
+- 防衛後にルーナ覚醒。
+- 正本確定台詞: 「冒険者様、助けてくださってありがとうございます。」
+- アルスを知らないことで、5年前以前の記憶喪失を確定提示。
+
+### Handling in Phase 7A
+進行に必要な最短会話のみ実装する。
+アルス／レイラ／ルーナの長い感情会話、ゼノン側の真意説明は後の章別Dialogue Polishへ送る。

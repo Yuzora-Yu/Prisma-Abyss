@@ -32,6 +32,9 @@ for (const eventId of ['present_lumina_rescue', 'present_lumina_rescue_retry']) 
   assert(boss.lossEventId === 'present_lumina_rescue_retry', `${eventId} does not keep a safe tutorial retry path.`);
   assert(event?.winActions?.some(a => a.type === 'FLAG' && a.key === 'presentLuminaRescueSeen'), `${eventId} does not persist rescue completion.`);
   assert(event?.winActions?.some(a => a.type === 'SUB' && Number(a.value) === 1), `${eventId} does not move storyStep 0 to the elder objective.`);
+  const convIndex = event.winActions.findIndex(a => a.type === 'CONV' && a.value === 'PRESENT_LUMINA_RESCUE_AFTER');
+  const knownIndex = event.winActions.findIndex(a => a.type === 'FLAG' && a.key === 'luminaVillageNameKnown');
+  assert(convIndex >= 0 && knownIndex > convIndex, `${eventId} reveals the village name before the elder says it.`);
 }
 
 for (const key of ['PROLOGUE_PRESENT_WAKE','PRESENT_REES_DEPART','PRESENT_LUMINA_RESCUE','PRESENT_LUMINA_RESCUE_AFTER','PRESENT_LUMINA_RESCUE_RETRY']) {
@@ -39,10 +42,10 @@ for (const key of ['PROLOGUE_PRESENT_WAKE','PRESENT_REES_DEPART','PRESENT_LUMINA
 }
 assert(Array.isArray(scripts.PROLOGUE3) && scripts.PROLOGUE3.some(line => String(line.text || '').includes('王都で大きな統合の儀')), 'Post-cave elder scene does not give the integration-ritual clue.');
 assert(!scripts.PROLOGUE3.some(line => String(line.text || '').includes('5年ほど前でしょうか')), 'Post-cave elder scene still explains the five-year catastrophe as if Ars did not experience it.');
-assert(String(objectives['0-0'] || '').includes('リュミナ'), 'storyStep 0 objective was not updated for the present-day bridge.');
+assert(!String(objectives['0-0'] || '').includes('リュミナ'), 'storyStep 0 objective must not reveal the village name before the player learns it.');
 assert(String(objectives['0-1'] || '').includes('長老'), 'storyStep 0-1 does not route to the elder.');
-assert(logicSource.includes("if (!flags.prologueDepartedReesHut) return 'リースの山小屋を出て、リュミナ地方へ向かおう'"), 'Objective runtime does not reflect Rees departure state.');
-assert(logicSource.includes("if (!flags.presentLuminaRescueSeen) return '現在のリュミナ村で起きている異変を確かめよう'"), 'Objective runtime does not reflect current Lumina rescue state.');
+assert(logicSource.includes("if (!flags.prologueDepartedReesHut) return '山小屋を出よう'"), 'Objective runtime does not use the spoiler-safe hut departure objective.');
+assert(logicSource.includes("if (!flags.presentLuminaRescueSeen) return '山を下りた先の村の様子を確かめよう'"), 'Objective runtime reveals the village name before the arrival rescue.');
 assert(mainSource.includes('areaDef.entryEventConditions') && mainSource.includes('App.evaluateGameConditions(areaDef.entryEventConditions)'), 'Fixed-map entry events cannot use the shared condition engine.');
 
 console.log('PASS validate-present-day-bridge-phase3a');

@@ -1814,9 +1814,9 @@ const MAP_MASTER = Object.freeze({
     LEGACION_WEST_TOWER: { id: "MAP000063", name: "混沌魔城レガシオン 西塔" },
     LEGACION_EAST_TOWER: { id: "MAP000064", name: "混沌魔城レガシオン 東塔" },
     MEMORY_REALM: { id: "MAP000065", name: "追憶の魔境" },
-    PROLOGUE_WEST_HILL: { id: "MAP000066", name: "名もなき山村 西の高台" },
-    PROLOGUE_SOUTH_VILLAGE: { id: "MAP000067", name: "名もなき山村 南エリア" },
-    PROLOGUE_NORTH_VILLAGE: { id: "MAP000068", name: "名もなき山村 北エリア" },
+    PROLOGUE_WEST_HILL: { id: "MAP000066", name: "名もなき山村・西の高台" },
+    PROLOGUE_SOUTH_VILLAGE: { id: "MAP000067", name: "名もなき山村・南側" },
+    PROLOGUE_NORTH_VILLAGE: { id: "MAP000068", name: "名もなき山村・北側" },
     REES_MOUNTAIN_HUT: { id: "MAP000069", name: "リースの山小屋" },
     PROLOGUE_FINAL_ALTAR: { id: "MAP000070", name: "五年前・終焉の祭壇" },
     REXNOTE_ESTATE: { id: "MAP000071", name: "レクスノート邸" },
@@ -2444,7 +2444,7 @@ const FIXED_OVERLAY_BASE_TILES = {
 
 const FIXED_MAPS = {
     "PROLOGUE_WEST_HILL": {
-        "name": "名もなき山村 西の高台",
+        "name": "名もなき山村・西の高台",
         "themeKey": "START_VILLAGE",
         "width": 17,
         "height": 13,
@@ -2469,26 +2469,27 @@ const FIXED_MAPS = {
         "mapActors": [],
         "mapActions": [
             {
-                "x": 8, "y": 11,
+                "x": 15, "y": 7,
                 "type": "fixedMap",
                 "target": "PROLOGUE_SOUTH_VILLAGE",
-                "targetX": 12, "targetY": 2,
-                "label": "ルーナを追って南エリアへ急ぐ",
-                "requiredWorldState": { "prologueStage": { "op": ">=", "value": 1 } },
-                "log": "大地の揺れが続いている。ルーナを追わなければ。"
+                "targetX": 2, "targetY": 3,
+                "label": "村へ戻る",
+                "triggerOnStep": true,
+                "requiredWorldState": { "prologueStage": { "op": ">=", "value": 1 } }
             }
         ]
     },
     "PROLOGUE_SOUTH_VILLAGE": {
-        "name": "名もなき山村 南エリア",
+        "name": "名もなき山村・南側",
         "themeKey": "START_VILLAGE",
         "width": 25,
         "height": 21,
-        "entryPoint": { "x": 12, "y": 2 },
+        "entryPoint": { "x": 2, "y": 3 },
         "battleBg": "battle_bg_first",
         "isDungeon": true,
         "useHabitatEncounters": true,
         "encounterRank": 1,
+        "enemyBoost": { "statMultiplier": 1.0, "hpMultiplier": 2.5 },
         "randomEncounterRateMultiplier": 0.75,
         "entryEventId": "prologue_south_arrival",
         "entryEventFlag": "prologueFirstBattleCleared",
@@ -2522,15 +2523,17 @@ const FIXED_MAPS = {
                 "type": "fixedMap",
                 "target": "PROLOGUE_NORTH_VILLAGE",
                 "targetX": 12, "targetY": 18,
-                "label": "北エリアへ向かう",
+                "label": "北側へ進む",
+                "triggerOnStep": true,
                 "requiredFlag": "prologueFirstBattleCleared"
             },
             {
-                "x": 2, "y": 3,
+                "x": 1, "y": 3,
                 "type": "fixedMap",
                 "target": "PROLOGUE_WEST_HILL",
-                "targetX": 8, "targetY": 11,
-                "label": "西の高台へ戻る",
+                "targetX": 14, "targetY": 7,
+                "label": "高台へ戻る",
+                "triggerOnStep": true,
                 "requiredFlag": "prologueFirstBattleCleared"
             },
             {
@@ -2543,17 +2546,10 @@ const FIXED_MAPS = {
             },
             {
                 "x": 12, "y": 19,
-                "type": "log",
-                "label": "村の南口を見る",
-                "log": "村の外へ続く道だ。今はまず、家族の無事を確かめなければ。",
-                "requiredFlag": "prologueFirstBattleCleared",
-                "missingFlag": "prologueHomeLostSeen"
-            },
-            {
-                "x": 12, "y": 19,
                 "type": "storyEvent",
                 "eventId": "prologue_south_exit_boss",
-                "label": "崩れる村から脱出する",
+                "label": "村を出る",
+                "triggerOnStep": true,
                 "requiredFlag": "prologueHomeLostSeen",
                 "missingFlag": "prologueFirstBossResolved"
             }
@@ -2576,7 +2572,7 @@ const FIXED_MAPS = {
             "WTTTTTTTTTW",
             "WTTTTTTTTTW",
             "WTTTTTTTTTW",
-            "WTTTTTTTTTW",
+            "WTTTTSTTTTW",
             "WWWWWWWWWWW"
         ],
         "mapActors": [],
@@ -2585,7 +2581,7 @@ const FIXED_MAPS = {
                 "x": 5, "y": 7,
                 "type": "storyEvent",
                 "eventId": "present_depart_rees",
-                "label": "山を下り、旅立つ",
+                "label": "外へ出る",
                 "requiredFlag": "prologuePresentWakeSeen",
                 "missingFlag": "prologueDepartedReesHut"
             }
@@ -2659,7 +2655,7 @@ const FIXED_MAPS = {
         "mapActions": []
     },
     "PROLOGUE_NORTH_VILLAGE": {
-        "name": "名もなき山村 北エリア",
+        "name": "名もなき山村・北側",
         "themeKey": "START_VILLAGE",
         "width": 25,
         "height": 21,
@@ -2700,7 +2696,8 @@ const FIXED_MAPS = {
                 "type": "fixedMap",
                 "target": "PROLOGUE_SOUTH_VILLAGE",
                 "targetX": 12, "targetY": 2,
-                "label": "南エリアへ戻る"
+                "label": "南側へ戻る",
+                "triggerOnStep": true
             }
         ]
     },
@@ -5122,6 +5119,23 @@ const FIXED_MAPS = {
                 "imageKey": "overlay_companion_sophia",
                 "states": [
                     {
+                        "stateId": "crystal_tree_main_route",
+                        "priority": 100,
+                        "when": {
+                            "requiredFlag": "crystalTreeMainRouteOpened",
+                            "missingFlag": "crystalTreeRouteBriefed"
+                        },
+                        "placement": {
+                            "x": 22,
+                            "y": 13
+                        },
+                        "action": {
+                            "label": "結晶樹について聞く",
+                            "type": "storyEvent",
+                            "eventId": "water_city_crystal_tree_briefing"
+                        }
+                    },
+                    {
                         "stateId": "water_city_plaza",
                         "priority": 10,
                         "when": {
@@ -7105,7 +7119,7 @@ const ABYSS_FIXED_GRIDS = Object.freeze({
     PURGATORY_NORTHEAST: parseAuthoredAbyssTiles(`
 #######################################
 #######################################
-##S...........#########################
+##U...........#########################
 ###.....####......#####################
 ###........#####......#################
 ###..#####.....#####.....##############
@@ -7620,9 +7634,9 @@ const ABYSS_AUTHORED_DUNGEONS = Object.freeze((() => {
         fixed('PURGATORY_MOUNTAINS', G.PURGATORY_SOUTHWEST, { label: '南西峰', floor: 1, entryMarker: 'S',
             floorLinks: [authoredAbyssLink(G.PURGATORY_SOUTHWEST, 'S', { to: 'EXIT', label: '深淵世界へ戻る' }), authoredAbyssLink(G.PURGATORY_SOUTHWEST, 'D', { toFloor: 2, label: '北東峰へ進む' })],
             chests: [authoredAbyssChest(5, 18, 14), authoredAbyssChest(32, 4, 7, true)] }),
-        fixed('PURGATORY_MOUNTAINS', G.PURGATORY_NORTHEAST, { label: '北東峰', floor: 2, entryMarker: 'S',
+        fixed('PURGATORY_MOUNTAINS', G.PURGATORY_NORTHEAST, { label: '北東峰', floor: 2, entryMarker: 'U',
             floorLinks: [
-                authoredAbyssLink(G.PURGATORY_NORTHEAST, 'S', { toFloor: 1, label: '南西峰へ戻る' }),
+                authoredAbyssLink(G.PURGATORY_NORTHEAST, 'U', { toFloor: 1, label: '南西峰へ戻る' }),
                 authoredAbyssLink(G.PURGATORY_NORTHEAST, 'D', {
                     to: 'EXIT',
                     label: '山脈の北東口から外へ出る',
@@ -7947,7 +7961,7 @@ const FIXED_DUNGEON_MAPS = {
                 height: 21,
                 tiles: [
                     "WWWWWWWWWWWWWWWWWWWWW",
-                    "WWWWWWWWWWSWWWWWWWWWW",
+                    "WWWWWWWWWWDWWWWWWWWWW",
                     "WWWWWWWWMMMMMWWWWWWWW",
                     "WWWWWWMMMMMMMMMWWWWWW",
                     "WWWWMMMTTTTMMTMMMWWWW",
@@ -8554,7 +8568,7 @@ const FIXED_DUNGEON_MAPS = {
                     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
                     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
                     "WWWWWWWWTWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-                    "WWWSTWWWTTWWWWWWWWWWGWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+                    "WWWDTWWWTTWWWWWWWWWWGWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
                     "WWWWTWWWTTTWWWWWWWWTTTWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
                     "WWWWTWWWWTTWWWWWWGTTRTWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
                     "WWWWTWWWWTTWWWWWWGTTTTWWWWWWWWWGGGGGGGGGGGGGGWWWGGGGWWW",
@@ -8714,7 +8728,7 @@ const FIXED_DUNGEON_MAPS = {
                     "WWWWWTNTTTGTTTTWWWWWWWWWWTTWTTTTTWWWWWWWW",
                     "WWWWGTTTTTGWWWTWWWWWWWWWWWTTTWWTTTTTTWWWW",
                     "WWWWWWWTTWWWWWTTWWWWWWWWTTTWWWWWTTTTTTTWW",
-                    "WWWWWWWWWWWWWWWTTTTTTWWWTWWWWWWWWWWWWWSWW",
+                    "WWWWWWWWWWWWWWWTTTTTTWWWTWWWWWWWWWWWWWUWW",
                     "WWWWWWWWWWWWWWWWWWWWTWWTTWWWWWWWWWWWWWWWW",
                     "WWWWWWWWWWWWWWWWWWWWTTTTWWWWWWWWWWWWWWWWW",
                     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
@@ -8734,7 +8748,6 @@ const FIXED_DUNGEON_MAPS = {
                         x: 20,
                         y: 2,
                         toDungeon: "WIND_TEMPLE",
-                        auto: true,
                         label: "風の神殿へ入る",
                         log: "森の北端に、風の神殿へ続く古い石門が開いている。",
                         requiredFlag: "windForestCleansed",
@@ -10948,7 +10961,7 @@ const FIXED_DUNGEON_MAPS = {
                         type: "item"
                     }
                 ],
-                nextActorPlacementId: 14,
+                nextActorPlacementId: 15,
                 mapActors: [
                     {
                         "placementId": 1,
@@ -11086,6 +11099,22 @@ const FIXED_DUNGEON_MAPS = {
                         "y": 21,
                         "imageKey": "overlay_companion_baron",
                         "states": [
+                            {
+                                "stateId": "demon_assault_wave1",
+                                "priority": 100,
+                                "when": {
+                                    "requiredWorldState": {
+                                        "thunderFortState": { "op": "==", "value": 6 }
+                                    },
+                                    "missingFlag": "thunderFortDefenseWave1Cleared"
+                                },
+                                "action": {
+                                    "label": "前線を押し返す",
+                                    "log": "バロンが救護区画へ続く通路を守っている。",
+                                    "type": "storyEvent",
+                                    "eventId": "thunder_fort_demon_assault_wave1"
+                                }
+                            },
                             {
                                 "stateId": "undersea_volcano_departure_story",
                                 "priority": 30,
@@ -11283,6 +11312,23 @@ const FIXED_DUNGEON_MAPS = {
                         "imageKey": "overlay_companion_marie",
                         "states": [
                             {
+                                "stateId": "demon_assault_wave2",
+                                "priority": 100,
+                                "when": {
+                                    "requiredWorldState": {
+                                        "thunderFortState": { "op": "==", "value": 6 }
+                                    },
+                                    "requiredFlag": "thunderFortDefenseWave1Cleared",
+                                    "missingFlag": "thunderFortDemonAssaultCleared"
+                                },
+                                "action": {
+                                    "label": "救護区画を守る",
+                                    "log": "別働隊が救護所へ迫っている。",
+                                    "type": "storyEvent",
+                                    "eventId": "thunder_fort_demon_assault_wave2"
+                                }
+                            },
+                            {
                                 "stateId": "undersea_volcano_departure_story",
                                 "priority": 30,
                                 "when": {
@@ -11351,6 +11397,28 @@ const FIXED_DUNGEON_MAPS = {
                                 }
                             }
                         ]
+                    },
+                    {
+                        "placementId": 14,
+                        "actorId": "luna_thunder_infirmary_post_awake",
+                        "name": "ルーナ",
+                        "x": 19,
+                        "y": 21,
+                        "imageKey": "overlay_companion_luna",
+                        "states": [
+                            {
+                                "stateId": "post_awakening",
+                                "priority": 100,
+                                "when": {
+                                    "requiredFlag": "lunaAwakenedAtThunderFort"
+                                },
+                                "action": {
+                                    "label": "ルーナの様子を見る",
+                                    "type": "storyEvent",
+                                    "eventId": "thunder_fort_luna_post_awakening"
+                                }
+                            }
+                        ]
                     }
                 ],
                 mapActions: [
@@ -11388,6 +11456,9 @@ const FIXED_DUNGEON_MAPS = {
                     x: 2,
                     y: 14
                 },
+                entryEventId: "thunder_fort_demon_assault_arrival",
+                entryEventFlag: "thunderFortDemonAssaultArrivalSeen",
+                entryEventConditions: { requiredFlag: "thunderFortDemonAssaultAlert", missingFlag: "thunderFortDemonAssaultCleared" },
                 bosses: [
                     {
                         x: 16,
@@ -12681,9 +12752,10 @@ const FIXED_DUNGEON_MAPS = {
                             301070,
                             301050
                         ],
-                        missingFlag: "lightPalaceFlashbackActive",
+                        requiredFlag: "lightPalacePrisonRescueSecured",
+                        missingFlags: ["lightPalaceFlashbackActive", "alanBetrayedLightPalace"],
                         startEventId: "light_palace_final_encounter",
-                        storyEventId: "light_palace_clear",
+                        storyEventId: "light_palace_alan_betrayal",
                         actionLabel: "祭壇へ進む"
                     }
                 ],
@@ -12720,6 +12792,13 @@ const FIXED_DUNGEON_MAPS = {
                     }
                 ],
                 mapActions: [
+                    {
+                        x: 17, y: 11, type: "storyEvent",
+                        eventId: "light_palace_final_locked_prison",
+                        missingFlags: ["lightPalacePrisonRescueSecured", "lightPalaceFlashbackActive", "alanBetrayedLightPalace"],
+                        label: "祭壇の奥を確認する",
+                        log: "祭壇へ進む前に、地下牢の生存者を確認する必要がある。"
+                    },
                     {
                         x: 17, y: 8, type: "elementalTrialPrism", element: "光",
                         interactFromAdjacent: true, blocksMovement: true,
@@ -12771,6 +12850,9 @@ const FIXED_DUNGEON_MAPS = {
                     x: 13,
                     y: 16
                 },
+                entryEventId: "light_palace_liberation_after_betrayal",
+                entryEventFlag: "lightPalaceLiberationSeen",
+                entryEventConditions: { requiredFlag: "alanBetrayedLightPalace", missingFlag: "lightPalaceCleared" },
                 chests: [
                     {
                         x: 3,
@@ -12865,7 +12947,7 @@ const FIXED_DUNGEON_MAPS = {
                         missingFlag: "leilaJoined"
                     }
                 ],
-                nextActorPlacementId: 5,
+                nextActorPlacementId: 6,
                 mapActors: [
                     {
                         "placementId": 1,
@@ -12949,6 +13031,30 @@ const FIXED_DUNGEON_MAPS = {
                                     "label": "衰弱した聖騎士を診る",
                                     "type": "storyEvent",
                                     "eventId": "light_palace_prison_leila"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "placementId": 5,
+                        "actorId": "light_palace_prison_leon",
+                        "name": "呪いに倒れた聖騎士",
+                        "x": 19,
+                        "y": 10,
+                        "imageKey": "overlay_companion_leon",
+                        "imageColor": "#d9e6ff",
+                        "minimapColor": "#d9e6ff",
+                        "states": [
+                            {
+                                "stateId": "light_palace_prison_leon",
+                                "priority": 100,
+                                "when": {
+                                    "missingFlag": "lightPalaceCleared"
+                                },
+                                "action": {
+                                    "label": "レオンの容体を確かめる",
+                                    "type": "storyEvent",
+                                    "eventId": "light_palace_prison_leon"
                                 }
                             }
                         ]

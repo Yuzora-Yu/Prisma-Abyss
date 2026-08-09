@@ -13,10 +13,12 @@ function assert(condition, message) {
 }
 
 assert(prison, 'LIGHT_PALACE floor 5 is unavailable.');
-assert((prison.mapActors || []).length === 4, 'LIGHT_PALACE floor 5 must have four authored prisoners.');
+assert((prison.mapActors || []).length === 5, 'LIGHT_PALACE floor 5 must have five authored prisoners after Leon is added.');
 const king = prison.mapActors.find(actor => actor.actorId === 'captive_king');
 assert(king.placementId === 1, 'The captive king placementId must remain 1.');
-assert(prison.nextActorPlacementId === 5, 'The next actor placement ID must reserve the four issued prisoner IDs.');
+assert(prison.nextActorPlacementId === 6, 'The next actor placement ID must reserve the five issued prisoner IDs.');
+const leon = prison.mapActors.find(actor => actor.actorId === 'light_palace_prison_leon');
+assert(leon && leon.placementId === 5, 'Current-time Leon prisoner placement must remain stable at placementId 5.');
 assert(king.actorId === 'captive_king', 'The captive king actorId must remain stable.');
 assert(Number(king.x) === 7 && Number(king.y) === 3, 'The captive king base placement moved unexpectedly.');
 assert(!(prison.mapActions || []).some(action => Number(action.x) === 7 && Number(action.y) === 3),
