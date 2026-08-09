@@ -136,14 +136,16 @@ const STORY_MANAGER_DATA = {
         "PROLOGUE_PRESENT_WAKE": [
                 { "name": "システム", "text": "――5年後。山中の小さな山小屋。" },
                 { "name": "システム", "text": "地鳴りで目が覚めた。枕元では、焼け焦げたペンダントが小さく揺れている。" },
-                { "name": "リース", "text": "起きたかい。……今の揺れ、あの日と少し似てたね。" },
-                { "name": "リース", "text": "気になるなら見ておいで。もう、私がここへ縛っておく歳でもない。" },
-                { "name": "リース", "text": "ただし山道は昨日の雨で滑るよ。急ぐなら、なおさら足元を見な。" }
+                { "name": "リース", "text": "起きたかい。顔を洗ったら、こっちへおいで。少し話そう。" }
         ],
-        "PRESENT_REES_DEPART": [
-                { "name": "リース", "text": "忘れ物は？　薬草くらいは持ったね。" },
-                { "name": "リース", "text": "下りた先で何を聞いても、すぐ答えを決めるんじゃないよ。" },
+        "PRESENT_REES_TALK": [
+                { "name": "リース", "text": "今の揺れ……あの日と少し似てたね。気になるんだろう？" },
+                { "name": "リース", "text": "なら、自分の目で見ておいで。もう私がここへ縛っておく歳でもない。" },
+                { "name": "リース", "text": "昨日の雨で山道が滑る。急ぐ時ほど足元を見な。薬草も忘れるんじゃないよ。" },
                 { "name": "リース", "text": "……行ってらっしゃい、アルス。" }
+        ],
+        "PRESENT_REES_AFTER_TALK": [
+                { "name": "リース", "text": "まだ何か忘れたかい？　慌てなくていい。準備ができたら行っておいで。" }
         ],
         "PRESENT_LUMINA_RESCUE": [
                 { "name": "システム", "text": "山を下りて最初に見えた村から、鋭い悲鳴が上がった。" },
@@ -3828,11 +3830,15 @@ const STORY_MANAGER_DATA = {
                         { "type": "FLAG", "key": "prologuePresentWakeSeen", "state": true }
                 ]
         },
-        "present_depart_rees": {
+        "present_talk_rees": {
                 "actions": [
-                        { "type": "CONV", "value": "PRESENT_REES_DEPART" },
-                        { "type": "FLAG", "key": "prologueDepartedReesHut", "state": true },
-                        { "type": "START_FIXED_MAP", "value": "START_VILLAGE", "targetX": 7, "targetY": 10, "replaceReturnPoint": true }
+                        { "type": "CONV", "value": "PRESENT_REES_TALK" },
+                        { "type": "FLAG", "key": "prologueReesDepartureTalkSeen", "state": true }
+                ]
+        },
+        "present_talk_rees_after": {
+                "actions": [
+                        { "type": "CONV", "value": "PRESENT_REES_AFTER_TALK" }
                 ]
         },
         "present_lumina_rescue": {

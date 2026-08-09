@@ -1360,15 +1360,15 @@ const STORY_EVENT_MONSTERS = [
       race:source.race || '獣',
       rank:2,
       minF:1,
-      hp:48,
-      mp:24,
-      atk:12,
+      hp:10,
+      mp:32,
+      atk:15,
       def:7,
-      spd:6,
-      mag:8,
-      mdef:6,
+      spd:5,
+      mag:11,
+      mdef:4,
       gold:0,
-      exp:18,
+      exp:8,
       actCount:1,
       acts:[{id:1,rate:80,condition:0},{id:203,rate:20,condition:0}],
       drops:{ normal:{id:null,rate:0}, rare:{id:null,rate:0} },
@@ -1511,8 +1511,17 @@ function getEncounterCandidates(options = {}) {
   const mapId = String(options.mapId || '').trim();
   const floor = normalizeEncounterFloor(options.floor, 0);
   const abyssFloor = normalizeEncounterFloor(options.abyssFloor, 0);
+  const rankMinRaw = Number(options.rankMin);
+  const rankMaxRaw = Number(options.rankMax);
+  const hasRankRange = Number.isFinite(rankMinRaw) || Number.isFinite(rankMaxRaw);
+  const rankMin = Number.isFinite(rankMinRaw) ? Math.max(1, Math.floor(rankMinRaw)) : 1;
+  const rankMax = Number.isFinite(rankMaxRaw) ? Math.max(rankMin, Math.floor(rankMaxRaw)) : Infinity;
   return NORMAL_MONSTER_BASES.filter((monster) => {
     if (abyssFloor > 0) return matchesFloorRanges(monster.abyssFloors, abyssFloor) && Array.isArray(monster.abyssFloors) && monster.abyssFloors.length > 0;
+    if (hasRankRange) {
+      const rank = Math.max(1, Number(monster?.rank || monster?.minF || 1));
+      return rank >= rankMin && rank <= rankMax;
+    }
     if (!mapId) return false;
     return (monster.habitats || []).some((habitat) => String(habitat?.mapId || '') === mapId && matchesFloorRanges(habitat?.floors, floor));
   });
@@ -1662,7 +1671,7 @@ function getRareEncounterRate(floor) {
 }
 
 function tryGenerateRareMonster(rank, options = {}) {
-  const candidates = getRareCandidatesForRank(rank);
+  const candidates = options.allCandidates === true ? FIXED_RARE_MONSTERS : getRareCandidatesForRank(rank);
 
   if (candidates.length === 0) {
     return null;

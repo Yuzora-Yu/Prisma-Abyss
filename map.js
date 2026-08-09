@@ -2489,7 +2489,6 @@ const FIXED_MAPS = {
         "isDungeon": true,
         "useHabitatEncounters": true,
         "encounterRank": 1,
-        "enemyBoost": { "statMultiplier": 1.0, "hpMultiplier": 2.5 },
         "randomEncounterRateMultiplier": 0.75,
         "entryEventId": "prologue_south_arrival",
         "entryEventFlag": "prologueFirstBattleCleared",
@@ -2575,17 +2574,54 @@ const FIXED_MAPS = {
             "WTTTTSTTTTW",
             "WWWWWWWWWWW"
         ],
-        "mapActors": [],
-        "mapActions": [
+        "nextActorPlacementId": 2,
+        "mapActors": [
+            {
+                "placementId": 1,
+                "actorId": "rees_hut_rees",
+                "name": "リース",
+                "x": 3,
+                "y": 3,
+                "imageKey": "overlay_npc_villager",
+                "baseTile": "T",
+                "states": [
+                    {
+                        "stateId": "rees_before_departure_talk",
+                        "priority": 10,
+                        "when": { "missingFlags": ["prologueReesDepartureTalkSeen"] },
+                        "action": {
+                            "label": "リースと話す",
+                            "type": "storyEvent",
+                            "eventId": "present_talk_rees"
+                        }
+                    },
+                    {
+                        "stateId": "rees_after_departure_talk",
+                        "priority": 0,
+                        "when": { "requiredFlags": ["prologueReesDepartureTalkSeen"] },
+                        "action": {
+                            "label": "リースと話す",
+                            "type": "storyEvent",
+                            "eventId": "present_talk_rees_after"
+                        }
+                    }
+                ]
+            }
+        ],
+        "worldExits": [
             {
                 "x": 5, "y": 7,
-                "type": "storyEvent",
-                "eventId": "present_depart_rees",
-                "label": "外へ出る",
-                "requiredFlag": "prologuePresentWakeSeen",
-                "missingFlag": "prologueDepartedReesHut"
+                "area": "WORLD",
+                "worldKey": "WORLD",
+                "worldX": 58,
+                "worldY": 65,
+                "requiredFlag": "prologueReesDepartureTalkSeen",
+                "setFlag": "prologueDepartedReesHut",
+                "lockedText": "出る前に、リースへ声をかけておこう。"
             }
-        ]
+        ],
+        "exitPoint": { "area": "WORLD", "worldKey": "WORLD", "x": 58, "y": 65 },
+        "mapActions": []
     },
     "REXNOTE_ESTATE": {
         "name": "レクスノート邸",
@@ -2664,7 +2700,10 @@ const FIXED_MAPS = {
         "isDungeon": true,
         "useHabitatEncounters": true,
         "encounterRank": 31,
-        "rareEncounterRateMultiplier": 1.35,
+        "encounterRankMin": 1,
+        "encounterRankMax": 76,
+        "rareEncounterAll": true,
+        "rareEncounterRateMultiplier": 1.0,
         "randomEncounterRateMultiplier": 1.0,
         "tiles": [
             "WWWWWWWWWWWWWWWWWWWWWWWWW",

@@ -8901,6 +8901,9 @@ load: () => {
             abyssBalanceFloor: mapEncounter?.balanceFloor || null,
             useHabitatEncounters: !!(mapEncounter?.useHabitatEncounters || isSeaEncounter || worldEncounter?.mapId),
             encounterRank: mapEncounter?.encounterRank || (worldEncounter ? worldEncounter.rank : null),
+            encounterRankMin: Number.isFinite(Number(mapEncounter?.encounterRankMin)) ? Number(mapEncounter.encounterRankMin) : null,
+            encounterRankMax: Number.isFinite(Number(mapEncounter?.encounterRankMax)) ? Number(mapEncounter.encounterRankMax) : null,
+            rareEncounterAll: mapEncounter?.rareEncounterAll === true,
 			monsters: Array.isArray(mapEncounter?.monsters) ? [...mapEncounter.monsters] : null,
             exactMonsters: !!mapEncounter?.exactMonsters,
             memoryRealm: !!mapEncounter?.memoryRealm,
@@ -12115,6 +12118,11 @@ const Field = {
                     const exit = (!localExit && savedWorld)
                         ? { area: saved.areaKey, worldKey: saved.worldKey || saved.areaKey, x: saved.x, y: saved.y }
                         : fallback;
+                    if (localExit?.setFlag) {
+                        App.data.progress = App.data.progress || {};
+                        App.data.progress.flags = App.data.progress.flags || {};
+                        App.data.progress.flags[String(localExit.setFlag)] = true;
+                    }
                     App.data.mapReturnPoint = null;
                     App.data.location.area = exit.area || 'WORLD';
                     App.data.location.worldKey = exit.worldKey || exit.area || 'WORLD';

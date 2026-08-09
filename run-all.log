@@ -10,7 +10,7 @@ Abyss town facility validation passed: 9 actions coincide with separated authore
 PASS validate-arisa-haine-main-route-phase5b
 
 [validation] validate-asset-fixed-names.js
-/mnt/data/prisma_phase5d_work/tools/validation/validate-asset-fixed-names.js:42
+/mnt/data/prologue_quality_followup/work/tools/validation/validate-asset-fixed-names.js:42
     throw new Error(`Fixed-name asset validation failed:\n${errors.join('\n')}`);
     ^
 
@@ -697,7 +697,7 @@ registered image is missing: assets/ui/menu-icons/item-skill-book.png
 registered image is missing: assets/ui/menu-icons/item-trait-book.png
 registered image is missing: assets/ui/menu-icons/item-travel.png
 registered image is missing: assets/ui/menu-icons/item-vehicle.png
-    at Object.<anonymous> (/mnt/data/prisma_phase5d_work/tools/validation/validate-asset-fixed-names.js:42:11)
+    at Object.<anonymous> (/mnt/data/prologue_quality_followup/work/tools/validation/validate-asset-fixed-names.js:42:11)
     at Module._compile (node:internal/modules/cjs/loader:1730:14)
     at Object..js (node:internal/modules/cjs/loader:1895:10)
     at Module.load (node:internal/modules/cjs/loader:1465:32)
@@ -714,9 +714,9 @@ node:fs:442
     return binding.readFileUtf8(path, stringToFlags(options.flag));
                    ^
 
-Error: ENOENT: no such file or directory, open '/mnt/data/prisma_phase5d_work/assets/map/library/manifest.json'
+Error: ENOENT: no such file or directory, open '/mnt/data/prologue_quality_followup/work/assets/map/library/manifest.json'
     at Object.readFileSync (node:fs:442:20)
-    at Object.<anonymous> (/mnt/data/prisma_phase5d_work/tools/validation/validate-authored-map-props.js:16:32)
+    at Object.<anonymous> (/mnt/data/prologue_quality_followup/work/tools/validation/validate-authored-map-props.js:16:32)
     at Module._compile (node:internal/modules/cjs/loader:1730:14)
     at Object..js (node:internal/modules/cjs/loader:1895:10)
     at Module.load (node:internal/modules/cjs/loader:1465:32)
@@ -728,7 +728,7 @@ Error: ENOENT: no such file or directory, open '/mnt/data/prisma_phase5d_work/as
   errno: -2,
   code: 'ENOENT',
   syscall: 'open',
-  path: '/mnt/data/prisma_phase5d_work/assets/map/library/manifest.json'
+  path: '/mnt/data/prologue_quality_followup/work/assets/map/library/manifest.json'
 }
 
 Node.js v22.16.0
@@ -748,14 +748,14 @@ Balance master validation passed: equipment curves and requested monster Rank ga
 - blocking object file is missing: assets/map/objects/object_blocking_dark_shrine_obelisk.png
 
 [validation] validate-chest-mimics.js
-Error: ENOENT: no such file or directory, open '/mnt/data/prisma_phase5d_work/assets/monsters/monster_120301.png'
+Error: ENOENT: no such file or directory, open '/mnt/data/prologue_quality_followup/work/assets/monsters/monster_120301.png'
     at Object.openSync (node:fs:562:18)
     at Object.readFileSync (node:fs:446:35)
-    at /mnt/data/prisma_phase5d_work/tools/validation/validate-chest-mimics.js:150:25 {
+    at /mnt/data/prologue_quality_followup/work/tools/validation/validate-chest-mimics.js:150:25 {
   errno: -2,
   code: 'ENOENT',
   syscall: 'open',
-  path: '/mnt/data/prisma_phase5d_work/assets/monsters/monster_120301.png'
+  path: '/mnt/data/prologue_quality_followup/work/assets/monsters/monster_120301.png'
 }
 
 [validation] validate-companion-map-sprites.js
@@ -763,11 +763,11 @@ node:fs:562
   return binding.open(
                  ^
 
-Error: ENOENT: no such file or directory, open '/mnt/data/prisma_phase5d_work/assets/map/overlays/source/companion-highres-v003/manifest.json'
+Error: ENOENT: no such file or directory, open '/mnt/data/prologue_quality_followup/work/assets/map/overlays/source/companion-highres-v003/manifest.json'
     at Object.openSync (node:fs:562:18)
     at Object.readFileSync (node:fs:446:35)
-    at read (/mnt/data/prisma_phase5d_work/tools/validation/validate-companion-map-sprites.js:5:25)
-    at Object.<anonymous> (/mnt/data/prisma_phase5d_work/tools/validation/validate-companion-map-sprites.js:9:29)
+    at read (/mnt/data/prologue_quality_followup/work/tools/validation/validate-companion-map-sprites.js:5:25)
+    at Object.<anonymous> (/mnt/data/prologue_quality_followup/work/tools/validation/validate-companion-map-sprites.js:9:29)
     at Module._compile (node:internal/modules/cjs/loader:1730:14)
     at Object..js (node:internal/modules/cjs/loader:1895:10)
     at Module.load (node:internal/modules/cjs/loader:1465:32)
@@ -777,7 +777,7 @@ Error: ENOENT: no such file or directory, open '/mnt/data/prisma_phase5d_work/as
   errno: -2,
   code: 'ENOENT',
   syscall: 'open',
-  path: '/mnt/data/prisma_phase5d_work/assets/map/overlays/source/companion-highres-v003/manifest.json'
+  path: '/mnt/data/prologue_quality_followup/work/assets/map/overlays/source/companion-highres-v003/manifest.json'
 }
 
 Node.js v22.16.0
@@ -786,13 +786,13 @@ Node.js v22.16.0
 Container presentation validation passed: chest, pot and barrel text paths are distinct.
 
 [validation] validate-event-map-markers.js
-/mnt/data/prisma_phase5d_work/tools/validation/validate-event-map-markers.js:6
+/mnt/data/prologue_quality_followup/work/tools/validation/validate-event-map-markers.js:6
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
                                                          ^
 
 Error: Blue event glimmer asset is missing
-    at assert (/mnt/data/prisma_phase5d_work/tools/validation/validate-event-map-markers.js:6:64)
-    at Object.<anonymous> (/mnt/data/prisma_phase5d_work/tools/validation/validate-event-map-markers.js:21:1)
+    at assert (/mnt/data/prologue_quality_followup/work/tools/validation/validate-event-map-markers.js:6:64)
+    at Object.<anonymous> (/mnt/data/prologue_quality_followup/work/tools/validation/validate-event-map-markers.js:21:1)
     at Module._compile (node:internal/modules/cjs/loader:1730:14)
     at Object..js (node:internal/modules/cjs/loader:1895:10)
     at Module.load (node:internal/modules/cjs/loader:1465:32)
@@ -808,7 +808,7 @@ Node.js v22.16.0
 Field encounter zone validation passed. Terrain-separated zones, rare metals, new dungeons, quests, items, and tile effects are valid.
 
 [validation] validate-fixed-encounter-rosters.js
-Fixed encounter roster validation passed: 435 monsters.js habitat entries, 69 authored hunter entries, depth gates, and the Crena investigation cordon are consistent.
+Fixed encounter roster validation passed: 444 monsters.js habitat entries, 69 authored hunter entries, depth gates, and the Crena investigation cordon are consistent.
 
 [validation] validate-fixed-exit-on-step.js
 Fixed dungeon exit validation passed: EXIT and unlinked S cells activate on contact; locked and inter-floor links remain safe.
@@ -817,13 +817,13 @@ Fixed dungeon exit validation passed: EXIT and unlinked S cells activate on cont
 Fixed hunter pathfinding validation passed: shortest walkable detour, unreachable wait, same-cell handling, and runtime pursuit are connected.
 
 [validation] validate-fixed-water-shore.js
-/mnt/data/prisma_phase5d_work/tools/validation/validate-fixed-water-shore.js:11
+/mnt/data/prologue_quality_followup/work/tools/validation/validate-fixed-water-shore.js:11
     if (!condition) throw new Error(message);
                     ^
 
 Error: World shoreline foam asset is missing
-    at assert (/mnt/data/prisma_phase5d_work/tools/validation/validate-fixed-water-shore.js:11:27)
-    at Object.<anonymous> (/mnt/data/prisma_phase5d_work/tools/validation/validate-fixed-water-shore.js:56:1)
+    at assert (/mnt/data/prologue_quality_followup/work/tools/validation/validate-fixed-water-shore.js:11:27)
+    at Object.<anonymous> (/mnt/data/prologue_quality_followup/work/tools/validation/validate-fixed-water-shore.js:56:1)
     at Module._compile (node:internal/modules/cjs/loader:1730:14)
     at Object..js (node:internal/modules/cjs/loader:1895:10)
     at Module.load (node:internal/modules/cjs/loader:1465:32)
@@ -1525,6 +1525,15 @@ PASS validate-grad-first-battle-phase4
 [validation] validate-inventory-equipment-display.js
 Inventory equipment display validation passed: acquisition-style cards and footer controls are active.
 
+[validation] validate-light-palace-flashback-phase6d.js
+[phase6d] PASS: Light Palace flashback route, isolation, checkpoints, Veld events, carryover, and news validated.
+
+[validation] validate-light-palace-present-assault-phase6e.js
+[phase6e] PASS: present Light Palace rescue gate, Alan betrayal/departure, liberation, save state, and news validated.
+
+[validation] validate-lighthouse-zelied-volcano-route-phase6b.js
+PASS validate-lighthouse-zelied-volcano-route-phase6b
+
 [validation] validate-luna403-thunder-state-phase5d.js
 PASS validate-luna403-thunder-state-phase5d
 
@@ -1538,8 +1547,8 @@ Grezelia has a sealed third layer, and all fixed tile effects use walkable coord
 Map actor master validation passed: stable ID, deterministic state priority, flag/item transitions, coordinate-independent identity, and legacy-action compatibility.
 
 [validation] validate-map-actors.js
-Map actor validation passed. Coordinate-based actors checked: 115.
-Stable mapActors masters checked: 86; no person sprites remain in mapActions.
+Map actor validation passed. Coordinate-based actors checked: 125.
+Stable mapActors masters checked: 93; no person sprites remain in mapActions.
 Actor positions are walkable, unique, blocking, adjacent-interactable, and linked to existing story events.
 
 [validation] validate-map-editor.js
@@ -1550,10 +1559,10 @@ Minimap/hazard safety passed. Wall cells filtered: 235. Protected cells filtered
 Directed navigation states: 4849. Important targets: 63. Adjacent switches: 8.
 
 [validation] validate-monster-habitat-master.js
-Monster habitat master validation passed: 108 fixed floors, 15 field zones, sea habitats, and four rare Rank bands at one 2% encounter roll.
+Monster habitat master validation passed: 111 fixed floors, 15 field zones, sea habitats, and four rare Rank bands at one 2% encounter roll.
 
 [validation] validate-news-data.js
-PASS: news data policy (9 dates)
+PASS: news data policy (10 dates)
 
 [validation] validate-passive-skills.js
 PASS: 特性互換監査（無効ID正規化・固定ON）
@@ -1569,6 +1578,9 @@ PASS validate-playable-prologue-phase2c
 
 [validation] validate-present-day-bridge-phase3a.js
 PASS validate-present-day-bridge-phase3a
+
+[validation] validate-prologue-quality-audit-20260810.js
+PASS validate-prologue-quality-audit-20260810
 
 [validation] validate-recruitment-route-cleanup-phase5d.js
 PASS validate-recruitment-route-cleanup-phase5d
@@ -1587,9 +1599,10 @@ PASS: all 59 index.html scripts are present in the Service Worker precache.
 Cache names are valid and the runtime cache is synchronized: prisma-abyss-v39.20260804-runtime
 
 [validation] validate-story-dialogue-data.js
-Story validation passed: 304 scripts, 251 events.
-Warnings: 29 unreferenced scripts (review separately; not auto-deleted).
+Story validation passed: 340 scripts, 288 events.
+Warnings: 30 unreferenced scripts (review separately; not auto-deleted).
 unreferenced script: GAME_START_1
+unreferenced script: LIGHT_PALACE_FINAL_ENCOUNTER
 unreferenced script: ABYSS_FLOOR_010_LEON_GUARDIAN
 unreferenced script: ABYSS_FLOOR_010_CLEAR
 unreferenced script: ABYSS_FLOOR_020_GLEN_GUARDIAN
@@ -1623,13 +1636,13 @@ unreferenced script: ABYSS_AZELGARAG_TRANSFORM_FINAL
 Story item-condition validation passed: missing/owned branches and item consumption are deterministic.
 
 [validation] validate-summit-temple.js
-/mnt/data/prisma_phase5d_work/tools/validation/validate-summit-temple.js:7
+/mnt/data/prologue_quality_followup/work/tools/validation/validate-summit-temple.js:7
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
                                                          ^
 
 Error: Missing Summit asset file: assets/map/terrain/tile_summit_temple_wall.png
-    at assert (/mnt/data/prisma_phase5d_work/tools/validation/validate-summit-temple.js:7:64)
-    at Object.<anonymous> (/mnt/data/prisma_phase5d_work/tools/validation/validate-summit-temple.js:96:5)
+    at assert (/mnt/data/prologue_quality_followup/work/tools/validation/validate-summit-temple.js:7:64)
+    at Object.<anonymous> (/mnt/data/prologue_quality_followup/work/tools/validation/validate-summit-temple.js:96:5)
     at Module._compile (node:internal/modules/cjs/loader:1730:14)
     at Object..js (node:internal/modules/cjs/loader:1895:10)
     at Module.load (node:internal/modules/cjs/loader:1465:32)
@@ -1640,6 +1653,18 @@ Error: Missing Summit asset file: assets/map/terrain/tile_summit_temple_wall.png
     at node:internal/main/run_main_module:36:49
 
 Node.js v22.16.0
+
+[validation] validate-thunder-fort-defense-phase7a.js
+PASS validate-thunder-fort-defense-phase7a
+
+[validation] validate-thunder-fort-state-phase6a.js
+PASS validate-thunder-fort-state-phase6a
+
+[validation] validate-undersea-grad-phase6c.js
+PASS validate-undersea-grad-phase6c
+
+[validation] validate-undersea-volcano-phase6b.js
+PASS validate-undersea-volcano-phase6b
 
 [validation] validate-visual-polish.js
 - generated visual asset is missing: assets/map/overlays/overlay_decor_default_cave_dust.png
@@ -1723,4 +1748,7 @@ Node.js v22.16.0
 [validation] validate-water-city-transition-phase5a.js
 PASS validate-water-city-transition-phase5a
 
-Validation suite failed: 10/42 scripts.
+[validation] validate-world-state-condition-normalizer.js
+PASS validate-world-state-condition-normalizer
+
+Validation suite failed: 10/51 scripts.

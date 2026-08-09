@@ -65,10 +65,9 @@ assert(maps.PROLOGUE_SOUTH_VILLAGE.isDungeon === true && maps.PROLOGUE_NORTH_VIL
 assert(maps.PROLOGUE_SOUTH_VILLAGE.useHabitatEncounters === true && maps.PROLOGUE_NORTH_VILLAGE.useHabitatEncounters === true, 'Prologue normal encounters must use monsters.js habitat master.');
 assert(!Array.isArray(maps.PROLOGUE_SOUTH_VILLAGE.monsters) && !Array.isArray(maps.PROLOGUE_NORTH_VILLAGE.monsters), 'Prologue maps must not duplicate normal encounter rosters in map.js.');
 assert(maps.PROLOGUE_SOUTH_VILLAGE.encounterRank === 1, 'South encounter rank must remain early-game rank.');
-assert(Number(maps.PROLOGUE_SOUTH_VILLAGE.enemyBoost?.hpMultiplier || 1) >= 2, 'South prologue encounters need HP-only pacing support.');
-assert(Number(maps.PROLOGUE_SOUTH_VILLAGE.enemyBoost?.statMultiplier || 1) === 1, 'South prologue pacing must not raise enemy offense just to lengthen fights.');
-assert(maps.PROLOGUE_NORTH_VILLAGE.encounterRank >= 31, 'North area must enter the first Metal Jelly rare-rank band.');
-assert(Number(maps.PROLOGUE_NORTH_VILLAGE.rareEncounterRateMultiplier || 0) > 1, 'North area does not expose the rare-monster hunt hook.');
+assert(!maps.PROLOGUE_SOUTH_VILLAGE.enemyBoost, 'South prologue normal encounters must keep their master stats without artificial HP/offense scaling.');
+assert(Number(maps.PROLOGUE_NORTH_VILLAGE.encounterRankMin) === 1 && Number(maps.PROLOGUE_NORTH_VILLAGE.encounterRankMax) === 76, 'North area must draw normal enemies from Rank 1 through Demon Castle Rank 76.');
+assert(maps.PROLOGUE_NORTH_VILLAGE.rareEncounterAll === true, 'North area must allow every current rare monster to appear on a rare roll.');
 
 assert(events.game_start?.actions?.some(a => a.type === 'WORLD_STATE' && a.key === 'prologueStage' && a.value === 1), 'game_start does not activate playable prologue stage.');
 const rescue = events.prologue_south_arrival;
@@ -77,7 +76,7 @@ const rescueBattle = rescue.actions?.find(a => a.type === 'BOSS');
 assert(rescueBattle && Number(rescueBattle.value) === 802000 && rescueBattle.lossEventId === 'prologue_south_ambush_retry', 'First rescue battle must use the dedicated prologue enemy and keep retry.');
 assert(rescueBattle.endAfterTurns === undefined && rescueBattle.endAtHpPercent === undefined && rescueBattle.forcedLoss !== true, 'First rescue battle must use normal HP=0 victory, not an authored one-turn finish rule.');
 const rescueMonster = monsterApi?.getMonsterById?.(802000);
-assert(rescueMonster && Number(rescueMonster.hp) >= 40, 'Dedicated rescue enemy is too fragile for a real opening battle.');
+assert(rescueMonster && Number(rescueMonster.hp) === 10, 'Opening rescue enemy HP must remain 10; the prior issue was the event-turn termination bug, not enemy durability.');
 assert(rescueMonster.bestiaryExcluded === true || rescueMonster.storyOnly === true, 'Dedicated rescue enemy must stay out of normal bestiary flow.');
 assert(rescue.winActions?.some(a => a.type === 'TEMP_ALLY' && Number(a.charId) === 403), 'Luna does not join as temporary prologue ally after rescue.');
 assert(rescue.winActions?.some(a => a.type === 'WORLD_STATE' && a.key === 'prologueStage' && a.value === 3), 'Rescue victory does not advance prologue stage.');

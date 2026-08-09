@@ -80,6 +80,7 @@ const StoryManager = {
         const flags = progress.flags || {};
         const prologueStage = Math.max(0, Number(progress.worldState?.prologueStage || 0));
         if (prologueStage >= 100 && flags.prologuePresentWakeSeen) {
+            if (!flags.prologueReesDepartureTalkSeen) return 'リースと話そう';
             if (!flags.prologueDepartedReesHut) return '山小屋を出よう';
             if (!flags.presentLuminaRescueSeen) return '山を下りた先の村の様子を確かめよう';
             if (!flags.luminaVillageNameKnown) return '村の長老と話そう';

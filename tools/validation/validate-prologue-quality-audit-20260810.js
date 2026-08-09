@@ -50,12 +50,20 @@ const homeAction = (south.mapActions || []).find(a => a.eventId === 'prologue_ho
 const bossExit = (south.mapActions || []).find(a => a.eventId === 'prologue_south_exit_boss');
 assert(homeAction && southReachable.has(`${homeAction.x},${homeAction.y}`), 'The destroyed-home event is not reachable from the south west entrance.');
 assert(bossExit && southReachable.has(`${bossExit.x},${bossExit.y}`), 'The south village escape/boss boundary is not reachable from the west entrance.');
-const hutExit = (hut.mapActions || []).find(a => a.eventId === 'present_depart_rees');
-assert(hutExit, 'Rees hut has no departure action.');
+const hutExit = (hut.worldExits || []).find(e => Number(e.x) === 5 && Number(e.y) === 7);
+assert(hutExit, 'Rees hut has no contact-driven field exit.');
 assert(hut.tiles?.[Number(hutExit.y)]?.[Number(hutExit.x)] === 'S', 'Rees hut departure point must be visibly marked as an exit tile.');
-assert(hutExit.triggerOnStep !== true, 'Rees hut -> another map must remain action-button driven.');
+assert(hutExit.area === 'WORLD' && hutExit.worldKey === 'WORLD', 'Rees hut must exit to the field/world, not teleport directly into another fixed map.');
+assert(hutExit.requiredFlag === 'prologueReesDepartureTalkSeen', 'Rees hut exit must be unlocked by talking to Rees first.');
+assert(hutExit.setFlag === 'prologueDepartedReesHut', 'Rees hut exit must record departure when the exit tile is actually stepped on.');
+assert(mainSource.includes('if (localExit?.setFlag)'), 'Field world-exit runtime does not apply the exit flag at the moment the exit tile is stepped on.');
+assert((hut.mapActions || []).length === 0, 'Rees hut field exit must not be implemented as an action-button map event.');
+const reesActor = (hut.mapActors || []).find(a => a.actorId === 'rees_hut_rees');
+assert(reesActor, 'Rees is not visibly placed as a conversation actor in her hut.');
+assert((reesActor.states || []).some(state => state.action?.eventId === 'present_talk_rees'), 'Rees actor is missing the departure conversation route.');
 const hutReachable = collectReachableCells(hut, hut.entryPoint);
 assert(hutReachable.has(`${hutExit.x},${hutExit.y}`), 'Rees hut exit is not physically reachable from the wake-up point.');
+assert(hutReachable.has(`${reesActor.x},${reesActor.y}`), 'Rees herself is not physically reachable from the wake-up point.');
 
 // 3) Opening combat pacing and victory semantics.
 const rescue = events.prologue_south_arrival;
@@ -65,9 +73,15 @@ assert(rescueBattle?.endAfterTurns === undefined && rescueBattle?.endAtHpPercent
   'Opening rescue must end by normal enemy HP=0, not an authored turn/HP shortcut.');
 assert(battleSource.includes("if (value === null || value === undefined || value === '') return null;"), 'Event-battle numeric rule normalizer can still convert null into a 1-turn threshold.');
 const rescueMonster = MonsterData?.getMonsterById?.(802000);
-assert(rescueMonster && Number(rescueMonster.hp) >= 40, 'Opening rescue enemy is too fragile to form a real battle.');
-assert(Number(south.enemyBoost?.statMultiplier || 1) === 1, 'Opening encounter pacing must not be achieved by raising enemy offense.');
-assert(Number(south.enemyBoost?.hpMultiplier || 1) >= 2, 'Opening normal encounters need HP-only pacing so they do not evaporate in one hit.');
+assert(rescueMonster && Number(rescueMonster.hp) === 10, 'Opening rescue enemy HP must remain 10; battle duration must come from correct victory semantics, not inflated durability.');
+assert(!south.enemyBoost, 'Opening normal encounters must use their original master stats without artificial HP/offense scaling.');
+const northPool = MonsterData?.getEncounterCandidates?.({ rankMin: north.encounterRankMin, rankMax: north.encounterRankMax }) || [];
+assert(Number(north.encounterRankMin) === 1 && Number(north.encounterRankMax) === 76, 'North village must span Rank 1 through Demon Castle Rank 76.');
+assert(northPool.some(m => Number(m.rank) <= 2) && northPool.some(m => Number(m.rank) === 76), 'North village broad pool does not actually include both opening and Demon Castle-tier normal enemies.');
+assert(northPool.every(m => Number(m.rank) >= 1 && Number(m.rank) <= 76), 'North village broad pool leaked a normal enemy outside Rank 1-76.');
+assert(north.rareEncounterAll === true, 'North village must use the all-current-rares rare pool.');
+assert(Array.isArray(MonsterData?.rareMonsters) && MonsterData.rareMonsters.length >= 4, 'Rare-monster master is incomplete for the north-village all-rares rule.');
+assert(battleSource.includes('allCandidates:battleData.rareEncounterAll === true'), 'Battle runtime does not pass the all-rares option to the rare encounter generator.');
 
 // 4) Prologue wipeout recovery belongs to the field, not battle-log healing.
 const wipeEvent = events.prologue_field_wipeout_recover;
@@ -126,7 +140,7 @@ assert(elderNamesVillage >= 0 && afterConversation >= 0 && knowsName > afterConv
 const openingScriptKeys = [
   'PROLOGUE_WEST_HILL_OPENING','PROLOGUE_SOUTH_AMBUSH','PROLOGUE_LUCION_RECOVER','PROLOGUE_SOUTH_AFTER_BATTLE',
   'PROLOGUE_HOME_LOST','PROLOGUE_SOUTH_EXIT_BOSS','PROLOGUE_COLLAPSE_AND_PENDANT','PROLOGUE_FIRST_BOSS_WIN',
-  'PROLOGUE_PRESENT_WAKE','PRESENT_REES_DEPART','PRESENT_LUMINA_RESCUE','PRESENT_LUMINA_RESCUE_AFTER'
+  'PROLOGUE_PRESENT_WAKE','PRESENT_REES_TALK','PRESENT_REES_AFTER_TALK','PRESENT_LUMINA_RESCUE','PRESENT_LUMINA_RESCUE_AFTER'
 ];
 const openingText = openingScriptKeys.flatMap(key => scripts[key] || []).map(line => String(line?.text || '')).join('\n');
 for (const banned of ['南エリア','北エリア','パーティに加わった','限界を越えた力','LB99']) {
