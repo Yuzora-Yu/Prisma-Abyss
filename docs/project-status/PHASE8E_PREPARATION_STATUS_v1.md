@@ -1,3 +1,5 @@
+> **SUPERSEDED:** Phase8E本実装は2026-08-10に完了しました。現在状態は `PHASE8E_STATUS_v1.md` / `PHASE8E_IMPLEMENTATION_REPORT_20260810.md` を参照してください。
+
 # Phase8E Preparation Status v1
 
 Date: 2026-08-10

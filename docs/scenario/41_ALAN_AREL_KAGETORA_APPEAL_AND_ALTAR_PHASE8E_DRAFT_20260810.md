@@ -1,3 +1,6 @@
+> **SUPERSEDED / 2026-08-10**  
+> この稿は承認前の履歴資料です。上申書の意味づけ等に旧解釈を含むため、実装正本には使用しません。承認済み正本は `42_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_APPROVED_20260810.md` を参照してください。
+
 # 41_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_DRAFT_20260810
 
 Status: **draft / user approval required before player-facing runtime implementation**  

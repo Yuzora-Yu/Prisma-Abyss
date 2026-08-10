@@ -24,6 +24,10 @@ Opening asset delivery is staged: before play begins, preload Lumina Village, th
 
 システム文を追加する前に「その文章を消しても、画面・操作・配置・音・人物の反応で伝わるか」を確認する。伝わるなら文章を足さない。
 
+### システム文・メニュー／UI文言の全体レビュー運用（2026-08-10追記）
+
+チュートリアルを除き、既存のシステム文、現在の目的、マップ操作文、メニュー、施設、戦闘等のUI文言は、現在の作業範囲に関係なくレビュー候補として収集する。既存文言を変更する場合は、必ず `現行` と `修正案` を併記し、ユーザーの最終判断前にruntimeへ反映しない。master inventoryは `docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md` とし、新規文言も継続追記する。チュートリアルは既存のUI完成ゲートを優先し、この全体レビューからは保留する。
+
 ## Core Intent
 
 The game has become feature-rich, but the next direction is to reorganize it as an RPG where features open naturally through story progression.

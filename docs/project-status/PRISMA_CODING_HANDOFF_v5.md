@@ -970,3 +970,26 @@ alanState.phase = 'dead'
 - source: `docs/scenario/40_NADIR_CAVE_DEFENSE_LINE_AND_INTEGRATION_ALTAR_PHASE8D_20260810.md`。
 - validation: `tools/validation/validate-nadir-cave-phase8d.js`。
 
+
+### アレル／カゲトラ長編・王への上申書・光の楔アラン【2026-08-10 Phase8E実装】
+
+- Quest master: `arel_kagetora_appeal`。`alanBetrayedLightPalace` 直後から解禁。
+- Stage flow: 雷の要塞ゼリード -> 水上都市旧行政記録 -> レクスノート邸 -> 光の宮殿旧命令簿 -> 水上都市ハヤテ -> 光の宮殿旧文書庫。
+- `701011 王への上申書` は、アレルが十年前に統合の儀を止めるため**国王への提出を準備していた未提出原本**。現代側で新規作成／王印追記しない。
+- ハヤテはStage3告白後、カゲトラがゼリードを最も信頼していた事実を前提に、即時刃傷沙汰へせず赦しを保留して同行。`ALLY 203` 後にStage4。
+- `ABYSS_FIELD` では人物spriteをmapActionに置かず、`mapActors` の `alan_integration_altar_phase8e` として配置。`nadirCaveCleared && !alanAltarResolved` の間のみ出現。
+- Boss master `301110 光の楔アラン`, Rank95, storyOnly/bestiaryExcluded, `assets/characters/char_face_201.gif`。
+- 上申書なし: `進む / 引き返す`。進む側で `alanAltarIrreversibleAccepted` を立て、撃破後 `alanOutcome=dead`, `alanDeadAtIntegrationAltar`, `alanAltarResolved`。未完了questは`QUEST_FAIL`。
+- 上申書あり: 戦闘後 `共に生きろ / ここで終わらせる`。saved/deadどちらもplayer choice。savedでも祭壇では再加入しない。
+- `alanAltarResolved` 後のみ中央亀裂の `abyssDungeon -> CARMENA / abyss_unsealed` が利用可能。
+- 旧saveが既に `abyssOuterReached` または `storyStep>=10` の場合、`alanAltarLegacyBypass` と `alanAltarResolved` を補い進行を巻き戻さない。`alanOutcome` は捏造しない。
+- ガルヴァニア渓谷の門破壊者＝アランはplayer-facingでは未回収のまま。
+- approved source: `docs/scenario/42_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_APPROVED_20260810.md`。
+
+### システム文／UI copy review policy【2026-08-10】
+
+- チュートリアル以外の既存システム文、目的文、map interaction、menu/UI copyは作業範囲外でもレビュー対象。
+- master inventory: `docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md`。
+- 既存runtime copyを変える時は `現行 / 修正案` を併記し、user最終判断前に変更しない。
+- 新規system/UI copyもinventoryへ追加する。
+- tutorialはUI completion gateを優先し、現レビューから除外。

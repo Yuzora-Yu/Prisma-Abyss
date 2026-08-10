@@ -884,38 +884,32 @@ Created: 2026-08-10
 
 ## DR-20260810-alan-altar-irreversible-branch-phase8e
 
-Status: awaiting_user_approval  
-Created: 2026-08-10
-Source draft: `docs/scenario/41_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_DRAFT_20260810.md`
+Status: approved_and_implemented  
+Created: 2026-08-10  
+Approved: 2026-08-10  
+Approved source: `docs/scenario/42_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_APPROVED_20260810.md`
 
 ### Target
-- file: `story.js` / `map.js`
+- file: `story.js` / `map.js` / `quests.js` / `items.js` / `monsters.js`
 - map / area: 統合の祭壇 `ABYSS_FIELD / MAP000032`
-- storyStep-subStep: `9-x`
 - related character: アラン、アルス、ルーナ、ジョセフ、レオン、クロード、レイラ、ゼリード、ハヤテほか
 - prerequisite item: **王への上申書**
 
-### Current implemented state
-- Phase8D時点では、統合の祭壇中央の亀裂から旧 `abyss_unsealed` が発火し、アラン戦を経ず深淵側へ進める。
-- 「王への上申書」を得るアラン父／カゲトラ／ゼリード／ハヤテの連続サブクエストはruntime未実装。
+### Final user decisions
+- 長編クエストは光の宮殿でアランが裏切った直後から解禁。
+- 「王への上申書」は現代に新規作成・認証するものではなく、**アレルが十年前、ジャスパーの統合の儀を止めるため国王へ提出しようと準備していた原本**。暗部に消されたはずの資料から発見する。
+- カゲトラはゼリードを最も信頼した相棒。ハヤテもその信頼を受け継いでおり、告白直後に喧嘩腰にはならない。許しは保留し、自分の手と目で真実を確認した後でもう一度ゼリードと話す。
+- ガルヴァニア渓谷の門を破壊した者がアランであることは、この場面では明かさない。
+- 上申書所持時もアランの最終的な生死はプレイヤー判断。
+- 上申書未所持時は **「進む / 引き返す」** を明示し、進んで撃破した場合の死亡は不可逆。
 
-### Concern
-- 正本では光の楔アランが地上側最後の壁。
-- 上申書なしで戦う場合、戦闘前に仲間たちの苦悩と **「引き返す / 進む」** の明示選択が必要。
-- 上申書なしで「進む」を選び撃破した場合、アランは死亡し救済不可となる不可逆分岐。
-- 救済条件クエストが未実装のまま戦闘だけ先行すると、プレイヤーが救済手段を知らず死亡確定へ入り得る。
-
-### Codex recommendation
-- アラン父の汚名回復→ハヤテ正式加入→王への上申書取得までの連続クエストと、祭壇アラン戦を **同一Phase** で設計・承認・実装する。
-- 上申書なしでは必ず引き返せるようにし、「進む」後の死亡を不可逆とする。
-- 専用Markdown稿を作成済み。runtimeの新規台詞／不可逆分岐はユーザー承認待ち。
-- scenario draft reviewで承認確認が必要な5点は、開始時期／上申書の意味づけ／ハヤテ加入時の決裂／渓谷門破壊者回収／上申書あり時も死亡選択を残すか。
+### Implementation status
+- 連続クエスト、原本上申書、ハヤテ加入、光の楔アラン戦、未所持警告、所持時の生死選択をruntime実装済み。
+- 旧セーブは `alanAltarLegacyBypass` で進行を巻き戻さず、過去のアラン生死を捏造しない。
 
 ### User decision
-- decision: undecided
-- selected option:
-- user notes:
-- approved date:
+- decision: approved with corrections
+- approved date: 2026-08-10
 
 ## DR-20260810-galvania-empire-arrival-exposition-phase8c-review
 
@@ -951,3 +945,23 @@ Created: 2026-08-10
 - selected option:
 - user notes:
 - approved date:
+## POLICY-20260810-system-ui-global-review
+
+Status: active  
+Created: 2026-08-10
+
+### User direction
+- チュートリアルを除き、シナリオ作業範囲外であっても、**システム文・メニュー・UI文言を全て調整候補としてピックアップ**する。
+- 修正を提案する際は必ず **「現行 / 修正案」** を併記する。
+- ユーザーの最終判断より先に、既存runtime文言を勝手に置換しない。
+- チュートリアルは既存のUI完成ゲート方針を優先し、現在の全体レビューでは保留する。
+
+### Master inventory
+- `docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md`
+- 初回全体走査では story system narration / story objective / map interaction / quest text / DOM UI / menu labels / HTML/template text を収集。
+- 新規文言を追加した場合も同台帳へ追記する。
+
+### Current proposal-ready item
+- `DR-20260810-galvania-empire-arrival-exposition-phase8c-review`
+- 現行と修正案を台帳にも併記済み。runtimeは未変更。
+
