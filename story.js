@@ -3880,9 +3880,19 @@ const STORY_MANAGER_DATA = {
         "MAP_SYSTEM_GALVANIA_CAVE_F3_ACTION_3": [{"name":"システム","text":"灰まみれの旅人は「火の島に欲を出すな。出口は北東の橋から南へ折れる」と残している。"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F4_ACTION_1": [{"name":"システム","text":"古い地図には、滑床を大きく迂回する赤い線が引かれている。"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F5_ACTION_1": [{"name":"システム","text":"箱には魔王城の紋章と「奈落防衛線」の印がある。兵糧、黒晶、予備の鎧が、いつでも補充できるよう整然と積まれている。"}],
-        "MAP_SYSTEM_GALVANIA_CAVE_F3_BOSS_1": [{"name":"システム","text":"黒炎の番人が、赤い宝箱の島だけを守っている。洞窟突破には関係なさそうだ。"}],
-        "MAP_SYSTEM_GALVANIA_CAVE_F4_BOSS_1": [{"name":"システム","text":"氷鎧の魔将が、古い金の鍵を握っている。深部防衛線へ急行するための補給路を開ける鍵かもしれない。"}],
-        "MAP_SYSTEM_GALVANIA_CAVE_F6_BOSS_1": [{"name":"システム","text":"宝の横穴を守る魔族がうずくまっている。洞窟突破には関係なさそうだ。"}],
+        "NADIR_CAVE_F1_DEFENSE_STAKES_PHASE8D": [{"name":"システム","text":"折れた防壁杭の尖端は入口側ではなく、洞窟の奥へ向けて並べられている。\n何度も打ち直した跡の上に、まだ乾ききっていない黒い血が残っている。"}],
+        "NADIR_CAVE_F2_LOOP_MARKS_PHASE8D": [{"name":"システム","text":"壁へ短い刻み傷が一定間隔で続いている。\n途中から同じ番号が何度も繰り返されている。道ではなく、空間そのものが戻っていたらしい。"}],
+        "NADIR_CAVE_F3_SHARED_BONES_PHASE8D": [{"name":"システム","text":"溶けた鎧と、獣とも人ともつかない黒い骨が橋の下で絡み合っている。\n残った傷の向きは、どちらも祭壇側を向いている。"}],
+        "NADIR_CAVE_F4_FREEZE_SEAL_PHASE8D": [{"name":"システム","text":"氷の下に古い術式線が透けている。\n割れては凍らせ、また割れては凍らせた跡が何層にも重なっている。"}],
+        "NADIR_CAVE_F5_RESUPPLY_MARKS_PHASE8D": [{"name":"システム","text":"箱の側面には日付ではなく、「第七码」「第八碼」と補充回数だけが刻まれている。\n一度きりの遠征ではなく、何度もここへ物資が運ばれていたようだ。"}],
+        "NADIR_CAVE_F6_LAST_LINE_PHASE8D": [{"name":"システム","text":"祭壇側へ向けて立てられていた最後の封鎖杭が、根元からこちら側へ倒れている。\n向こうから押し破られた跡だ。"}],
+        "NADIR_CAVE_F6_FRESH_TRACKS_PHASE8D": [{"name":"システム","text":"古い血痕の上を、新しい足跡が横切っている。\n数は一人ではない。立ち止まった形跡もなく、祭壇側へまっすぐ続いている。"}],
+        "INTEGRATION_ALTAR_DEFENSE_DIRECTION_PHASE8D": [{"name":"システム","text":"折れた固定杭は、祭壇の外周ではなく中央の亀裂へ向けて並べられている。\n根元には、何度も交換した跡がある。"}],
+        "INTEGRATION_ALTAR_FRESH_TRACKS_PHASE8D": [{"name":"システム","text":"乾いた泥の上を、数人分の新しい足跡が横切っている。\n迷った形跡はなく、祭壇中央へ続いている。"}],
+        "INTEGRATION_ALTAR_OVERLAID_RITUAL_LINES_PHASE8D": [{"name":"システム","text":"古い導線の上へ、色の違う新しい術式線が刻まれている。\n下の線は亀裂を囲み、上の線は亀裂へ集まっている。"}],
+        "MAP_SYSTEM_GALVANIA_CAVE_F3_BOSS_1": [{"name":"システム","text":"黒い炎をまとった侵食獣が、赤い宝箱の島に居着いている。洞窟突破には関係なさそうだ。"}],
+        "MAP_SYSTEM_GALVANIA_CAVE_F4_BOSS_1": [{"name":"システム","text":"氷漬けの保管区画に異形が潜んでいる。倒せば金の鍵を回収できそうだ。"}],
+        "MAP_SYSTEM_GALVANIA_CAVE_F6_BOSS_1": [{"name":"システム","text":"白骨坑の横穴に異形がうずくまっている。洞窟突破には関係なさそうだ。"}],
         "GALVANIA_EMPIRE_ARRIVAL_PHASE8C": [
                 { "name": "システム", "text": "城下へ入る。武装した魔族兵の間を、担架が何度も行き交っている。\n配給所では、小さな子どもが両手で椀を抱えていた。" },
                 { "name": "ルーナ", "text": "……子どもが、いる。", "charId": 401 },
@@ -7396,12 +7406,22 @@ const STORY_MANAGER_DATA = {
         "map_system_galvania_cave_f3_action_3": { "actions": [{ "type": "CONV", "value": "MAP_SYSTEM_GALVANIA_CAVE_F3_ACTION_3" }], "winActions": [] },
         "map_system_galvania_cave_f4_action_1": { "actions": [{ "type": "CONV", "value": "MAP_SYSTEM_GALVANIA_CAVE_F4_ACTION_1" }], "winActions": [] },
         "map_system_galvania_cave_f5_action_1": { "actions": [{ "type": "CONV", "value": "MAP_SYSTEM_GALVANIA_CAVE_F5_ACTION_1" }], "winActions": [] },
+        "nadir_cave_f1_defense_stakes_phase8d": { "actions": [{ "type": "CONV", "value": "NADIR_CAVE_F1_DEFENSE_STAKES_PHASE8D" }], "winActions": [] },
+        "nadir_cave_f2_loop_marks_phase8d": { "actions": [{ "type": "CONV", "value": "NADIR_CAVE_F2_LOOP_MARKS_PHASE8D" }], "winActions": [] },
+        "nadir_cave_f3_shared_bones_phase8d": { "actions": [{ "type": "CONV", "value": "NADIR_CAVE_F3_SHARED_BONES_PHASE8D" }], "winActions": [] },
+        "nadir_cave_f4_freeze_seal_phase8d": { "actions": [{ "type": "CONV", "value": "NADIR_CAVE_F4_FREEZE_SEAL_PHASE8D" }], "winActions": [] },
+        "nadir_cave_f5_resupply_marks_phase8d": { "actions": [{ "type": "CONV", "value": "NADIR_CAVE_F5_RESUPPLY_MARKS_PHASE8D" }], "winActions": [] },
+        "nadir_cave_f6_last_line_phase8d": { "actions": [{ "type": "CONV", "value": "NADIR_CAVE_F6_LAST_LINE_PHASE8D" }], "winActions": [] },
+        "nadir_cave_f6_fresh_tracks_phase8d": { "actions": [{ "type": "CONV", "value": "NADIR_CAVE_F6_FRESH_TRACKS_PHASE8D" }], "winActions": [] },
+        "integration_altar_defense_direction_phase8d": { "actions": [{ "type": "CONV", "value": "INTEGRATION_ALTAR_DEFENSE_DIRECTION_PHASE8D" }], "winActions": [] },
+        "integration_altar_fresh_tracks_phase8d": { "actions": [{ "type": "CONV", "value": "INTEGRATION_ALTAR_FRESH_TRACKS_PHASE8D" }], "winActions": [] },
+        "integration_altar_overlaid_ritual_lines_phase8d": { "actions": [{ "type": "CONV", "value": "INTEGRATION_ALTAR_OVERLAID_RITUAL_LINES_PHASE8D" }], "winActions": [] },
         "map_system_galvania_cave_f3_boss_1": {
                 "actions": [
                         { "type": "CONV", "value": "MAP_SYSTEM_GALVANIA_CAVE_F3_BOSS_1" },
                         {
                                 "type": "CHOICE",
-                                "text": "番人を倒せば奥の赤い宝箱を取れそうだ。挑みますか？",
+                                "text": "赤い宝箱の周囲に侵食獣が居着いている。挑みますか？",
                                 "yes": [{ "type": "BOSS", "value": [100060, 100061] }],
                                 "no": []
                         }
@@ -7413,7 +7433,7 @@ const STORY_MANAGER_DATA = {
                         { "type": "CONV", "value": "MAP_SYSTEM_GALVANIA_CAVE_F4_BOSS_1" },
                         {
                                 "type": "CHOICE",
-                                "text": "この魔将は通路突破に必須ではないが、倒せば金の鍵を奪えそうだ。挑みますか？",
+                                "text": "凍りついた保管区画に異形が居着いている。倒せば金の鍵を回収できそうだ。挑みますか？",
                                 "yes": [{ "type": "BOSS", "value": [100061, 100062] }],
                                 "no": []
                         }
@@ -7425,7 +7445,7 @@ const STORY_MANAGER_DATA = {
                         { "type": "CONV", "value": "MAP_SYSTEM_GALVANIA_CAVE_F6_BOSS_1" },
                         {
                                 "type": "CHOICE",
-                                "text": "この先には赤い宝箱が見える。守護魔に挑みますか？",
+                                "text": "横穴の赤い宝箱の前に異形がうずくまっている。挑みますか？",
                                 "yes": [{ "type": "BOSS", "value": [100062, 100064] }],
                                 "no": []
                         }

@@ -1412,7 +1412,7 @@ const StoryManager = {
             this.persistEventCursor(active, path);
             let result = null;
 
-            if (action.type === 'IF_FLAG' || action.type === 'IF' || action.type === 'IF_ITEM' || action.type === 'IF_KILL_COUNTS' || action.type === 'CHOICE') {
+            if (action.type === 'IF_FLAG' || action.type === 'IF' || action.type === 'IF_ITEM' || action.type === 'IF_KILL_COUNTS' || action.type === 'IF_QUEST_STAGE' || action.type === 'CHOICE') {
                 let branchName = active.selectedBranches[pathKey];
                 if (!branchName) {
                     if (action.type === 'IF_FLAG' || action.type === 'IF') {
@@ -1434,8 +1434,20 @@ const StoryManager = {
                         branchName = ids.length > 0 && ids.every(id => Number(killCounts[id] || killCounts[String(id)] || 0) >= minimum)
                             ? 'then'
                             : (Array.isArray(action.else) ? 'else' : 'otherwise');
+                    } else if (action.type === 'IF_QUEST_STAGE') {
+                        const questId = action.questId || action.id || action.value;
+                        const actual = (questId && typeof App.getQuestStage === 'function') ? App.getQuestStage(questId) : 0;
+                        const expected = Number(action.stage ?? action.expected ?? action.count ?? 0);
+                        const op = action.op || action.operator || '>=';
+                        const matched = (typeof App.compareConditionValue === 'function')
+                            ? App.compareConditionValue(actual, op, expected)
+                            : actual >= expected;
+                        branchName = matched ? 'then' : (Array.isArray(action.else) ? 'else' : 'otherwise');
                     } else {
-                        const isYes = await this.showChoice(action.text);
+                        const isYes = await this.showChoice(action.text, {
+                            yesLabel: action.yesLabel,
+                            noLabel: action.noLabel
+                        });
                         branchName = isYes ? 'yes' : 'no';
                     }
                     active.selectedBranches[pathKey] = branchName;
@@ -2181,6 +2193,28 @@ const StoryManager = {
             this.refreshFieldAfterStoryStateChange();
         }
 
+        if (action.type === 'QUEST_STAGE' && typeof App.setQuestStage === 'function') {
+            const questId = action.questId || action.id || action.value;
+            const stage = Number(action.stage ?? action.to ?? action.count ?? 0);
+            if (questId) App.setQuestStage(questId, stage, {
+                allowDecrease: action.allowDecrease === true,
+                allowCompleted: action.allowCompleted === true,
+                allowFailed: action.allowFailed === true,
+                save: !deferSave
+            });
+            this.refreshFieldAfterStoryStateChange();
+        }
+
+        if (action.type === 'QUEST_FAIL' && typeof App.failQuest === 'function') {
+            const questId = action.questId || action.id || action.value;
+            if (questId) App.failQuest(questId, {
+                reason: action.reason || null,
+                allowCompleted: action.allowCompleted === true,
+                save: !deferSave
+            });
+            this.refreshFieldAfterStoryStateChange();
+        }
+
         if (action.type === 'STORY_DEFEAT') {
             await this.playStoryDefeatEffect(action, context);
         }
@@ -2342,8 +2376,28 @@ const StoryManager = {
             }
         }
 
+        if (!context.managed && action.type === 'IF_QUEST_STAGE') {
+            const questId = action.questId || action.id || action.value;
+            const actual = (questId && typeof App.getQuestStage === 'function') ? App.getQuestStage(questId) : 0;
+            const expected = Number(action.stage ?? action.expected ?? action.count ?? 0);
+            const op = action.op || action.operator || '>=';
+            const matched = (typeof App.compareConditionValue === 'function')
+                ? App.compareConditionValue(actual, op, expected)
+                : actual >= expected;
+            const branch = matched ? action.then : (action.else || action.otherwise);
+            if (Array.isArray(branch)) {
+                for (const sub of branch) {
+                    const res = await this.processAction(sub, eventId);
+                    if (res === 'BREAK' || res === 'BREAK_TRANSFER') return res;
+                }
+            }
+        }
+
         if (!context.managed && action.type === 'CHOICE') {
-            const isYes = await this.showChoice(action.text);
+            const isYes = await this.showChoice(action.text, {
+                yesLabel: action.yesLabel,
+                noLabel: action.noLabel
+            });
             const branch = isYes ? action.yes : action.no;
             if (branch && branch.length > 0) {
                 for (const sub of branch) {
@@ -2606,7 +2660,7 @@ const StoryManager = {
         this.isTyping = false;
     },
 
-    showChoice: function(text) {
+    showChoice: function(text, options = {}) {
         return new Promise((resolve) => {
             this.dismissChoiceUI({ hideOverlay: false });
             const overlay = document.getElementById('story-ui-overlay') || this.createStoryDOM();
@@ -2637,14 +2691,23 @@ const StoryManager = {
             menu.style.cssText = "display:flex; gap:20px; margin-top:15px; justify-content:center;";
             
             const btnStyle = "padding:10px 30px; background:#000044; border:1px solid #ffd700; color:#ffd700; cursor:pointer; font-weight:bold; border-radius:4px;";
-            menu.innerHTML = `<button style="${btnStyle}" class="no-skip">はい</button><button style="${btnStyle}" class="no-skip">いいえ</button>`;
+            const yesButton = document.createElement('button');
+            const noButton = document.createElement('button');
+            yesButton.style.cssText = btnStyle;
+            noButton.style.cssText = btnStyle;
+            yesButton.className = 'no-skip';
+            noButton.className = 'no-skip';
+            yesButton.textContent = String(options.yesLabel || 'はい');
+            noButton.textContent = String(options.noLabel || 'いいえ');
+            menu.appendChild(yesButton);
+            menu.appendChild(noButton);
             
-            menu.children[0].onclick = (e) => {
+            yesButton.onclick = (e) => {
                 e.stopPropagation();
                 this.dismissChoiceUI({ hideOverlay: true });
                 resolve(true);
             };
-            menu.children[1].onclick = (e) => {
+            noButton.onclick = (e) => {
                 e.stopPropagation();
                 this.dismissChoiceUI({ hideOverlay: true });
                 resolve(false);

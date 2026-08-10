@@ -5793,6 +5793,36 @@ const FIXED_MAPS = {
         ],
         "mapActions": [
             {
+                "x": 6,
+                "y": 11,
+                "label": "折れた防衛設備を調べる",
+                "eventId": "integration_altar_defense_direction_phase8d",
+                "type": "storyEvent",
+                "imageKey": "overlay_dungeon_event",
+                "blocksMovement": false,
+                "baseTile": "T"
+            },
+            {
+                "x": 8,
+                "y": 10,
+                "label": "新しい足跡を調べる",
+                "eventId": "integration_altar_fresh_tracks_phase8d",
+                "type": "storyEvent",
+                "imageKey": "overlay_dungeon_event",
+                "blocksMovement": false,
+                "baseTile": "T"
+            },
+            {
+                "x": 6,
+                "y": 4,
+                "label": "重なった術式線を調べる",
+                "eventId": "integration_altar_overlaid_ritual_lines_phase8d",
+                "type": "storyEvent",
+                "imageKey": "overlay_dungeon_event",
+                "blocksMovement": false,
+                "baseTile": "T"
+            },
+            {
                 "x": 8,
                 "y": 7,
                 "minimapColor": "#9c64db",
@@ -14066,14 +14096,14 @@ const FIXED_DUNGEON_MAPS = {
                         id: "galvania_f1_black_scout_v2",
                         imageKey: "overlay_dungeon_hunter_shadow",
                         monsterIds: [
-                            451,
-                            753,
-                            703
+                            802,
+                            803,
+                            851
                         ],
                         speed: 0.58,
                         range: 34,
                         statMultiplier: 1.22,
-                        message: "黒岩の陰から魔族の斥候が襲いかかった！"
+                        message: "黒岩の隙間から、侵食に追われた魔物が飛び出した！"
                     },
                     {
                         x: 52,
@@ -14154,6 +14184,16 @@ const FIXED_DUNGEON_MAPS = {
                         "y": 13,
                         "label": "黒い道標を読む",
                         "eventId": "map_system_galvania_cave_f1_action_2",
+                        "type": "storyEvent",
+                        "imageKey": "overlay_dungeon_event",
+                        "blocksMovement": false,
+                        "baseTile": "G"
+                    },
+                    {
+                        "x": 29,
+                        "y": 30,
+                        "label": "折れた防壁杭を調べる",
+                        "eventId": "nadir_cave_f1_defense_stakes_phase8d",
                         "type": "storyEvent",
                         "imageKey": "overlay_dungeon_event",
                         "blocksMovement": false,
@@ -14358,6 +14398,16 @@ const FIXED_DUNGEON_MAPS = {
                         imageKey: "overlay_dungeon_event",
                         blocksMovement: false,
                         baseTile: "T"
+                    },
+                    {
+                        x: 40,
+                        y: 13,
+                        label: "壁の刻み傷を調べる",
+                        eventId: "nadir_cave_f2_loop_marks_phase8d",
+                        type: "storyEvent",
+                        imageKey: "overlay_dungeon_event",
+                        blocksMovement: false,
+                        baseTile: "T"
                     }
                 ],
                 limitedMapReveal: true,
@@ -14437,14 +14487,14 @@ const FIXED_DUNGEON_MAPS = {
                         id: "galvania_f3_ash_daemon_v2",
                         imageKey: "overlay_dungeon_hunter_fire",
                         monsterIds: [
-                            507,
-                            703,
-                            652
+                            851,
+                            855,
+                            861
                         ],
                         speed: 0.48,
                         range: 38,
                         statMultiplier: 1.28,
-                        message: "溶岩霧の向こうから、灼熱の魔族が迫る！"
+                        message: "溶岩霧の向こうから、侵食に濁った魔物が這い出した！"
                     }
                 ],
                 chests: [
@@ -14504,8 +14554,8 @@ const FIXED_DUNGEON_MAPS = {
                         bossStatMultiplier: 1.3,
                         inactiveTile: "G",
                         startEventId: "map_system_galvania_cave_f3_boss_1",
-                        actionLabel: "黒炎の番人に挑む",
-                        challengeText: "番人を倒せば奥の赤い宝箱を取れそうだ。挑みますか？"
+                        actionLabel: "黒炎の侵食獣に挑む",
+                        challengeText: "赤い宝箱の周囲に侵食獣が居着いている。挑みますか？"
                     }
                 ],
                 nextActorPlacementId: 2,
@@ -14549,6 +14599,16 @@ const FIXED_DUNGEON_MAPS = {
                         "y": 14,
                         "label": "折れた橋脚を調べる",
                         "eventId": "map_system_galvania_cave_f3_action_2",
+                        "type": "storyEvent",
+                        "imageKey": "overlay_dungeon_event",
+                        "blocksMovement": false,
+                        "baseTile": "G"
+                    },
+                    {
+                        "x": 26,
+                        "y": 25,
+                        "label": "橋下の残骸を調べる",
+                        "eventId": "nadir_cave_f3_shared_bones_phase8d",
                         "type": "storyEvent",
                         "imageKey": "overlay_dungeon_event",
                         "blocksMovement": false,
@@ -14835,14 +14895,14 @@ const FIXED_DUNGEON_MAPS = {
                         id: "galvania_f4_frost_hound_v2",
                         imageKey: "overlay_dungeon_hunter_sea",
                         monsterIds: [
-                            604,
-                            703,
-                            751
+                            851,
+                            857,
+                            863
                         ],
                         speed: 0.52,
                         range: 34,
                         statMultiplier: 1.28,
-                        message: "氷壁の向こうから魔犬が滑るように迫ってきた！"
+                        message: "氷壁の裂け目から、侵食獣が滑るように迫ってきた！"
                     }
                 ],
                 chests: [
@@ -14897,8 +14957,8 @@ const FIXED_DUNGEON_MAPS = {
                         inactiveTile: "G",
                         keyRewardColor: "gold",
                         startEventId: "map_system_galvania_cave_f4_boss_1",
-                        actionLabel: "氷鎧の魔将に挑む",
-                        challengeText: "この魔将は通路突破に必須ではないが、倒せば金の鍵を奪えそうだ。挑みますか？"
+                        actionLabel: "氷晶の異形に挑む",
+                        challengeText: "凍りついた保管区画に異形が居着いている。倒せば金の鍵を回収できそうだ。挑みますか？"
                     }
                 ],
                 mapActions: [
@@ -14907,6 +14967,16 @@ const FIXED_DUNGEON_MAPS = {
                         y: 27,
                         label: "氷漬けの荷物を調べる",
                         eventId: "map_system_galvania_cave_f4_action_1",
+                        type: "storyEvent",
+                        imageKey: "overlay_dungeon_event",
+                        blocksMovement: false,
+                        baseTile: "G"
+                    },
+                    {
+                        x: 18,
+                        y: 28,
+                        label: "氷の下の術式を調べる",
+                        eventId: "nadir_cave_f4_freeze_seal_phase8d",
                         type: "storyEvent",
                         imageKey: "overlay_dungeon_event",
                         blocksMovement: false,
@@ -14988,14 +15058,14 @@ const FIXED_DUNGEON_MAPS = {
                         id: "galvania_f5_supply_overseer_v2",
                         imageKey: "overlay_dungeon_hunter_shadow",
                         monsterIds: [
-                            507,
-                            703,
-                            754
+                            863,
+                            864,
+                            865
                         ],
                         speed: 0.68,
                         range: 46,
                         statMultiplier: 1.32,
-                        message: "補給路を巡回する上級魔族が、こちらを捕捉した！"
+                        message: "崩れた補給路から、深淵側の魔物がなだれ込んできた！"
                     }
                 ],
                 chests: [
@@ -15049,6 +15119,16 @@ const FIXED_DUNGEON_MAPS = {
                         y: 8,
                         label: "防衛軍の積荷を調べる",
                         eventId: "map_system_galvania_cave_f5_action_1",
+                        type: "storyEvent",
+                        imageKey: "overlay_dungeon_event",
+                        blocksMovement: false,
+                        baseTile: "G"
+                    },
+                    {
+                        x: 41,
+                        y: 8,
+                        label: "補給箱の刻印を調べる",
+                        eventId: "nadir_cave_f5_resupply_marks_phase8d",
                         type: "storyEvent",
                         imageKey: "overlay_dungeon_event",
                         blocksMovement: false,
@@ -15137,14 +15217,14 @@ const FIXED_DUNGEON_MAPS = {
                         id: "galvania_f6_royal_rearguard_v2",
                         imageKey: "overlay_dungeon_hunter_shadow",
                         monsterIds: [
-                            801,
-                            655,
-                            854
+                            901,
+                            904,
+                            911
                         ],
                         speed: 0.58,
                         range: 42,
                         statMultiplier: 1.36,
-                        message: "撤退路を守る魔族の後衛が立ちはだかった！"
+                        message: "最終防衛線を越えた魔物が、祭壇側から迫ってきた！"
                     }
                 ],
                 chests: [
@@ -15204,11 +15284,32 @@ const FIXED_DUNGEON_MAPS = {
                         bossStatMultiplier: 1.32,
                         inactiveTile: "G",
                         startEventId: "map_system_galvania_cave_f6_boss_1",
-                        actionLabel: "横穴の守護魔に挑む",
-                        challengeText: "この先には赤い宝箱が見える。守護魔に挑みますか？"
+                        actionLabel: "白骨坑の異形に挑む",
+                        challengeText: "横穴の赤い宝箱の前に異形がうずくまっている。挑みますか？"
                     }
                 ],
-                mapActions: [],
+                mapActions: [
+                    {
+                        x: 45,
+                        y: 29,
+                        label: "最後の封鎖杭を調べる",
+                        eventId: "nadir_cave_f6_last_line_phase8d",
+                        type: "storyEvent",
+                        imageKey: "overlay_dungeon_event",
+                        blocksMovement: false,
+                        baseTile: "T"
+                    },
+                    {
+                        x: 53,
+                        y: 32,
+                        label: "新しい足跡を調べる",
+                        eventId: "nadir_cave_f6_fresh_tracks_phase8d",
+                        type: "storyEvent",
+                        imageKey: "overlay_dungeon_event",
+                        blocksMovement: false,
+                        baseTile: "T"
+                    }
+                ],
                 entryPoint: {
                     x: 5,
                     y: 30
