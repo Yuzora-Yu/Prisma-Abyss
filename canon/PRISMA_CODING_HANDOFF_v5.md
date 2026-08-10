@@ -955,3 +955,18 @@ alanState.phase = 'dead'
 - event commit順: CONV → ALLY306 → Luna reward/state → `prismBlessingsComplete` → `secondIntegrationStarted` → `darkCastleTruthPhase8CSeen` → **`darkCastleCleared`** → Step9/Sub0。`darkCastleCleared` は帝国店/奈落解禁の後段commit。
 - 旧 `darkCastleCleared=true` かつ `darkCastleTruthPhase8CSeen=false` saveは、謁見の間 `x16,y7` の `dark_castle_truth_phase8c_revisit` から新会話を回収可能。EXP二重付与なし、memory stage低下なし、EXP倍率上昇なし。
 - アランが渓谷門を破壊した真相およびアラン／ヴェルド／ジャスパーの現在位置はこのPhaseでもプレイヤーへ伏せる。
+
+### 奈落への洞窟・統合の祭壇前半【2026-08-10 Phase8D実装】
+
+- `GALVANIA_CAVE / MAP000025` の6階層レイアウト・パズル・入口/出口座標は維持。
+- 魔王城真相後にも魔族兵hunterが襲う旧配置を廃止し、既存monster masterのRank81〜93帯から侵食獣・亡者・異形へ置換。新規assetなし。
+- hunter pool: F1 `[802,803,851]` / F3 `[851,855,861]` / F4 `[851,857,863]` / F5 `[863,864,865]` / F6 `[901,904,911]`。
+- 任意bossはルート必須ではない既存仕様を維持し、「魔将／守護魔／魔王軍の番人」ではなく、宝物・保管区画へ居着いた侵食獣／異形としてplayer-facing textを再定義。
+- Phase8D調査event: `nadir_cave_f1_defense_stakes_phase8d`, `nadir_cave_f2_loop_marks_phase8d`, `nadir_cave_f3_shared_bones_phase8d`, `nadir_cave_f4_freeze_seal_phase8d`, `nadir_cave_f5_resupply_marks_phase8d`, `nadir_cave_f6_last_line_phase8d`, `nadir_cave_f6_fresh_tracks_phase8d`。
+- `ABYSS_FIELD / MAP000032` レイアウトは変更せず、`integration_altar_defense_direction_phase8d`, `integration_altar_fresh_tracks_phase8d`, `integration_altar_overlaid_ritual_lines_phase8d` を追加。先行者名／属性は出さない。
+- F6祭壇側出口の `setFlag: nadirCaveCleared` とワールド `x42,y55` は維持。
+- 現Phase8Dでは中央亀裂の `abyss_unsealed` を**意図的に残す**。ここを単純ロックすると、未実装のアラン戦／上申書救済クエストが原因でsoftlockするため。
+- 次段では `王への上申書` runtime化と、統合の祭壇「光の楔アラン」戦の `引き返す/進む` 不可逆分岐を同一パッケージで実装する。上申書なしの死亡確定戦のみを先行実装しない。
+- source: `docs/scenario/40_NADIR_CAVE_DEFENSE_LINE_AND_INTEGRATION_ALTAR_PHASE8D_20260810.md`。
+- validation: `tools/validation/validate-nadir-cave-phase8d.js`。
+

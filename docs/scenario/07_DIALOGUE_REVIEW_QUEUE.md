@@ -881,3 +881,73 @@ Created: 2026-08-10
 - reward: `luna_dark_castle_300k`, `lunaMemoryStage=3`, EXP multiplier 1600%
 - save rescue: `dark_castle_truth_phase8c_revisit` + non-regressive state actions
 - validation: `tools/validation/validate-dark-castle-phase8c.js`
+
+## DR-20260810-alan-altar-irreversible-branch-phase8e
+
+Status: awaiting_user_approval  
+Created: 2026-08-10
+Source draft: `docs/scenario/41_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_DRAFT_20260810.md`
+
+### Target
+- file: `story.js` / `map.js`
+- map / area: 統合の祭壇 `ABYSS_FIELD / MAP000032`
+- storyStep-subStep: `9-x`
+- related character: アラン、アルス、ルーナ、ジョセフ、レオン、クロード、レイラ、ゼリード、ハヤテほか
+- prerequisite item: **王への上申書**
+
+### Current implemented state
+- Phase8D時点では、統合の祭壇中央の亀裂から旧 `abyss_unsealed` が発火し、アラン戦を経ず深淵側へ進める。
+- 「王への上申書」を得るアラン父／カゲトラ／ゼリード／ハヤテの連続サブクエストはruntime未実装。
+
+### Concern
+- 正本では光の楔アランが地上側最後の壁。
+- 上申書なしで戦う場合、戦闘前に仲間たちの苦悩と **「引き返す / 進む」** の明示選択が必要。
+- 上申書なしで「進む」を選び撃破した場合、アランは死亡し救済不可となる不可逆分岐。
+- 救済条件クエストが未実装のまま戦闘だけ先行すると、プレイヤーが救済手段を知らず死亡確定へ入り得る。
+
+### Codex recommendation
+- アラン父の汚名回復→ハヤテ正式加入→王への上申書取得までの連続クエストと、祭壇アラン戦を **同一Phase** で設計・承認・実装する。
+- 上申書なしでは必ず引き返せるようにし、「進む」後の死亡を不可逆とする。
+- 専用Markdown稿を作成済み。runtimeの新規台詞／不可逆分岐はユーザー承認待ち。
+- scenario draft reviewで承認確認が必要な5点は、開始時期／上申書の意味づけ／ハヤテ加入時の決裂／渓谷門破壊者回収／上申書あり時も死亡選択を残すか。
+
+### User decision
+- decision: undecided
+- selected option:
+- user notes:
+- approved date:
+
+## DR-20260810-galvania-empire-arrival-exposition-phase8c-review
+
+Status: pending  
+Created: 2026-08-10
+
+### Target
+- file: `story.js`
+- script key: `GALVANIA_EMPIRE_ARRIVAL_PHASE8C`
+- map / area: ガルヴァニア帝国
+- storyStep-subStep: 8-0
+- speaker: システム
+
+### Current implemented text
+> 包帯を巻いた兵が壁にもたれ、そのすぐ横を親子が避難区画へ急いでいく。\n侵略のための軍都というより、長く何かに耐えてきた街に見えた。
+
+### Concern
+- 1文目だけで「負傷兵」「親子の避難」という視覚情報が十分に置かれている。
+- 2文目の「侵略のための軍都というより～」は、その視覚情報から何を考えるべきかをシステム文が先回りしている。
+- Phase8Cの狙いは、プレイヤー自身が魔王軍への理解を揺らすことなので、ここは説明を減らした方が後の三幹部／ゼノン／闇プリズムが強くなる。
+
+### Options
+- **現行維持:** 現在の2文をそのまま残す。
+- **軽微修正:** 1文目を残し、2文目を「古い補修跡の残る壁の向こうで、避難を告げる鐘が鳴った。」等の観測可能な描写へ差し替える。
+- **大幅修正:** 2文目を削除し、1文目だけにする。
+
+### Codex recommendation
+- **大幅修正**を推奨。ここでは判断文を消し、プレイヤーの解釈を後段へ委ねる。
+- ユーザー承認まではruntimeを変更しない。
+
+### User decision
+- decision: undecided
+- selected option:
+- user notes:
+- approved date:
