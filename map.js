@@ -3552,7 +3552,7 @@ const FIXED_MAPS = {
             "WWWWWWWWWWWWWWGGGGGGGGGGTGGGGGGGGGGWWWWWWWWWWWWWW",
             "WWWWWWWWWWWWWWWWWWWWWWWWSWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
-        "nextActorPlacementId": 6,
+        "nextActorPlacementId": 7,
         "mapActors": [
             {
                 "placementId": 1,
@@ -3655,6 +3655,32 @@ const FIXED_MAPS = {
                             "type": "storyEvent",
                             "eventId": "abyss_legacion_wall_vendor",
                             "label": "商人と話す"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 6,
+                "actorId": "alan_waiting_legacion_phase8f",
+                "name": "アラン",
+                "x": 22,
+                "y": 22,
+                "imageKey": "overlay_companion_alan",
+                "drawWidth": 32,
+                "drawHeight": 32,
+                "baseTile": "G",
+                "states": [
+                    {
+                        "stateId": "alan_waiting_after_jasper",
+                        "priority": 900,
+                        "when": {
+                            "requiredFlag": "alanWaitingAtLegacionAfterJasper",
+                            "missingFlag": "alanRejoinedAfterJasper"
+                        },
+                        "action": {
+                            "type": "storyEvent",
+                            "eventId": "abyss_legacion_alan_rejoin_phase8f",
+                            "label": "アランと話す"
                         }
                     }
                 ]

@@ -12,10 +12,10 @@ Status: **inventory / no automatic replacement**
 
 ## 集計
 
-- total entries: **1640**
-- story system narration: **155**
+- total entries: **1656**
+- story system narration: **159**
 - story objective text: **55**
-- other UI/map/menu candidates: **1430**
+- other UI/map/menu candidates: **1442**
 
 ## レビュー項目
 
@@ -1661,3 +1661,20 @@ Status: **inventory / no automatic replacement**
 |1638|ui_html_text|`tutorial.js:865`|html/template text|◀ 前へ|（UI完成ゲート後に別途レビュー）|tutorial_deferred|
 |1639|ui_html_text|`tutorial.js:870`|html/template text|次へ ▶|（UI完成ゲート後に別途レビュー）|tutorial_deferred|
 |1640|ui_html_text|`tutorial.js:872`|html/template text|閉じる|（UI完成ゲート後に別途レビュー）|tutorial_deferred|
+|1641|story_system|`story.js:7801`|ABYSS_JASPER|災禍の根の最深部。白い祭壇を中心に、黒ずんだ根が幾重にも絡み合っている。|（未提案・レビュー待ち）|new_copy_inventory|
+|1642|story_system|`story.js:7805`|ABYSS_JASPER|足元の紋様が反転した。白と黒の光が根を伝い、一行の身体へ絡みつく。|（未提案・レビュー待ち）|new_copy_inventory|
+|1643|story_system|`story.js:7824`|ABYSS_JASPER_ALAN_ENTRY_PHASE8F|その時、祭壇の外縁で影が揺れた。濁った光が一閃し、身体を縛る白黒の鎖へ食い込む。|（未提案・レビュー待ち）|new_copy_inventory|
+|1644|story_system|`story.js:7827`|ABYSS_JASPER_ALAN_ENTRY_PHASE8F|混沌に染まった光が、混沌呪縛の術式へ逆流する。絡みついていた力がひび割れ、一行の身体からほどけていった。|（未提案・レビュー待ち）|new_copy_inventory|
+|1645|ui_choice|`story.js:8287`|abyss_jasper_clear|アランを仲間に迎えますか？|（未提案・レビュー待ち）|new_copy_inventory|
+|1646|ui_choice_label|`story.js:8288`|abyss_jasper_clear yesLabel|仲間に迎える|（未提案・レビュー待ち）|new_copy_inventory|
+|1647|ui_choice_label|`story.js:8288`|abyss_jasper_clear noLabel|今は断る|（未提案・レビュー待ち）|new_copy_inventory|
+|1648|ui_story_log|`story.js:8294`|abyss_jasper_clear join|アランが再び仲間に加わった。|（未提案・レビュー待ち）|new_copy_inventory|
+|1649|ui_story_log|`story.js:8299`|abyss_jasper_clear wait|アランは混沌魔城レガシオンへ戻った。|（未提案・レビュー待ち）|new_copy_inventory|
+|1650|ui_choice|`story.js:8377`|abyss_legacion_alan_rejoin_phase8f|アランを仲間に迎えますか？|（未提案・レビュー待ち）|new_copy_inventory|
+|1651|ui_choice_label|`story.js:8378`|abyss_legacion_alan_rejoin_phase8f yesLabel|仲間に迎える|（未提案・レビュー待ち）|new_copy_inventory|
+|1652|ui_choice_label|`story.js:8378`|abyss_legacion_alan_rejoin_phase8f noLabel|今は断る|（未提案・レビュー待ち）|new_copy_inventory|
+|1653|ui_story_log|`story.js:8384`|abyss_legacion_alan_rejoin_phase8f join|アランが再び仲間に加わった。|（未提案・レビュー待ち）|new_copy_inventory|
+|1654|map_interaction_label|`map.js:3683`|alan_waiting_legacion_phase8f|アランと話す|（未提案・レビュー待ち）|new_copy_inventory|
+|1655|battle_system_fallback|`battle.js:2064`|openingPartyStatDebuff fallback label|特殊な呪縛|（未提案・レビュー待ち）|new_copy_inventory|
+|1656|battle_system_log|`battle.js:2065`|openingPartyStatDebuff battle log|${label}により、味方全体の能力が低下した！|（未提案・レビュー待ち）|new_copy_inventory|
+

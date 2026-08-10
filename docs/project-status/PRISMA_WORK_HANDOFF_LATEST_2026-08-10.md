@@ -1,11 +1,13 @@
 # PRISMA ABYSS — 作業引き継ぎ書 最新版
 
 **更新:** 2026-08-10  
-**Phase:** 8E implemented / アレル・カゲトラ長編クエスト、王への上申書原本、光の楔アラン、救済／死亡分岐  
+**Phase:** 8F implemented / 災禍の根ジャゴレア、ジャスパー自白、アラン戦闘外援護・再加入  
 **用途:** 次Chat/次作業開始時に最初に読む短縮版。詳細は `canon/PRISMA_CODING_HANDOFF_v5.md` と各正本MD。
 
 ## 1. 最新基準
 
+- Phase8F正本: `docs/scenario/43_JAGOREA_JASPER_ALAN_SUPPORT_PHASE8F_20260810.md`
+- Phase8F implementation report: `docs/project-status/PHASE8F_IMPLEMENTATION_REPORT_20260810.md`
 - Phase8E承認正本: `docs/scenario/42_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_APPROVED_20260810.md`
 - Phase8E implementation report: `docs/project-status/PHASE8E_IMPLEMENTATION_REPORT_20260810.md`
 - システム／UI全文言レビュー台帳: `docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md`
@@ -83,17 +85,51 @@ Key item: `701011 王への上申書`。
 - アランへ十年前の原本を見せるが、それだけで和解しない。
 - 戦闘後、プレイヤーが **「共に生きろ / ここで終わらせる」** を選ぶ。
 - 上申書は生存を可能にする条件であり、**生存を強制しない**。
-- savedでも祭壇では即再加入しない。後続Phaseの光魔剣士再加入＋500,000EXPへ接続予定。
+- savedでも祭壇では即再加入しない。Phase8Fのジャスパー戦へ生存状態を持ち越す。
 
 アラン戦が解決し `alanAltarResolved` 後にだけ、中央亀裂から旧 `abyss_unsealed` / CARMENA側へ進める。
 
-## 6. Save safety
+## 6. Phase8F — 災禍の根ジャゴレア / ジャスパー戦
+
+### 共通
+
+- `ABYSS_JASPER` は混沌呪縛罠から開始。
+- ジャスパーは王国、聖女、騎士、プリズム、人魔対立を研究材料へ利用したことを自慢げに明かす。
+- アルスたちを殺し、亡骸を深淵王へ捧げれば幹部として研究を続けられると信じている。
+- 地上を自分の管理下に置かれた暁には、全生命を研究材料にする意図を明言する。
+
+### アラン死亡時
+
+- そのまま `302060 妄執の神官ジャスパー` 戦。
+- `ambush:true`。
+- `openingPartyStatDebuff` の「混沌呪縛」で ATK/DEF/MDEF/SPD/MAG/HIT/EVA/CRI を0.5倍。
+- 最大HP/MPは変化させない。戦闘後へも持ち越さない。
+
+### アラン生存時
+
+- `alanSavedAtIntegrationAltar` でアラン登場。混沌に染まった光を逆流させ、呪縛を崩す。
+- 黒幕本人から父・自身の利用・統合の儀について聞いたと語り、アルスへ共闘を願う。
+- ガイルは過去を帳消しにしないと釘を刺し、アルスはジャスパーを止めるため受け入れる。
+- 戦闘外NPC援護 `externalTurnSupports` を使用。party slotを使わず、敵targetにもならない。
+- source statsは主人公 `charId:301` の最終能力値。
+- 毎ターン **アステリア(146) -> 霊脈断ち(115) -> 戦神の律動(508) -> ルクシオン・ノナ(232)** をcycle。
+
+### ジャスパー撃破後
+
+- アランは真実を自分の目で確認し決着をつけられたことへ感謝し、自身の嫉妬・父への失望・誤った選択を認める。
+- プレイヤーは **「仲間に迎える / 今は断る」** を選ぶ。
+- 許可: その場でALLY201。Story EXP **+1,000,000** once-only (`alan_jagorea_join_1000k`)。
+- 保留: `alanWaitingAtLegacionAfterJasper`。混沌魔城レガシオンにアランActorを配置し、後から加入可能。
+- 後日加入でも同じreward keyで+1,000,000。加入後 `alanRejoinedAfterJasper` で待機Actor消滅。
+- Phase8E時点の将来予定「後続で再加入＋500,000EXP」は**再加入時期／EXP量を上書き**。光魔剣士構想は残るがPhase8F runtimeでは職変更未実装。
+
+## 7. Save safety
 
 - 旧saveで `abyssOuterReached` または `storyStep>=10` の場合、`alanAltarLegacyBypass=true`, `alanAltarResolved=true` として進行を巻き戻さない。
 - 旧save救済時に `alanOutcome` を勝手に `dead/saved` へ補完しない。
 - 上申書は戦闘後も消費しない。
 
-## 7. システム文・メニュー／UI文言の新ルール
+## 8. システム文・メニュー／UI文言の新ルール
 
 ユーザー指示により、チュートリアル以外の既存player-facing copyを作業範囲に関係なくレビュー対象とする。
 
@@ -106,31 +142,34 @@ Key item: `701011 王への上申書`。
 現在のproposal-ready項目:
 - `GALVANIA_EMPIRE_ARRIVAL_PHASE8C` の「侵略のための軍都というより～」行。runtimeは**まだ変更していない**。
 
-## 8. 次工程
+## 9. 次工程
 
-Phase8E後に進める際は、まずアラン生存／死亡双方の後続差分を監査する。
+Phase8F後は、ジャスパー撃破とアラン再加入結果をさらに深淵後半へ接続する。
 
-- saved: 後の光魔剣士アラン再加入、+500,000EXP once-only、クロード／レオン／リュウ／ハヤテ等の差分。
-- dead: 再加入不可、関係NPC／アーカイブ／ending差分。
-- 深淵側のStep10以降へPhase8E結果をどう持ち込むか。
+- saved + joined: アランを正式partyとして後続深淵へ反映。クロード／レオン／リュウ／ハヤテ／ゼリード等の差分。
+- saved + waiting: レガシオン待機を維持し、加入必須化しない。後続会話がアラン加入済みを誤前提にしないこと。
+- dead: 再加入不可。関係NPC／アーカイブ／ending差分を維持。
+- ジャスパー以降の現行深淵ボス、レガシオン、終焉の祭壇の旧会話／旧進行を監査する。
+- 汎用 `externalTurnSupports` は他クエスト共闘で利用可能。新規利用時は固有実装を増やさずconfigから設定する。
 - システム／UI文言レビューは別途batch化し、現行／修正案を提示して承認後に反映。
 
-## 9. Validation
+## 10. Validation
 
 最低限:
 
 - `node --check story.js map.js main.js quests.js items.js monsters.js news.js story_logic.js`
 - `node tools/validation/validate-phase8e-alan-appeal.js`
 - `node tools/validation/validate-phase8e-story-infrastructure.js`
+- `node tools/validation/validate-phase8f-jasper-alan-support.js`
 - Phase8D / 8C / 8B / 8A / 7D regressions
 - `node tools/validation/validate-map-actors.js`
 - `node tools/validation/validate-news-data.js`
 - final `node tools/validation/run-all.js`
 
-最終 `run-all`: **12 / 71 FAIL**。
+最終 `run-all`: **12 / 72 FAIL**。
 
 - assets除外由来: 10
 - 旧前提validator (`PROLOGUE_HILL`, removed `getStoryMonsterVariant`): 2
-- Phase8E由来の新規FAIL: 0
+- Phase8F由来の新規FAIL: 0
 
 Phase8Eで新規Actor／祭壇gateを追加したことでstale化した4本のmaintained validatorは、新仕様を検証する形へ更新済み。

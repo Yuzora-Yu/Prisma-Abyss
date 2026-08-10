@@ -1,29 +1,26 @@
-# PRISMA ABYSS 最新成果物一式（2026-06-29）
+# PRISMA ABYSS — 最新シナリオ／実装資料（2026-08-10）
 
-このZIPは、この会話内で作成・更新した成果物のうち、最新版のみをまとめたものです。
-過去版・中間ZIP・差し戻し前の旧版は含めていません。
+この一覧は現行作業で優先して参照する最新版を示す。古い草案・履歴ファイルは比較用であり、下記の正本／承認済み資料と衝突する場合は最新版を優先する。
 
-注記: この一覧は2026-06-29時点のシナリオ成果物パックです。現行の機能解放・プレイヤー導線は、実装コードおよび最新READMEを正とします。
+## 最優先
 
-## 含めたファイル
+- `43_JAGOREA_JASPER_ALAN_SUPPORT_PHASE8F_20260810.md` — 災禍の根ジャゴレア、ジャスパー自白、アラン援護・再加入。
+- `42_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_APPROVED_20260810.md` — 王への上申書原本、ハヤテ／ゼリード、統合の祭壇アラン分岐。
+- `40_NADIR_CAVE_DEFENSE_LINE_AND_INTEGRATION_ALTAR_PHASE8D_20260810.md` — 奈落への洞窟／統合の祭壇前半。
+- `39_DARK_CASTLE_TRUTH_AND_SECOND_INTEGRATION_PHASE8C_DRAFT_20260810.md` — 魔王城真相・第二次統合（runtime反映済み内容の作業稿）。
+- `38_DARK_CASTLE_OFFICERS_AND_EMPIRE_SHOPS_PHASE8B_20260810.md` — 三幹部男性設定／帝国店舗移管。
+- `37_GALVANIA_GEOGRAPHY_PHASE8A_20260810.md` — ガルヴァニア地理再編。
+- `36_CRYSTAL_TREE_SIX_ELEMENT_RITUAL_DRAFT_20260810.md` — 承認済み六属性秘薬イベント。
+- `SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md` — システム／メニュー／UI全文言レビュー台帳。既存文言はユーザー承認前に自動変更しない。
 
-- `00_SCENARIO_CANON_polished.md`
-- `02_CHARACTER_VOICE_BIBLE_polished.md`
-- `12_ABYSS_AND_DIALOGUE_CANON_NOTES_20260629_polished.md`
-- `13_STORY_WIDE_POLISH_PROPOSALS_20260629_v4.md`
-- `14_CHARACTER_DETAIL_SHEETS_DRAFT_20260629_v3.md`
-- `15_REFERENCE_DIALOGUE_STYLE_NOTES_20260629.md`
-- `16_IMPLEMENTATION_PATCH_NOTES_20260629.md`
-- `17_MULTI_VIEW_STORY_REVIEW_AND_REWRITE_POLICY_20260629.md`
-- `18_STORY_FULL_REWRITE_PACKAGE_20260629_v3.md`
-- `19_STORY_PATCH_SCRIPTS_BATCH3_20260629.js`
-- `20_TOWN_DIALOGUE_PROGRESS_BANK_20260629_v2.md`
-- `21_COMPANION_QUEST_EXPANSION_DRAFT_20260629_v2.md`
-- `22_CHARACTER_VOICE_BIBLE_REBUILD_V6_20260629.md`
-- `23_AUTHOR_DIRECTIVE_AND_HANDOFF_20260629_v2.md`
+## 全体正本
+
+- `../../canon/PRISMA_SCENARIO_CANON_MASTER_v8.md`
+- `../../canon/PRISMA_CHARACTER_BOSS_ENCYCLOPEDIA_v5.md`
+- `../../canon/PRISMA_CODING_HANDOFF_v5.md`
+- `../project-status/PRISMA_WORK_HANDOFF_LATEST_2026-08-10.md`
 
 ## 注意
 
-- `19_STORY_PATCH_SCRIPTS_BATCH3_20260629.js` は、story.jsへ反映するための差し替え用パッチ草案です。
-- 実装反映前に、現行 `story.js` / `map.js` / `story_logic.js` との接続確認が必要です。
-- 旧版ファイルは意図的に除外しています。
+- `41_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_DRAFT_20260810.md` は承認前履歴稿であり、王への上申書に旧解釈を含むため実装正本にしない。
+- Phase8E時点の「アラン救済後 +500,000EXP」はPhase8Fで上書き済み。現在はジャスパー撃破後の実加入時 **+1,000,000EXP once-only**。光魔剣士の職構想は別途職定義確定後に実装する。

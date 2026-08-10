@@ -2559,6 +2559,12 @@ const StoryManager = {
             const elementalSpiritTrial = action.elementalSpiritTrial && typeof action.elementalSpiritTrial === 'object'
                 ? JSON.parse(JSON.stringify(action.elementalSpiritTrial))
                 : null;
+            const externalTurnSupports = Array.isArray(action.externalTurnSupports)
+                ? JSON.parse(JSON.stringify(action.externalTurnSupports))
+                : null;
+            const openingPartyStatDebuff = action.openingPartyStatDebuff && typeof action.openingPartyStatDebuff === 'object'
+                ? JSON.parse(JSON.stringify(action.openingPartyStatDebuff))
+                : null;
             const directEventBattleRuleKeys = [
                 'bestiaryExcluded', 'noDrops', 'noExp', 'noGold', 'noQuestProgress', 'noRecruit',
                 'forcedLoss', 'hpFloor', 'endAfterTurns', 'endAtHpPercent', 'storyVariantOf',
@@ -2600,6 +2606,8 @@ const StoryManager = {
                 battleChainPhase: Math.max(0, Number(action.battleChainPhase ?? activeFixedBossContext?.phase ?? 0)),
                 completedTurns: 0,
                 ...(eventBattleRules ? { eventBattleRules } : {}),
+                ...(externalTurnSupports ? { externalTurnSupports } : {}),
+                ...(openingPartyStatDebuff ? { openingPartyStatDebuff } : {}),
                 fixedBossContextNonce: activeFixedBossContext?.nonce || null,
                 ...(elementalSpiritTrial ? {
                     elementalSpiritTrial,

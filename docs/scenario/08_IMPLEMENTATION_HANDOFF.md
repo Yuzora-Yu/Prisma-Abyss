@@ -157,3 +157,16 @@ Source:
 - 第二次統合: 地下から地鳴り。奈落への洞窟を経て統合の祭壇へ。
 - シャニー: ゼノン命令ではなく本人の意思で加入。
 - commit: `darkCastleCleared` は会話・加入・ルーナ報酬・第二次統合flagの後。旧save再閲覧あり。
+
+## 2026-08-10 Phase8F — 災禍の根ジャゴレア / ジャスパー・アラン援護
+
+- Source: `docs/scenario/43_JAGOREA_JASPER_ALAN_SUPPORT_PHASE8F_20260810.md`。
+- `ABYSS_JASPER`: 混沌呪縛罠＋ジャスパーによる計画自白へ置換。
+- アラン死亡: 不意打ち＋開幕 `openingPartyStatDebuff`。ATK/DEF/MDEF/SPD/MAG/HIT/EVA/CRI 0.5倍、HP/MP上限は変更しない。
+- アラン生存: `alanSavedAtIntegrationAltar` で専用登場会話。混沌呪縛を崩した後、汎用 `externalTurnSupports` で毎ターン援護。
+- アラン援護は主人公 `charId:301` の最終ステータス参照。party枠／敵targetを消費しない。
+- cycle: アステリア(146) → 霊脈断ち(115) → 戦神の律動(508) → ルクシオン・ノナ(232)。
+- ジャスパー撃破後: `仲間に迎える / 今は断る`。実加入時にStory EXP +1,000,000 once-only。
+- 保留時: `alanWaitingAtLegacionAfterJasper` で混沌魔城レガシオンActorへ移動。後から加入可能。
+- 光魔剣士への職変更構想は既存正本として残るが、職定義未確定のためPhase8Fでは変更しない。
+- Validation: `tools/validation/validate-phase8f-jasper-alan-support.js`。

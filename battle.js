@@ -815,6 +815,7 @@ const Battle = {
 
     resetInputStateForPhaseTransition: () => {
         Battle.commandQueue = [];
+        Battle.externalTurnSupportActors = new Map();
         Battle.currentActorIndex = 0;
         Battle.selectingAction = null;
         Battle.selectedItemOrSkill = null;
@@ -1909,6 +1910,162 @@ const Battle = {
         return outcome;
     },
 
+    // 戦闘メンバー枠を使わず、イベント専用NPCが各ターンに援護行動する汎用機構。
+    // story BOSS action の externalTurnSupports から構成し、対象ボス固有の処理は持たせない。
+    getExternalTurnSupportConfigs: () => {
+        const raw = App.data?.battle?.externalTurnSupports;
+        if (!Array.isArray(raw)) return [];
+        return raw.filter(config => config && config.actsEveryTurn !== false && Array.isArray(config.skillIds) && config.skillIds.length > 0);
+    },
+
+    findExternalTurnSupportSourceCharacter: (config = {}) => {
+        const charId = Number(config.sourceCharId);
+        const uid = config.sourceUid != null ? String(config.sourceUid) : '';
+        const roster = Array.isArray(App.data?.characters) ? App.data.characters : [];
+        if (uid) {
+            const byUid = roster.find(char => String(char?.uid || '') === uid);
+            if (byUid) return byUid;
+        }
+        if (Number.isFinite(charId)) {
+            const byCharId = roster.find(char => Number(char?.charId) === charId);
+            if (byCharId) return byCharId;
+        }
+        return roster.find(char => char?.isHero === true || Number(char?.charId) === 301) || null;
+    },
+
+    createExternalTurnSupportActor: (config = {}) => {
+        const source = Battle.findExternalTurnSupportSourceCharacter(config);
+        if (!source || typeof App.calcStats !== 'function') return null;
+        const stats = App.calcStats(source);
+        const actor = new Player(source);
+        const supportId = String(config.supportId || config.id || config.name || 'external_support');
+        actor.uid = `external-support:${supportId}`;
+        actor.name = String(config.name || actor.name || source.name || '援護者');
+        actor.charId = Number(config.charId || source.charId || 0) || null;
+        actor.isExternalBattleSupport = true;
+        actor.externalSupportId = supportId;
+        actor.weaponTypes = Array.isArray(config.weaponTypes) ? config.weaponTypes.slice() : (source.weaponTypes || actor.weaponTypes || []);
+        actor.weaponType = config.weaponType || source.weaponType || actor.weaponType || '剣';
+        actor.formation = 'front';
+        actor.baseMaxHp = Math.max(1, Number(stats.maxHp || actor.hp || 1));
+        actor.baseMaxMp = Math.max(0, Number(stats.maxMp || actor.mp || 0));
+        actor.hp = actor.baseMaxHp;
+        actor.mp = config.freeSkillCost === false ? actor.baseMaxMp : Math.max(actor.baseMaxMp, 999999999);
+        ['atk','def','mdef','spd','mag','hit','eva','cri','finDmg','finRed'].forEach(key => {
+            if (stats[key] !== undefined) actor[key] = stats[key];
+        });
+        actor.elmAtk = stats.elmAtk || {};
+        actor.elmRes = stats.elmRes || {};
+        actor.resists = stats.resists || {};
+        // 「主人公のステータス参照」は最終能力値だけに限定し、主人公の装備パッシブや二刀流を援護NPCへ複製しない。
+        actor.passive = {};
+        actor.skills = config.skillIds
+            .map(id => DB.SKILLS.find(skill => Number(skill?.id) === Number(id)))
+            .filter(Boolean);
+        Battle.initBattleStatus(actor);
+        return actor;
+    },
+
+    initializeExternalTurnSupports: () => {
+        Battle.externalTurnSupportActors = new Map();
+        Battle.getExternalTurnSupportConfigs().forEach(config => {
+            const actor = Battle.createExternalTurnSupportActor(config);
+            if (!actor) return;
+            const supportId = String(config.supportId || config.id || config.name || actor.name);
+            Battle.externalTurnSupportActors.set(supportId, actor);
+        });
+        return Battle.externalTurnSupportActors;
+    },
+
+    getExternalTurnSupportActor: (config = {}) => {
+        const supportId = String(config.supportId || config.id || config.name || 'external_support');
+        if (!(Battle.externalTurnSupportActors instanceof Map)) Battle.initializeExternalTurnSupports();
+        let actor = Battle.externalTurnSupportActors.get(supportId) || null;
+        if (!actor) {
+            actor = Battle.createExternalTurnSupportActor(config);
+            if (actor) Battle.externalTurnSupportActors.set(supportId, actor);
+        }
+        return actor;
+    },
+
+    buildExternalTurnSupportCommand: (config = {}, turnNumber = 1, runtimeGeneration = 0) => {
+        const actor = Battle.getExternalTurnSupportActor(config);
+        if (!actor) return null;
+        const skillIds = (config.skillIds || []).map(Number).filter(Number.isFinite);
+        if (!skillIds.length) return null;
+        let index = 0;
+        if (config.selection === 'random') {
+            index = Math.floor(Math.random() * skillIds.length);
+        } else {
+            index = (Math.max(1, Number(turnNumber || 1)) - 1) % skillIds.length;
+        }
+        const skill = DB.SKILLS.find(entry => Number(entry?.id) === skillIds[index]);
+        if (!skill) return null;
+        const isSupport = Battle.isSupportSkill(skill);
+        const aliveEnemies = (Battle.enemies || []).filter(enemy => Battle.isBattleAlive(enemy));
+        const aliveParty = (Battle.party || []).filter(member => Battle.isBattleAlive(member));
+        let target = null;
+        if (skill.target === '自分') target = actor;
+        else if (skill.target === '全体') target = isSupport ? 'all_ally' : 'all_enemy';
+        else if (skill.target === 'ランダム') target = 'random';
+        else if (isSupport) target = aliveParty[0] || null;
+        else {
+            const preferredBossIds = (Array.isArray(App.data?.battle?.fixedBossId) ? App.data.battle.fixedBossId : [App.data?.battle?.fixedBossId])
+                .map(Number).filter(Number.isFinite);
+            target = aliveEnemies.find(enemy => preferredBossIds.includes(Battle.getUnitBaseId(enemy))) || aliveEnemies[0] || null;
+        }
+        const priority = Number(skill.priority || 0);
+        const speed = (Math.max(1, Number(Battle.getBattleStat(actor, 'spd') || 1)) * (0.8 + Math.random() * 0.4)) + (priority * 100000);
+        return {
+            type:'skill',
+            actor,
+            speed,
+            isEnemy:false,
+            isExternalSupport:true,
+            externalSupportId:actor.externalSupportId,
+            data:skill,
+            targetScope:skill.target,
+            target,
+            runtimeGeneration
+        };
+    },
+
+    appendExternalTurnSupportCommands: (queue, options = {}) => {
+        if (!Array.isArray(queue)) return queue;
+        const turnNumber = Math.max(1, Number(options.turnNumber || App.data?.battle?.turnNumber || 1));
+        const runtimeGeneration = Math.max(0, Number(options.runtimeGeneration || Battle.runtimeGeneration || 0));
+        Battle.getExternalTurnSupportConfigs().forEach(config => {
+            const command = Battle.buildExternalTurnSupportCommand(config, turnNumber, runtimeGeneration);
+            if (command) queue.push(command);
+        });
+        return queue;
+    },
+
+    applyOpeningPartyStatDebuff: () => {
+        const config = App.data?.battle?.openingPartyStatDebuff;
+        if (!config || typeof config !== 'object' || App.data?.battle?.openingPartyStatDebuffApplied === true) return false;
+        const multiplier = Math.max(0.1, Math.min(1, Number(config.multiplier || 1)));
+        const keys = (Array.isArray(config.keys) && config.keys.length
+            ? config.keys
+            : ['atk','def','mdef','spd','mag']).map(String);
+        const turns = config.turns === null ? null : Math.max(1, Number(config.turns || 1));
+        Battle.party.forEach(member => {
+            if (!member) return;
+            const status = Battle.ensureUnitBattleStatus(member);
+            keys.forEach(key => {
+                status.debuffs[key] = {
+                    val: multiplier,
+                    turns,
+                    source: String(config.id || 'opening_party_stat_debuff')
+                };
+            });
+        });
+        if (App.data?.battle) App.data.battle.openingPartyStatDebuffApplied = true;
+        const label = String(config.label || '特殊な呪縛');
+        Battle.log(`<span style="color:#d9a1ff; font-weight:bold;">${label}により、味方全体の能力が低下した！</span>`);
+        return true;
+    },
+
     applyOctaprismToEnemy: (enemy) => {
         if (!enemy || !Battle.abyssAzelgaragIds.includes(Battle.getUnitBaseId(enemy))) return;
         const status = Battle.ensureUnitBattleStatus(enemy);
@@ -2314,6 +2471,9 @@ const Battle = {
                 });
             });
         }
+
+        Battle.applyOpeningPartyStatDebuff();
+        Battle.initializeExternalTurnSupports();
 
         if (Battle.party.length === 0 || Battle.party.every(p => p.isDead)) {
             App.log("戦えるメンバーがいません！");
@@ -5666,6 +5826,11 @@ findNextActor: () => {
                 if (Battle.hasPendingPhaseTransition()) return false;
                 if (Battle.checkFinish()) return false;
             }
+
+            Battle.appendExternalTurnSupportCommands(queuedCommands, {
+                turnNumber: App.data?.battle?.turnNumber || 1,
+                runtimeGeneration: executionGeneration
+            });
 
             if (!Battle.isPreemptive) {
                 Battle.enemies.forEach(enemy => {

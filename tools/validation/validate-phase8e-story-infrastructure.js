@@ -38,7 +38,7 @@ assert(queue.includes('DR-20260810-alan-altar-irreversible-branch-phase8e') && q
 assert(queue.includes('POLICY-20260810-system-ui-global-review'), 'global system/UI text review policy must be recorded.');
 assert(queue.includes('DR-20260810-galvania-empire-arrival-exposition-phase8c-review'), 'Phase8C over-explanatory Empire line must remain queued rather than silently changed.');
 assert(inventory.includes('現行') && inventory.includes('修正案') && inventory.includes('侵略のための軍都というより'), 'system/UI inventory must include current/proposed columns and the known Phase8C review item.');
-assert(handoff.includes('**Phase:** 8E implemented') && handoff.includes('未提出原本'), 'latest handoff must reflect Phase8E implementation and corrected petition canon.');
+assert(handoff.includes('Phase8E') && handoff.includes('未提出原本') && handoff.includes('42_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_APPROVED_20260810.md'), 'latest handoff must retain Phase8E implementation and corrected petition canon even after later phases.');
 assert(handoffProjectStatus === handoff, 'root and project-status latest handoff copies must stay synchronized.');
 assert(news.includes('原本『王への上申書』の発見') && news.includes('光の楔アラン戦'), 'NEWS must record the delivered Phase8E content.');
 

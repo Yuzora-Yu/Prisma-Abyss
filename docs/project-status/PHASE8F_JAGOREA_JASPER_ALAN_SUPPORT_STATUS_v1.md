@@ -1,0 +1,34 @@
+# Phase8F — ジャゴレア / ジャスパー・アラン援護 Status v1
+
+**更新:** 2026-08-10  
+**Status:** implemented / validated
+
+## 実装済み
+
+- 災禍の根ジャゴレアのジャスパー戦前を、混沌呪縛罠＋計画自白へ更改。
+- アラン死亡時: 不意打ち＋戦闘中の主要能力0.5倍。
+- アラン生存時: アランが混沌呪縛を破壊し、戦闘外NPC援護として毎ターン行動。
+- 汎用 `externalTurnSupports` を `story.js -> story_logic.js -> battle.js` で接続。
+- 汎用 `openingPartyStatDebuff` を同様に接続。
+- アラン援護は主人公最終ステータスを参照し、4技をcycle。
+- ジャスパー撃破後にアランの正式再加入を再選択。
+- 即加入／レガシオン保留の双方で、実際の加入時にStory EXP +1,000,000 once-only。
+- レガシオン待機Actorを追加。
+- Phase8F専用validator追加。
+
+## 正本変更
+
+Phase8E時点の「後続Phaseで再加入＋500,000EXP」は、Phase8Fで**再加入時期とEXP量を上書き**する。光魔剣士という職構想自体は維持するが、職定義未確定のためPhase8F runtimeでは職変更を行わない。
+
+最新正本:
+
+- 統合の祭壇では生存／死亡のみ決定し、savedでも即加入しない。
+- savedアランはジャゴレアのジャスパー戦へ戦闘外援護として参加。
+- ジャスパー撃破後、プレイヤーが再加入を許可／保留する。
+- 加入した時点でStory EXP +1,000,000。
+- 保留時は混沌魔城レガシオンで後日加入可能。
+
+## Validation
+
+Targeted validation: PASS。  
+Final run-all: **12 / 72 FAIL**。失敗はassets除外由来10件＋旧前提validator 2件のみ。Phase8F由来の新規FAILは0。

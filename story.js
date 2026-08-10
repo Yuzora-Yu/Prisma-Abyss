@@ -7797,10 +7797,71 @@ const STORY_MANAGER_DATA = {
         ],
         ABYSS_VELD: cloneScript('ABYSS_FLOOR_070_VELD', { '混沌の騎士ヴェルド':'昏迷の黒騎士ヴェルド' }),
         ABYSS_VELD_CLEAR: cloneScript('ABYSS_FLOOR_070_VELD_CLEAR', { '混沌の騎士ヴェルド':'昏迷の黒騎士ヴェルド' }),
-        ABYSS_JASPER: cloneScript('ABYSS_FLOOR_090_JASPER', { '暗黒神官ジャスパー':'妄執の神官ジャスパー' }),
+        ABYSS_JASPER: [
+            { name:'システム', text:'災禍の根の最深部。白い祭壇を中心に、黒ずんだ根が幾重にも絡み合っている。' },
+            { name:'妄執の神官ジャスパー', text:'ようやく来たか。ここまで追ってくるとは、実験材料にしては随分としぶとい。' },
+            { name:'アルス', text:'ジャスパー。ここで終わらせる。', charId:301 },
+            { name:'妄執の神官ジャスパー', text:'終わらせる？　逆だ。お前たちは、ようやく最後の役目を果たすのだよ。' },
+            { name:'システム', text:'足元の紋様が反転した。白と黒の光が根を伝い、一行の身体へ絡みつく。' },
+            { name:'ガイル', text:'ぐっ……なんだ、これ……！　身体が、動かねえ……！', charId:109 },
+            { name:'ケイト', text:'力が抜ける……。魔力まで、引きずられて……。', charId:104 },
+            { name:'妄執の神官ジャスパー', text:'混沌呪縛。お前たちが私の研究を追い回すことくらい、とうに織り込み済みだ。' },
+            { name:'レイラ', text:'……私たちに掛けた呪縛も、この術式の……。', charId:204 },
+            { name:'妄執の神官ジャスパー', text:'あれは小さな試験に過ぎん。聖女も、騎士も、プリズムも――すべて、六つの属性を一つへ束ねるための材料だった。' },
+            { name:'妄執の神官ジャスパー', text:'王国には救済の儀と信じ込ませた。異を唱える者は反逆者へ仕立てた。魔族と人間が互いを憎めば、深淵の裂け目はさらに育つ。実に扱いやすい連中だったよ。' },
+            { name:'シャオ', text:'人が死んだのも、国が壊れたのも……全部、研究のつもりだったってのか。', charId:105 },
+            { name:'妄執の神官ジャスパー', text:'研究に犠牲は付き物だ。おかげで、個体への統合も、プリズムへの干渉も、混沌の定着もここまで進んだ。' },
+            { name:'ルーナ', text:'……私から、力を奪ったのも……。', charId:401 },
+            { name:'妄執の神官ジャスパー', text:'ああ。聖女の器は素晴らしかった。壊れずにどこまで混ぜられるか、もっと時間があれば試したかったがね。' },
+            { name:'アルス', text:'……黙れ。', charId:301 },
+            { name:'妄執の神官ジャスパー', text:'なに、まだ続けられる。お前たちをここで亡き者にし、その亡骸を深淵王様へ捧げればよい。これだけの成果を示せば、私はまだ幹部として重用される。' },
+            { name:'妄執の神官ジャスパー', text:'そして地上を私の管理下に置いていただいた暁には――人も、獣も、魔族も、草木も。すべての生命を使って研究を完成させる。' },
+            { name:'妄執の神官ジャスパー', text:'六つに分かれたまま争うから世界は不完全なのだ。私が、ひとつの正しい形へ直してやる。' },
+            { name:'シャニー', text:'違う。あなたは、壊して混ぜてるだけ。そこに誰がいたか、一度も見てない。', charId:306 },
+            { name:'妄執の神官ジャスパー', text:'名前など要らん。完成した式だけが残れば、それでよい。' }
+        ],
+        ABYSS_JASPER_ALAN_ENTRY_PHASE8F: [
+            { name:'システム', text:'その時、祭壇の外縁で影が揺れた。濁った光が一閃し、身体を縛る白黒の鎖へ食い込む。' },
+            { name:'妄執の神官ジャスパー', text:'……その光。まさか。' },
+            { name:'アラン', text:'ようやく見つけたぞ、ジャスパー。', charId:201 },
+            { name:'システム', text:'混沌に染まった光が、混沌呪縛の術式へ逆流する。絡みついていた力がひび割れ、一行の身体からほどけていった。' },
+            { name:'ガイル', text:'アラン……！　てめえ、今さら何しに来た！', charId:109 },
+            { name:'アラン', text:'怒るのは後でいい。お前たちに怒られる理由なら、嫌になるほど分かってる。', charId:201 },
+            { name:'アラン', text:'でも、今はこいつだ。全部聞いた。父のことも、俺を使った理由も、統合の儀も――黒幕の口から、この耳で聞いた。', charId:201 },
+            { name:'妄執の神官ジャスパー', text:'愚かな。お前に与えた光を、恩人へ向けるというのか。' },
+            { name:'アラン', text:'恩人だったと思ってたさ。だからこそ、自分の手で終わらせる。', charId:201 },
+            { name:'アラン', text:'アルス。頼む。共に戦わせてくれ。', charId:201 },
+            { name:'ガイル', text:'簡単に帳消しになると思うなよ。お前がやったことは、戦いが終わっても残るからな。', charId:109 },
+            { name:'アラン', text:'分かってる。', charId:201 },
+            { name:'アルス', text:'……今はジャスパーを止める。来い、アラン。', charId:301 },
+            { name:'アラン', text:'ああ。', charId:201 }
+        ],
         ABYSS_JASPER_CLEAR: [
             ...cloneScript('ABYSS_FLOOR_090_JASPER_CLEAR', { '暗黒神官ジャスパー':'妄執の神官ジャスパー' }),
             { name:'システム', text:'ジャゴレアの根元に、濁った光を放つ結晶が残された。\n混沌の結晶片を手に入れた。' }
+        ],
+        ABYSS_JASPER_ALAN_POST_PHASE8F: [
+            { name:'アラン', text:'……終わったな。', charId:201 },
+            { name:'アラン', text:'お陰で、やっと真実をこの目で確認できた。決着をつけさせてくれて、感謝する。', charId:201 },
+            { name:'アラン', text:'……大切な友人に嫉妬して、大好きだった父に失望して。挙げ句、差し出された言葉に縋って、こんな道を選んでしまった。', charId:201 },
+            { name:'アラン', text:'許してくれとは言わない。許されるとも思ってない。', charId:201 },
+            { name:'アラン', text:'だが……こんな俺でもよければ、共に戦わせてほしい。今度は、自分で選んだ側に立ちたい。', charId:201 }
+        ],
+        ABYSS_JASPER_ALAN_JOIN_PHASE8F: [
+            { name:'アラン', text:'……ありがとう。借りを返せるなんて言わない。そんな簡単なものじゃない。', charId:201 },
+            { name:'アラン', text:'それでも、もう逃げない。最後まで一緒に行く。', charId:201 }
+        ],
+        ABYSS_JASPER_ALAN_WAIT_PHASE8F: [
+            { name:'アラン', text:'……分かった。無理にとは言わない。', charId:201 },
+            { name:'アラン', text:'レガシオンに戻る。もし気が変わったら、その時もう一度声をかけてくれ。', charId:201 }
+        ],
+        ABYSS_LEGACION_ALAN_WAITING_PHASE8F: [
+            { name:'アラン', text:'……来たか。', charId:201 },
+            { name:'アラン', text:'答えを急かすつもりはない。ただ、まだ俺に戦う場所があるなら――今度こそ、最後まで付き合いたい。', charId:201 }
+        ],
+        ABYSS_LEGACION_ALAN_REJOIN_PHASE8F: [
+            { name:'アラン', text:'分かった。……ありがとう。', charId:201 },
+            { name:'アラン', text:'行こう、アルス。今度は同じ側で、最後まで。', charId:201 }
         ],
         ABYSS_ILLUMINACIA: [
             { name:'混沌姫イルミナシア', text:'ようやく来たのね。\nこの牢獄では、時間も祈りも、わたくしの指先で同じ色に溶ける。' },
@@ -8177,8 +8238,73 @@ const STORY_MANAGER_DATA = {
         abyss_grad_clear: clearEvent('ABYSS_GRAD_CLEAR',['abyssGradDefeated'],[{type:'IF_FLAG',key:'abyssSecondBarrierCleared',then:[{type:'CONV',value:'ABYSS_SECOND_BARRIER_CLEAR'}]}]),
         abyss_veld_battle: bossEvent('ABYSS_VELD',302050,'abyss_veld_clear',[{type:'LB_ADD_PARTY',charId:204,amount:5,source:'story'}]),
         abyss_veld_clear: clearEvent('ABYSS_VELD_CLEAR',['abyssVeldDefeated']),
-        abyss_jasper_battle: bossEvent('ABYSS_JASPER',302060,'abyss_jasper_clear'),
-        abyss_jasper_clear: clearEvent('ABYSS_JASPER_CLEAR',['abyssJasperDefeated'],[{type:'ITEM',id:701007,count:1}]),
+        abyss_jasper_battle: {
+            actions:[
+                {type:'CONV',value:'ABYSS_JASPER'},
+                {
+                    type:'IF_FLAG', key:'alanSavedAtIntegrationAltar',
+                    then:[
+                        {type:'CONV',value:'ABYSS_JASPER_ALAN_ENTRY_PHASE8F'},
+                        {
+                            type:'BOSS', value:302060, winEventId:'abyss_jasper_clear', forceAutoOff:true,
+                            externalTurnSupports:[{
+                                supportId:'alan_jagorea_phase8f',
+                                name:'アラン',
+                                sourceCharId:301,
+                                skillIds:[146,115,508,232],
+                                selection:'cycle',
+                                freeSkillCost:true,
+                                actsEveryTurn:true
+                            }]
+                        }
+                    ],
+                    else:[
+                        {
+                            type:'BOSS', value:302060, winEventId:'abyss_jasper_clear', ambush:true, forceAutoOff:true,
+                            openingPartyStatDebuff:{
+                                id:'chaos_bind_jagorea',
+                                label:'混沌呪縛',
+                                multiplier:0.5,
+                                keys:['atk','def','mdef','spd','mag','hit','eva','cri'],
+                                turns:null
+                            }
+                        }
+                    ]
+                }
+            ],
+            winActions:[]
+        },
+        abyss_jasper_clear: {
+            actions:[
+                {type:'CONV',value:'ABYSS_JASPER_CLEAR'},
+                {type:'FLAG',key:'abyssJasperDefeated'},
+                {type:'ITEM',id:701007,count:1},
+                {
+                    type:'IF_FLAG', key:'alanSavedAtIntegrationAltar',
+                    then:[
+                        {type:'CONV',value:'ABYSS_JASPER_ALAN_POST_PHASE8F'},
+                        {
+                            type:'CHOICE', text:'アランを仲間に迎えますか？',
+                            yesLabel:'仲間に迎える', noLabel:'今は断る',
+                            yes:[
+                                {type:'CONV',value:'ABYSS_JASPER_ALAN_JOIN_PHASE8F'},
+                                {type:'ALLY',charId:201,joinParty:true,available:true},
+                                {type:'STORY_EXP',charId:201,amount:1000000,rewardKey:'alan_jagorea_join_1000k'},
+                                {type:'FLAG',key:'alanRejoinedAfterJasper',refreshField:true},
+                                {type:'LOG',value:'アランが再び仲間に加わった。'}
+                            ],
+                            no:[
+                                {type:'CONV',value:'ABYSS_JASPER_ALAN_WAIT_PHASE8F'},
+                                {type:'FLAG',key:'alanWaitingAtLegacionAfterJasper',refreshField:true},
+                                {type:'LOG',value:'アランは混沌魔城レガシオンへ戻った。'}
+                            ]
+                        }
+                    ],
+                    else:[]
+                }
+            ],
+            winActions:[]
+        },
         abyss_illuminacia_battle: bossEvent('ABYSS_ILLUMINACIA',302070,'abyss_illuminacia_clear'),
         abyss_illuminacia_clear: clearEvent('ABYSS_ILLUMINACIA_CLEAR',['abyssIlluminaciaDefeated']),
         abyss_final_altar_encounter: {
@@ -8243,7 +8369,25 @@ const STORY_MANAGER_DATA = {
         abyss_legacion_gallery_page: {actions:[{type:'CONV',value:'ABYSS_LEGACION_GALLERY_PAGE'}],winActions:[]},
         abyss_legacion_archivist: {actions:[{type:'CONV',value:'ABYSS_LEGACION_ARCHIVIST'}],winActions:[]},
         abyss_legacion_west_sentry: {actions:[{type:'CONV',value:'ABYSS_LEGACION_WEST_SENTRY'}],winActions:[]},
-        abyss_legacion_east_observer: {actions:[{type:'CONV',value:'ABYSS_LEGACION_EAST_OBSERVER'}],winActions:[]}
+        abyss_legacion_east_observer: {actions:[{type:'CONV',value:'ABYSS_LEGACION_EAST_OBSERVER'}],winActions:[]},
+        abyss_legacion_alan_rejoin_phase8f: {
+            actions:[
+                {type:'CONV',value:'ABYSS_LEGACION_ALAN_WAITING_PHASE8F'},
+                {
+                    type:'CHOICE', text:'アランを仲間に迎えますか？',
+                    yesLabel:'仲間に迎える', noLabel:'今は断る',
+                    yes:[
+                        {type:'CONV',value:'ABYSS_LEGACION_ALAN_REJOIN_PHASE8F'},
+                        {type:'ALLY',charId:201,joinParty:true,available:true},
+                        {type:'STORY_EXP',charId:201,amount:1000000,rewardKey:'alan_jagorea_join_1000k'},
+                        {type:'FLAG',key:'alanRejoinedAfterJasper',refreshField:true},
+                        {type:'LOG',value:'アランが再び仲間に加わった。'}
+                    ],
+                    no:[]
+                }
+            ],
+            winActions:[]
+        }
     });
 
     Object.entries(data.abyssSpiritTrials).forEach(([element, definition]) => {

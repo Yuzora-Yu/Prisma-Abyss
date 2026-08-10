@@ -443,11 +443,11 @@ alanState.phase = 'dead'
 
 上申書所持＋救済ルート選択後：
 
-- `phase='saved'`。
-- 後の再加入イベントで職業変更：**魔法戦士 → 光魔剣士**。
-- 内部経験値：**+500,000**を一度だけ付与。
-- `rejoinExpGranted=true` で二重取得防止。
-- `phase='rejoined'`。
+- `phase='saved'` 相当の生存状態を保持。
+- 災禍の根ジャゴレアでジャスパー撃破後、正式再加入をプレイヤーが再選択。
+- 実加入時の内部経験値：**+1,000,000**を一度だけ付与（`alan_jagorea_join_1000k`）。
+- 光魔剣士への職変更構想は維持するが、職定義／成長／習得技の確定が必要なためPhase8F runtimeでは未実装。
+- `alanRejoinedAfterJasper` で正式再加入を保持。
 
 光魔剣士用に最低限必要：
 
@@ -837,8 +837,9 @@ alanState.phase = 'dead'
 - [ ] 死亡後再加入不能。
 - [ ] 死亡後ハヤテSQ閉鎖。
 - [ ] 上申書あり→救済可能。
-- [ ] 光魔剣士へ職変更。
-- [ ] +500k EXP一回のみ。
+- [ ] ジャスパー生存分岐で戦闘外援護。
+- [ ] ジャスパー後に加入許可／レガシオン保留。
+- [ ] 実加入時+1,000,000 EXP一回のみ。
 - [ ] セーブ／ロード後分岐維持。
 
 ## MAP名称
@@ -985,6 +986,20 @@ alanState.phase = 'dead'
 - 旧saveが既に `abyssOuterReached` または `storyStep>=10` の場合、`alanAltarLegacyBypass` と `alanAltarResolved` を補い進行を巻き戻さない。`alanOutcome` は捏造しない。
 - ガルヴァニア渓谷の門破壊者＝アランはplayer-facingでは未回収のまま。
 - approved source: `docs/scenario/42_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_APPROVED_20260810.md`。
+
+### 災禍の根ジャゴレア／ジャスパー・アラン援護【2026-08-10 Phase8F実装】
+
+- `ABYSS_JASPER` を混沌呪縛罠＋ジャスパー計画自白へ更新。
+- アラン死亡時: `ambush:true`＋`openingPartyStatDebuff` で ATK/DEF/MDEF/SPD/MAG/HIT/EVA/CRI を0.5倍。HP/MP最大値は変更しない。
+- アラン生存時: `alanSavedAtIntegrationAltar` で専用会話後、汎用 `externalTurnSupports` を使用。
+- `externalTurnSupports` はstory BOSS action -> `story_logic.js` -> `battle.js` のbattle stateへ受け渡し、party外NPCを通常ターン順へ追加する汎用基盤。敵target／party slotを消費しない。
+- Phase8Fアラン: sourceCharId 301（主人公の最終能力参照）、skill cycle `[146,115,508,232]` = アステリア / 霊脈断ち / 戦神の律動 / ルクシオン・ノナ。
+- ジャスパー撃破後: アランが正式再加入を願い、`仲間に迎える / 今は断る`。
+- 許可時: ALLY201 + Story EXP 1,000,000、reward key `alan_jagorea_join_1000k`、`alanRejoinedAfterJasper`。
+- 保留時: `alanWaitingAtLegacionAfterJasper`。LEGACIONの人物Actorへ配置し、後から同じonce-only rewardで加入可能。
+- Phase8Eの将来予定「再加入時+500k」はPhase8Fで**+1,000,000**へ上書き。光魔剣士の職構想は維持するが、職定義未確定のためPhase8F runtimeでは職変更しない。
+- source: `docs/scenario/43_JAGOREA_JASPER_ALAN_SUPPORT_PHASE8F_20260810.md`。
+- validation: `tools/validation/validate-phase8f-jasper-alan-support.js`。
 
 ### システム文／UI copy review policy【2026-08-10】
 
