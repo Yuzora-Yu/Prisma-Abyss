@@ -7158,6 +7158,56 @@ const FIXED_MAPS = {
                 "suppressShadow": true
             }
         ],
+        "floorDecorations": [
+            {
+                "authoredPlacementId": "crystal-ritual-pedestal-water",
+                "type": "image",
+                "imageKey": "prism_pedestal_water",
+                "x": 11, "y": 4, "width": 1, "height": 1,
+                "drawScale": 2.2, "alpha": 0.92, "shimmer": true, "shimmerDuration": 1350,
+                "renderLayer": "object", "blocking": true, "baseTile": "T"
+            },
+            {
+                "authoredPlacementId": "crystal-ritual-pedestal-wind",
+                "type": "image",
+                "imageKey": "prism_pedestal_wind",
+                "x": 14, "y": 3, "width": 1, "height": 1,
+                "drawScale": 2.2, "alpha": 0.92, "shimmer": true, "shimmerDuration": 1290,
+                "renderLayer": "object", "blocking": true, "baseTile": "T"
+            },
+            {
+                "authoredPlacementId": "crystal-ritual-pedestal-light",
+                "type": "image",
+                "imageKey": "prism_pedestal_light",
+                "x": 17, "y": 4, "width": 1, "height": 1,
+                "drawScale": 2.2, "alpha": 0.92, "shimmer": true, "shimmerDuration": 1230,
+                "renderLayer": "object", "blocking": true, "baseTile": "T"
+            },
+            {
+                "authoredPlacementId": "crystal-ritual-pedestal-fire",
+                "type": "image",
+                "imageKey": "prism_pedestal_fire",
+                "x": 18, "y": 6, "width": 1, "height": 1,
+                "drawScale": 2.2, "alpha": 0.92, "shimmer": true, "shimmerDuration": 1170,
+                "renderLayer": "object", "blocking": true, "baseTile": "T"
+            },
+            {
+                "authoredPlacementId": "crystal-ritual-pedestal-thunder",
+                "type": "image",
+                "imageKey": "prism_pedestal_thunder",
+                "x": 16, "y": 8, "width": 1, "height": 1,
+                "drawScale": 2.2, "alpha": 0.92, "shimmer": true, "shimmerDuration": 1110,
+                "renderLayer": "object", "blocking": true, "baseTile": "T"
+            },
+            {
+                "authoredPlacementId": "crystal-ritual-pedestal-dark",
+                "type": "image",
+                "imageKey": "prism_pedestal_dark",
+                "x": 12, "y": 8, "width": 1, "height": 1,
+                "drawScale": 2.2, "alpha": 0.92, "shimmer": true, "shimmerDuration": 1410,
+                "renderLayer": "object", "blocking": true, "baseTile": "T"
+            }
+        ],
         "mapId": "MAP000073",
         "floorId": "MAP000073-00",
         "useHabitatEncounters": false

@@ -41,7 +41,8 @@ assert(story.includes('"7-1": "地下牢の主要な生存者を確認した。�
 assert(story.includes('"7-2": "アランが離脱した。地下牢へ戻り、捕らわれていた人々を保護しよう"'), '7-2 objective missing');
 assert(story.includes('"7-3": "雷の要塞へ急行し、救護区画のルーナを守ろう"'), '7-3 objective missing');
 const liberationStart = story.indexOf('"light_palace_liberation_after_betrayal"');
-const liberationEnd = story.indexOf('"light_palace_overpower_clear"', liberationStart);
+// Phase7以降のイベントが後方へ追加されても誤検知しないよう、直後の雷要塞イベントまでを境界にする。
+const liberationEnd = story.indexOf('"thunder_fort_demon_assault_arrival"', liberationStart);
 const liberationEvent = story.slice(liberationStart, liberationEnd);
 assert(liberationEvent.includes('"SUB", "value": 3'), 'palace liberation must advance to 7-3');
 assert(!liberationEvent.includes('"STEP", "value": 8'), 'new palace liberation must not skip Thunder Fortress defense by advancing to Step 8');

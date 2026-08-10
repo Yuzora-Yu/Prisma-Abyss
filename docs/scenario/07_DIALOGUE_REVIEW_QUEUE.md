@@ -769,3 +769,42 @@ Created: 2026-08-10
 
 ### User decision
 - decision: undecided
+
+## DR-20260810-crystal-tree-six-element-ritual
+
+Status: resolved  
+Created: 2026-08-10  
+Approved: 2026-08-10  
+Implemented: 2026-08-10
+
+### Target
+- file: `story.js`
+- script keys: `CRYSTAL_TREE_DEFENSE_CLEAR`, `CRYSTAL_TREE_POST_CLEAR_CHECKPOINT`, `CRYSTAL_TREE_SIX_ELEMENT_RITUAL`, `CRYSTAL_TREE_POST_RITUAL_REPEAT`
+- source draft: `36_CRYSTAL_TREE_SIX_ELEMENT_RITUAL_DRAFT_20260810.md`
+- map / area: `CRYSTAL_TREE / MAP000073`
+- storyStep-subStep: `7-11` → `8-0`
+
+### Approved direction
+- 魔王軍戦②直後は応急安定化のみ。完治commitを行わない。
+- レイラが葉で治った観測結果を起点に、ミネルバが六属性循環の仮説を組み立てる。
+- 秘薬は水→風→光→火→雷→闇の順で生成し、最後の闇で完成する。
+- 正常な闇に支配・操作・洗脳の本質がないことを観測結果として示す。
+- ルーナは故郷を理屈ではなく、木漏れ日・水音・風・匂い・暖かな光として思い出す。
+- レオンを先に治療し、覚醒後最初にレイラの無事を尋ねる。
+- ルーナは身体循環と成長阻害を回復方向へ戻すが、奪われた力そのものは全回復しない。
+- 魔王軍を味方と断定せず、闇のプリズムの実態を自分の目で確かめるため魔王城へ向かう。
+
+### User decision
+- decision: approved
+- selected option: approved long-form draft / full implementation
+- user notes: 「これでOKです。コード側の作業に入ってください。」
+- approved date: 2026-08-10
+
+### Implementation tracking
+- `crystal_tree_defense_clear` から治療reward/clear commitを後段へ移動。
+- `crystalTreeSixElementRitualSeen` を独立既読flagとして追加。
+- `leilaCrystalTreeLeafTreated` を追加し、結晶樹案内前に治療済みを保証。旧 `leilaJoined` saveは互換昇格。
+- MAP000073へ既存六属性pedestal assetをM0仮配置。
+- 冒頭村へ同一感覚モチーフを薄く追加。
+- シャオの誤 `charId:301` を `105` へ修正。
+- implementation validation: `validate-crystal-tree-route-phase7c.js` / `validate-crystal-tree-six-element-phase7d.js`

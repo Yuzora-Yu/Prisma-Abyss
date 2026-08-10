@@ -827,7 +827,7 @@ const App = {
     },
 
     // --- 新シナリオ共通状態 (WorldState / StoryState) ---
-    storyStateSchemaVersion: 8,
+    storyStateSchemaVersion: 9,
 
     getDefaultWorldState: () => ({
         prologueStage: 0,
@@ -935,6 +935,13 @@ const App = {
         if (!worldState) return null;
         if (!data.progress.flags || typeof data.progress.flags !== 'object') data.progress.flags = {};
         const flags = data.progress.flags;
+
+        // Phase 7D save compatibility: 旧saveの leilaJoined は、現行ルート上では
+        // 結晶樹の葉による治療を終えた時だけ成立していた。専用flagへ安全に昇格する。
+        if (flags.leilaJoined === true && flags.leilaCrystalTreeLeafTreated !== true) {
+            flags.leilaCrystalTreeLeafTreated = true;
+        }
+
         const current = Math.max(0, Math.floor(Number(worldState.crystalTreeState || 0)));
         let next = current;
 
@@ -1771,7 +1778,7 @@ const App = {
                 abyssFloorSchemaVersion: 2,
                 monsterAllySkillPointSchemaVersion: 1,
                 monsterAllyGrowthSchemaVersion: 1,
-                storyStateSchemaVersion: 8
+                storyStateSchemaVersion: 9
             },
             progress: {
                 ...templateProgress,

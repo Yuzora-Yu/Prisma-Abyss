@@ -321,7 +321,7 @@ const INITIAL_DATA_TEMPLATE = {
     },
     transportMode: null, // null / "boat" / "flying"
     mapReturnPoint: null,
-    system: { storyStateSchemaVersion: 8 },
+    system: { storyStateSchemaVersion: 9 },
     progress: { 
         floor: 0,
         storyStep: 0,        // ストーリー進行フラグ

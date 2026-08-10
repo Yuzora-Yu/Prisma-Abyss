@@ -51,7 +51,7 @@ const STORY_MANAGER_DATA = {
         "7-7": "水上都市の北側にある古い水門を調べよう",
         "7-8": "結晶樹の奥へ進み、ミネルバを探そう",
         "7-9": "結晶樹の根元へ向かおう",
-        "7-10": "結晶樹を守り、ルーナとレオンの治療を終えよう",
+        "7-10": "結晶樹を守り、ルーナとレオンの治療を続けよう",
         "7-11": "根元に残ったミネルバと話そう",
         "8-0": "魔王城へ向かい、闇のプリズムの真実を確かめよう",
         "9-0": "世界の中心に開いた深淵への亀裂を調べよう",
@@ -91,6 +91,7 @@ const STORY_MANAGER_DATA = {
         ],
         "PROLOGUE_WEST_HILL_OPENING": [
                 { "name": "システム", "text": "――5年前。山奥の小さな村。" },
+                { "name": "システム", "text": "眼下の村では、小さな光神の祠へ朝日が差し、白い祈り布が風に揺れている。水路の音に、炊事の匂いが混じっていた。" },
                 { "name": "ルーナ", "charId": 403, "text": "今日のお供え、これならきっと喜んでもらえるね。あと少しだけ摘んで帰ろう、アルス。" },
                 { "name": "システム", "text": "東の空が、白く弾けた。" },
                 { "name": "ルーナ", "charId": 403, "text": "……え？" },
@@ -2744,6 +2745,11 @@ const STORY_MANAGER_DATA = {
         "THUNDER_FORT_LUNA_POST_AWAKENING": [
                 { "name": "システム", "text": "ルーナは目を閉じたまま、浅い呼吸を繰り返している。" }
         ],
+        "WATER_CITY_CRYSTAL_TREE_BRIEFING_LEILA_PENDING": [
+                { "name": "ソフィア", "charId": 202, "text": "レオンさんとルーナさんを診る前に、ひとつだけ確かめたいことがあります。レイラさんに、結晶樹の葉は使いましたか？" },
+                { "name": "ケイト", "charId": 104, "text": "……三人とも、ジャスパーの呪縛を受けています。レイラさんが葉にどう反応するか分かれば、二人の治療法を探す手掛かりになるかもしれません。" },
+                { "name": "ソフィア", "charId": 202, "text": "先にレイラさんの容体を確かめてきてください。その結果を見てから、秘跡へ案内します。" }
+        ],
         "WATER_CITY_CRYSTAL_TREE_BRIEFING": [
                 { "name": "ソフィア", "charId": 202, "text": "ミネルバなら、結晶樹の秘跡にいます。根の流れを調べると言って、また一人で潜っていきました。" },
                 { "name": "ソフィア", "charId": 202, "text": "北の古い水門を使ってください。あの先なら、彼女の残した目印が見つかるはずです。" }
@@ -2762,16 +2768,840 @@ const STORY_MANAGER_DATA = {
                 { "name": "ミネルバ", "charId": 206, "text": "レオンをそこへ。ルーナは私の手を離さないで。" },
                 { "name": "システム", "text": "根の奥で、何かが軋む。少し遅れて、複数の足音が近づいてきた。" },
                 { "name": "魔人兵長", "text": "聖女を渡せ。教団にも、お前たちにも預けられん。" },
-                { "name": "シャオ", "charId": 301, "text": "またそれか。理由も言わずに連れていけると思うな。" },
+                { "name": "シャオ", "charId": 105, "text": "またそれか。理由も言わずに連れていけると思うな。" },
                 { "name": "魔人兵長", "text": "光をここまで穢した者が、我らだと本気で思っているのか。" }
         ],
         "CRYSTAL_TREE_DEFENSE_CLEAR": [
                 { "name": "システム", "text": "魔族たちは深追いせず、根の裂け目の向こうへ退いていった。" },
-                { "name": "ミネルバ", "charId": 206, "text": "……続ける。今止めた方が危ない。" },
-                { "name": "システム", "text": "しばらくして、レオンの呼吸が深くなる。ルーナの指先にも、わずかに温度が戻った。" }
+                { "name": "ミネルバ", "charId": 206, "text": "追わなくていい。こっち。今止める方が危ない。" },
+                { "name": "システム", "text": "根から薄い光が二人へ流れる。レオンの浅かった呼吸が少しだけ深くなり、ルーナの冷えていた指先へわずかに温度が戻った。" },
+                { "name": "ケイト", "charId": 104, "text": "……戻ってきてる。" },
+                { "name": "ミネルバ", "charId": 206, "text": "仮止め。治ったわけじゃないよ。" },
+                { "name": "ミネルバ", "charId": 206, "text": "でも……うん。やっぱり、いる。" },
+                { "name": "アルス", "charId": 301, "text": "何が？" },
+                { "name": "ミネルバ", "charId": 206, "text": "まだ半分。答え。" }
         ],
         "CRYSTAL_TREE_POST_CLEAR_CHECKPOINT": [
                 { "name": "ミネルバ", "charId": 206, "text": "まだ根の中に残ってるものがある。……少し、考えさせて。" }
+        ],
+        "CRYSTAL_TREE_SIX_ELEMENT_RITUAL": [
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "あ、ちょうどいい。半分が八割くらいになった。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "残り二割は？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "これから試す。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "試すのか……。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "その前に教えてくれ。どうして、ここなら二人を治せると思った？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "レイラ。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "レイラ？"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "……結晶樹の葉で、レイラさんは回復した。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "そう。レオンには足りなかった。でも、効かなかったわけじゃない。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "少しだけ、脈の濁りが弱まった……。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "だったら葉っぱが間違いなんじゃない。足りないの。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "それだけで、ここまで来たのか？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "それだけって、すごい手掛かりだよ？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "レイラは脈。レオンは脈と呼吸と体温。ルーナはそれに加えて、反応も鈍い。眠っても戻らない。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "……はい。目を閉じても、ずっと身体が重くて。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "普通なら別の不調に見える。でも三人とも、同じ人に同じ頃に壊されてる。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "病気が六つあるんじゃない。一つの流れが、あちこちで引っかかってる。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "流れ……？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "人の中にもあるんだよ。小さいけどね。別々に働いて、順番に渡して、また戻ってくる。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "ジャスパーは、それを……？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "力を奪っただけじゃない。別々に流れてたものを、途中で無理やり一つに寄せたみたい。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "プリズムの……統合？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "似てる。似てるだけ。まだ断定はしない。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "でも、人ひとりの中へ押し込んだらどう壊れるかって聞かれたら――たぶん、こうなる。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "だから、足すんじゃない。もう持ってるものを、ちゃんと巡れるように戻す。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "じゃ、始めようか。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "……本当に八割で始めるのか？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "残り二割は、始めないと分からないでしょ。"
+        },
+        {
+                "type": "FIELD_CUTSCENE",
+                "name": "六属性秘薬・水",
+                "commands": [
+                        {
+                                "op": "CLEAR_LAYER"
+                        },
+                        {
+                                "op": "SHOW_SPRITE",
+                                "id": "crystal-ritual-water",
+                                "src": "assets/map/overlays/prism_water.png",
+                                "x": 11,
+                                "y": 4,
+                                "size": 1.25,
+                                "z": 8,
+                                "opacity": 1,
+                                "css": "filter:brightness(1.3) drop-shadow(0 0 8px rgba(95,190,255,.9));"
+                        },
+                        {
+                                "op": "WAIT",
+                                "ms": 120
+                        }
+                ]
+        },
+        {
+                "name": "システム",
+                "text": "水の台座から淡い青が床の溝を走る。中央の器で、乾いていた薬草片がゆっくり開いた。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "最初は水。育つ場所がなきゃ、何も始まらないから。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "薬の材料を……受け止めてる。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "うん。器を作る。"
+        },
+        {
+                "type": "FIELD_CUTSCENE",
+                "name": "六属性秘薬・風",
+                "commands": [
+                        {
+                                "op": "SHOW_SPRITE",
+                                "id": "crystal-ritual-wind",
+                                "src": "assets/map/overlays/prism_wind.png",
+                                "x": 14,
+                                "y": 3,
+                                "size": 1.25,
+                                "z": 8,
+                                "opacity": 1,
+                                "css": "filter:brightness(1.3) drop-shadow(0 0 8px rgba(145,255,190,.9));"
+                        },
+                        {
+                                "op": "WAIT",
+                                "ms": 120
+                        }
+                ]
+        },
+        {
+                "name": "システム",
+                "text": "風の台座が灯る。密閉された根源域を柔らかな風が巡り、器から立った香りを運んでいく。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "次、風。離れてるものを運ぶ。繋ぐ。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "……この匂い……。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "ルーナ？"
+        },
+        {
+                "name": "システム",
+                "text": "濡れた土。小さな水音。木の葉が擦れる音。風に揺れる白い布――ルーナは少しだけ目を閉じた。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "……知ってる気がします。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "どんな――"
+        },
+        {
+                "name": "システム",
+                "text": "問いかけかけたミネルバは、ルーナの表情を見て止まった。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "……ううん。今は追わなくていい。逃げなかった分だけ、覚えといて。"
+        },
+        {
+                "type": "FIELD_CUTSCENE",
+                "name": "六属性秘薬・光",
+                "commands": [
+                        {
+                                "op": "SHOW_SPRITE",
+                                "id": "crystal-ritual-light",
+                                "src": "assets/map/overlays/prism_light.png",
+                                "x": 17,
+                                "y": 4,
+                                "size": 1.25,
+                                "z": 8,
+                                "opacity": 1,
+                                "css": "filter:brightness(1.35) drop-shadow(0 0 9px rgba(255,244,155,.95));"
+                        },
+                        {
+                                "op": "WAIT",
+                                "ms": 120
+                        }
+                ]
+        },
+        {
+                "name": "システム",
+                "text": "光の台座が灯る。木々の隙間から差すような光が器へ落ち、ばらついていた成分が一つの方向へ整っていく。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "光。明るくするだけじゃない。どっちへ伸びるか、教える。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "……あったかい。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "昔も……こんな光を見た気がする。木の下で……風が吹いてて……水の音がして……。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "……ごめんなさい。そこから先は……。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "謝らなくていい。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "一個戻ったなら上出来。"
+        },
+        {
+                "type": "FIELD_CUTSCENE",
+                "name": "六属性秘薬・火",
+                "commands": [
+                        {
+                                "op": "SHOW_SPRITE",
+                                "id": "crystal-ritual-fire",
+                                "src": "assets/map/overlays/prism_fire.png",
+                                "x": 18,
+                                "y": 6,
+                                "size": 1.25,
+                                "z": 8,
+                                "opacity": 1,
+                                "css": "filter:brightness(1.3) drop-shadow(0 0 8px rgba(255,125,75,.95));"
+                        },
+                        {
+                                "op": "WAIT",
+                                "ms": 120
+                        }
+                ]
+        },
+        {
+                "name": "システム",
+                "text": "火の台座が灯る。器は静かに熱を帯び、素材の色が淡い金色へ変わった。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "火。持ってるだけじゃ使えないものを、働ける形に変える。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "燃やすだけじゃない、と。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "燃やすだけなら、料理だってだいたい炭になるよ。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "……それはそうだな。"
+        },
+        {
+                "type": "FIELD_CUTSCENE",
+                "name": "六属性秘薬・雷",
+                "commands": [
+                        {
+                                "op": "SHOW_SPRITE",
+                                "id": "crystal-ritual-thunder",
+                                "src": "assets/map/overlays/prism_thunder.png",
+                                "x": 16,
+                                "y": 8,
+                                "size": 1.25,
+                                "z": 8,
+                                "opacity": 1,
+                                "css": "filter:brightness(1.4) drop-shadow(0 0 10px rgba(245,235,105,.98));"
+                        },
+                        {
+                                "op": "WAIT",
+                                "ms": 90
+                        }
+                ]
+        },
+        {
+                "name": "システム",
+                "text": "雷の台座へ触れた瞬間、小さな閃光。器の中が一度だけ大きく脈打ち、別々だった成分が組み替わる。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "雷。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "これ、好き。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "そこなんですか？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "だって一瞬で変わるんだよ？　止まってたものに、きっかけを入れる。変化を起こす。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "……できた？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "まだ。"
+        },
+        {
+                "type": "FIELD_CUTSCENE",
+                "name": "六属性秘薬・闇",
+                "commands": [
+                        {
+                                "op": "SHOW_SPRITE",
+                                "id": "crystal-ritual-dark",
+                                "src": "assets/map/overlays/prism_dark.png",
+                                "x": 12,
+                                "y": 8,
+                                "size": 1.25,
+                                "z": 8,
+                                "opacity": 1,
+                                "css": "filter:brightness(1.35) drop-shadow(0 0 10px rgba(174,115,255,.95));"
+                        },
+                        {
+                                "op": "WAIT",
+                                "ms": 180
+                        }
+                ]
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "……闇を使うのか。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "最後に……？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "使うよ。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "本当に大丈夫なのか？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "だから見るんでしょ。"
+        },
+        {
+                "name": "システム",
+                "text": "黒紫の光が器へ届く。液体は黒くならない。激しく発光していた五つの反応が静まり、熱も香りも穏やかになっていく。"
+        },
+        {
+                "name": "システム",
+                "text": "最後に残ったのは、澄んだ淡い銀色の液体だった。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "……安定した。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "闇で……？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "完成。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "闇が最後だから？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "うん。動き続けたら、壊れるでしょ。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "休ませる。ほどく。次に渡せるところまで戻す。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "闇は、そういう仕事。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "でも、私たちは……。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "私も何度も見たよ。支配するか。命令へ逆らえなくするか。意志へ割り込むか。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "正常な闇には、そういう反応がない。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "じゃあ……今まで見た、黒いものは……。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "知らない。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "知らないのか。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "黒いから闇、って決める方が雑だよ。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "分からないものが増えた。いいね。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "よくない。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "まずレオン。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "先にルーナじゃなくていいのか？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "レオンの方が今は深い。それに、こっちで効き方を見ればルーナの量を変えられる。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "やっぱり試してるじゃないか。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "治すための試し方はするよ。"
+        },
+        {
+                "name": "システム",
+                "text": "秘薬を少しずつ飲ませると、レオンの呼吸が深くなり、冷えていた手へ血色が戻っていく。強張っていた指から力が抜けた。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "……うん。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "戻ってます。"
+        },
+        {
+                "name": "レオン",
+                "charId": 305,
+                "text": "……ここは……。"
+        },
+        {
+                "name": "レオン",
+                "charId": 305,
+                "text": "レイラは。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "あなたより先に治ってる。"
+        },
+        {
+                "name": "レオン",
+                "charId": 305,
+                "text": "……そうか。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "起きなくていい。今やっと、ちゃんと休めてるんだから。"
+        },
+        {
+                "name": "システム",
+                "text": "レオンは再び目を閉じた。今度の眠りは衰弱ではなく、静かな休息に見えた。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "次、ルーナ。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "これを飲めば……元の力も戻りますか？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "そこは別。奪われたものを、薬で作り直すことはできない。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "でも、身体が前へ進めないように絡められてるところは戻せる。今のままだと、力を取り戻しても身体の方が受け取れないから。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "……分かりました。"
+        },
+        {
+                "name": "システム",
+                "text": "ルーナが秘薬を飲む。最初に、深く息を吸えた。肩の力が抜け、指先から頬、足へゆっくり温度が戻っていく。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "……軽い。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "足が……ちゃんと、自分のものみたいです。"
+        },
+        {
+                "name": "システム",
+                "text": "ルーナは中央へ落ちる木漏れ日を見つめ、また目を閉じた。"
+        },
+        {
+                "name": "システム",
+                "text": "朝露。葉の隙間から落ちる暖かな光。小さな水路。風に揺れる白い祈り布。炊事の火の匂い。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "村……。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "小さな村です。光が、すごく綺麗で……でも、眩しいんじゃなくて。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "……あったかかった。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "それしか……まだ。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "それでいい。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "ミネルバさん。さっき言った、無理やり一つへ寄せたって……。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "五年前のプリズム統合と、同じことを……人に？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "同じ、とまでは言わない。でも痕跡は似てる。六つが役目を譲らず、同じ場所へ固まりかけてた。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "それをジャスパーが三人に……。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "力を奪うついでにね。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "じゃあ、あいつらが使ってた黒い力は何なんだ。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "だから、それはまだ分からない。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "魔王軍は？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "それも別の話。さっき私たちへ剣を向けた。それは事実。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "でも、“闇だから人を操る”は違う。ここまでなら、言える。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "……私は、まだあいつらを信用しない。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "俺もだ。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "でも……闇だからってだけで決めるのも、違うんだな。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "闇のプリズムは、魔王城にある。"
+        },
+        {
+                "name": "ケイト",
+                "charId": 104,
+                "text": "もし本当に、闇そのものが原因じゃないなら……。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "見に行く。壊れてるのか。使われてるのか。それとも――。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "守られてるのか。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "自分の目で確かめる。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "私も行きます。"
+        },
+        {
+                "name": "アルス",
+                "charId": 301,
+                "text": "身体は――。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "まだ、分からないことばかりです。私の力を奪った人たちのことも、私を連れて行こうとした魔族の人たちのことも。"
+        },
+        {
+                "name": "ルーナ",
+                "charId": 401,
+                "text": "だから今度は、自分で見たいです。"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "お前は来ないのか？"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "私はこっち。こんなの見つけた直後に帰れると思う？"
+        },
+        {
+                "name": "シャオ",
+                "charId": 105,
+                "text": "……聞いた私が悪かった。"
+        },
+        {
+                "name": "ミネルバ",
+                "charId": 206,
+                "text": "闇のプリズム、ちゃんと見てきて。人の話じゃなくて、自分の目で。"
+        },
+        {
+                "type": "FIELD_CUTSCENE",
+                "name": "六属性秘薬・演出終了",
+                "commands": [
+                        {
+                                "op": "CLEANUP"
+                        }
+                ]
+        }
+],
+        "CRYSTAL_TREE_POST_RITUAL_REPEAT": [
+                { "name": "ミネルバ", "charId": 206, "text": "私はもう少しここを見るよ。闇のプリズムは、人の話じゃなくて自分の目で確かめてきて。" }
         ],
         "LIGHT_PALACE_FINAL_ENCOUNTER": [
                 {
@@ -4378,7 +5208,7 @@ const STORY_MANAGER_DATA = {
         "light_palace_final_locked_prison": {
                 "actions": [
                         { "type": "CONV", "value": "LIGHT_PALACE_FINAL_LOCKED_PRISON" },
-                        { "type": "LOG", "value": "地下牢で国王、レイラ、レオンの所在を確認しよう。" }
+                        { "type": "LOG", "value": "地下牢の主要な生存者を確認しよう。" }
                 ],
                 "winActions": []
         },
@@ -4470,6 +5300,7 @@ const STORY_MANAGER_DATA = {
                                                                 "yes": [
                                                                         { "type": "CONSUME_ITEM", "id": 5, "count": 1 },
                                                                         { "type": "CONV", "value": "LIGHT_PALACE_LEILA_RECOVERY_JOIN" },
+                                                                        { "type": "FLAG", "key": "leilaCrystalTreeLeafTreated" },
                                                                         { "type": "ALLY", "value": 204 },
                                                                         { "type": "FLAG", "key": "leilaJoined", "refreshField": true }
                                                                 ],
@@ -4634,11 +5465,21 @@ const STORY_MANAGER_DATA = {
                                 "key": "crystalTreeRouteBriefed",
                                 "then": [],
                                 "else": [
-                                        { "type": "CONV", "value": "WATER_CITY_CRYSTAL_TREE_BRIEFING" },
-                                        { "type": "FLAG", "key": "crystalTreeRouteBriefed", "refreshField": true },
-                                        { "type": "FLAG", "key": "minervaCrystalTreeLeadKnown" },
-                                        { "type": "WORLD_STATE", "key": "crystalTreeState", "value": 1 },
-                                        { "type": "SUB", "value": 7 }
+                                        {
+                                                "type": "IF_FLAG",
+                                                "key": "leilaCrystalTreeLeafTreated",
+                                                "then": [
+                                                        { "type": "CONV", "value": "WATER_CITY_CRYSTAL_TREE_BRIEFING" },
+                                                        { "type": "FLAG", "key": "crystalTreeRouteBriefed", "refreshField": true },
+                                                        { "type": "FLAG", "key": "minervaCrystalTreeLeadKnown" },
+                                                        { "type": "WORLD_STATE", "key": "crystalTreeState", "value": 1 },
+                                                        { "type": "SUB", "value": 7 }
+                                                ],
+                                                "else": [
+                                                        { "type": "CONV", "value": "WATER_CITY_CRYSTAL_TREE_BRIEFING_LEILA_PENDING" },
+                                                        { "type": "LOG", "value": "光の宮殿でレイラに結晶樹の葉を使い、治療経過を確かめよう。" }
+                                                ]
+                                        }
                                 ]
                         }
                 ],
@@ -4705,19 +5546,12 @@ const STORY_MANAGER_DATA = {
                 "actions": [
                         {
                                 "type": "IF_FLAG",
-                                "key": "crystalTreeCleared",
+                                "key": "crystalTreeDefenseCleared",
                                 "then": [],
                                 "else": [
                                         { "type": "CONV", "value": "CRYSTAL_TREE_DEFENSE_CLEAR" },
-                                        { "type": "STORY_EXP", "charId": 401, "amount": 300000, "rewardKey": "luna_crystal_tree_300k" },
-                                        { "type": "SET_EXP_MULTIPLIER", "charId": 401, "pct": 1800 },
-                                        { "type": "WORLD_STATE", "key": "lunaMemoryStage", "value": 2 },
-                                        { "type": "FLAG", "key": "lunaCrystalTreeStabilized" },
-                                        { "type": "FLAG", "key": "leonCrystalTreeTreated" },
-                                        { "type": "WORLD_STATE", "key": "crystalTreeState", "value": 5 },
                                         { "type": "SUB", "value": 11 },
-                                        { "type": "FLAG", "key": "crystalTreeDefenseCleared", "refreshField": true },
-                                        { "type": "FLAG", "key": "crystalTreeCleared", "refreshField": true }
+                                        { "type": "FLAG", "key": "crystalTreeDefenseCleared", "refreshField": true }
                                 ]
                         }
                 ],
@@ -4725,7 +5559,28 @@ const STORY_MANAGER_DATA = {
         },
         "crystal_tree_post_clear_checkpoint": {
                 "actions": [
-                        { "type": "CONV", "value": "CRYSTAL_TREE_POST_CLEAR_CHECKPOINT" }
+                        {
+                                "type": "IF_FLAG",
+                                "key": "crystalTreeSixElementRitualSeen",
+                                "then": [
+                                        { "type": "CONV", "value": "CRYSTAL_TREE_POST_RITUAL_REPEAT" }
+                                ],
+                                "else": [
+                                        { "type": "CONV", "value": "CRYSTAL_TREE_POST_CLEAR_CHECKPOINT" },
+                                        { "type": "CONV", "value": "CRYSTAL_TREE_SIX_ELEMENT_RITUAL" },
+                                        { "type": "FLAG", "key": "leonCrystalTreeTreated" },
+                                        { "type": "FLAG", "key": "lunaCrystalTreeStabilized" },
+                                        { "type": "WORLD_STATE", "key": "lunaMemoryStage", "value": 2 },
+                                        { "type": "STORY_EXP", "charId": 401, "amount": 300000, "rewardKey": "luna_crystal_tree_300k" },
+                                        { "type": "SET_EXP_MULTIPLIER", "charId": 401, "pct": 1800 },
+                                        { "type": "WORLD_STATE", "key": "crystalTreeState", "value": 5 },
+                                        { "type": "FLAG", "key": "crystalTreeSixElementRitualSeen" },
+                                        { "type": "FLAG", "key": "crystalTreeCleared", "refreshField": true },
+                                        { "type": "STEP", "value": 8 },
+                                        { "type": "SUB", "value": 0 },
+                                        { "type": "LOG", "value": "闇のプリズムを自分たちの目で確かめるため、魔王城へ向かうことになった。" }
+                                ]
+                        }
                 ],
                 "winActions": []
         },
