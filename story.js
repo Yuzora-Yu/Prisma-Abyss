@@ -53,8 +53,8 @@ const STORY_MANAGER_DATA = {
         "7-9": "結晶樹の根元へ向かおう",
         "7-10": "結晶樹を守り、ルーナとレオンの治療を続けよう",
         "7-11": "根元に残ったミネルバと話そう",
-        "8-0": "魔王城へ向かい、闇のプリズムの真実を確かめよう",
-        "9-0": "世界の中心に開いた深淵への亀裂を調べよう",
+        "8-0": "ガルヴァニア渓谷を越え、魔王城で闇のプリズムの真実を確かめよう",
+        "9-0": "奈落への洞窟を越え、統合の祭壇へ向かおう",
         "10-0": "深淵の魔窟の先に広がる異界を探索しよう",
         "10-1": "深淵を覆う結界を解こう",
         "10-2": "終焉の祭壇で混沌の根源を断とう"
@@ -3836,6 +3836,29 @@ const STORY_MANAGER_DATA = {
                         "text": "次は同じ敵を斬る。\nそれなら背中を預けられる。"
                 }
         ],
+        "CRYSTAL_TREE_GALVANIA_RUMBLE": [
+                { "name": "システム", "text": "そのとき――遠く西の方角から、地面を震わせるような轟音が響いた。" },
+                { "name": "ケイト", "charId": 104, "text": "……今の音。雷の要塞より、もっと西から……？" },
+                { "name": "ミネルバ", "charId": 206, "text": "山鳴りじゃないね。何か、ものすごく大きいものが壊れた音。" },
+                { "name": "シャオ", "charId": 105, "text": "魔王城の方角か……。" }
+        ],
+        "GALVANIA_GORGE_AFTER_CRYSTAL_TREE": [
+                { "name": "システム", "text": "渓谷を塞いでいたはずの巨大な城壁が崩れている。厚い門扉まで、原形が分からないほど打ち砕かれていた。" },
+                { "name": "シャオ", "charId": 105, "text": "これ……魔王軍が閉じてた門だよな。誰がこんな……。" },
+                { "name": "ケイト", "charId": 104, "text": "壊れてから、まだそれほど時間は経っていません。先へ進んだ何者かがいる……。" }
+        ],
+        "GALVANIA_GORGE_FALLEN_DEMON_HATRED": [
+                { "name": "倒れた魔族", "text": "……人間……め……。どこまで……奪えば……気が、済む……。" },
+                { "name": "システム", "text": "魔族はアルスたちを睨んだまま、最後の息を吐いた。" }
+        ],
+        "GALVANIA_GORGE_FALLEN_DEMON_WARNING": [
+                { "name": "倒れた魔族", "text": "門が……抜かれた……。このままでは……世界が……。" },
+                { "name": "倒れた魔族", "text": "……止め……なければ……。" },
+                { "name": "システム", "text": "その言葉を最後に、魔族の呼吸が止まった。" }
+        ],
+        "LOCKED_INTEGRATION_ALTAR_ROUTE": [
+                { "name": "ケイト", "charId": 104, "text": "ここへ直接進むのは危険です。奈落への洞窟側から侵食路を確保して、祭壇へ入る道を作りましょう。" }
+        ],
         "GALVANIA_CAVE_NORTH_BLOCKED": [
                 {
                         "name": "ケイト",
@@ -3848,26 +3871,26 @@ const STORY_MANAGER_DATA = {
                         "charId": 101
                 }
         ],
-        "MAP_SYSTEM_GALVANIA_CAVE_F1_ACTION_1": [{"name":"システム","text":"兵は「見える近道ほど、地の熱に誘われる。南へ急ぐなら高い岩をたどれ」と息絶え絶えに告げた。"}],
+        "MAP_SYSTEM_GALVANIA_CAVE_F1_ACTION_1": [{"name":"システム","text":"倒れた魔族兵の記録には「祭壇側の侵食が強い。低地へ誘われるな。急ぐなら高い岩をたどれ」と掠れた字で残されている。"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F1_ACTION_2": [{"name":"システム","text":"「・・・は輪を・・。火を・・・戻れ。高みの橋・・・次の闇へ・・」だけが読み取れた"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F2_ACTION_1": [{"name":"システム","text":"「柱を数えよ。三度目に迷い、四度目に上れ。端まで急ぐ者は輪の腹へ戻る」と読める。"}],
-        "MAP_SYSTEM_GALVANIA_CAVE_F2_ACTION_2": [{"name":"システム","text":"足跡は不自然に北へ伸びている。魔族の巡回はこの道だけを避けているようだ。"}],
+        "MAP_SYSTEM_GALVANIA_CAVE_F2_ACTION_2": [{"name":"システム","text":"魔族兵の足跡は不自然に北へ迂回している。この区画だけ、侵食の強い地脈を避けて巡回していたようだ。"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F3_ACTION_1": [{"name":"システム","text":"「湖は赤く、道は細い。まっすぐな橋ほど熱に沈む。黒炎の島は宝を守るだけ」とある。"}],
-        "MAP_SYSTEM_GALVANIA_CAVE_F3_ACTION_2": [{"name":"システム","text":"橋脚には魔王軍の焼印が残っている。補給路を急造した跡だ。"}],
+        "MAP_SYSTEM_GALVANIA_CAVE_F3_ACTION_2": [{"name":"システム","text":"橋脚には魔王軍の焼印と、何度も重ねた補修痕が残っている。深部の防衛線へ物資を運ぶため、長く維持されてきた補給路らしい。"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F3_ACTION_3": [{"name":"システム","text":"灰まみれの旅人は「火の島に欲を出すな。出口は北東の橋から南へ折れる」と残している。"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F4_ACTION_1": [{"name":"システム","text":"古い地図には、滑床を大きく迂回する赤い線が引かれている。"}],
-        "MAP_SYSTEM_GALVANIA_CAVE_F5_ACTION_1": [{"name":"システム","text":"箱には魔王城の紋章が焼き付けられている。兵糧、黒晶、予備の鎧が整然と並ぶ。"}],
+        "MAP_SYSTEM_GALVANIA_CAVE_F5_ACTION_1": [{"name":"システム","text":"箱には魔王城の紋章と「奈落防衛線」の印がある。兵糧、黒晶、予備の鎧が、いつでも補充できるよう整然と積まれている。"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F3_BOSS_1": [{"name":"システム","text":"黒炎の番人が、赤い宝箱の島だけを守っている。洞窟突破には関係なさそうだ。"}],
-        "MAP_SYSTEM_GALVANIA_CAVE_F4_BOSS_1": [{"name":"システム","text":"氷鎧の魔将が、古い金の鍵を握っている。先の補給路の近道を開ける鍵かもしれない。"}],
+        "MAP_SYSTEM_GALVANIA_CAVE_F4_BOSS_1": [{"name":"システム","text":"氷鎧の魔将が、古い金の鍵を握っている。深部防衛線へ急行するための補給路を開ける鍵かもしれない。"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F6_BOSS_1": [{"name":"システム","text":"宝の横穴を守る魔族がうずくまっている。洞窟突破には関係なさそうだ。"}],
         "LOCKED_DARK_CASTLE": [
                 {
                         "name": "システム",
-                        "text": "魔王城へ続く道を、王宮聖騎士の術式が幾重にも閉ざしている。"
+                        "text": "魔王城へ入るには、ガルヴァニア帝国内の正門を通る必要がある。"
                 },
                 {
                         "name": "ジョセフ",
-                        "text": "この結界は力任せじゃ破れねえ。王宮聖騎士の力を借りる必要がある。",
+                        "text": "正面から話を通すなら、レイラの立場が要る。今はまだ門前払いだろうな。",
                         "charId": 101
                 }
         ],
@@ -3885,90 +3908,124 @@ const STORY_MANAGER_DATA = {
         "DARK_CASTLE_ZELDRAS_ENCOUNTER": [
                 {
                         "name": "システム",
-                        "text": "西館二階、結界の間。黒い剣を携えた騎士が、青い封印石の前に立っている。"
+                        "text": "西館二階、結界の間。青い封印石の前で、大剣を背負った男が待ち受けている。"
                 },
                 {
                         "name": "常闇のゼルドラス",
-                        "text": "ここは西の結界。闇の王へ至る資格なき者は、青き鍵に触れることも許されぬ。"
+                        "text": "常闇のゼルドラスだ。聖女を置いて、貴様ら人間は去れ。"
                 },
                 {
-                        "name": "シャオ",
-                        "text": "魔王の部下なら、どいて。こっちは確かめたいことがある。",
-                        "charId": 105
+                        "name": "ルーナ",
+                        "text": "私は物ではありません。ここへ来ると決めたのも、私です。",
+                        "charId": 401
                 },
                 {
                         "name": "常闇のゼルドラス",
-                        "text": "ならば刃で示せ。怒りだけでこの城を進めると思うな。"
+                        "text": "……その意志が誰のものか、俺には測れん。だが王国は一度、我らから闇のプリズムを奪った。"
+                },
+                {
+                        "name": "アルス",
+                        "text": "奪いに来たんじゃない。壊れてるのか、守られてるのか、自分の目で確かめたいだけだ。",
+                        "charId": 301
+                },
+                {
+                        "name": "常闇のゼルドラス",
+                        "text": "ならば通るだけの覚悟を示せ。人間の都合で、聖女もプリズムも二度と使わせん。"
                 }
         ],
         "DARK_CASTLE_ZELDRAS_CLEAR": [
                 {
                         "name": "常闇のゼルドラス",
-                        "text": "よかろう。青き鍵を持って進め。だが玉座の前で、己の憎しみまで正義と呼ぶな。"
+                        "text": "……聖女に庇われるだけの者ではないか。青き鍵を持て。"
                 },
                 {
-                        "name": "シャオ",
-                        "text": "……わかってる。わかってるけど、簡単に割り切れないんだ。",
-                        "charId": 105
+                        "name": "ルーナ",
+                        "text": "ありがとうございます。",
+                        "charId": 401
+                },
+                {
+                        "name": "常闇のゼルドラス",
+                        "text": "礼は要らん。玉座で何を見ても、人間の正義だけで切り分けるな。それだけだ。"
                 }
         ],
         "DARK_CASTLE_ELMENAS_ENCOUNTER": [
                 {
                         "name": "システム",
-                        "text": "東館二階、結界の間。風のない部屋に、鈴のような声だけが響いている。"
+                        "text": "東館二階、結界の間。気配のない室内で、低い男の声が背後から響く。"
                 },
                 {
                         "name": "風詠のエルメナス",
-                        "text": "東の結界へようこそ。赤き鍵は、急ぐ者ほど遠ざかるわ。"
+                        "text": "風詠のエルメナス。赤き鍵は渡さん。闇のプリズムに近づく人間を、私は信用していない。"
+                },
+                {
+                        "name": "ケイト",
+                        "text": "私たちは、プリズムを利用する方法を探しに来たわけではありません。",
+                        "charId": 104
+                },
+                {
+                        "name": "風詠のエルメナス",
+                        "text": "『利用しない』と言いながら、王国は一度それを奪った。善意も命令も、結果の前では言い訳にならん。"
                 },
                 {
                         "name": "シャオ",
-                        "text": "回りくどい言い方はやめて。こっちは、魔王にも……あの人にも、聞きたいことがある。",
+                        "text": "だからって、何も見ないで帰れるわけないでしょ。",
                         "charId": 105
                 },
                 {
                         "name": "風詠のエルメナス",
-                        "text": "風は答えを運ぶだけ。受け止めるかどうかは、あなた次第よ。"
+                        "text": "なら、見たものを自分で考えろ。力だけで答えを決める者を、王の前へは通せん。"
                 }
         ],
         "DARK_CASTLE_ELMENAS_CLEAR": [
                 {
                         "name": "風詠のエルメナス",
-                        "text": "赤き鍵はあなたたちへ。……風が告げている。玉座で待つ者は、ただの敵ではないわ。"
+                        "text": "……なるほど。赤き鍵を持て。"
+                },
+                {
+                        "name": "風詠のエルメナス",
+                        "text": "急いで答えを決めるな。玉座で見たものを、まずそのまま見ろ。"
                 },
                 {
                         "name": "シャオ",
-                        "text": "……だったら、なおさら行く。",
+                        "text": "……やってみる。",
                         "charId": 105
                 }
         ],
         "DARK_CASTLE_BELET_ELM_ENCOUNTER": [
                 {
                         "name": "システム",
-                        "text": "本館二階、夢幻回廊。床も天井も歪み、進んだはずの道が背後へ戻っていく。"
+                        "text": "本館二階、夢幻回廊。歪む通路の中央で、一人の騎士が大剣を床へ突き立てている。"
                 },
                 {
                         "name": "冥騎士ベレト",
-                        "text": "赤と青の結界を越えたか。ならば最後は、己の影と戦う覚悟を見せろ。"
+                        "text": "冥騎士ベレト。赤と青を越えたことは認めよう。"
                 },
                 {
                         "name": "レイラ",
-                        "text": "この回廊そのものが試練になっています。迷いを突かれないでください。",
+                        "text": "あなたも、人間を信用できないから私たちを止めるのですか？",
                         "charId": 204
                 },
                 {
                         "name": "冥騎士ベレト",
-                        "text": "金の鍵は玉座への最後の鎖。欲しければ、夢ごと斬り払ってみせよ。"
+                        "text": "思想の差異になど興味はない。貴様らが魔王様への謁見にふさわしい実力を持つか、それだけだ。"
+                },
+                {
+                        "name": "冥騎士ベレト",
+                        "text": "金の鍵が欲しければ、俺を越えろ。言葉はその後で聞く。"
                 }
         ],
         "DARK_CASTLE_BELET_ELM_CLEAR": [
                 {
                         "name": "冥騎士ベレト",
-                        "text": "見事。金の鍵を持て。玉座の扉は、三つの鍵をそろえた者だけを通す。"
+                        "text": "見事だ。金の鍵を持て。"
+                },
+                {
+                        "name": "冥騎士ベレト",
+                        "text": "約束どおり、俺はもう止めん。魔王様の前では、剣も言葉も偽るな。"
                 },
                 {
                         "name": "レイラ",
-                        "text": "青、赤、金……これで謁見の間へ進めるはずです。",
+                        "text": "……承知しました。",
                         "charId": 204
                 }
         ],
@@ -4105,12 +4162,12 @@ const STORY_MANAGER_DATA = {
                 },
                 {
                         "name": "魔王ゼノン",
-                        "text": "六つが応えた今なら、世界中央の亀裂も開く。\n案内は、こいつに任せる。",
+                        "text": "この城の先に、我らが深淵の浸食を抑えてきた地下路がある。\n統合の祭壇へ行くなら、そこを通れ。",
                         "charId": 402
                 },
                 {
                         "name": "シャニー",
-                        "text": "……道は知ってる。\n今度は、黙って消えない。",
+                        "text": "奈落への洞窟……道は知ってる。\n今度は、黙って消えない。",
                         "charId": 306
                 },
                 {
@@ -5568,6 +5625,7 @@ const STORY_MANAGER_DATA = {
                                 "else": [
                                         { "type": "CONV", "value": "CRYSTAL_TREE_POST_CLEAR_CHECKPOINT" },
                                         { "type": "CONV", "value": "CRYSTAL_TREE_SIX_ELEMENT_RITUAL" },
+                                        { "type": "CONV", "value": "CRYSTAL_TREE_GALVANIA_RUMBLE" },
                                         { "type": "FLAG", "key": "leonCrystalTreeTreated" },
                                         { "type": "FLAG", "key": "lunaCrystalTreeStabilized" },
                                         { "type": "WORLD_STATE", "key": "lunaMemoryStage", "value": 2 },
@@ -5698,7 +5756,7 @@ const STORY_MANAGER_DATA = {
                         },
                         {
                                 "type": "LOG",
-                                "value": "闇の加護を得た。世界の中心の亀裂へ向かおう。"
+                                "value": "闇のプリズムの無事を確認した。奈落への洞窟を越え、統合の祭壇へ向かおう。"
                         }
                 ],
                 "winActions": []
@@ -6913,6 +6971,33 @@ const STORY_MANAGER_DATA = {
         },
         "post_light_palace_base_1": {
                 "actions": [{ "type": "CONV", "value": "POST_LIGHT_PALACE_BASE_1" }],
+                "winActions": []
+        },
+        "galvania_gorge_after_crystal_tree": {
+                "actions": [
+                        { "type": "CONV", "value": "GALVANIA_GORGE_AFTER_CRYSTAL_TREE" },
+                        { "type": "FLAG", "key": "galvaniaGorgeAftermathSeen" }
+                ],
+                "winActions": []
+        },
+        "galvania_gorge_fallen_demon_hatred": {
+                "actions": [
+                        { "type": "CONV", "value": "GALVANIA_GORGE_FALLEN_DEMON_HATRED" },
+                        { "type": "FLAG", "key": "galvaniaGorgeHatredDemonDead", "refreshField": true }
+                ],
+                "winActions": []
+        },
+        "galvania_gorge_fallen_demon_warning": {
+                "actions": [
+                        { "type": "CONV", "value": "GALVANIA_GORGE_FALLEN_DEMON_WARNING" },
+                        { "type": "FLAG", "key": "galvaniaGorgeWarningDemonDead", "refreshField": true }
+                ],
+                "winActions": []
+        },
+        "locked_integration_altar_route": {
+                "actions": [
+                        { "type": "CONV", "value": "LOCKED_INTEGRATION_ALTAR_ROUTE" }
+                ],
                 "winActions": []
         },
         "galvania_cave_north_blocked": {

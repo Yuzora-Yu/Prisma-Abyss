@@ -64,7 +64,7 @@ assert(story.includes('"7-9": "結晶樹の根元へ向かおう"'), '7-9 object
 assert(story.includes('"value": [652, 755, 652]'), 'Direct demon-army battle 2 composition is missing.');
 assert(story.includes('"noRecruit": true, "noQuestProgress": true'), 'Story demon battle must not leak recruitment/quest progress.');
 assert(story.includes('"7-11": "根元に残ったミネルバと話そう"'), '7-11 checkpoint objective must remain explicit.');
-assert(story.includes('"8-0": "魔王城へ向かい、闇のプリズムの真実を確かめよう"'), 'Crystal Tree completion must point to the revised Demon Castle objective.');
+assert(story.includes('"8-0": "ガルヴァニア渓谷を越え、魔王城で闇のプリズムの真実を確かめよう"'), 'Crystal Tree completion must point through Galvania Gorge to the revised Demon Castle objective.');
 
 assert((news.match(/date: "2026\/08\/10"/g) || []).length === 1, 'NEWS_DATA must keep one 2026/08/10 record.');
 assert(news.includes('結晶樹の六属性秘薬'), '2026/08/10 news must mention the six-element Crystal Tree medicine ritual.');

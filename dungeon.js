@@ -1472,28 +1472,33 @@ const Dungeon = {
                 }
                 return ok();
             case 'GALVANIA_CAVE': {
-                const entryKey = options.entryKey || 'north';
-                if (entryKey === 'south') {
-                    return flags.galvaniaCaveSouthOpened
+                const entryKey = options.entryKey || 'entrance';
+                const altarSide = entryKey === 'altarSide' || entryKey === 'south';
+                if (altarSide) {
+                    const legacyCleared = !!flags.galvaniaCaveSouthOpened && (flags.abyssOuterReached || step >= 10);
+                    return (flags.nadirCaveCleared || legacyCleared)
                         ? ok()
-                        : block('南口の岩戸は内側から開けられていない。北口から洞窟を抜ける必要がある。', null);
+                        : block('祭壇側の出口は、洞窟内部からまだ確保されていない。入口側から奈落への洞窟を抜ける必要がある。', null);
+                }
+                return flags.darkCastleCleared
+                    ? ok()
+                    : block('この侵食路へ向かうのは、魔王城で闇のプリズムの真実を確かめてからだ。', null);
+            }
+            case 'GALVANIA_CAVE_NORTH':
+                return flags.darkCastleCleared
+                    ? ok()
+                    : block('この侵食路へ向かうのは、魔王城で闇のプリズムの真実を確かめてからだ。', null);
+            case 'GALVANIA_CAVE_SOUTH':
+                return (flags.nadirCaveCleared || (!!flags.galvaniaCaveSouthOpened && (flags.abyssOuterReached || step >= 10)))
+                    ? ok()
+                    : block('祭壇側の出口は、洞窟内部からまだ確保されていない。', null);
+            case 'DARK_CASTLE':
+                if (!flags.crystalTreeCleared) {
+                    return block('闇のプリズムを確かめる前に、結晶樹でレオンとルーナの治療を終える必要がある。', null);
                 }
                 return hasLeila
                     ? ok()
-                    : block('すさまじい結界でふさがれている。', 'galvania_cave_north_blocked');
-            }
-            case 'GALVANIA_CAVE_NORTH':
-                return hasLeila
-                    ? ok()
-                    : block('すさまじい結界でふさがれている。', 'galvania_cave_north_blocked');
-            case 'GALVANIA_CAVE_SOUTH':
-                return flags.galvaniaCaveSouthOpened
-                    ? ok()
-                    : block('南口の岩戸は内側から開けられていない。北口から洞窟を抜ける必要がある。', null);
-            case 'DARK_CASTLE':
-                return hasLeila
-                    ? ok()
-                    : block('王宮聖騎士の結界が道を閉ざしている。', 'locked_dark_castle');
+                    : block('魔王城へ踏み込むには、王宮聖騎士レイラの力が必要だ。', 'locked_dark_castle');
             case 'DARK_SHRINE_RUINS':
                 return hasLeila
                     ? ok()

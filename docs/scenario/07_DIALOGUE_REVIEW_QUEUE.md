@@ -808,3 +808,38 @@ Implemented: 2026-08-10
 - 冒頭村へ同一感覚モチーフを薄く追加。
 - シャオの誤 `charId:301` を `105` へ修正。
 - implementation validation: `validate-crystal-tree-route-phase7c.js` / `validate-crystal-tree-six-element-phase7d.js`
+
+## DR-Phase8B-dark-castle-three-officers
+
+Status: implemented  
+Created: 2026-08-10  
+Updated: 2026-08-10
+
+### Target
+- file: `story.js`
+- script keys: `DARK_CASTLE_ZELDRAS_ENCOUNTER/CLEAR`, `DARK_CASTLE_ELMENAS_ENCOUNTER/CLEAR`, `DARK_CASTLE_BELET_ELM_ENCOUNTER/CLEAR`
+- map / area: 魔王城ガルヴァニア
+- storyStep-subStep: 8-0
+- speakers: 常闇のゼルドラス／風詠のエルメナス／冥騎士ベレト
+
+### Current implemented text before revision
+- ゼルドラスは「資格」「怒り」を中心にした旧試練会話。
+- エルメナスは「遠ざかるわ」「あなた次第よ」「ただの敵ではないわ」等、女性口調として実装されていた。
+- ベレトは夢幻回廊／己の影を中心とする旧試練会話。
+
+### Concern
+- 三幹部はユーザー正典で全員男性。
+- 戦闘理由が、魔王軍側の人間不信・闇プリズム防衛・謁見資格という新版設定を十分に反映していなかった。
+
+### User decision
+- decision: approved_rewrite
+- selected option: 大幅修正
+- user notes: 三幹部は全員男性。ゼルドラス／エルメナスは人間側を信用せず通さない。ベレトは思想差より謁見資格を実力で測る。
+- approved date: 2026-08-10
+
+### Implementation tracking
+- implemented file: `story.js`
+- implemented script keys: 上記6キー
+- implemented date: 2026-08-10
+- source draft: `docs/scenario/38_DARK_CASTLE_OFFICERS_AND_EMPIRE_SHOPS_PHASE8B_20260810.md`
+- validation: `tools/validation/validate-dark-castle-phase8b.js`

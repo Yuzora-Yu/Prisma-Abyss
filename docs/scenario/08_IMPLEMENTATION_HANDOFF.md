@@ -109,3 +109,39 @@ Codexは実装後に以下を報告する。
 ### User follow-up needed
 - 
 ```
+
+---
+
+## IMPL-20260810-PHASE8A-GALVANIA-GEOGRAPHY
+
+Status: implemented  
+Source:
+- scenario file: `docs/scenario/37_GALVANIA_GEOGRAPHY_PHASE8A_20260810.md`
+- approval status: user-approved coordinates / geography direction
+
+### Target
+- files: `map.js`, `main.js`, `dungeon.js`, `story.js`, `phaser-field.js`, `news.js`
+- current storyStep-subStep: `8-0`
+- target storyStep-subStep: geography reorg only; main step remains `8-0` until Castle clear
+
+### Change summary
+- Old Galvania Cave world pins -> new Galvania Gorge at x31,y40 / x35,y42.
+- Old Castle world pin x8,y50 -> new Galvania Empire M0; Castle entrance moved inside Empire.
+- Old Galvania Cave dungeon -> Nadir Cave at x38,y55 / x42,y55 after Castle.
+- Integration Altar gated behind Nadir Cave exit.
+- Crystal Tree clear rumble and Gorge fallen-demon aftermath wired.
+- Old-save discovery and late-story migration added.
+
+### Flags changed
+- set: `galvaniaGorgeAftermathSeen`, `galvaniaGorgeHatredDemonDead`, `galvaniaGorgeWarningDemonDead`, `nadirCaveCleared`
+- check: `crystalTreeCleared`, `darkCastleCleared`
+
+### Risks
+- save compatibility: handled by visited-area and late-story migration.
+- route skip: Integration Altar and Sky Prism both check `nadirCaveCleared`.
+- premature spoiler: Alan identity remains internal only.
+- M0 quality: Galvania Empire is deliberately not final town geography.
+
+### Validation
+- `validate-galvania-geography-phase8a.js`
+- full `run-all.js` baseline comparison required before delivery.

@@ -183,6 +183,7 @@
         THUNDER_FORT: { key: 'overlay_decor_thunder_fort_wiring', frequency: 40, alpha: 0.88, animate: 'electric' },
         LIGHT_PALACE: { key: 'overlay_decor_light_palace_prism', frequency: 40, alpha: 0.66 },
         GALVANIA_CAVE: { key: 'overlay_decor_galvania_crystal', frequency: 40, alpha: 0.72 },
+        GALVANIA_GORGE: { key: 'overlay_decor_galvania_crystal', frequency: 44, alpha: 0.68 },
         DARK_CASTLE: { key: 'overlay_decor_dark_castle_chain', frequency: 40, alpha: 0.70 },
         CRENA_CAVE: { key: null, disabled: true, reason: 'authored-clear-floor' },
         SEABED_TEMPLE: { key: 'overlay_decor_seabed_temple_ripple', frequency: 40, alpha: 0.70 },

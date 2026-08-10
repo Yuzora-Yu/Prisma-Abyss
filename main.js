@@ -1993,6 +1993,51 @@ const App = {
         }
 
         // 既存セーブ救済: 固有MAP内で再開した場合は、そのMAPを発見済みにする。
+        // 2026-08-10 Phase8A: ガルヴァニア地理再編の既存セーブ移行。
+        // 旧「ガルヴァニアへの洞窟」の発見履歴は、同じワールド座標を引き継いだ
+        // 「ガルヴァニア渓谷」へ移す。奈落への洞窟は魔王城後に新たに発見する場所として扱う。
+        if (App.data.progress) {
+            const flags = App.data.progress.flags || (App.data.progress.flags = {});
+            const visited = App.data.progress.visitedFixedMaps || (App.data.progress.visitedFixedMaps = {});
+            const oldCaveRecord = visited.GALVANIA_CAVE;
+            const oldCaveDiscovery = !!oldCaveRecord && (
+                String(oldCaveRecord.name || '') === 'ガルヴァニアへの洞窟' ||
+                (Number(oldCaveRecord.worldX) === 31 && Number(oldCaveRecord.worldY) === 40)
+            );
+            if (oldCaveDiscovery) {
+                if (!visited.GALVANIA_GORGE) {
+                    visited.GALVANIA_GORGE = {
+                        ...oldCaveRecord,
+                        areaKey: 'GALVANIA_GORGE',
+                        name: 'ガルヴァニア渓谷',
+                        kind: 'field',
+                        worldX: 31,
+                        worldY: 40,
+                        worldKey: 'WORLD',
+                        parentAreaKey: null
+                    };
+                }
+                delete visited.GALVANIA_CAVE;
+            }
+            const oldCastleRecord = visited.DARK_CASTLE;
+            if (oldCastleRecord && !visited.GALVANIA_EMPIRE && (flags.crystalTreeCleared || flags.darkCastleCleared)) {
+                visited.GALVANIA_EMPIRE = {
+                    ...oldCastleRecord,
+                    areaKey: 'GALVANIA_EMPIRE',
+                    name: 'ガルヴァニア帝国',
+                    kind: 'field',
+                    worldX: 8,
+                    worldY: 50,
+                    worldKey: 'WORLD',
+                    parentAreaKey: null
+                };
+            }
+            // すでに統合の祭壇より先へ進んでいる旧セーブだけは、新しい中継ダンジョンで逆戻りさせない。
+            if (!flags.nadirCaveCleared && (flags.abyssOuterReached || Number(App.data.progress.storyStep || 0) >= 10)) {
+                flags.nadirCaveCleared = true;
+            }
+        }
+
         if (App.data.location && App.data.progress && typeof App.discoverFixedMap === 'function') {
             const currentArea = App.data.location.area;
             const isCurrentFixedMap = (typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[currentArea]) ||
@@ -3315,8 +3360,9 @@ const App = {
             'BIG_TOWER',
             'LIGHT_PALACE',
             'DARK_SHRINE_RUINS',
+            'GALVANIA_GORGE',
+            'GALVANIA_EMPIRE',
             'GALVANIA_CAVE',
-            'DARK_CASTLE',
             'GREZELIA_FORBIDDEN',
             'ABYSS_FIELD',
             'MEMORY_REALM',
@@ -3440,6 +3486,9 @@ const App = {
             : null;
         if (info.kind === 'world' && targetWorld?.skyPrismEligible === false) {
             return { ok: false, message: '深淵世界はスカイプリズムの座標に定着しない。' };
+        }
+        if (areaKey === 'ABYSS_FIELD' && !App.data?.progress?.flags?.nadirCaveCleared) {
+            return { ok: false, message: '統合の祭壇へ向かうには、先に奈落への洞窟の祭壇側出口を確保する必要がある。' };
         }
         const dest = App.getFixedMapWorldDestination(areaKey);
         if (!dest) return { ok: false, message: 'この場所のフィールド座標が見つかりません。' };
@@ -9679,6 +9728,13 @@ const Field = {
             }
             return false;
         }
+        if (targetAreaKey === 'ABYSS_FIELD' && !App.data?.progress?.flags?.nadirCaveCleared) {
+            App.log('統合の祭壇へ続く道は、奈落側からの侵食で寸断されている。');
+            if (typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
+                StoryManager.executeEvent('locked_integration_altar_route');
+            }
+            return false;
+        }
 
         const areaDef = FIXED_MAPS[targetAreaKey];
         const sourceIsFixedMap = !!Field.currentMapData?.isFixed && Field.isFixedMapAreaKey(App.data?.location?.area);
@@ -11749,7 +11805,7 @@ const Field = {
             }
             if (action.log) App.log(action.log);
             App.save();
-            Dungeon.startFixed(action.target);
+            Dungeon.startFixed(action.target, { entryKey: action.entryKey || null });
             return;
         }
 

@@ -105,6 +105,7 @@ const themeDecorByTheme = {
     THUNDER_FORT: 'overlay_decor_thunder_fort_wiring',
     LIGHT_PALACE: 'overlay_decor_light_palace_prism',
     GALVANIA_CAVE: 'overlay_decor_galvania_crystal',
+    GALVANIA_GORGE: 'overlay_decor_galvania_crystal',
     DARK_CASTLE: 'overlay_decor_dark_castle_chain',
     SEABED_TEMPLE: 'overlay_decor_seabed_temple_ripple',
     DARK_SHRINE_RUINS: 'overlay_decor_dark_shrine_sigil',

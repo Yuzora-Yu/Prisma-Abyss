@@ -736,6 +736,46 @@ const TILE_THEMES = {
             color: "#b8892f"
         }
     },
+    GALVANIA_GORGE: {
+        I: {
+            img: "tile_summit_temple_mountain_trail",
+            color: "#68645f",
+            terrain: true,
+            variants: [
+                "tile_summit_temple_mountain_trail",
+                "tile_summit_temple_mountain_trail_2"
+            ]
+        },
+        W: {
+            img: "tile_galvania_wall",
+            color: "#252630",
+            variants: [
+                "tile_galvania_wall",
+                "tile_galvania_wall_2",
+                "tile_galvania_wall_3",
+                "tile_galvania_wall_4"
+            ]
+        },
+        T: {
+            img: "tile_summit_temple_mountain_trail",
+            color: "#77736b",
+            variants: [
+                "tile_summit_temple_mountain_trail",
+                "tile_summit_temple_mountain_trail_2"
+            ]
+        },
+        G: {
+            img: "tile_galvania_floor",
+            color: "#3a3840",
+            variants: [
+                "tile_galvania_floor",
+                "tile_galvania_floor_2",
+                "tile_galvania_floor_3",
+                "tile_galvania_floor_4"
+            ]
+        },
+        S: { img: "tile_summit_temple_mountain_trail", color: "#d7b45a" }
+    },
     DARK_CASTLE: {
         I: {
             img: "tile_summit_temple_mountain_trail",
@@ -1210,6 +1250,9 @@ const DUNGEON_WALL_FACE_THEMES = {
     GALVANIA_CAVE: {
         img: "tile_galvania_wall_face"
     },
+    GALVANIA_GORGE: {
+        img: "tile_galvania_wall_face"
+    },
     DARK_SHRINE_RUINS: {
         img: "tile_dark_shrine_wall_face",
         mode: "overlay"
@@ -1304,6 +1347,11 @@ const MAP_FLOOR_DECOR_THEMES = {
         key: "overlay_decor_galvania_crystal",
         frequency: 40,
         alpha: 0.72
+    },
+    GALVANIA_GORGE: {
+        key: "overlay_decor_galvania_crystal",
+        frequency: 54,
+        alpha: 0.5
     },
     DARK_CASTLE: {
         key: "overlay_decor_dark_castle_chain",
@@ -1478,40 +1526,71 @@ const STORY_DATA = {
                 color: "#eef0e8"
             }
         },
-        GALVANIA_CAVE: {
-            name: "ガルヴァニアへの洞窟",
-            rank: 68,
+        GALVANIA_GORGE: {
+            name: "ガルヴァニア渓谷",
+            rank: 72,
             centerX: 31,
             centerY: 40,
-            defaultEntryKey: "north",
+            defaultEntryKey: "fortSide",
+            fieldTile: {
+                img: "overlay_field_fortress",
+                color: "#5b5150"
+            },
+            entrances: [
+                {
+                    x: 31,
+                    y: 40,
+                    entryKey: "fortSide",
+                    label: "要塞側"
+                },
+                {
+                    x: 35,
+                    y: 42,
+                    entryKey: "empireSide",
+                    label: "帝国側"
+                }
+            ]
+        },
+        GALVANIA_CAVE: {
+            name: "奈落への洞窟",
+            rank: 86,
+            centerX: 38,
+            centerY: 55,
+            defaultEntryKey: "entrance",
             fieldTile: {
                 img: "overlay_field_cave",
                 color: "#303541"
             },
             entrances: [
                 {
-                    x: 31,
-                    y: 40,
-                    entryKey: "north",
-                    label: "北口"
+                    x: 38,
+                    y: 55,
+                    entryKey: "entrance",
+                    label: "入口側"
                 },
                 {
-                    x: 35,
-                    y: 42,
-                    entryKey: "south",
-                    label: "南口"
+                    x: 42,
+                    y: 55,
+                    entryKey: "altarSide",
+                    label: "祭壇側"
                 }
             ]
         },
-        DARK_CASTLE: {
-            name: "魔王城ガルヴァニア",
-            rank: 60,
+        GALVANIA_EMPIRE: {
+            name: "ガルヴァニア帝国",
+            rank: 78,
             centerX: 8,
             centerY: 50,
             fieldTile: {
                 img: "overlay_field_darkcastle",
-                color: "#db3b4d"
-            }
+                color: "#6e5660"
+            },
+            entryRequiredFlag: "crystalTreeCleared",
+            entryLockedText: "魔王軍の防衛線が残っている。先にレオンとルーナの治療を終えよう。"
+        },
+        DARK_CASTLE: {
+            name: "魔王城ガルヴァニア",
+            rank: 80
         },
         ABYSS: {
             name: "深淵の魔窟",
@@ -1524,14 +1603,16 @@ const STORY_DATA = {
             }
         },
         ABYSS_FIELD: {
-            name: "深淵の魔窟 外縁",
-            rank: 70,
+            name: "統合の祭壇",
+            rank: 92,
             centerX: 51,
             centerY: 55,
             fieldTile: {
                 img: "overlay_field_lost",
                 color: "#303541"
-            }
+            },
+            entryRequiredFlag: "nadirCaveCleared",
+            entryLockedText: "統合の祭壇へ続く侵食路は、奈落への洞窟側から確保しなければ進めない。"
         },
         FOREST_WIND_HOLE: {
             name: "森の風穴",
@@ -1785,14 +1866,14 @@ const MAP_MASTER = Object.freeze({
     LIGHT_PALACE_OUTSKIRTS: { id: "MAP000022", name: "光の宮殿グランプリズマ周辺" },
     LIGHT_PALACE: { id: "MAP000023", name: "光の宮殿グランプリズマ" },
     DARK_SHRINE_RUINS: { id: "MAP000024", name: "闇の神殿エクリプス跡" },
-    GALVANIA_CAVE: { id: "MAP000025", name: "ガルヴァニアへの洞窟" },
-    DARK_CASTLE_OUTSKIRTS: { id: "MAP000026", name: "魔王城ガルヴァニア周辺" },
+    GALVANIA_CAVE: { id: "MAP000025", name: "奈落への洞窟" },
+    DARK_CASTLE_OUTSKIRTS: { id: "MAP000026", name: "ガルヴァニア帝国周辺" },
     DARK_CASTLE: { id: "MAP000027", name: "魔王城ガルヴァニア" },
     TRIAL_ISLAND_OUTSKIRTS: { id: "MAP000028", name: "最果ての祠周辺" },
     TRIAL_ISLAND: { id: "MAP000029", name: "最果ての祠" },
     GREZELIA_FORBIDDEN: { id: "MAP000030", name: "禁則地グレゼリア" },
-    ABYSS_FIELD_OUTSKIRTS: { id: "MAP000031", name: "深淵の魔窟外縁周辺" },
-    ABYSS_FIELD: { id: "MAP000032", name: "深淵の魔窟外縁" },
+    ABYSS_FIELD_OUTSKIRTS: { id: "MAP000031", name: "統合の祭壇周辺" },
+    ABYSS_FIELD: { id: "MAP000032", name: "統合の祭壇" },
     ABYSS: { id: "MAP000033", name: "深淵" },
     SUMMIT_TEMPLE_OUTSKIRTS: { id: "MAP000034", name: "頂の神殿周辺" },
     SUMMIT_TEMPLE: { id: "MAP000035", name: "頂の神殿" },
@@ -1833,7 +1914,9 @@ const MAP_MASTER = Object.freeze({
     PROLOGUE_FINAL_ALTAR: { id: "MAP000070", name: "五年前・終焉の祭壇" },
     REXNOTE_ESTATE: { id: "MAP000071", name: "レクスノート邸" },
     UNDERSEA_VOLCANO: { id: "MAP000072", name: "海底火山" },
-    CRYSTAL_TREE: { id: "MAP000073", name: "結晶樹の秘跡" }
+    CRYSTAL_TREE: { id: "MAP000073", name: "結晶樹の秘跡" },
+    GALVANIA_GORGE: { id: "MAP000074", name: "ガルヴァニア渓谷" },
+    GALVANIA_EMPIRE: { id: "MAP000075", name: "ガルヴァニア帝国" }
 });
 
 const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
@@ -1843,7 +1926,7 @@ const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
 
 const FIXED_AREA_MAP_KEYS = Object.freeze({
     PROLOGUE_WEST_HILL: "PROLOGUE_WEST_HILL", PROLOGUE_SOUTH_VILLAGE: "PROLOGUE_SOUTH_VILLAGE", PROLOGUE_NORTH_VILLAGE: "PROLOGUE_NORTH_VILLAGE",
-    REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO", CRYSTAL_TREE: "CRYSTAL_TREE",
+    REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO", CRYSTAL_TREE: "CRYSTAL_TREE", GALVANIA_GORGE: "GALVANIA_GORGE", GALVANIA_EMPIRE: "GALVANIA_EMPIRE",
     START_VILLAGE: "START_VILLAGE", FIRE_VILLAGE: "FIRE_VILLAGE", WIND_VILLAGE: "WIND_VILLAGE", WATER_CITY: "WATER_CITY",
     ABYSS_FIELD: "ABYSS_FIELD", RUINED_SHRINE: "RUINED_SHRINE", TRIAL_ISLAND: "TRIAL_ISLAND", SUMMIT_TEMPLE: "SUMMIT_TEMPLE",
     START_CAVE: "START_CAVE", FOREST_WIND_HOLE: "FOREST_WIND_HOLE", IGNIS_VOLCANO: "IGNIS_VOLCANO",
@@ -1875,8 +1958,8 @@ const FIELD_ENCOUNTER_ZONES = [
     { id: "BIG_TOWER_SHORE", mapId: MAP_IDS.BIG_TOWER_OUTSKIRTS, name: "大灯台周辺", rank: 56, centerX: 21, centerY: 79, radius: 30 },
     { id: "THUNDER_FRONTIER", mapId: MAP_IDS.THUNDER_FORT_OUTSKIRTS, name: "ライザーク要塞周辺", rank: 51, centerX: 45, centerY: 36, radius: 24 },
     { id: "LIGHT_PALACE_GROVE", mapId: MAP_IDS.LIGHT_PALACE_OUTSKIRTS, name: "光の宮殿グランプリズマ周辺", rank: 61, centerX: 67, centerY: 48, radius: 18 },
-    { id: "DARK_WASTES", mapId: MAP_IDS.DARK_CASTLE_OUTSKIRTS, name: "魔王城ガルヴァニア周辺", rank: 71, centerX: 8, centerY: 50, radius: 30 },
-    { id: "ABYSS_EDGE", mapId: MAP_IDS.ABYSS_FIELD_OUTSKIRTS, name: "深淵の魔窟外縁周辺", rank: 81, centerX: 51, centerY: 55, radius: 20, priority: 1 },
+    { id: "DARK_WASTES", mapId: MAP_IDS.DARK_CASTLE_OUTSKIRTS, name: "ガルヴァニア帝国周辺", rank: 78, centerX: 8, centerY: 50, radius: 30 },
+    { id: "ABYSS_EDGE", mapId: MAP_IDS.ABYSS_FIELD_OUTSKIRTS, name: "統合の祭壇周辺", rank: 92, centerX: 51, centerY: 55, radius: 20, priority: 1 },
     { id: "ABYSS_CARMENA_FIELD", worldKey: "ABYSS_WORLD", mapId: MAP_IDS.CARMENA_OUTSKIRTS, name: "カルメナ周辺", rank: 88, centerX: 31, centerY: 52, radius: 24, rect: { x1: 0, y1: 39, x2: 77, y2: 63 }, priority: 1 },
     { id: "ABYSS_VISTA_FIELD", worldKey: "ABYSS_WORLD", mapId: MAP_IDS.VISTA_OUTSKIRTS, name: "ビスタ周辺", rank: 98, centerX: 42, centerY: 32, radius: 24, rect: { x1: 0, y1: 23, x2: 77, y2: 38 }, priority: 2 },
     { id: "ABYSS_LEGACION_FIELD", worldKey: "ABYSS_WORLD", mapId: MAP_IDS.LEGACION_OUTSKIRTS, name: "レガシオン周辺", rank: 108, centerX: 44, centerY: 15, radius: 20, rect: { x1: 0, y1: 0, x2: 77, y2: 22 }, priority: 3 },
@@ -5417,7 +5500,7 @@ const FIXED_MAPS = {
         "floorId": "MAP000015-00"
     },
     "ABYSS_FIELD": {
-        "name": "深淵の魔窟 外縁",
+        "name": "統合の祭壇",
         "themeKey": "ABYSS_FIELD",
         "tileOverrides": {},
         "width": 17,
@@ -5721,8 +5804,8 @@ const FIXED_MAPS = {
                     "height": 3
                 },
                 "interactFromAdjacent": true,
-                "label": "魔窟に入る",
-                "log": "闇がどこまでも続いているような穴がある。",
+                "label": "深淵の亀裂を調べる",
+                "log": "統合の祭壇の中心で、深淵へ続く亀裂が脈打っている。",
                 "type": "abyssDungeon",
                 "target": "CARMENA",
                 "events": [
@@ -7052,6 +7135,482 @@ const FIXED_MAPS = {
         ],
         "mapId": "MAP000060",
         "floorId": "MAP000060-00",
+        "useHabitatEncounters": false
+    },
+    "GALVANIA_GORGE": {
+        "name": "ガルヴァニア渓谷",
+        "themeKey": "GALVANIA_GORGE",
+        "width": 49,
+        "height": 31,
+        "entryPoint": {
+            "x": 46,
+            "y": 15
+        },
+        "entryPoints": {
+            "fortSide": {
+                "x": 46,
+                "y": 15
+            },
+            "empireSide": {
+                "x": 2,
+                "y": 15
+            }
+        },
+        "battleBg": "battle_bg_galvania_cave",
+        "useHabitatEncounters": true,
+        "encounterRank": 72,
+        "encounterRankMin": 68,
+        "encounterRankMax": 76,
+        "randomEncounterRateMultiplier": 0.8,
+        "impassableTiles": [
+            "W",
+            "I"
+        ],
+        "entryEventId": "galvania_gorge_after_crystal_tree",
+        "entryEventFlag": "galvaniaGorgeAftermathSeen",
+        "entryEventConditions": {
+            "requiredFlag": "crystalTreeCleared"
+        },
+        "tiles": [
+            "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIGGIGGIGGIGGIGGIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WGGTTTTTTTTTTTTTTTIGGIGIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WTTTTTTTTTTTTTTTTTTTTTTGIGIIIIIIIIIIIIIIIIIIIIIIW",
+            "WTTTTTTTTTTTTTTTTTTTTTTTTTGIGGIIIIIIIIIIIIIIIIGGW",
+            "WTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGIGGIGGIGGIGGITTW",
+            "WTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTW",
+            "WSTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTSW",
+            "WTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTW",
+            "WTTIGGIGGIGGIGGIGGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTW",
+            "WGGIIIIIIIIIIIIIIIIGGIGTTTTTTTTTTTTTTTTTTTTTTTTTW",
+            "WIIIIIIIIIIIIIIIIIIIIIIGIGTTTTTTTTTTTTTTTTTTTTTTW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIGIGGITTTTTTTTTTTTTTTGGW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGGIGGIGGIGGIGGIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIW",
+            "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+        ],
+        "nextActorPlacementId": 3,
+        "mapActors": [
+            {
+                "placementId": 1,
+                "actorId": "galvania_gorge_fallen_demon_hatred",
+                "name": "倒れた魔族",
+                "x": 20,
+                "y": 13,
+                "imageKey": "overlay_npc_bronze_knight",
+                "baseTile": "T",
+                "states": [
+                    {
+                        "stateId": "dying",
+                        "priority": 10,
+                        "when": {
+                            "requiredFlags": [
+                                "crystalTreeCleared"
+                            ],
+                            "missingFlags": [
+                                "galvaniaGorgeHatredDemonDead"
+                            ]
+                        },
+                        "action": {
+                            "label": "倒れた魔族に声をかける",
+                            "type": "storyEvent",
+                            "eventId": "galvania_gorge_fallen_demon_hatred"
+                        }
+                    },
+                    {
+                        "stateId": "dead",
+                        "priority": 0,
+                        "when": {
+                            "requiredFlags": [
+                                "galvaniaGorgeHatredDemonDead"
+                            ]
+                        },
+                        "action": {
+                            "label": "倒れた魔族を調べる",
+                            "type": "log",
+                            "log": "魔族はすでに息をしていない。"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 2,
+                "actorId": "galvania_gorge_fallen_demon_warning",
+                "name": "倒れた魔族",
+                "x": 18,
+                "y": 17,
+                "imageKey": "overlay_npc_bronze_knight",
+                "baseTile": "T",
+                "states": [
+                    {
+                        "stateId": "dying",
+                        "priority": 10,
+                        "when": {
+                            "requiredFlags": [
+                                "crystalTreeCleared"
+                            ],
+                            "missingFlags": [
+                                "galvaniaGorgeWarningDemonDead"
+                            ]
+                        },
+                        "action": {
+                            "label": "倒れた魔族に声をかける",
+                            "type": "storyEvent",
+                            "eventId": "galvania_gorge_fallen_demon_warning"
+                        }
+                    },
+                    {
+                        "stateId": "dead",
+                        "priority": 0,
+                        "when": {
+                            "requiredFlags": [
+                                "galvaniaGorgeWarningDemonDead"
+                            ]
+                        },
+                        "action": {
+                            "label": "倒れた魔族を調べる",
+                            "type": "log",
+                            "log": "魔族はすでに息をしていない。"
+                        }
+                    }
+                ]
+            }
+        ],
+        "blockingObjects": [
+            {
+                "x": 24,
+                "y": 12,
+                "missingFlag": "crystalTreeCleared",
+                "baseTile": "T",
+                "log": "魔王軍の城壁と巨大な門扉が渓谷を完全に塞いでいる。今は越えられない。"
+            },
+            {
+                "x": 24,
+                "y": 13,
+                "missingFlag": "crystalTreeCleared",
+                "baseTile": "T",
+                "log": "魔王軍の城壁と巨大な門扉が渓谷を完全に塞いでいる。今は越えられない。"
+            },
+            {
+                "x": 24,
+                "y": 14,
+                "missingFlag": "crystalTreeCleared",
+                "baseTile": "T",
+                "log": "魔王軍の城壁と巨大な門扉が渓谷を完全に塞いでいる。今は越えられない。"
+            },
+            {
+                "x": 24,
+                "y": 15,
+                "missingFlag": "crystalTreeCleared",
+                "baseTile": "T",
+                "log": "魔王軍の城壁と巨大な門扉が渓谷を完全に塞いでいる。今は越えられない。"
+            },
+            {
+                "x": 24,
+                "y": 16,
+                "missingFlag": "crystalTreeCleared",
+                "baseTile": "T",
+                "log": "魔王軍の城壁と巨大な門扉が渓谷を完全に塞いでいる。今は越えられない。"
+            },
+            {
+                "x": 24,
+                "y": 17,
+                "missingFlag": "crystalTreeCleared",
+                "baseTile": "T",
+                "log": "魔王軍の城壁と巨大な門扉が渓谷を完全に塞いでいる。今は越えられない。"
+            },
+            {
+                "x": 24,
+                "y": 18,
+                "missingFlag": "crystalTreeCleared",
+                "baseTile": "T",
+                "log": "魔王軍の城壁と巨大な門扉が渓谷を完全に塞いでいる。今は越えられない。"
+            }
+        ],
+        "mapActions": [
+            {
+                "x": 24,
+                "y": 15,
+                "type": "log",
+                "label": "城門を調べる",
+                "log": "魔王軍の城壁と巨大な門扉が渓谷を完全に塞いでいる。今は越えられない。",
+                "missingFlag": "crystalTreeCleared",
+                "imageKey": "overlay_field_fortress",
+                "drawWidth": 54,
+                "drawHeight": 70,
+                "baseTile": "T",
+                "blocksMovement": false,
+                "interactFromAdjacent": true
+            },
+            {
+                "x": 24,
+                "y": 15,
+                "type": "log",
+                "label": "破壊された城門を調べる",
+                "log": "魔王軍の巨大な門扉と城壁が、凄まじい力で打ち砕かれている。誰が破ったのかは分からない。",
+                "requiredFlag": "crystalTreeCleared",
+                "imageKey": "overlay_abyss_outer_fallen_pillar",
+                "baseTile": "T",
+                "blocksMovement": false
+            },
+            {
+                "x": 17,
+                "y": 11,
+                "type": "log",
+                "label": "崩れた防壁を調べる",
+                "log": "防壁には古い補修跡が幾重にも重なっている。最近造られたものではない。",
+                "requiredFlag": "crystalTreeCleared",
+                "baseTile": "T"
+            }
+        ],
+        "worldExits": [
+            {
+                "x": 47,
+                "y": 15,
+                "area": "WORLD",
+                "worldKey": "WORLD",
+                "worldX": 31,
+                "worldY": 40
+            },
+            {
+                "x": 1,
+                "y": 15,
+                "area": "WORLD",
+                "worldKey": "WORLD",
+                "worldX": 35,
+                "worldY": 42
+            }
+        ],
+        "mapId": "MAP000074",
+        "floorId": "MAP000074-00"
+    },
+    "GALVANIA_EMPIRE": {
+        "name": "ガルヴァニア帝国",
+        "themeKey": "DARK_CASTLE",
+        "width": 55,
+        "height": 41,
+        "entryPoint": {
+            "x": 27,
+            "y": 37
+        },
+        "skyPrismEntryPoint": {
+            "x": 27,
+            "y": 37
+        },
+        "battleBg": "battle_bg_dark_castle",
+        "randomEncounterDisabled": true,
+        "disableRandomEncounters": true,
+        "tiles": [
+            "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+            "WGGGGGGGGGGGGGGGGGGGGGGTTTTTTTTTGGGGGGGGGGGGGGGGGGGGGGW",
+            "WGGGGGGGGGGGGGGGGGGGGGGTTTTTTTTTGGGGGGGGGGGGGGGGGGGGGGW",
+            "WGGGGGGGGGGGGGGGGGGGGGGTTTTTTTTTGGGGGGGGGGGGGGGGGGGGGGW",
+            "WGGGWWWWWWWWWWGGWWWWWWWTTTTTTTTTWWWWWWWWGGWWWWWWWWWGGGW",
+            "WGGGWWWWWWWWWWGGWWWWWWWTTTTTTTTTWWWWWWWWGGWWWWWWWWWGGGW",
+            "WGGGWWWWWWWWWWGGWWWWWWWTTTTTTTTTWWWWWWWWGGWWWWWWWWWGGGW",
+            "WGGGWWWWWWWWWWGGWWWWWWWTTTTTTTTTWWWWWWWWGGWWWWWWWWWGGGW",
+            "WGGGWWWWWWWWWWGGWWWWWWWGTTTTTTTGWWWWWWWWGGWWWWWWWWWGGGW",
+            "WGGGGGGGGTTTGGGGGTTTGGGGTTTTTTTGGGGTTTGGGGGTTTGGGGGGGGW",
+            "WGGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGW",
+            "WGGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGW",
+            "WGGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGGGGGGTTTGGGGGTTTGGGGTTTTTTTGGGGTTTGGGGGTTTGGGGGGGGW",
+            "WGGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGW",
+            "WGGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGW",
+            "WGGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGWWWWWWTTWWWWWWWWWGGGTTTTTTTGGGWWWWWWWWWTTWWWWWWGGGW",
+            "WGGGGGGGGTTTGGGGGTTTGGGGTTTTTTTGGGGTTTGGGGGTTTGGGGGGGGW",
+            "WGGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGW",
+            "WGGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGW",
+            "WGGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGW",
+            "WGGGWWWWWWWWWGGWWWWWWWGGTTTTTTTGGWWWWWWWWGGWWWWWWWWGGGW",
+            "WGGGWWWWWWWWWGGWWWWWWWGGTTTTTTTGGWWWWWWWWGGWWWWWWWWGGGW",
+            "WGGGWWWWWWWWWGGWWWWWWWGGTTTTTTTGGWWWWWWWWGGWWWWWWWWGGGW",
+            "WGGGWWWWWWWWWGGWWWWWWWGGTTTTTTTGGWWWWWWWWGGWWWWWWWWGGGW",
+            "WGGGWWWWWWWWWGGWWWWWWWGGTTTTTTTGGWWWWWWWWGGWWWWWWWWGGGW",
+            "WGGGGGGGGTTTGGGGGTTTGGGGTTTTTTTGGGGTTTGGGGGTTTGGGGGGGGW",
+            "WGGGGGGGGGGGGGGGGGGGGGGGTTTSTTTGGGGGGGGGGGGGGGGGGGGGGGW",
+            "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+        ],
+        "nextActorPlacementId": 4,
+        "mapActors": [
+            {
+                "placementId": 1,
+                "actorId": "galvania_empire_item_shop",
+                "name": "雑貨店",
+                "x": 9,
+                "y": 11,
+                "imageKey": "overlay_town_demon_guard",
+                "states": [
+                    {
+                        "stateId": "open",
+                        "priority": 20,
+                        "when": { "requiredFlag": "darkCastleCleared" },
+                        "action": {
+                            "label": "品物を見る",
+                            "log": "閉じられていた商品箱が開かれ、旅の補給品が並んでいる。",
+                            "type": "shop",
+                            "shopType": "item",
+                            "title": "ガルヴァニア帝国 雑貨店",
+                            "shopRank": 65
+                        }
+                    },
+                    {
+                        "stateId": "closed",
+                        "priority": 10,
+                        "when": { "missingFlag": "darkCastleCleared" },
+                        "action": {
+                            "label": "店先を見る",
+                            "log": "店主は商品箱を閉じたまま、こちらを警戒している。今は取引する気はないようだ。",
+                            "type": "log"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 2,
+                "actorId": "galvania_empire_weapon_shop",
+                "name": "武器店",
+                "x": 9,
+                "y": 21,
+                "imageKey": "overlay_town_demon_guard",
+                "states": [
+                    {
+                        "stateId": "open",
+                        "priority": 20,
+                        "when": { "requiredFlag": "darkCastleCleared" },
+                        "action": {
+                            "label": "武器を見る",
+                            "log": "止まっていた炉に火が入り、魔族の鍛冶師が武器を並べている。",
+                            "type": "shop",
+                            "shopType": "weapon",
+                            "title": "ガルヴァニア帝国 武器店",
+                            "shopRank": 65
+                        }
+                    },
+                    {
+                        "stateId": "closed",
+                        "priority": 10,
+                        "when": { "missingFlag": "darkCastleCleared" },
+                        "action": {
+                            "label": "鍛冶場を見る",
+                            "log": "炉は落とされ、武器は鎖で固定されている。鍛冶師は無言でこちらを見返した。",
+                            "type": "log"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 3,
+                "actorId": "galvania_empire_armor_shop",
+                "name": "防具店",
+                "x": 45,
+                "y": 21,
+                "imageKey": "overlay_town_demon_guard",
+                "states": [
+                    {
+                        "stateId": "open",
+                        "priority": 20,
+                        "when": { "requiredFlag": "darkCastleCleared" },
+                        "action": {
+                            "label": "防具を見る",
+                            "log": "補修を終えた鎧や盾が、店先へ整然と並べ直されている。",
+                            "type": "shop",
+                            "shopType": "armor",
+                            "title": "ガルヴァニア帝国 防具店",
+                            "shopRank": 65
+                        }
+                    },
+                    {
+                        "stateId": "closed",
+                        "priority": 10,
+                        "when": { "missingFlag": "darkCastleCleared" },
+                        "action": {
+                            "label": "店先を見る",
+                            "log": "防具職人は帳面を閉じた。城の緊張が解けるまでは、客として扱う気はないようだ。",
+                            "type": "log"
+                        }
+                    }
+                ]
+            }
+        ],
+        "mapActions": [
+            {
+                "x": 27,
+                "y": 3,
+                "label": "魔王城へ入る",
+                "log": "帝国中央の高台に、魔王城の正門がそびえている。",
+                "type": "fixedDungeon",
+                "target": "DARK_CASTLE",
+                "imageKey": "overlay_field_darkcastle",
+                "interactFromAdjacent": true,
+                "blocksMovement": true,
+                "baseTile": "T",
+                "requiredFlag": "crystalTreeCleared"
+            },
+            {
+                "x": 8,
+                "y": 20,
+                "label": "救護区画を調べる",
+                "type": "log",
+                "log": "簡素な担架と薬箱が並ぶ。負傷兵を収容するための区画らしい。",
+                "baseTile": "T"
+            },
+            {
+                "x": 46,
+                "y": 20,
+                "label": "補給倉庫を調べる",
+                "type": "log",
+                "log": "兵糧と修繕材が大量に積まれている。遠征の戦利品というより、長期防衛用の備蓄に見える。",
+                "baseTile": "T"
+            },
+            {
+                "x": 27,
+                "y": 9,
+                "label": "城壁を見上げる",
+                "type": "log",
+                "log": "城壁の傷は外からの攻撃だけではない。帝国のさらに奥側へ向けて補修された箇所もある。",
+                "baseTile": "T"
+            }
+        ],
+        "worldExits": [
+            {
+                "x": 27,
+                "y": 39,
+                "area": "WORLD",
+                "worldKey": "WORLD",
+                "worldX": 8,
+                "worldY": 50
+            }
+        ],
+        "mapId": "MAP000075",
+        "floorId": "MAP000075-00",
         "useHabitatEncounters": false
     },
     "CRYSTAL_TREE": {
@@ -13368,11 +13927,13 @@ const FIXED_DUNGEON_MAPS = {
         ]
     },
     GALVANIA_CAVE: {
-        name: "ガルヴァニアへの洞窟",
+        name: "奈落への洞窟",
         themeKey: "GALVANIA_CAVE",
         canonicalAreaKey: "GALVANIA_CAVE",
-        rank: 70,
-        encounterRank: 70,
+        rank: 86,
+        encounterRank: 86,
+        encounterRankMin: 81,
+        encounterRankMax: 92,
         battleBg: "battle_bg_galvania_cave",
         enemyBoost: {
             statMultiplier: 1,
@@ -13387,27 +13948,21 @@ const FIXED_DUNGEON_MAPS = {
             y: 32
         },
         entryPoints: {
-            north: {
-                floor: 1,
-                x: 30,
-                y: 32
-            },
-            south: {
-                floor: 6,
-                x: 56,
-                y: 32
-            }
+            entrance: { floor: 1, x: 30, y: 32 },
+            altarSide: { floor: 6, x: 56, y: 32 },
+            north: { floor: 1, x: 30, y: 32 },
+            south: { floor: 6, x: 56, y: 32 }
         },
-        entryRequiredAllyId: 204,
+        entryRequiredFlag: "darkCastleCleared",
         entryRequiredEntrances: [
+            "entrance",
             "north"
         ],
-        entryLockedEventId: "galvania_cave_north_blocked",
-        entryLockedText: "すさまじい結界でふさがれている。",
+        entryLockedText: "魔王城の先へ進むまでは、この侵食路へ踏み込む理由がない。",
         floors: [
             {
-                label: "1階・北口 黒岩の胎道",
-                encounterRank: 61,
+                label: "1階・入口側 黒岩の胎道",
+                encounterRank: 81,
                 width: 61,
                 height: 35,
                 tiles: [
@@ -13452,11 +14007,11 @@ const FIXED_DUNGEON_MAPS = {
                         x: 30,
                         y: 32,
                         to: "EXIT",
-                        label: "北口へ戻る",
+                        label: "入口側へ戻る",
                         exitPoint: {
                             areaKey: "WORLD",
-                            x: 31,
-                            y: 40
+                            x: 38,
+                            y: 55
                         }
                     },
                     {
@@ -13579,7 +14134,7 @@ const FIXED_DUNGEON_MAPS = {
             },
             {
                 label: "2階・偽りの無限回廊",
-                encounterRank: 66,
+                encounterRank: 83,
                 width: 61,
                 height: 35,
                 tiles: [
@@ -13781,7 +14336,7 @@ const FIXED_DUNGEON_MAPS = {
             },
             {
                 label: "3階・溶岩の地底湖",
-                encounterRank: 66,
+                encounterRank: 85,
                 width: 61,
                 height: 35,
                 tiles: [
@@ -13976,7 +14531,7 @@ const FIXED_DUNGEON_MAPS = {
             },
             {
                 label: "4階・氷晶の十字滑床",
-                encounterRank: 66,
+                encounterRank: 87,
                 width: 61,
                 height: 35,
                 tiles: [
@@ -14031,7 +14586,7 @@ const FIXED_DUNGEON_MAPS = {
                         toFloor: 5,
                         targetX: 5,
                         targetY: 4,
-                        label: "魔軍補給路へ"
+                        label: "深淵防衛補給路へ"
                     }
                 ],
                 tileEffects: [
@@ -14331,8 +14886,8 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "GALVANIA_CAVE"
             },
             {
-                label: "5階・魔軍補給路",
-                encounterRank: 66,
+                label: "5階・深淵防衛補給路",
+                encounterRank: 89,
                 width: 61,
                 height: 35,
                 tiles: [
@@ -14387,7 +14942,7 @@ const FIXED_DUNGEON_MAPS = {
                         toFloor: 6,
                         targetX: 5,
                         targetY: 30,
-                        label: "南口の白骨旧坑へ"
+                        label: "祭壇側の白骨旧坑へ"
                     }
                 ],
                 tileEffects: [
@@ -14457,7 +15012,7 @@ const FIXED_DUNGEON_MAPS = {
                     {
                         x: 40,
                         y: 8,
-                        label: "魔軍の積荷を調べる",
+                        label: "防衛軍の積荷を調べる",
                         eventId: "map_system_galvania_cave_f5_action_1",
                         type: "storyEvent",
                         imageKey: "overlay_dungeon_event",
@@ -14475,8 +15030,8 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "GALVANIA_CAVE"
             },
             {
-                label: "6階・南口 白骨の旧坑",
-                encounterRank: 76,
+                label: "6階・祭壇側 白骨の旧坑",
+                encounterRank: 91,
                 width: 61,
                 height: 35,
                 tiles: [
@@ -14523,20 +15078,20 @@ const FIXED_DUNGEON_MAPS = {
                         toFloor: 5,
                         targetX: 55,
                         targetY: 29,
-                        label: "魔軍補給路へ戻る"
+                        label: "深淵防衛補給路へ戻る"
                     },
                     {
                         x: 56,
                         y: 32,
                         to: "EXIT",
-                        label: "南口へ出る",
+                        label: "祭壇側へ出る",
                         exitPoint: {
                             areaKey: "WORLD",
-                            x: 35,
-                            y: 42
+                            x: 42,
+                            y: 55
                         },
-                        setFlag: "galvaniaCaveSouthOpened",
-                        openLog: "南口の岩戸を内側から開けた。以後、南口からも再進入できる。"
+                        setFlag: "nadirCaveCleared",
+                        openLog: "祭壇側の出口を確保した。以後、奈落への洞窟を両側から通行できる。"
                     }
                 ],
                 tileEffects: [
@@ -14642,8 +15197,7 @@ const FIXED_DUNGEON_MAPS = {
         name: "魔王城ガルヴァニア",
         themeKey: "DARK_CASTLE",
         entryRequiredAllyId: 204,
-        entryLockedEventId: "locked_dark_castle",
-        entryLockedText: "王宮聖騎士の結界が道を閉ざしている。",
+        entryLockedText: "ガルヴァニア帝国内の正門から入る必要がある。",
         rank: 80,
         encounterRank: 80,
         battleBg: "battle_bg_dark_castle",
@@ -14771,84 +15325,6 @@ const FIXED_DUNGEON_MAPS = {
                 ],
                 nextActorPlacementId: 5,
                 mapActors: [
-                    {
-                        "placementId": 1,
-                        "actorId": "town_demon_guard",
-                        "name": "闇市",
-                        "x": 10,
-                        "y": 22,
-                        "imageKey": "overlay_town_demon_guard",
-                        "states": [
-                            {
-                                "stateId": "shop",
-                                "priority": 0,
-                                "when": {
-                                    "requiredFlag": "darkCastleCleared"
-                                },
-                                "action": {
-                                    "label": "闇市を見る",
-                                    "log": "魔族の商人が静かに品を広げている。",
-                                    "type": "shop",
-                                    "shopType": "item",
-                                    "title": "魔王城ガルヴァニア 闇市",
-                                    "shopRank": 65,
-                                    "lockedText": "城内はまだ戦闘態勢だ。"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "placementId": 2,
-                        "actorId": "town_demon_guard_2",
-                        "name": "武器",
-                        "x": 22,
-                        "y": 20,
-                        "imageKey": "overlay_town_demon_guard",
-                        "states": [
-                            {
-                                "stateId": "shop",
-                                "priority": 0,
-                                "when": {
-                                    "requiredFlag": "darkCastleCleared"
-                                },
-                                "action": {
-                                    "label": "武器を見る",
-                                    "log": "魔族の鍛冶場から低い槌音が響く。",
-                                    "type": "shop",
-                                    "shopType": "weapon",
-                                    "title": "魔王城ガルヴァニア 武器庫",
-                                    "shopRank": 65,
-                                    "lockedText": "武器庫には近づけない。"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "placementId": 3,
-                        "actorId": "town_demon_guard_3",
-                        "name": "防具",
-                        "x": 22,
-                        "y": 22,
-                        "imageKey": "overlay_town_demon_guard",
-                        "states": [
-                            {
-                                "stateId": "shop",
-                                "priority": 0,
-                                "when": {
-                                    "requiredFlag": "darkCastleCleared"
-                                },
-                                "action": {
-                                    "label": "防具を見る",
-                                    "log": "闇に耐える防具が並んでいる。",
-                                    "type": "shop",
-                                    "shopType": "armor",
-                                    "title": "魔王城ガルヴァニア 防具庫",
-                                    "shopRank": 65,
-                                    "lockedText": "防具庫には近づけない。"
-                                }
-                            }
-                        ]
-                    },
                     {
                         "placementId": 4,
                         "actorId": "post_dark_castle_base_1",
