@@ -1,0 +1,25 @@
+=== syntax ===
+node --check story.js
+node --check story_logic.js
+node --check map.js
+node --check main.js
+node --check dungeon.js
+node --check phaser-field.js
+node --check news.js
+=== targeted ===
+node tools/validation/validate-dark-castle-phase8c.js
+[phase8c-dark-castle] PASS: Luna accountability, Dark Prism memory pain, Alus non-pressure support, Galvania defense evidence, Zenon truth, second integration, Shanny choice, commit order, and old-save rescue are wired.
+node tools/validation/validate-dark-castle-phase8b.js
+[phase8b-dark-castle] PASS: three male officers, revised battle motives, Castle shop removal, and post-clear Empire shop activation are wired.
+node tools/validation/validate-galvania-geography-phase8a.js
+[phase8a-galvania] PASS: world coordinates, new M0 maps, route gates, hidden Gorge aftermath, save migration, Nadir reuse, and Integration Altar sequencing are wired.
+node tools/validation/validate-crystal-tree-six-element-phase7d.js
+[phase7d-six-element] PASS: approved six-element medicine ritual, save compatibility, Leila gate, pedestals, and subtle hometown foreshadowing are wired.
+node tools/validation/validate-system-input-update-20260810.js
+System/input update validation passed: village encounters, Rees hut coordinate, Rank drops, analog input, and tap-to-walk are wired correctly.
+node tools/validation/validate-news-data.js
+PASS: news data policy (10 dates)
+node tools/validation/validate-map-actors.js
+Map actor validation passed. Coordinate-based actors checked: 142.
+Stable mapActors masters checked: 100; no person sprites remain in mapActions.
+Actor positions are walkable, unique, blocking, adjacent-interactable, and linked to existing story events.

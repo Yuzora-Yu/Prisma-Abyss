@@ -89,7 +89,7 @@ for (const name of ['常闇のゼルドラス', '風詠のエルメナス', '冥
 }
 assert(draft.includes('三名とも男性') && draft.includes('ガルヴァニア帝国 雑貨店'), 'Phase8B approved-direction draft must document gender and shop migration.');
 assert(queue.includes('DR-Phase8B-dark-castle-three-officers') && queue.includes('Status: implemented'), 'Dialogue review queue must record the approved three-officer rewrite.');
-assert(handoff.includes('**Phase:** 8B') && handoff.includes('雑貨 `x9,y11` / 武器 `x9,y21` / 防具 `x45,y21`'), 'Latest handoff must describe Phase8B shop placement.');
+assert(handoff.includes('Phase8B') && handoff.includes('雑貨 `x9,y11` / 武器 `x9,y21` / 防具 `x45,y21`'), 'Latest handoff must preserve the Phase8B shop placement baseline.');
 assert(news.includes('ガルヴァニア帝国へ道具・武器・防具店を移し、魔王城攻略後に利用できるようにしました'), 'NEWS must mention Empire shop migration and clear gate.');
 assert(news.includes('魔王城の三幹部戦の会話と人物描写を調整しました'), 'NEWS must mention the three-officer dialogue update.');
 

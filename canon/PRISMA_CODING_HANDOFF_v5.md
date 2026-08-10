@@ -941,3 +941,17 @@ alanState.phase = 'dead'
 - エルメナス戦は「王国が過去に闇プリズムを奪った」結果を根拠に人間を信用せず、見たものを自分で考えられるかを問う知略型。
 - ベレト戦は政治思想より、魔王ゼノンへの謁見に値する実力があるかを測る試験として扱う。
 - 上記承認稿: `docs/scenario/38_DARK_CASTLE_OFFICERS_AND_EMPIRE_SHOPS_PHASE8B_20260810.md`。
+
+
+### 魔王城真相・第二次統合【2026-08-10 Phase8C実装】
+
+- `GALVANIA_EMPIRE / MAP000075` 初回攻略時に `galvania_empire_arrival_phase8c`。`crystalTreeCleared` 必須、`darkCastleCleared` 前のみ。`galvaniaEmpireArrivalSeen` で一度限り。
+- 帝国M0へ負傷兵 `x16,y11`、配給係 `x38,y11`、避難親子 `x16,y31`、工兵 `x38,y31` を追加。既存assetのみ使用。
+- `DARK_CASTLE` 1Fへ地下巡回優先、防衛砲、反復補修の調査eventを追加。ゼノンの説明より先に深淵防衛の証拠を見せる。
+- 三幹部Phase8Bの男性設定／戦闘理由を維持しつつ、ルーナの魔族討伐歴・謝罪・「目を逸らさない」再起を戦前会話へ追加。
+- 新 `DARK_CASTLE_CLEAR` はゼノン戦後に無傷の闇プリズム確認→ルーナ直接接触→記憶接続負荷→エクリプス闇研究→四研究者知見→調和/統合差→第二次統合→シャニー自己選択加入→奈落への洞窟、の順。
+- ルーナ魔王城reward: `STORY_EXP charId:401 amount:300000 rewardKey:luna_dark_castle_300k`、`WORLD_STATE lunaMemoryStage=3 mode:max`、`SET_EXP_MULTIPLIER 1600 onlyDecrease:true`。
+- `story_logic.js` に `WORLD_STATE mode:max` と `SET_EXP_MULTIPLIER onlyDecrease:true` を追加。既存saveで後の成長状態を巻き戻さない。
+- event commit順: CONV → ALLY306 → Luna reward/state → `prismBlessingsComplete` → `secondIntegrationStarted` → `darkCastleTruthPhase8CSeen` → **`darkCastleCleared`** → Step9/Sub0。`darkCastleCleared` は帝国店/奈落解禁の後段commit。
+- 旧 `darkCastleCleared=true` かつ `darkCastleTruthPhase8CSeen=false` saveは、謁見の間 `x16,y7` の `dark_castle_truth_phase8c_revisit` から新会話を回収可能。EXP二重付与なし、memory stage低下なし、EXP倍率上昇なし。
+- アランが渓谷門を破壊した真相およびアラン／ヴェルド／ジャスパーの現在位置はこのPhaseでもプレイヤーへ伏せる。

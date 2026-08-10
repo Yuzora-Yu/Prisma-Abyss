@@ -3883,6 +3883,45 @@ const STORY_MANAGER_DATA = {
         "MAP_SYSTEM_GALVANIA_CAVE_F3_BOSS_1": [{"name":"システム","text":"黒炎の番人が、赤い宝箱の島だけを守っている。洞窟突破には関係なさそうだ。"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F4_BOSS_1": [{"name":"システム","text":"氷鎧の魔将が、古い金の鍵を握っている。深部防衛線へ急行するための補給路を開ける鍵かもしれない。"}],
         "MAP_SYSTEM_GALVANIA_CAVE_F6_BOSS_1": [{"name":"システム","text":"宝の横穴を守る魔族がうずくまっている。洞窟突破には関係なさそうだ。"}],
+        "GALVANIA_EMPIRE_ARRIVAL_PHASE8C": [
+                { "name": "システム", "text": "城下へ入る。武装した魔族兵の間を、担架が何度も行き交っている。\n配給所では、小さな子どもが両手で椀を抱えていた。" },
+                { "name": "ルーナ", "text": "……子どもが、いる。", "charId": 401 },
+                { "name": "システム", "text": "包帯を巻いた兵が壁にもたれ、そのすぐ横を親子が避難区画へ急いでいく。\n侵略のための軍都というより、長く何かに耐えてきた街に見えた。" },
+                { "name": "ルーナ", "text": "私……聖女として、魔族の討伐に出たことがあります。\n魔族は人を襲うものだと教えられて。それが、人を守る正しいことだと思っていました。", "charId": 401 },
+                { "name": "レイラ", "text": "ルーナ様……。", "charId": 204 },
+                { "name": "ルーナ", "text": "知らなかったから仕方ない、とは……言いたくありません。", "charId": 401 },
+                { "name": "アルス", "text": "……今は、見よう。", "charId": 301 },
+                { "name": "ルーナ", "text": "……はい。", "charId": 401 }
+        ],
+        "GALVANIA_EMPIRE_WOUNDED_SOLDIER_PHASE8C": [
+                { "name": "負傷した魔族兵", "text": "……人間の治療など要らん。" },
+                { "name": "レイラ", "text": "傷が開いています。せめて包帯だけでも。", "charId": 204 },
+                { "name": "負傷した魔族兵", "text": "包帯だけ置いていけ。運ぶだけなら……借りを作ったことにはならん。" },
+                { "name": "ルーナ", "text": "……分かりました。ここに置きます。", "charId": 401 }
+        ],
+        "GALVANIA_EMPIRE_RATIONS_PHASE8C": [
+                { "name": "魔族の配給係", "text": "兵の鍋はそっちだ。子どもの分に辛い香草を入れるな。昨日また泣かれた。" },
+                { "name": "システム", "text": "配給係はアルスたちに気づき、手を止める。" },
+                { "name": "魔族の配給係", "text": "……人間に売る分はない。見るだけなら勝手にしろ。" }
+        ],
+        "GALVANIA_EMPIRE_EVACUEES_PHASE8C": [
+                { "name": "魔族の男", "text": "地下の鐘が鳴ったら、荷物は捨てろ。子どもだけ連れて内側へ走れ。" },
+                { "name": "魔族の子ども", "text": "今度は、何日ここにいるの？" },
+                { "name": "魔族の男", "text": "……鐘が止むまでだ。" },
+                { "name": "システム", "text": "親子のそばには、いつでも持ち出せるよう小さな荷物がまとめられている。" }
+        ],
+        "DARK_CASTLE_LOWER_PATROL_PRIORITY_PHASE8C": [
+                { "name": "魔族兵A", "text": "人間が三人目を越えた。" },
+                { "name": "魔族兵B", "text": "知っている。下の巡回は減らすな。" },
+                { "name": "魔族兵A", "text": "だが――" },
+                { "name": "魔族兵B", "text": "下を空ける方が先に城が落ちる。" }
+        ],
+        "DARK_CASTLE_RIFT_EMPLACEMENT_PHASE8C": [
+                { "name": "システム", "text": "重い砲身は城外の平野ではなく、床下へ続く深い裂け目へ向けて固定されている。" }
+        ],
+        "DARK_CASTLE_REPAIR_LAYERS_PHASE8C": [
+                { "name": "システム", "text": "新しい石材の下に古い補修跡が幾重にも重なっている。\n同じ場所を、何年も塞ぎ直してきたようだ。" }
+        ],
         "LOCKED_DARK_CASTLE": [
                 {
                         "name": "システム",
@@ -3906,32 +3945,15 @@ const STORY_MANAGER_DATA = {
                 }
         ],
         "DARK_CASTLE_ZELDRAS_ENCOUNTER": [
-                {
-                        "name": "システム",
-                        "text": "西館二階、結界の間。青い封印石の前で、大剣を背負った男が待ち受けている。"
-                },
-                {
-                        "name": "常闇のゼルドラス",
-                        "text": "常闇のゼルドラスだ。聖女を置いて、貴様ら人間は去れ。"
-                },
-                {
-                        "name": "ルーナ",
-                        "text": "私は物ではありません。ここへ来ると決めたのも、私です。",
-                        "charId": 401
-                },
-                {
-                        "name": "常闇のゼルドラス",
-                        "text": "……その意志が誰のものか、俺には測れん。だが王国は一度、我らから闇のプリズムを奪った。"
-                },
-                {
-                        "name": "アルス",
-                        "text": "奪いに来たんじゃない。壊れてるのか、守られてるのか、自分の目で確かめたいだけだ。",
-                        "charId": 301
-                },
-                {
-                        "name": "常闇のゼルドラス",
-                        "text": "ならば通るだけの覚悟を示せ。人間の都合で、聖女もプリズムも二度と使わせん。"
-                }
+                { "name": "システム", "text": "西館二階、結界の間。青い封印石の前で、大剣を背負った男が待ち受けている。" },
+                { "name": "常闇のゼルドラス", "text": "常闇のゼルドラスだ。聖女を置いて、貴様ら人間は去れ。" },
+                { "name": "ルーナ", "text": "私は物ではありません。ここへ来ると決めたのも、私です。", "charId": 401 },
+                { "name": "ルーナ", "text": "それに……私は聖女として、魔族の討伐にも参加しました。正しいことだと信じて。", "charId": 401 },
+                { "name": "常闇のゼルドラス", "text": "懺悔を聞かせに来たのか。謝罪で死者は戻らん。" },
+                { "name": "ルーナ", "text": "はい。許してもらうために言ったのではありません。知らなかったままで終わらせたくないんです。", "charId": 401 },
+                { "name": "常闇のゼルドラス", "text": "……その意志が誰のものか、俺にはまだ測れん。王国は一度、我らから闇のプリズムを奪った。" },
+                { "name": "アルス", "text": "奪いに来たんじゃない。自分の目で確かめに来た。", "charId": 301 },
+                { "name": "常闇のゼルドラス", "text": "ならば通るだけの覚悟を示せ。人間の都合で、聖女もプリズムも二度と使わせん。" }
         ],
         "DARK_CASTLE_ZELDRAS_CLEAR": [
                 {
@@ -3949,32 +3971,15 @@ const STORY_MANAGER_DATA = {
                 }
         ],
         "DARK_CASTLE_ELMENAS_ENCOUNTER": [
-                {
-                        "name": "システム",
-                        "text": "東館二階、結界の間。気配のない室内で、低い男の声が背後から響く。"
-                },
-                {
-                        "name": "風詠のエルメナス",
-                        "text": "風詠のエルメナス。赤き鍵は渡さん。闇のプリズムに近づく人間を、私は信用していない。"
-                },
-                {
-                        "name": "ケイト",
-                        "text": "私たちは、プリズムを利用する方法を探しに来たわけではありません。",
-                        "charId": 104
-                },
-                {
-                        "name": "風詠のエルメナス",
-                        "text": "『利用しない』と言いながら、王国は一度それを奪った。善意も命令も、結果の前では言い訳にならん。"
-                },
-                {
-                        "name": "シャオ",
-                        "text": "だからって、何も見ないで帰れるわけないでしょ。",
-                        "charId": 105
-                },
-                {
-                        "name": "風詠のエルメナス",
-                        "text": "なら、見たものを自分で考えろ。力だけで答えを決める者を、王の前へは通せん。"
-                }
+                { "name": "システム", "text": "東館二階、結界の間。気配のない室内で、低い男の声が背後から響く。" },
+                { "name": "風詠のエルメナス", "text": "風詠のエルメナス。赤き鍵は渡さん。闇のプリズムに近づく人間を、私は信用していない。" },
+                { "name": "ケイト", "text": "私たちは、プリズムを利用する方法を探しに来たわけではありません。", "charId": 104 },
+                { "name": "風詠のエルメナス", "text": "『利用しない』と言いながら、王国は一度それを奪った。善意も命令も、結果の前では言い訳にならん。" },
+                { "name": "ルーナ", "text": "私は、その歴史を『魔族から闇のプリズムを保護した』と教えられました。", "charId": 401 },
+                { "name": "風詠のエルメナス", "text": "そして信じた。" },
+                { "name": "ルーナ", "text": "……はい。だから今度は、教えられた答えではなく、目の前にあるものを見ます。", "charId": 401 },
+                { "name": "シャオ", "text": "私も。何も見ないで帰るつもりはない。", "charId": 105 },
+                { "name": "風詠のエルメナス", "text": "なら、見たものを自分で考えろ。力だけで答えを決める者を、王の前へは通せん。" }
         ],
         "DARK_CASTLE_ELMENAS_CLEAR": [
                 {
@@ -3992,27 +3997,13 @@ const STORY_MANAGER_DATA = {
                 }
         ],
         "DARK_CASTLE_BELET_ELM_ENCOUNTER": [
-                {
-                        "name": "システム",
-                        "text": "本館二階、夢幻回廊。歪む通路の中央で、一人の騎士が大剣を床へ突き立てている。"
-                },
-                {
-                        "name": "冥騎士ベレト",
-                        "text": "冥騎士ベレト。赤と青を越えたことは認めよう。"
-                },
-                {
-                        "name": "レイラ",
-                        "text": "あなたも、人間を信用できないから私たちを止めるのですか？",
-                        "charId": 204
-                },
-                {
-                        "name": "冥騎士ベレト",
-                        "text": "思想の差異になど興味はない。貴様らが魔王様への謁見にふさわしい実力を持つか、それだけだ。"
-                },
-                {
-                        "name": "冥騎士ベレト",
-                        "text": "金の鍵が欲しければ、俺を越えろ。言葉はその後で聞く。"
-                }
+                { "name": "システム", "text": "本館二階、夢幻回廊。歪む通路の中央で、一人の騎士が大剣を床へ突き立てている。" },
+                { "name": "冥騎士ベレト", "text": "冥騎士ベレト。赤と青を越えたことは認めよう。" },
+                { "name": "レイラ", "text": "あなたも、人間を信用できないから私たちを止めるのですか？", "charId": 204 },
+                { "name": "冥騎士ベレト", "text": "思想の差異になど興味はない。貴様らが魔王様への謁見にふさわしい実力を持つか、それだけだ。" },
+                { "name": "冥騎士ベレト", "text": "……聖女。そんな顔で剣を握るな。後悔で手が鈍るなら、ここで引き返せ。" },
+                { "name": "ルーナ", "text": "後悔は、消しません。でも、もう目は逸らしません。", "charId": 401 },
+                { "name": "冥騎士ベレト", "text": "よし。なら言葉は要らん。金の鍵が欲しければ、俺を越せ。" }
         ],
         "DARK_CASTLE_BELET_ELM_CLEAR": [
                 {
@@ -4106,74 +4097,60 @@ const STORY_MANAGER_DATA = {
                 }
         ],
         "DARK_CASTLE_CLEAR": [
-                {
-                        "name": "魔王ゼノン",
-                        "text": "……見事だ。\n闇を前にしても、刃を止めなかった。",
-                        "charId": 402
-                },
-                {
-                        "name": "システム",
-                        "text": "闇のプリズムは静かに脈打っている。\n濁りはない。傷もない。"
-                },
-                {
-                        "name": "シャオ",
-                        "text": "壊れて……ない。\n魔王が、壊したんじゃないの？",
-                        "charId": 105
-                },
-                {
-                        "name": "魔王ゼノン",
-                        "text": "余を善と呼ぶな。不快だ。\nだが、預かったものは捨てぬ。",
-                        "charId": 402
-                },
-                {
-                        "name": "魔王ゼノン",
-                        "text": "シャニーも同じだ。\n縋ったのはあれだが、救ったのは余だ。",
-                        "charId": 402
-                },
-                {
-                        "name": "魔王ゼノン",
-                        "text": "代わりに、その才と生涯はもらった。\n契約とは、そういうものだ。",
-                        "charId": 402
-                },
-                {
-                        "name": "シャニー",
-                        "text": "ゼノン様。……もう、十分です。",
-                        "charId": 306
-                },
-                {
-                        "name": "シャオ",
-                        "text": "姉さん……何を、したの。",
-                        "charId": 105
-                },
-                {
-                        "name": "シャニー",
-                        "text": "生きるために、選んだ。\nあなたのそばには、戻れなかった。",
-                        "charId": 306
-                },
-                {
-                        "name": "シャニー",
-                        "text": "それでも……忘れた日はない。",
-                        "charId": 306
-                },
-                {
-                        "name": "シャオ",
-                        "text": "……許したわけじゃない。\nでも、知らないことがあるのは分かった。",
-                        "charId": 105
-                },
-                {
-                        "name": "魔王ゼノン",
-                        "text": "この城の先に、我らが深淵の浸食を抑えてきた地下路がある。\n統合の祭壇へ行くなら、そこを通れ。",
-                        "charId": 402
-                },
-                {
-                        "name": "シャニー",
-                        "text": "奈落への洞窟……道は知ってる。\n今度は、黙って消えない。",
-                        "charId": 306
-                },
-                {
-                        "name": "システム",
-                        "text": "[N:306]が仲間に加わった！"
-                }
+                { "name": "魔王ゼノン", "text": "――充分だ。\n三人を越え、余の前でも退かなかった。それでいい。", "charId": 402 },
+                { "name": "システム", "text": "ゼノンは武器を下ろし、玉座の後ろへ視線を向けた。\nそこには闇のプリズムがある。濁りも傷もなく、静かに脈打っている。" },
+                { "name": "シャオ", "text": "……ある。\n壊れてない……。", "charId": 105 },
+                { "name": "シャオ", "text": "じゃあ……何なの。\n私たちが追ってきたものは……。", "charId": 105 },
+                { "name": "ルーナ", "text": "……触れてみます。", "charId": 401 },
+                { "name": "アルス", "text": "ルーナ。", "charId": 301 },
+                { "name": "ルーナ", "text": "大丈夫です。自分で確かめたいんです。", "charId": 401 },
+                { "name": "システム", "text": "ルーナが闇のプリズムへ指先を触れた。\n息が止まる。記憶の前と後が、境目を失って一度に流れ込む。" },
+                { "name": "システム", "text": "夜の木々。湿った草の匂い。すぐそばの小さな寝息。\n白い祈祷室。『闇は人を惑わす』と繰り返す声。討伐帰りの鎧。" },
+                { "name": "ルーナ", "text": "っ……！", "charId": 401 },
+                { "name": "システム", "text": "ルーナの膝から力が抜ける。アルスがすぐに肩を支えた。" },
+                { "name": "アルス", "text": "もういい。無理に戻さなくていい。", "charId": 301 },
+                { "name": "ルーナ", "text": "……嫌です。", "charId": 401 },
+                { "name": "ルーナ", "text": "怖いです。頭も、すごく痛い。\nでも……私にとっても、きっと大切な思い出だから。", "charId": 401 },
+                { "name": "ルーナ", "text": "もう少しだけ、頑張らせてください。", "charId": 401 },
+                { "name": "アルス", "text": "……分かった。\n倒れたら支える。", "charId": 301 },
+                { "name": "システム", "text": "アルスの手が肩に残ったまま、ルーナはもう一度プリズムへ触れる。\n今度は流れ込むものを拒まず、ひとつずつ受け止めた。" },
+                { "name": "ルーナ", "text": "夜……。\n窓の外で、葉っぱが鳴ってる。", "charId": 401 },
+                { "name": "ルーナ", "text": "誰かが、すぐ近くで眠ってて……。\n私、その子の手を握ってた。", "charId": 401 },
+                { "name": "ルーナ", "text": "……暗かったのに。\n安心してた。", "charId": 401 },
+                { "name": "シャオ", "text": "アランは光を奪った時、『これで準備は整った』って言った。\nなのに、闇はここにある……。", "charId": 105 },
+                { "name": "魔王ゼノン", "text": "当然だ。奴らに、今この闇を奪う必要はなかった。", "charId": 402 },
+                { "name": "魔王ゼノン", "text": "六年前、王国は暗魔帝国エクリプスを滅ぼし、闇のプリズムを奪った。\n余がこれを取り戻したのは、五年前の崩壊の後だ。", "charId": 402 },
+                { "name": "魔王ゼノン", "text": "闇のプリズムも。戦場に残った魔力も。死んだ人間も、魔族も。\n奴らは、すべて記録にした。", "charId": 402 },
+                { "name": "魔王ゼノン", "text": "エクリプスが滅びた時点で、闇を統合へ組み込む研究は必要なところまで終わっていた。", "charId": 402 },
+                { "name": "ルーナ", "text": "……私は、聖女として魔族討伐に出ました。\n教えられた歴史を信じて、それが人を守ることだと思っていました。", "charId": 401 },
+                { "name": "ルーナ", "text": "……ごめんなさい。", "charId": 401 },
+                { "name": "魔王ゼノン", "text": "謝罪で死者は戻らん。", "charId": 402 },
+                { "name": "ルーナ", "text": "はい。だから、許してほしいとは言いません。\n知らなかったことを、言い訳にもしたくありません。", "charId": 401 },
+                { "name": "ルーナ", "text": "今度は、自分で見て、自分で選びます。\n誰かに教えられた正義ではなく、目の前の人を守るために……もう一度、戦います。", "charId": 401 },
+                { "name": "魔王ゼノン", "text": "なら、次に振るう力で示せ。", "charId": 402 },
+                { "name": "魔王ゼノン", "text": "余も最初から答えを知っていたわけではない。\nリーシアが守った遺稿。ソフィアが受け継いだ失敗の記録。", "charId": 402 },
+                { "name": "魔王ゼノン", "text": "ミネルバが結晶樹で見つけた循環。\nそして余が、魔術で確かめた実測。それらを重ねて、ようやく輪郭が見えた。", "charId": 402 },
+                { "name": "ケイト", "text": "……この五年前の術式。順番が、ない。", "charId": 104 },
+                { "name": "ケイト", "text": "結晶樹では、水から始めて……最後に闇へ渡しました。\nでも、この儀式は六つ全部を……同じ場所で、同時に止めようとしてる。", "charId": 104 },
+                { "name": "ケイト", "text": "属性は、一つになりたがってるんじゃない。\n違うまま、巡ってるから……生きていられる。", "charId": 104 },
+                { "name": "魔王ゼノン", "text": "『調和』と『統合』を、同じ言葉で括った。\nそれが最初の間違いだ。", "charId": 402 },
+                { "name": "シャオ", "text": "私……黒いものを見たら、魔族の仕業だって決めつけてた。", "charId": 105 },
+                { "name": "魔王ゼノン", "text": "余を善と呼ぶ気ならやめろ。不快だ。\n余も、人間を好いてはいない。だが――世界を深淵へ渡す気もない。", "charId": 402 },
+                { "name": "システム", "text": "その瞬間、城全体が低く唸った。\n上からではない。はるか地下から、地面そのものを押し上げるような振動が続く。" },
+                { "name": "シャニー", "text": "……下から。こんな揺れ、今までと違う。", "charId": 306 },
+                { "name": "魔王ゼノン", "text": "統合だ。\n五年前に失敗したものを、今度は深淵の側でな。", "charId": 402 },
+                { "name": "シャオ", "text": "統合の祭壇……。", "charId": 105 },
+                { "name": "魔王ゼノン", "text": "この城の先に、我らが深淵の浸食を抑えてきた地下路がある。", "charId": 402 },
+                { "name": "魔王ゼノン", "text": "奈落への洞窟だ。その先が、統合の祭壇へ続く。\n今もあの道で兵が侵食を押し返している。", "charId": 402 },
+                { "name": "シャニー", "text": "私が案内する。\n奈落の道は知ってる。", "charId": 306 },
+                { "name": "魔王ゼノン", "text": "余は命じていない。", "charId": 402 },
+                { "name": "シャニー", "text": "分かってる。\nだから行く。", "charId": 306 },
+                { "name": "シャオ", "text": "……また、一人で決めるの。\n許したわけじゃない。聞きたいことだって、いっぱいある。", "charId": 105 },
+                { "name": "シャオ", "text": "でも――今度は私もいる。\n勝手に消えないで。", "charId": 105 },
+                { "name": "シャニー", "text": "……うん。", "charId": 306 },
+                { "name": "システム", "text": "ルーナが前を向く。アルスはその横顔を見て、ほんの少しだけ口元を緩めた。\n何かを言いかけてやめ、ただ隣に立つ。" },
+                { "name": "魔王ゼノン", "text": "行け。余の城で学んだことを信じる必要はない。\n奈落で、自分の目で確かめろ。", "charId": 402 },
+                { "name": "システム", "text": "[N:306]が仲間に加わった！" }
         ],
 
         "POST_DARK_CASTLE_BASE_1": [
@@ -5730,34 +5707,18 @@ const STORY_MANAGER_DATA = {
         },
         "dark_castle_clear": {
                 "actions": [
-                        {
-                                "type": "CONV",
-                                "value": "DARK_CASTLE_CLEAR"
-                        },
-                        {
-                                "type": "ALLY",
-                                "value": 306
-                        },
-                        {
-                                "type": "FLAG",
-                                "key": "darkCastleCleared"
-                        },
-                        {
-                                "type": "FLAG",
-                                "key": "prismBlessingsComplete"
-                        },
-                        {
-                                "type": "STEP",
-                                "value": 9
-                        },
-                        {
-                                "type": "SUB",
-                                "value": 0
-                        },
-                        {
-                                "type": "LOG",
-                                "value": "闇のプリズムの無事を確認した。奈落への洞窟を越え、統合の祭壇へ向かおう。"
-                        }
+                        { "type": "CONV", "value": "DARK_CASTLE_CLEAR" },
+                        { "type": "ALLY", "value": 306 },
+                        { "type": "STORY_EXP", "charId": 401, "amount": 300000, "rewardKey": "luna_dark_castle_300k" },
+                        { "type": "WORLD_STATE", "key": "lunaMemoryStage", "value": 3, "mode": "max" },
+                        { "type": "SET_EXP_MULTIPLIER", "charId": 401, "pct": 1600, "onlyDecrease": true },
+                        { "type": "FLAG", "key": "prismBlessingsComplete" },
+                        { "type": "FLAG", "key": "secondIntegrationStarted" },
+                        { "type": "FLAG", "key": "darkCastleTruthPhase8CSeen" },
+                        { "type": "FLAG", "key": "darkCastleCleared", "refreshField": true },
+                        { "type": "STEP", "value": 9 },
+                        { "type": "SUB", "value": 0 },
+                        { "type": "LOG", "value": "第二次統合が始まった。奈落への洞窟を越え、統合の祭壇へ急ごう。" }
                 ],
                 "winActions": []
         },
@@ -7002,6 +6963,50 @@ const STORY_MANAGER_DATA = {
         },
         "galvania_cave_north_blocked": {
                 "actions": [{ "type": "CONV", "value": "GALVANIA_CAVE_NORTH_BLOCKED" }],
+                "winActions": []
+        },
+        "galvania_empire_arrival_phase8c": {
+                "actions": [
+                        { "type": "CONV", "value": "GALVANIA_EMPIRE_ARRIVAL_PHASE8C" },
+                        { "type": "FLAG", "key": "galvaniaEmpireArrivalSeen" }
+                ],
+                "winActions": []
+        },
+        "galvania_empire_wounded_soldier_phase8c": {
+                "actions": [{ "type": "CONV", "value": "GALVANIA_EMPIRE_WOUNDED_SOLDIER_PHASE8C" }],
+                "winActions": []
+        },
+        "galvania_empire_rations_phase8c": {
+                "actions": [{ "type": "CONV", "value": "GALVANIA_EMPIRE_RATIONS_PHASE8C" }],
+                "winActions": []
+        },
+        "galvania_empire_evacuees_phase8c": {
+                "actions": [{ "type": "CONV", "value": "GALVANIA_EMPIRE_EVACUEES_PHASE8C" }],
+                "winActions": []
+        },
+        "dark_castle_lower_patrol_priority_phase8c": {
+                "actions": [{ "type": "CONV", "value": "DARK_CASTLE_LOWER_PATROL_PRIORITY_PHASE8C" }],
+                "winActions": []
+        },
+        "dark_castle_rift_emplacement_phase8c": {
+                "actions": [{ "type": "CONV", "value": "DARK_CASTLE_RIFT_EMPLACEMENT_PHASE8C" }],
+                "winActions": []
+        },
+        "dark_castle_repair_layers_phase8c": {
+                "actions": [{ "type": "CONV", "value": "DARK_CASTLE_REPAIR_LAYERS_PHASE8C" }],
+                "winActions": []
+        },
+        "dark_castle_truth_phase8c_revisit": {
+                "actions": [
+                        { "type": "CONV", "value": "DARK_CASTLE_CLEAR" },
+                        { "type": "ALLY", "value": 306 },
+                        { "type": "STORY_EXP", "charId": 401, "amount": 300000, "rewardKey": "luna_dark_castle_300k" },
+                        { "type": "WORLD_STATE", "key": "lunaMemoryStage", "value": 3, "mode": "max" },
+                        { "type": "SET_EXP_MULTIPLIER", "charId": 401, "pct": 1600, "onlyDecrease": true },
+                        { "type": "FLAG", "key": "prismBlessingsComplete" },
+                        { "type": "FLAG", "key": "secondIntegrationStarted" },
+                        { "type": "FLAG", "key": "darkCastleTruthPhase8CSeen", "refreshField": true }
+                ],
                 "winActions": []
         },
         "post_dark_castle_base_1": {

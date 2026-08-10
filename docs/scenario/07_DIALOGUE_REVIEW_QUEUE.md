@@ -843,3 +843,41 @@ Updated: 2026-08-10
 - implemented date: 2026-08-10
 - source draft: `docs/scenario/38_DARK_CASTLE_OFFICERS_AND_EMPIRE_SHOPS_PHASE8B_20260810.md`
 - validation: `tools/validation/validate-dark-castle-phase8b.js`
+
+## DR-20260810-dark-castle-truth-second-integration-phase8c
+
+Status: implemented  
+Created: 2026-08-10
+
+### Target
+- file: `story.js`
+- script keys: `DARK_CASTLE_CLEAR` / `dark_castle_clear`
+- map / area: 魔王城ガルヴァニア 3F 玉座の間 / ガルヴァニア帝国
+- storyStep-subStep: `8-0` → `9-0`
+- source draft: `docs/scenario/39_DARK_CASTLE_TRUTH_AND_SECOND_INTEGRATION_PHASE8C_DRAFT_20260810.md`
+
+### Pre-Phase8C implemented text
+- 闇プリズム無傷確認後、シャニーとゼノンの契約説明へ直行していた。
+- 奈落への洞窟案内、シャニー加入、`darkCastleCleared`、`prismBlessingsComplete`、Step9を一括commitしていた。
+
+### Concern
+- 新正典に必要なエクリプス滅亡／闇研究完成済みの因果、四研究者の知見、結晶樹で学んだ「循環」と統合の違い、ルーナの魔王城記憶回復、第二次統合開始が欠落している。
+- `darkCastleCleared` が長会話と報酬より先に一括commitされる旧構造では、途中中断・既存save互換・帝国ショップ解禁の順序が粗い。
+- シャニー加入は本人の自立選択として一段強く描く必要がある。
+
+### Codex recommendation
+- substantial rewrite。現行文の核（闇プリズム無傷／ゼノンを善人化しない／シャニー契約の重さ／奈落への道／加入）は継承する。
+- 長会話の前に、帝国・城内MAPの生活／地下防衛描写を追加し、ゼノンの説明より先にプレイヤーへ証拠を見せる。
+- user approval後にPhase8Cとして実装する。
+
+### User decision
+- decision: approved_with_additions
+- approved date: 2026-08-10
+- additions: ルーナの記憶回復はゼノン戦後の闇プリズム直接接触。記憶接続による痛み、アルスが急かさず支える関係、ルーナの誤った魔族史・討伐歴への後悔と謝罪、自分で見て選び直す再起を追加。その他のPhase8C案は承認。
+
+### Implementation tracking
+- implemented: 2026-08-10
+- runtime: `story.js` / `story_logic.js` / `map.js`
+- reward: `luna_dark_castle_300k`, `lunaMemoryStage=3`, EXP multiplier 1600%
+- save rescue: `dark_castle_truth_phase8c_revisit` + non-regressive state actions
+- validation: `tools/validation/validate-dark-castle-phase8c.js`

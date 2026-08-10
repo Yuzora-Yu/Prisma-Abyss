@@ -2059,7 +2059,13 @@ const StoryManager = {
         if (action.type === 'WORLD_STATE') {
             const key = String(action.key || '').trim();
             if (key && typeof App.setWorldStateValue === 'function') {
-                App.setWorldStateValue(key, action.value, { save: !deferSave });
+                let nextValue = action.value;
+                if (action.mode === 'max') {
+                    const current = Number(App.getWorldStateValue?.(key, Number.NEGATIVE_INFINITY));
+                    const requested = Number(action.value);
+                    if (Number.isFinite(current) && Number.isFinite(requested)) nextValue = Math.max(current, requested);
+                }
+                App.setWorldStateValue(key, nextValue, { save: !deferSave });
                 if (action.refreshField === true) this.refreshFieldAfterStoryStateChange();
             }
         }
@@ -2084,9 +2090,16 @@ const StoryManager = {
 
         if (action.type === 'SET_EXP_MULTIPLIER') {
             const charId = Number(action.charId ?? action.value);
-            const pct = Number(action.pct ?? action.multiplierPct ?? action.expMultiplierPct);
+            let pct = Number(action.pct ?? action.multiplierPct ?? action.expMultiplierPct);
             if (!Number.isFinite(charId) || !Number.isFinite(pct) || pct <= 0) {
                 throw new Error('SET_EXP_MULTIPLIERにはcharId / pctが必要です。');
+            }
+            if (action.onlyDecrease === true) {
+                const charData = App.getStoryAllyCharacter?.(charId);
+                if (charData) {
+                    const current = Number(App.getCharacterExpRequirementMultiplierPct?.(charData));
+                    if (Number.isFinite(current) && current > 0) pct = Math.min(current, pct);
+                }
             }
             if (!App.setCharacterExpRequirementMultiplierPct?.(charId, pct, { save: !deferSave })) {
                 throw new Error(`必要経験値倍率を設定できませんでした: charId=${charId}`);

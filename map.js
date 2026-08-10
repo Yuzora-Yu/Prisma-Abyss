@@ -6825,7 +6825,7 @@ const FIXED_MAPS = {
             "x": 14,
             "y": 13
         },
-        "nextActorPlacementId": 4,
+        "nextActorPlacementId": 8,
         "mapActors": [
             {
                 "placementId": 1,
@@ -7415,6 +7415,9 @@ const FIXED_MAPS = {
         "battleBg": "battle_bg_dark_castle",
         "randomEncounterDisabled": true,
         "disableRandomEncounters": true,
+        "entryEventId": "galvania_empire_arrival_phase8c",
+        "entryEventFlag": "galvaniaEmpireArrivalSeen",
+        "entryEventConditions": { "requiredFlag": "crystalTreeCleared", "missingFlag": "darkCastleCleared" },
         "tiles": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "WGGGGGGGGGGGGGGGGGGGGGGTTTTTTTTTGGGGGGGGGGGGGGGGGGGGGGW",
@@ -7458,7 +7461,7 @@ const FIXED_MAPS = {
             "WGGGGGGGGGGGGGGGGGGGGGGGTTTSTTTGGGGGGGGGGGGGGGGGGGGGGGW",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
-        "nextActorPlacementId": 4,
+        "nextActorPlacementId": 8,
         "mapActors": [
             {
                 "placementId": 1,
@@ -7558,6 +7561,38 @@ const FIXED_MAPS = {
                         }
                     }
                 ]
+            }
+            ,{
+                "placementId": 4,
+                "actorId": "galvania_empire_wounded_soldier_phase8c",
+                "name": "負傷した魔族兵",
+                "x": 16, "y": 11,
+                "imageKey": "overlay_town_demon_guard",
+                "states": [{ "stateId": "default", "priority": 0, "when": {}, "action": { "label": "負傷兵と話す", "type": "storyEvent", "eventId": "galvania_empire_wounded_soldier_phase8c" } }]
+            },
+            {
+                "placementId": 5,
+                "actorId": "galvania_empire_rations_phase8c",
+                "name": "配給係",
+                "x": 38, "y": 11,
+                "imageKey": "overlay_town_demon_guard",
+                "states": [{ "stateId": "default", "priority": 0, "when": {}, "action": { "label": "配給係と話す", "type": "storyEvent", "eventId": "galvania_empire_rations_phase8c" } }]
+            },
+            {
+                "placementId": 6,
+                "actorId": "galvania_empire_evacuees_phase8c",
+                "name": "避難する親子",
+                "x": 16, "y": 31,
+                "imageKey": "overlay_town_demon_guard",
+                "states": [{ "stateId": "default", "priority": 0, "when": {}, "action": { "label": "親子と話す", "type": "storyEvent", "eventId": "galvania_empire_evacuees_phase8c" } }]
+            },
+            {
+                "placementId": 7,
+                "actorId": "galvania_empire_wall_engineer_phase8c",
+                "name": "魔族工兵",
+                "x": 38, "y": 31,
+                "imageKey": "overlay_town_demon_guard",
+                "states": [{ "stateId": "default", "priority": 0, "when": {}, "action": { "label": "工兵と話す", "type": "log", "log": "魔族工兵「そこ踏むな。まだ固まってない。」\n壁の亀裂は、外からではなく帝国の深部側から押し広げられたように見える。" } }]
             }
         ],
         "mapActions": [
@@ -15350,7 +15385,11 @@ const FIXED_DUNGEON_MAPS = {
                         ]
                     }
                 ],
-                mapActions: [],
+                mapActions: [
+                    { x: 13, y: 14, type: "storyEvent", label: "兵士たちの会話を聞く", eventId: "dark_castle_lower_patrol_priority_phase8c", imageKey: "overlay_dungeon_event", baseTile: "T", blocksMovement: false },
+                    { x: 19, y: 14, type: "storyEvent", label: "防衛設備を調べる", eventId: "dark_castle_rift_emplacement_phase8c", imageKey: "overlay_dungeon_event", baseTile: "T", blocksMovement: false },
+                    { x: 10, y: 16, type: "storyEvent", label: "補修痕を調べる", eventId: "dark_castle_repair_layers_phase8c", imageKey: "overlay_dungeon_event", baseTile: "T", blocksMovement: false }
+                ],
                 entryPoint: {
                     x: 16,
                     y: 27
@@ -15962,6 +16001,13 @@ const FIXED_DUNGEON_MAPS = {
                     }
                 ],
                 mapActions: [
+                    {
+                        x: 16, y: 7, type: "storyEvent", label: "ゼノンと話す",
+                        eventId: "dark_castle_truth_phase8c_revisit",
+                        requiredFlag: "darkCastleCleared", missingFlag: "darkCastleTruthPhase8CSeen",
+                        interactFromAdjacent: true, blocksMovement: false, baseTile: "B",
+                        imageKey: "overlay_dungeon_event"
+                    },
                     {
                         x: 21,
                         y: 14,
