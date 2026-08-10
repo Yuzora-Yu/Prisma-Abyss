@@ -73,7 +73,9 @@ const luna = (thunder.mapActors || []).find(a => a.actorId === 'luna_thunder_inf
 assert(baron?.states?.some(s => s.stateId === 'demon_assault_wave1' && s.action?.eventId === 'thunder_fort_demon_assault_wave1'), 'Baron does not start defense wave 1.');
 assert(marie?.states?.some(s => s.stateId === 'demon_assault_wave2' && s.action?.eventId === 'thunder_fort_demon_assault_wave2'), 'Marie does not start defense wave 2.');
 assert(luna?.states?.some(s => s.when?.requiredFlag === 'lunaAwakenedAtThunderFort'), 'Post-awakening Luna actor is missing.');
-assert(Number(thunder.nextActorPlacementId) === 15, 'Thunder Fort nextActorPlacementId must reserve Luna placement 14.');
+assert(Number(luna?.placementId) === 14, 'Post-awakening Luna placementId must remain stable at 14.');
+const thunderPlacementIds = (thunder.mapActors || []).map(actor => Number(actor.placementId) || 0);
+assert(Number(thunder.nextActorPlacementId) > Math.max(...thunderPlacementIds), 'Thunder Fort nextActorPlacementId must stay above every issued stable actor ID.');
 
 const monsterContext = {}; monsterContext.globalThis = monsterContext; vm.createContext(monsterContext);
 vm.runInContext(fs.readFileSync(path.join(root, 'monsters.js'), 'utf8'), monsterContext);

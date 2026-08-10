@@ -7031,6 +7031,23 @@ window.ITEMS_DATA.push(
     "fieldUsable": false,
     "abyssDrop": false,
     "icon": "assets/ui/menu-icons/item-key.png"
+},
+{
+    "id": 701011,
+    "rank": 80,
+    "name": "王への上申書",
+    "type": "貴重品",
+    "val": 0,
+    "desc": "アレル＝レクスノート侯爵が、プリズム統合の儀を止めるため国王への提出を準備していた上申書。王国暗部に消されたはずの原本で、十年前の封印された記録とともに発見された。",
+    "target": "なし",
+    "price": 0,
+    "sellPrice": 0,
+    "shopAvailable": false,
+    "consumable": false,
+    "battleUsable": false,
+    "fieldUsable": false,
+    "abyssDrop": false,
+    "icon": "assets/ui/menu-icons/item-key.png"
 }
 );
 

@@ -4514,8 +4514,163 @@ const STORY_MANAGER_DATA = {
                 {"name": "リュシオン", "text": "今は地上で息を整えなさい。\n終焉の祭壇に残る王の影を断った時、次の道を越える光を託しましょう。", "charId": 501},
                 {"name": "システム", "text": "深淵の奥に残る気配は消えていない。\n一行は、終焉の祭壇へ至る道を探すことにした。"}
         ],
-},
 
+        "AREL_QUEST_START_PHASE8E": [
+                { "name": "ゼリード", "charId": 103, "text": "……なあ、アルス。アランの親父が処刑されたのが十年前って話は、知ってるよな。" },
+                { "name": "アルス", "charId": 301, "text": "ああ。アレル＝レクスノート侯爵。" },
+                { "name": "ゼリード", "charId": 103, "text": "汚職、反逆、魔道研究の私物化。当時は、そういうことになった。" },
+                { "name": "シャオ", "charId": 105, "text": "……『なった』？" },
+                { "name": "ゼリード", "charId": 103, "text": "嫌なところ拾うな、お前。" },
+                { "name": "ゼリード", "charId": 103, "text": "王国暗部は、侯爵が残した紙を片っ端から消した。俺も、その仕事にいた。" },
+                { "name": "ゼリード", "charId": 103, "text": "だが一枚だけ……処分記録の端切れを、どうしても捨てられなかった。宛先は王。差出人はアレル。本文はもうない。" },
+                { "name": "ルーナ", "charId": 401, "text": "それを、調べたいんですね。" },
+                { "name": "ゼリード", "charId": 103, "text": "……いや。調べなきゃならねえんだろうな。水上都市の旧行政記録から当たる。" }
+        ],
+        "AREL_WATER_ARCHIVE_PHASE8E": [
+                { "name": "システム", "text": "水上都市の旧行政記録。処分済みの束に、レクスノート侯爵家の研究申請控えが一枚だけ残っている。" },
+                { "name": "ミネルバ", "charId": 206, "text": "『六系統を同時に固定する方式は認めない。個別の循環を失わせれば、安定じゃなく崩壊を招く』……へえ。" },
+                { "name": "シャオ", "charId": 105, "text": "結晶樹で見たのと、同じ話か？" },
+                { "name": "ミネルバ", "charId": 206, "text": "かなり近い。でも、これだけじゃ『危険だと思ってた』って証拠。嵌められた証拠じゃないよ。" },
+                { "name": "ケイト", "charId": 104, "text": "余白に別の筆跡があります。『統合計画への妨害。反国家的研究姿勢として報告』。" },
+                { "name": "ゼリード", "charId": 103, "text": "……次はレクスノート邸だ。押収しきれなかった私物が残ってるかもしれねえ。" }
+        ],
+        "AREL_REXNOTE_RECORD_PHASE8E": [
+                { "name": "システム", "text": "古い机の隠し棚から、魔術式と生活の走り書きが混ざった紙束が出てきた。" },
+                { "name": "システム", "text": "『アラン、光弾三発。二発目で庭木を焦がす。本人は隠せたつもりらしい。』" },
+                { "name": "システム", "text": "『リュウ、また勝手に外へ出る。叱る前に帰ってこい。』" },
+                { "name": "レオン", "charId": 305, "text": "……あいつ、昔から二発目だけ妙に力む癖があった。" },
+                { "name": "クロード", "charId": 304, "text": "庭師には俺たちまで怒られたけどな。" },
+                { "name": "システム", "text": "その下には、カゲトラ宛の短い覚え書きがある。『王へ出す上申は別便にする。統合試験が先に動くなら、子どもたちを近づけるな。』" },
+                { "name": "アルス", "charId": 301, "text": "カゲトラ……？" },
+                { "name": "ゼリード", "charId": 103, "text": "……ハヤテの親父だ。俺の相棒だった。" },
+                { "name": "ルーナ", "charId": 401, "text": "上申書は、本当に王へ出る前だったんですね。" },
+                { "name": "ゼリード", "charId": 103, "text": "ああ。そして、その頃から暗部が動いてた。光の宮殿の旧命令簿を見りゃ、もう少し分かる。" }
+        ],
+        "AREL_PALACE_OLD_ORDER_PHASE8E": [
+                { "name": "システム", "text": "同じ日付の命令書が二枚ある。王命控えは『証拠確保まで身柄を拘束』。暗部へ渡った写しには『反逆抵抗時、現場判断で処断を許可』。" },
+                { "name": "ケイト", "charId": 104, "text": "印影は似ています。でも、押された位置と墨の滲みが違う……後から作られています。" },
+                { "name": "ゼリード", "charId": 103, "text": "そうだ。" },
+                { "name": "アルス", "charId": 301, "text": "どうして分かる？" },
+                { "name": "ゼリード", "charId": 103, "text": "その紙を運んだのが、俺だからだ。" },
+                { "name": "ゼリード", "charId": 103, "text": "相棒は命令がおかしいって言った。アレルは逃げても隠してもいない。なのに何で処断命令が出るんだ、って。" },
+                { "name": "ゼリード", "charId": 103, "text": "俺もおかしいと思ってた。思ってたくせに、命令に従った。" },
+                { "name": "アルス", "charId": 301, "text": "ゼリード……。" },
+                { "name": "ゼリード", "charId": 103, "text": "慰めんな。騙されたから仕方なかった、で済ませたくて喋ってるんじゃねえ。" },
+                { "name": "ゼリード", "charId": 103, "text": "カゲトラを斬ったのは、俺だ。" },
+                { "name": "ゼリード", "charId": 103, "text": "……ハヤテには、俺の口から言う。" }
+        ],
+        "AREL_HAYATE_TRUTH_PHASE8E": [
+                { "name": "ハヤテ", "charId": 203, "text": "ゼリード。父さんの件で、何か分かったんだろ。" },
+                { "name": "ゼリード", "charId": 103, "text": "……ああ。まず、俺から言わなきゃならねえことがある。" },
+                { "name": "ゼリード", "charId": 103, "text": "十年前、カゲトラを斬ったのは俺だ。" },
+                { "name": "ハヤテ", "charId": 203, "text": "……。" },
+                { "name": "ハヤテ", "charId": 203, "text": "父さんは、あんたを一番信じてた。俺にも何度もそう言ってた。" },
+                { "name": "ハヤテ", "charId": 203, "text": "だから俺も……父さんの相棒だったあんたなら、分かってると思ってた。" },
+                { "name": "ゼリード", "charId": 103, "text": "……すまねえ。" },
+                { "name": "ハヤテ", "charId": 203, "text": "今は、その言葉に何を返せばいいか分からない。許すとも、許さないとも、まだ言えない。" },
+                { "name": "ハヤテ", "charId": 203, "text": "俺は自分の手で、自分の目で、父さんが何を守ろうとしたのか確かめに行く。" },
+                { "name": "ハヤテ", "charId": 203, "text": "全部見たあとで……もう一度、あんたと話したい。" },
+                { "name": "ゼリード", "charId": 103, "text": "……ああ。待ってる。" },
+                { "name": "ハヤテ", "charId": 203, "text": "アルス。俺も行く。父さんが残した先を見届けたい。" }
+        ],
+        "AREL_APPEAL_FOUND_PHASE8E": [
+                { "name": "ゼリード", "charId": 103, "text": "カゲトラを斬ったあと、押収品を焼けって命令が出た。俺は……一箱だけ、封も切らずに旧文書庫の裏へ隠した。" },
+                { "name": "ハヤテ", "charId": 203, "text": "父さんの荷だったのか。" },
+                { "name": "ゼリード", "charId": 103, "text": "たぶんな。怖くて、確かめもしなかった。十年もな。" },
+                { "name": "システム", "text": "崩れた書架の背面から、小さな封印箱が見つかった。封蝋にはレクスノート家の印と、宛先『国王陛下』が残っている。" },
+                { "name": "ケイト", "charId": 104, "text": "……『王への上申書』。署名は、アレル＝レクスノート。" },
+                { "name": "システム", "text": "本文には、プリズム統合の儀を即時停止すること、六属性を一つへ固定する人体・大規模実験を禁じること、ジャスパー主導の試験記録を王自身が再確認することが求められている。" },
+                { "name": "ミネルバ", "charId": 206, "text": "これなら『後から正しかったことにした紙』じゃない。十年前、その時点で止めようとしてた。" },
+                { "name": "ハヤテ", "charId": 203, "text": "父さんは、これを王へ届けようとして……。" },
+                { "name": "ゼリード", "charId": 103, "text": "俺たち暗部が、その道ごと消した。" },
+                { "name": "ハヤテ", "charId": 203, "text": "……持っていこう。アランにも、見せる。どう受け取るかは、あいつが決めればいい。" }
+        ],
+        "ALAN_ALTAR_OPENING_PHASE8E": [
+                { "name": "システム", "text": "祭壇中央。古い抑制術式の上に、新しい光の術式が重なっている。その前に、アランが一人で立っていた。" },
+                { "name": "アルス", "charId": 301, "text": "……アラン。" },
+                { "name": "アラン", "charId": 201, "text": "遅かったな。" },
+                { "name": "クロード", "charId": 304, "text": "ジャスパーとヴェルドは。" },
+                { "name": "アラン", "charId": 201, "text": "もう下だ。俺はここで、お前たちを止める。" },
+                { "name": "アルス", "charId": 301, "text": "その前に聞け。お前の父さんのことを調べた。" },
+                { "name": "アラン", "charId": 201, "text": "……今さら何を。" },
+                { "name": "アルス", "charId": 301, "text": "アレル＝レクスノートは、統合に反対してた。危険だって、止めようとしてた。" },
+                { "name": "アラン", "charId": 201, "text": "だから？" },
+                { "name": "アルス", "charId": 301, "text": "反逆者じゃなかった。" },
+                { "name": "アラン", "charId": 201, "text": "今さら父が正しかったと言われて、俺にどうしろっていうんだ。十年だぞ。" },
+                { "name": "アラン", "charId": 201, "text": "十年、俺は反逆者の息子だった。家名を出せば笑われる。隠せば逃げたみたいで腹が立つ。親父を恨めば楽だった。" },
+                { "name": "クロード", "charId": 304, "text": "……俺たちに言えよ。腹が立ってたなら、そう言えってんだ。" },
+                { "name": "アラン", "charId": 201, "text": "言ってどうなる。お前は何でもできた。剣を持てば褒められる。前へ出れば人がついてくる。" },
+                { "name": "レオン", "charId": 305, "text": "俺まで一緒にするな。お前が消えてから、何度探したと思ってる。" },
+                { "name": "アラン", "charId": 201, "text": "探してほしいなんて頼んでない。" },
+                { "name": "アラン", "charId": 201, "text": "それで次はお前だ、アルス。何も持ってなかった年下の平民が、気づけば救世主だ。聖女まで隣にいる。" },
+                { "name": "アラン", "charId": 201, "text": "俺は家も名前も力も守ろうとして、全部なくした。お前は何も持ってなかったくせに、全部拾っていく。" },
+                { "name": "アルス", "charId": 301, "text": "……そう思ってたんだな。" },
+                { "name": "アラン", "charId": 201, "text": "怒れよ。" },
+                { "name": "アルス", "charId": 301, "text": "怒ってる。裏切ったことは、まだ怒ってる。でも、お前がそう思ってたことまで嘘にはならない。" },
+                { "name": "アラン", "charId": 201, "text": "お前もだ、ルーナ。何も覚えてなくても聖女だ。皆が守る。皆が待つ。" },
+                { "name": "ルーナ", "charId": 401, "text": "……私は、それが怖かったです。聖女だから正しいと言われて、私はそれを信じて間違えました。" },
+                { "name": "ルーナ", "charId": 401, "text": "でも、あなたに『分かります』とは言いません。あなたが失った十年は、あなたのものだから。" },
+                { "name": "アラン", "charId": 201, "text": "ジャスパー様だけだった。家名でも、親父でも、クロードの隣でもない。俺の力を見て『使える』と言った。" },
+                { "name": "ゼリード", "charId": 103, "text": "使える、か。俺もその言葉が欲しかった時期がある。だから余計に気に食わねえ。" },
+                { "name": "アラン", "charId": 201, "text": "話は終わりだ。俺が選んだ。ジャスパー様の力を受けて、ここに立つと。" },
+                { "name": "アラン", "charId": 201, "text": "ここから先へ行きたいなら――俺を越えろ。" }
+        ],
+        "ALAN_ALTAR_NO_APPEAL_WARNING_PHASE8E": [
+                { "name": "ジョセフ", "charId": 101, "text": "待て、アルス。剣を抜く前に考えろ。俺は十年前も『国がそう言うなら』って考えるのをやめた。同じことを今度はお前にさせたくない。" },
+                { "name": "レオン", "charId": 305, "text": "俺はあいつと戦える。だが、倒したあとに取り返せないなら……知らなかったでは済ませたくない。" },
+                { "name": "クロード", "charId": 304, "text": "殴ってでも連れ戻すつもりだった。……死ぬって話なら、同じじゃねえ。" },
+                { "name": "レイラ", "charId": 204, "text": "急ぐ必要があるのは分かっています。それでも、急ぐことと、選ばないことは違います。" },
+                { "name": "ゼリード", "charId": 103, "text": "アレルの件は、まだ終わってねえ。証拠を拾える場所が残ってる。ここで進んだら、本人に届ける機会はたぶんもうねえ。" },
+                { "name": "ガイル", "charId": 109, "text": "……アラン、仲間だったじゃんか。裏切ったからって、それまで全部なくなるのか？" },
+                { "name": "サラ", "charId": 110, "text": "嫌いになった人なら、死んでもいいってことにはならないでしょ。" },
+                { "name": "システム", "text": "ここで戦えば、もうアランを連れ戻す道は残らないかもしれない。" }
+        ],
+        "ALAN_ALTAR_RETREAT_PHASE8E": [
+                { "name": "アラン", "charId": 201, "text": "……好きにしろ。次に来た時は、迷うな。" }
+        ],
+        "ALAN_ALTAR_WITH_APPEAL_PHASE8E": [
+                { "name": "ハヤテ", "charId": 203, "text": "アラン。" },
+                { "name": "アラン", "charId": 201, "text": "……まだ俺を追ってたのか。" },
+                { "name": "ハヤテ", "charId": 203, "text": "俺が追ってたのは、お前じゃない。父さんが死んだ理由だ。" },
+                { "name": "アルス", "charId": 301, "text": "これを見つけた。『王への上申書』。お前の父さんが、十年前に国王へ出そうとしてた原本だ。" },
+                { "name": "アラン", "charId": 201, "text": "……紙切れ一枚で、十年が戻るのか？" },
+                { "name": "ハヤテ", "charId": 203, "text": "戻らない。俺の父さんも戻らない。だから、これは許すための紙じゃない。" },
+                { "name": "ハヤテ", "charId": 203, "text": "消されたものが、本当にあったって証拠だ。あとは、お前が自分で読め。" },
+                { "name": "アラン", "charId": 201, "text": "……なら、持ってろ。俺はもう、親父の名誉のためにここにいるんじゃない。" },
+                { "name": "アラン", "charId": 201, "text": "俺が選んだ。ここに立つと。" }
+        ],
+        "ALAN_ALTAR_DEATH_PHASE8E": [
+                { "name": "システム", "text": "アランが膝をつく。剣を包んでいた光が、細い粒になって消えていく。" },
+                { "name": "アラン", "charId": 201, "text": "……来るな。" },
+                { "name": "アルス", "charId": 301, "text": "アラン。" },
+                { "name": "アラン", "charId": 201, "text": "勝ったんだろ。" },
+                { "name": "クロード", "charId": 304, "text": "こんなの……勝ちじゃねえだろ。" },
+                { "name": "アラン", "charId": 201, "text": "昔から、お前は勝っても文句が多いな。" },
+                { "name": "アラン", "charId": 201, "text": "行け。俺が止められなかったなら……あの二人は、もう先へ行ってる。" },
+                { "name": "アラン", "charId": 201, "text": "救世主。……最後までやれよ。" },
+                { "name": "システム", "text": "それきり、アランは動かなかった。" }
+        ],
+        "ALAN_ALTAR_POST_BATTLE_APPEAL_PHASE8E": [
+                { "name": "システム", "text": "アランが膝をつく。戦いの最中に落ちた上申書が、光の消えた床に残っている。" },
+                { "name": "アラン", "charId": 201, "text": "……くだらない。今さら……。" },
+                { "name": "ハヤテ", "charId": 203, "text": "今さらだよ。だから、ここから先をどうするかは、生きてる奴が決めるしかない。" },
+                { "name": "システム", "text": "アルスは、倒れたアランへ手を伸ばした。" }
+        ],
+        "ALAN_ALTAR_SAVED_PHASE8E": [
+                { "name": "アルス", "charId": 301, "text": "アラン。父さんのためじゃない。俺たちのためでもない。お前が自分で選び直すために――生きろ。" },
+                { "name": "アラン", "charId": 201, "text": "……簡単に言うな。" },
+                { "name": "アルス", "charId": 301, "text": "簡単じゃないから言ってる。" },
+                { "name": "システム", "text": "長い沈黙のあと、アランは手を取らなかった。けれど、もう振り払おうともしなかった。" },
+                { "name": "クロード", "charId": 304, "text": "利子つけて返せ。" },
+                { "name": "レオン", "charId": 305, "text": "十年分な。" },
+                { "name": "アラン", "charId": 201, "text": "……最悪だ。一番、借りを作りたくない連中に。" },
+                { "name": "システム", "text": "アランは戦線を離れた。今はまだ、仲間として戻る時ではない。" }
+        ],
+        "ALAN_ALTAR_DEATH_WITH_APPEAL_PHASE8E": [
+                { "name": "アラン", "charId": 201, "text": "……そうか。" },
+                { "name": "システム", "text": "アランは床の上申書を一度だけ見た。やがて、光は完全に消えた。" }
+        ]
+    },
     events: {
         "game_start": {
                 "actions": [
@@ -6727,6 +6882,133 @@ const STORY_MANAGER_DATA = {
         },
         "town_water_villager_4_after": {
                 "actions": [{ "type": "CONV", "value": "TOWN_WATER_VILLAGER_4_AFTER" }],
+                "winActions": []
+        },
+        "arel_kagetora_quest_start_phase8e": {
+                "actions": [
+                        { "type": "CONV", "value": "AREL_QUEST_START_PHASE8E" }
+                ],
+                "winActions": []
+        },
+        "arel_kagetora_water_archive_phase8e": {
+                "actions": [
+                        { "type": "CONV", "value": "AREL_WATER_ARCHIVE_PHASE8E" },
+                        { "type": "FLAG", "key": "arelArchiveEvidenceFound", "refreshField": true },
+                        { "type": "QUEST_STAGE", "questId": "arel_kagetora_appeal", "stage": 1 },
+                        { "type": "LOG", "value": "レクスノート邸に残る私的記録を調べよう。" }
+                ],
+                "winActions": []
+        },
+        "arel_kagetora_rexnote_record_phase8e": {
+                "actions": [
+                        { "type": "CONV", "value": "AREL_REXNOTE_RECORD_PHASE8E" },
+                        { "type": "FLAG", "key": "rexnotePrivateRecordFound", "refreshField": true },
+                        { "type": "QUEST_STAGE", "questId": "arel_kagetora_appeal", "stage": 2 },
+                        { "type": "LOG", "value": "光の宮殿に残る十年前の旧命令記録を確認しよう。" }
+                ],
+                "winActions": []
+        },
+        "arel_kagetora_palace_order_phase8e": {
+                "actions": [
+                        { "type": "CONV", "value": "AREL_PALACE_OLD_ORDER_PHASE8E" },
+                        { "type": "FLAG", "key": "zeliedKagetoraConfessed", "refreshField": true },
+                        { "type": "QUEST_STAGE", "questId": "arel_kagetora_appeal", "stage": 3 },
+                        { "type": "LOG", "value": "水上都市のハヤテへ、ゼリード自身の言葉で真実を伝えよう。" }
+                ],
+                "winActions": []
+        },
+        "arel_kagetora_hayate_truth_phase8e": {
+                "actions": [
+                        { "type": "CONV", "value": "AREL_HAYATE_TRUTH_PHASE8E" },
+                        { "type": "ALLY", "value": 203 },
+                        { "type": "FLAG", "key": "hayateTruthConfrontationSeen", "refreshField": true },
+                        { "type": "QUEST_STAGE", "questId": "arel_kagetora_appeal", "stage": 4 },
+                        { "type": "LOG", "value": "ゼリードが隠した押収箱を、光の宮殿の旧文書庫で探そう。" }
+                ],
+                "winActions": []
+        },
+        "arel_kagetora_appeal_found_phase8e": {
+                "actions": [
+                        { "type": "CONV", "value": "AREL_APPEAL_FOUND_PHASE8E" },
+                        { "type": "QUEST_STAGE", "questId": "arel_kagetora_appeal", "stage": 5 },
+                        { "type": "QUEST_COMPLETE", "value": "arel_kagetora_appeal" },
+                        { "type": "FLAG", "key": "arelOriginalAppealRecovered", "refreshField": true },
+                        { "type": "LOG", "value": "『王への上申書』を手に入れた。アレルが十年前に統合の儀を止めようとしていた原本だ。" }
+                ],
+                "winActions": []
+        },
+        "integration_altar_alan_phase8e": {
+                "actions": [
+                        { "type": "CONV", "value": "ALAN_ALTAR_OPENING_PHASE8E" },
+                        {
+                                "type": "IF_ITEM",
+                                "id": 701011,
+                                "count": 1,
+                                "then": [
+                                        { "type": "CONV", "value": "ALAN_ALTAR_WITH_APPEAL_PHASE8E" },
+                                        { "type": "BOSS", "value": 301110, "winEventId": "integration_altar_alan_clear_phase8e", "noDrops": true, "noRecruit": true, "forceAutoOff": true }
+                                ],
+                                "else": [
+                                        { "type": "CONV", "value": "ALAN_ALTAR_NO_APPEAL_WARNING_PHASE8E" },
+                                        {
+                                                "type": "CHOICE",
+                                                "text": "アランとの戦いへ進みますか？",
+                                                "yesLabel": "進む",
+                                                "noLabel": "引き返す",
+                                                "yes": [
+                                                        { "type": "FLAG", "key": "alanAltarIrreversibleAccepted" },
+                                                        { "type": "BOSS", "value": 301110, "winEventId": "integration_altar_alan_clear_phase8e", "noDrops": true, "noRecruit": true, "forceAutoOff": true }
+                                                ],
+                                                "no": [
+                                                        { "type": "CONV", "value": "ALAN_ALTAR_RETREAT_PHASE8E" }
+                                                ]
+                                        }
+                                ]
+                        }
+                ],
+                "winActions": []
+        },
+        "integration_altar_alan_clear_phase8e": {
+                "postBattleBossSprite": false,
+                "actions": [
+                        { "type": "FLAG", "key": "alanAltarBattleCleared" },
+                        {
+                                "type": "IF_ITEM",
+                                "id": 701011,
+                                "count": 1,
+                                "then": [
+                                        { "type": "CONV", "value": "ALAN_ALTAR_POST_BATTLE_APPEAL_PHASE8E" },
+                                        {
+                                                "type": "CHOICE",
+                                                "text": "アランへ、どの答えを返しますか？",
+                                                "yesLabel": "共に生きろ",
+                                                "noLabel": "ここで終わらせる",
+                                                "yes": [
+                                                        { "type": "CONV", "value": "ALAN_ALTAR_SAVED_PHASE8E" },
+                                                        { "type": "WORLD_STATE", "key": "alanOutcome", "value": "saved" },
+                                                        { "type": "FLAG", "key": "alanSavedAtIntegrationAltar" },
+                                                        { "type": "FLAG", "key": "alanAltarResolved", "refreshField": true },
+                                                        { "type": "LOG", "value": "アランは生き残った。統合の祭壇中央の亀裂を調べよう。" }
+                                                ],
+                                                "no": [
+                                                        { "type": "CONV", "value": "ALAN_ALTAR_DEATH_WITH_APPEAL_PHASE8E" },
+                                                        { "type": "WORLD_STATE", "key": "alanOutcome", "value": "dead" },
+                                                        { "type": "FLAG", "key": "alanDeadAtIntegrationAltar" },
+                                                        { "type": "FLAG", "key": "alanAltarResolved", "refreshField": true },
+                                                        { "type": "LOG", "value": "アランは統合の祭壇で命を落とした。中央の亀裂を調べよう。" }
+                                                ]
+                                        }
+                                ],
+                                "else": [
+                                        { "type": "CONV", "value": "ALAN_ALTAR_DEATH_PHASE8E" },
+                                        { "type": "WORLD_STATE", "key": "alanOutcome", "value": "dead" },
+                                        { "type": "FLAG", "key": "alanDeadAtIntegrationAltar" },
+                                        { "type": "QUEST_FAIL", "questId": "arel_kagetora_appeal", "reason": "alan_dead_at_integration_altar" },
+                                        { "type": "FLAG", "key": "alanAltarResolved", "refreshField": true },
+                                        { "type": "LOG", "value": "アランは統合の祭壇で命を落とした。中央の亀裂を調べよう。" }
+                                ]
+                        }
+                ],
                 "winActions": []
         },
         "quest_marie_start": {

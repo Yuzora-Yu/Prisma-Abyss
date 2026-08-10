@@ -55,6 +55,14 @@ When an existing line seems suspicious, weak, inconsistent, over-explanatory, sp
 
 The user decides whether a legacy line becomes canon, gets revised, is rewritten, or is kept for now.
 
+## System / menu / UI text review policy
+
+- Treat all existing player-facing system narration, story objective text, map interaction messages, menu labels, and UI copy as reviewable legacy text, even when it falls outside the current feature work.
+- Do not silently polish or replace existing system/UI copy. Record it in `docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md` and, when proposing a change, show `現行` and `修正案` side by side.
+- Apply a revision only after the user makes the final decision.
+- Newly introduced system/UI copy must also be added to the inventory so it can be reviewed in later batches.
+- Tutorials remain governed by the UI-completion gate and are excluded from the current global copy-review pass until that gate is satisfied.
+
 ## Game craft and player-information boundary
 
 - A game is not an application whose quality is measured by explaining every state correctly. Preserve room for discovery, misunderstanding, failure, surprise, and player interpretation.

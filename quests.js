@@ -221,6 +221,35 @@
             "areaKey": "BIG_TOWER"
         }
     },
+    "arel_kagetora_appeal": {
+        "name": "残された名",
+        "area": "ライザーク要塞 / 水上都市 / レクスノート邸 / 光の宮殿",
+        "kind": "travel",
+        "longArc": true,
+        "unlockFlags": [
+            "alanBetrayedLightPalace"
+        ],
+        "missingFlags": [
+            "alanDeadAtIntegrationAltar"
+        ],
+        "objective": "ゼリードとともに、十年前に消されたアレル＝レクスノート侯爵とカゲトラの記録を追う。",
+        "startText": "ゼリードは、王国暗部が消した十年前の記録に、まだ捨て切れなかった痕跡があると話した。",
+        "startEventId": "arel_kagetora_quest_start_phase8e",
+        "progressText": "残された記録を辿り、アレルとカゲトラが何を止めようとしていたのか確かめよう。",
+        "completeText": "暗部に消されたはずの『王への上申書』原本を発見した。アレルが統合の儀を止めようとしていた証拠が残っている。",
+        "rewardFlags": [
+            "royalAppealDocumentObtained"
+        ],
+        "rewardItems": [
+            {
+                "id": 701011,
+                "count": 1
+            }
+        ],
+        "travelTarget": {
+            "areaKey": "WATER_CITY"
+        }
+    },
     "hayate_water_city": {
         "name": "ハヤテの早駆け討伐",
         "disabled": true,

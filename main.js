@@ -2036,6 +2036,12 @@ const App = {
             if (!flags.nadirCaveCleared && (flags.abyssOuterReached || Number(App.data.progress.storyStep || 0) >= 10)) {
                 flags.nadirCaveCleared = true;
             }
+            // 2026-08-10 Phase8E: 旧runtimeですでに統合の祭壇を通過したセーブは、
+            // プレイヤーが選んでいないアランの生死をmigrationで捏造せず、祭壇ゲートだけ通過済みにする。
+            if (!flags.alanAltarResolved && (flags.abyssOuterReached || Number(App.data.progress.storyStep || 0) >= 10)) {
+                flags.alanAltarLegacyBypass = true;
+                flags.alanAltarResolved = true;
+            }
         }
 
         if (App.data.location && App.data.progress && typeof App.discoverFixedMap === 'function') {

@@ -13,10 +13,21 @@ function assert(condition, message) {
 }
 
 assert(prison, 'LIGHT_PALACE floor 5 is unavailable.');
-assert((prison.mapActors || []).length === 5, 'LIGHT_PALACE floor 5 must have five authored prisoners after Leon is added.');
+const expectedPrisoners = new Map([
+    ['captive_king', 1],
+    ['light_palace_prison_leila', 2],
+    ['light_palace_prison_priest_a', 3],
+    ['light_palace_prison_priest_b', 4],
+    ['light_palace_prison_leon', 5],
+]);
+for (const [actorId, placementId] of expectedPrisoners) {
+    const actor = (prison.mapActors || []).find(candidate => candidate.actorId === actorId);
+    assert(actor && Number(actor.placementId) === placementId, `LIGHT_PALACE prisoner ${actorId} must keep placementId ${placementId}.`);
+}
 const king = prison.mapActors.find(actor => actor.actorId === 'captive_king');
 assert(king.placementId === 1, 'The captive king placementId must remain 1.');
-assert(prison.nextActorPlacementId === 6, 'The next actor placement ID must reserve the five issued prisoner IDs.');
+const issuedPlacementIds = (prison.mapActors || []).map(actor => Number(actor.placementId) || 0);
+assert(Number(prison.nextActorPlacementId) > Math.max(...issuedPlacementIds), 'The next actor placement ID must remain above every issued Light Palace actor ID.');
 const leon = prison.mapActors.find(actor => actor.actorId === 'light_palace_prison_leon');
 assert(leon && leon.placementId === 5, 'Current-time Leon prisoner placement must remain stable at placementId 5.');
 assert(king.actorId === 'captive_king', 'The captive king actorId must remain stable.');

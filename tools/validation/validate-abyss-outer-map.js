@@ -27,16 +27,25 @@ const action = map.mapActions.find(entry => entry.type === 'abyssDungeon');
 const registry = mapContext.window.MapRegistry;
 
 assert(action, 'Abyss entrance action is missing');
+assert(action.requiredFlag === 'alanAltarResolved', 'Abyss entrance must remain locked until the Phase8E Alan altar route is resolved.');
 assert(action.interactFromAdjacent === true, 'Abyss entrance must be activated from an adjacent tile');
 assert(action.baseTile === 'T', 'The chasm overlay must own its floor base');
 assert(!action.imageKey, 'The nine-cell chasm must not return to the actor-depth overlay layer');
 assert(action.interactionArea?.x === 7 && action.interactionArea?.y === 6
     && action.interactionArea?.width === 3 && action.interactionArea?.height === 3,
     'Abyss interaction area must match the exact 3x3 chasm footprint');
+// Phase8E intentionally gates the old Abyss entrance until Alan's altar route is resolved.
+// Validate the authored footprint with that story condition lifted locally instead of weakening the runtime gate.
+const unlockedAction = { ...action };
+delete unlockedAction.requiredFlag;
+const unlockedMap = {
+    ...map,
+    mapActions: (map.mapActions || []).map(entry => entry === action ? unlockedAction : entry),
+};
 for (let y = 6; y <= 8; y++) for (let x = 7; x <= 9; x++) {
-    assert(registry.findMapActionInteractionCell(map, x, y) === action, `Interaction footprint lookup failed at ${x},${y}`);
+    assert(registry.findMapActionInteractionCell(unlockedMap, x, y) === unlockedAction, `Interaction footprint lookup failed at ${x},${y}`);
 }
-assert(registry.findMapActionInteractionCell(map, 8, 5) === null, 'Interaction footprint leaked outside the 3x3 chasm');
+assert(registry.findMapActionInteractionCell(unlockedMap, 8, 5) === null, 'Interaction footprint leaked outside the 3x3 chasm');
 assert(decor.disabled === true && decor.key === null, 'Random floor decoration must stay disabled on the authored ritual ruin');
 
 for (const tileKey of ['W', 'T', 'G']) {

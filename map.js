@@ -2753,6 +2753,18 @@ const FIXED_MAPS = {
                 "requiredFlag": "rexnoteEstateArrivalSeen"
             },
             {
+                "x": 4,
+                "y": 3,
+                "type": "storyEvent",
+                "label": "古い机の隠し棚を調べる",
+                "eventId": "arel_kagetora_rexnote_record_phase8e",
+                "requiredQuestStates": { "arel_kagetora_appeal": "accepted" },
+                "requiredQuestStages": { "arel_kagetora_appeal": { "op": "==", "value": 1 } },
+                "imageKey": "overlay_dungeon_event",
+                "blocksMovement": false,
+                "baseTile": "T"
+            },
+            {
                 "x": 8,
                 "y": 2,
                 "type": "log",
@@ -4947,7 +4959,7 @@ const FIXED_MAPS = {
             "WWWWWWWWWWWWWWWWWWWLWWWWWWWWWWWWWWWWWWW",
             "WWWWWWWWWWWWWWWWWWWSWWWWWWWWWWWWWWWWWWW"
         ],
-        "nextActorPlacementId": 15,
+        "nextActorPlacementId": 91,
         "mapActors": [
             {
                 "placementId": 1,
@@ -5206,6 +5218,20 @@ const FIXED_MAPS = {
                 "imageKey": "overlay_companion_hayate",
                 "states": [
                     {
+                        "stateId": "arel_hayate_truth_stage3",
+                        "priority": 800,
+                        "when": {
+                            "requiredQuestStates": { "arel_kagetora_appeal": "accepted" },
+                            "requiredQuestStages": { "arel_kagetora_appeal": { "op": "==", "value": 3 } }
+                        },
+                        "action": {
+                            "label": "ハヤテと話す",
+                            "log": "ハヤテはゼリードを、父の最も信頼した相棒として待っている。",
+                            "type": "storyEvent",
+                            "eventId": "arel_kagetora_hayate_truth_phase8e"
+                        }
+                    },
+                    {
                         "stateId": "hayate_water_city",
                         "priority": 0,
                         "when": {
@@ -5217,6 +5243,29 @@ const FIXED_MAPS = {
                             "type": "quest",
                             "questId": "hayate_water_city",
                             "lockedText": "ハヤテはまだ、信頼できる案内人を待っているようだ。"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 90,
+                "actorId": "arel_old_admin_archive_phase8e",
+                "name": "旧行政記録棚",
+                "x": 25,
+                "y": 11,
+                "imageKey": "overlay_dungeon_event",
+                "states": [
+                    {
+                        "stateId": "arel_archive_stage0",
+                        "priority": 500,
+                        "when": {
+                            "requiredQuestStates": { "arel_kagetora_appeal": "accepted" },
+                            "requiredQuestStages": { "arel_kagetora_appeal": { "op": "==", "value": 0 } }
+                        },
+                        "action": {
+                            "label": "旧行政記録を調べる",
+                            "type": "storyEvent",
+                            "eventId": "arel_kagetora_water_archive_phase8e"
                         }
                     }
                 ]
@@ -5791,6 +5840,36 @@ const FIXED_MAPS = {
                 "log": "崩れた台座に、微かな光を失った結晶片が残っている。"
             }
         ],
+        "nextActorPlacementId": 2,
+        "mapActors": [
+            {
+                "placementId": 1,
+                "actorId": "alan_integration_altar_phase8e",
+                "name": "アラン",
+                "x": 8,
+                "y": 9,
+                "imageKey": "overlay_companion_alan",
+                "drawWidth": 32,
+                "drawHeight": 32,
+                "baseTile": "T",
+                "states": [
+                    {
+                        "stateId": "alan_altar_unresolved",
+                        "priority": 900,
+                        "when": {
+                            "requiredFlag": "nadirCaveCleared",
+                            "missingFlag": "alanAltarResolved"
+                        },
+                        "action": {
+                            "label": "アランと対峙する",
+                            "log": "祭壇中央の亀裂の前に、光をまとったアランが立っている。",
+                            "type": "storyEvent",
+                            "eventId": "integration_altar_alan_phase8e"
+                        }
+                    }
+                ]
+            }
+        ],
         "mapActions": [
             {
                 "x": 6,
@@ -5838,6 +5917,7 @@ const FIXED_MAPS = {
                 "log": "統合の祭壇の中心で、深淵へ続く亀裂が脈打っている。",
                 "type": "abyssDungeon",
                 "target": "CARMENA",
+                "requiredFlag": "alanAltarResolved",
                 "events": [
                     {
                         "stepMin": 9,
@@ -11805,8 +11885,46 @@ const FIXED_DUNGEON_MAPS = {
                         type: "item"
                     }
                 ],
-                nextActorPlacementId: 15,
+                nextActorPlacementId: 91,
                 mapActors: [
+                    {
+                        "placementId": 90,
+                        "actorId": "zelied_arel_long_arc_phase8e",
+                        "name": "ゼリード",
+                        "x": 16,
+                        "y": 20,
+                        "imageKey": "overlay_companion_zelied",
+                        "states": [
+                            {
+                                "stateId": "arel_long_arc_start",
+                                "priority": 900,
+                                "when": {
+                                    "requiredFlag": "alanBetrayedLightPalace",
+                                    "missingFlag": "alanDeadAtIntegrationAltar",
+                                    "requiredQuestStates": { "arel_kagetora_appeal": "available" }
+                                },
+                                "action": {
+                                    "label": "ゼリードと話す",
+                                    "log": "ゼリードが、捨てられなかった古い紙片を眺めている。",
+                                    "type": "quest",
+                                    "questId": "arel_kagetora_appeal",
+                                    "lockedText": "今はまだ、十年前の記録を追う時ではないようだ。"
+                                }
+                            },
+                            {
+                                "stateId": "arel_long_arc_progress",
+                                "priority": 100,
+                                "when": {
+                                    "requiredQuestStates": { "arel_kagetora_appeal": "accepted" }
+                                },
+                                "action": {
+                                    "label": "ゼリードと話す",
+                                    "type": "log",
+                                    "log": "ゼリード「今は記録を辿ろう。俺が逃げた分までな。」"
+                                }
+                            }
+                        ]
+                    },
                     {
                         "placementId": 1,
                         "actorId": "guild_girl",
@@ -13788,8 +13906,54 @@ const FIXED_DUNGEON_MAPS = {
                         missingFlag: "leilaJoined"
                     }
                 ],
-                nextActorPlacementId: 6,
+                nextActorPlacementId: 92,
                 mapActors: [
+                    {
+                        "placementId": 90,
+                        "actorId": "arel_old_order_ledger_phase8e",
+                        "name": "旧命令簿",
+                        "x": 13,
+                        "imageKey": "overlay_dungeon_event",
+                        "y": 11,
+                        "states": [
+                            {
+                                "stateId": "arel_order_stage2",
+                                "priority": 700,
+                                "when": {
+                                    "requiredQuestStates": { "arel_kagetora_appeal": "accepted" },
+                                    "requiredQuestStages": { "arel_kagetora_appeal": { "op": "==", "value": 2 } }
+                                },
+                                "action": {
+                                    "label": "十年前の旧命令簿を照合する",
+                                    "type": "storyEvent",
+                                    "eventId": "arel_kagetora_palace_order_phase8e"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "placementId": 91,
+                        "actorId": "arel_hidden_seized_box_phase8e",
+                        "name": "崩れた旧文書庫",
+                        "x": 14,
+                        "imageKey": "overlay_dungeon_event",
+                        "y": 11,
+                        "states": [
+                            {
+                                "stateId": "arel_appeal_stage4",
+                                "priority": 700,
+                                "when": {
+                                    "requiredQuestStates": { "arel_kagetora_appeal": "accepted" },
+                                    "requiredQuestStages": { "arel_kagetora_appeal": { "op": "==", "value": 4 } }
+                                },
+                                "action": {
+                                    "label": "ゼリードが隠した押収箱を探す",
+                                    "type": "storyEvent",
+                                    "eventId": "arel_kagetora_appeal_found_phase8e"
+                                }
+                            }
+                        ]
+                    },
                     {
                         "placementId": 1,
                         "actorId": "captive_king",

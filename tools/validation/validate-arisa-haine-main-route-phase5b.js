@@ -19,7 +19,9 @@ assert(q?.mainStory === true, 'Arisa/Haine rescue quest is not marked mainStory.
 assert(q?.unlockFlags?.includes('arisaHaineMainStoryRequired') && !q?.unlockFlags?.includes('waterCityCleared'), 'Arisa/Haine quest can still unlock as an optional quest immediately after Water City clear.');
 
 const messenger = context.FIXED_MAPS.WATER_CITY.mapActors.find(a=>a.actorId==='wind_messenger_water_city');
-assert(messenger?.placementId===14 && Number(context.FIXED_MAPS.WATER_CITY.nextActorPlacementId)===15, 'Water City messenger placement master is not stable.');
+assert(messenger?.placementId===14, 'Water City messenger placementId must remain stable at 14.');
+const waterActorIds = (context.FIXED_MAPS.WATER_CITY.mapActors || []).map(actor => Number(actor.placementId) || 0);
+assert(Number(context.FIXED_MAPS.WATER_CITY.nextActorPlacementId) > Math.max(...waterActorIds), 'Water City nextActorPlacementId must stay above every issued stable actor ID.');
 assert(messenger?.states?.[0]?.when?.requiredFlag==='waterCityPostClearTalked' && messenger?.states?.[0]?.when?.missingFlag==='arisaHaineMainStoryRequired', 'Wind messenger does not appear only after the breathing-space conversation.');
 assert(messenger?.states?.[0]?.action?.eventId==='water_city_wind_messenger', 'Wind messenger does not start mandatory rescue route.');
 assert(action('water_city_wind_messenger','FLAG',a=>a.key==='arisaHaineMainStoryRequired'), 'Messenger does not mark the rescue as main-story required.');
