@@ -41,7 +41,12 @@ for (const [areaKey, dungeon] of Object.entries(FIXED_DUNGEON_MAPS)) {
         if (floor.disableRandomEncounters || floor.isGuildQuestDungeon || floor.useHabitatEncounters === false) return;
         const abyssFloor = floor.mapId === MAP_IDS.ABYSS ? floor.floor : 0;
         const candidates = MonsterData.getEncounterCandidates({ mapId: floor.mapId, floor: floor.floor, abyssFloor });
+        const runtimeCandidates = MonsterData.getEncounterCandidates({
+            mapId: floor.mapId, floor: floor.floor, abyssFloor, rankMin: null, rankMax: null
+        });
         assert(candidates.length > 0, `${areaKey}:F${index + 1} has no monsters.js habitat candidates.`);
+        assert(JSON.stringify(runtimeCandidates.map(monster => monster.id)) === JSON.stringify(candidates.map(monster => monster.id)),
+            `${areaKey}:F${index + 1} runtime null rank bounds bypass monsters.js habitats.`);
         assert(!Array.isArray(floor.monsters), `${areaKey}:F${index + 1} restored a map-local monster roster.`);
         assert(!Array.isArray(floor.rareMonsters), `${areaKey}:F${index + 1} restored a map-local rare roster.`);
         floorsChecked += 1;
@@ -50,12 +55,19 @@ for (const [areaKey, dungeon] of Object.entries(FIXED_DUNGEON_MAPS)) {
 
 for (const zone of FIELD_ENCOUNTER_ZONES) {
     const candidates = MonsterData.getEncounterCandidates({ mapId: zone.mapId, floor: 0 });
+    const runtimeCandidates = MonsterData.getEncounterCandidates({ mapId: zone.mapId, floor: 0, rankMin: null, rankMax: null });
     assert(candidates.length > 0, `${zone.id} has no monsters.js field-habitat candidates.`);
+    assert(JSON.stringify(runtimeCandidates.map(monster => monster.id)) === JSON.stringify(candidates.map(monster => monster.id)),
+        `${zone.id} runtime null rank bounds bypass monsters.js field habitats.`);
     assert(!Array.isArray(zone.monsters) && !Array.isArray(zone.rareMonsters),
         `${zone.id} contains a map-local encounter override.`);
 }
 assert(MonsterData.getEncounterCandidates({ mapId: MAP_IDS.SEA, floor: 0 }).length > 0,
     'Sea encounters have no monsters.js habitat candidates.');
+
+const explicitRange = MonsterData.getEncounterCandidates({ mapId: MAP_IDS.THUNDER_FORT, floor: 1, rankMin: 68, rankMax: 76 });
+assert(explicitRange.length > 0 && explicitRange.every(monster => Number(monster.rank) >= 68 && Number(monster.rank) <= 76),
+    'Explicit encounterRankMin/Max no longer selects the intended global Rank range.');
 assert(MonsterData.getEncounterCandidates({ mapId: MAP_IDS.PROLOGUE_SOUTH_VILLAGE, floor: 0 }).some(monster => [1,2,3,4].includes(monster.id)),
     'Playable prologue south area has no early-game habitat candidates.');
 assert(MonsterData.getEncounterCandidates({ mapId: MAP_IDS.PROLOGUE_NORTH_VILLAGE, floor: 0 }).some(monster => [51,52,53,54].includes(monster.id)),

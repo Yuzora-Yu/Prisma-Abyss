@@ -13,7 +13,7 @@ const story = read('story.js');
 const phaser = read('phaser-field.js');
 const news = read('news.js');
 const canon = read('canon/PRISMA_SCENARIO_CANON_MASTER_v8.md');
-const handoff = read('PRISMA_WORK_HANDOFF_LATEST_2026-08-10.md');
+const handoff = read('development_notes/2026-08-10/handoff/PRISMA_WORK_HANDOFF_LATEST_2026-08-10.md');
 const geoDoc = read('docs/scenario/37_GALVANIA_GEOGRAPHY_PHASE8A_20260810.md');
 
 const context = { window: {}, console };

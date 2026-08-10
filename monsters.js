@@ -1512,8 +1512,13 @@ function getEncounterCandidates(options = {}) {
   const mapId = String(options.mapId || '').trim();
   const floor = normalizeEncounterFloor(options.floor, 0);
   const abyssFloor = normalizeEncounterFloor(options.abyssFloor, 0);
-  const rankMinRaw = Number(options.rankMin);
-  const rankMaxRaw = Number(options.rankMax);
+  // rankMin / rankMax are optional. Runtime battle data stores an omitted bound as null;
+  // Number(null) === 0, so coercing first would incorrectly turn every habitat encounter
+  // into an explicit Rank 1 range and bypass monsters.js habitat matching entirely.
+  const hasRankMin = options.rankMin !== null && options.rankMin !== undefined && options.rankMin !== '';
+  const hasRankMax = options.rankMax !== null && options.rankMax !== undefined && options.rankMax !== '';
+  const rankMinRaw = hasRankMin ? Number(options.rankMin) : NaN;
+  const rankMaxRaw = hasRankMax ? Number(options.rankMax) : NaN;
   const hasRankRange = Number.isFinite(rankMinRaw) || Number.isFinite(rankMaxRaw);
   const rankMin = Number.isFinite(rankMinRaw) ? Math.max(1, Math.floor(rankMinRaw)) : 1;
   const rankMax = Number.isFinite(rankMaxRaw) ? Math.max(rankMin, Math.floor(rankMaxRaw)) : Infinity;

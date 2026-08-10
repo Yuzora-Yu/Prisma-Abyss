@@ -12,7 +12,7 @@ const canon = read('canon/PRISMA_SCENARIO_CANON_MASTER_v8.md');
 const encyclopedia = read('canon/PRISMA_CHARACTER_BOSS_ENCYCLOPEDIA_v5.md');
 const draft = read('docs/scenario/38_DARK_CASTLE_OFFICERS_AND_EMPIRE_SHOPS_PHASE8B_20260810.md');
 const queue = read('docs/scenario/07_DIALOGUE_REVIEW_QUEUE.md');
-const handoff = read('PRISMA_WORK_HANDOFF_LATEST_2026-08-10.md');
+const handoff = read('development_notes/2026-08-10/handoff/PRISMA_WORK_HANDOFF_LATEST_2026-08-10.md');
 const news = read('news.js');
 
 const mapCtx = { window: {}, console };

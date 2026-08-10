@@ -164,3 +164,12 @@ If a change touches legacy implemented dialogue, it needs a review queue entry u
 - When a major feature is added or its interaction flow changes substantially, complete a tutorial-impact review after the target UI is stable. If new guidance is needed, propose the tutorial addition or revision to the user instead of silently leaving the old tutorial unchanged. Runtime implementation still requires the UI completion gate above.
 - Gacha is not planned for player use. Keep legacy code only when removal would create unnecessary risk, but do not add a player-facing route, unlock, tutorial, reward dependency, or future-release promise.
 - Do not infer effective starting combat stats from a single displayed value or one battle sample. Trace character master data, new-game copying, randomized starting equipment, `App.calcStats()`, traits, allocations, limit breaks, auras, and battle initialization first.
+
+## Delivery archive organization
+
+- Keep the ZIP root limited to runtime/project files that naturally belong there (for example `README.md` and `AGENTS.md`).
+- Do not accumulate handoff notes, implementation reports, scenario review drafts, validation logs, or review inventories at ZIP root.
+- Store generated development artifacts under `development_notes/YYYY-MM-DD/`.
+- Within each date folder, prefer `handoff/`, `reports/`, `scenario/`, `review/`, and `validation/` subfolders.
+- When the calendar date changes, create a new date folder instead of mixing new reports into the previous date.
+- Stable canonical documentation may remain in its established `canon/` or `docs/` hierarchy; `development_notes/` is the delivery-history/work-log layer.

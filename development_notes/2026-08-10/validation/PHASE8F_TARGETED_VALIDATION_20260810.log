@@ -1,0 +1,83 @@
+## Phase8F targeted validation (final)
+UTC 2026-08-10 09:04:30
+
+>>> validate-phase8f-jasper-alan-support.js
+[phase8f-jasper] PASS: Jasper trap/boast scene, death-route ambush+half stats, generic external NPC turn support, Alan four-skill cycle, post-battle rejoin choice, Legacion fallback, and 1,000,000 EXP are wired.
+
+>>> validate-phase8e-alan-appeal.js
+[phase8e-alan] PASS: corrected original-petition quest, Hayate/Zelied relationship, Alan boss, irreversible/no-petition and player-chosen petition branches, map gating, and save migration are wired.
+
+>>> validate-phase8e-story-infrastructure.js
+[phase8e-infra] PASS: quest-stage actions, explicit choice labels, approved canon, and global system/UI review policy are synchronized.
+
+>>> validate-nadir-cave-phase8d.js
+PASS validate-nadir-cave-phase8d
+
+>>> validate-dark-castle-phase8c.js
+[phase8c-dark-castle] PASS: Luna accountability, Dark Prism memory pain, Alus non-pressure support, Galvania defense evidence, Zenon truth, second integration, Shanny choice, commit order, and old-save rescue are wired.
+
+>>> validate-dark-castle-phase8b.js
+[phase8b-dark-castle] PASS: three male officers, revised battle motives, Castle shop removal, and post-clear Empire shop activation are wired.
+
+>>> validate-galvania-geography-phase8a.js
+[phase8a-galvania] PASS: world coordinates, new M0 maps, route gates, hidden Gorge aftermath, save migration, Nadir reuse, and Integration Altar sequencing are wired.
+
+>>> validate-crystal-tree-six-element-phase7d.js
+[phase7d-six-element] PASS: approved six-element medicine ritual, save compatibility, Leila gate, pedestals, and subtle hometown foreshadowing are wired.
+
+>>> validate-map-actors.js
+Map actor validation passed. Coordinate-based actors checked: 159.
+Stable mapActors masters checked: 106; no person sprites remain in mapActions.
+Actor positions are walkable, unique, blocking, adjacent-interactable, and linked to existing story events.
+
+>>> validate-map-actor-master.js
+Map actor master validation passed: stable ID, deterministic state priority, flag/item transitions, coordinate-independent identity, and legacy-action compatibility.
+
+>>> validate-story-dialogue-data.js
+Story validation passed: 388 scripts, 325 events.
+Warnings: 30 unreferenced scripts (review separately; not auto-deleted).
+unreferenced script: GAME_START_1
+unreferenced script: LIGHT_PALACE_FINAL_ENCOUNTER
+unreferenced script: ABYSS_FLOOR_010_LEON_GUARDIAN
+unreferenced script: ABYSS_FLOOR_010_CLEAR
+unreferenced script: ABYSS_FLOOR_020_GLEN_GUARDIAN
+unreferenced script: ABYSS_FLOOR_020_CLEAR
+unreferenced script: ABYSS_FLOOR_030_LEONARD
+unreferenced script: ABYSS_FLOOR_030_CLEAR
+unreferenced script: ABYSS_FLOOR_040_ELICIA
+unreferenced script: ABYSS_FLOOR_040_CLEAR
+unreferenced script: ABYSS_FLOOR_050_SYRIS
+unreferenced script: ABYSS_FLOOR_050_CLEAR
+unreferenced script: ABYSS_FLOOR_060_GRAD
+unreferenced script: ABYSS_FLOOR_060_CLEAR
+unreferenced script: ABYSS_FLOOR_070_VELD
+unreferenced script: ABYSS_FLOOR_070_VELD_CLEAR
+unreferenced script: ABYSS_FLOOR_080_LILITH
+unreferenced script: ABYSS_FLOOR_080_CLEAR
+unreferenced script: ABYSS_FLOOR_090_JASPER
+unreferenced script: ABYSS_FLOOR_090_JASPER_CLEAR
+unreferenced script: ABYSS_FLOOR_100_PHASE1
+unreferenced script: ABYSS_FLOOR_100_PHASE2
+unreferenced script: ABYSS_FLOOR_100_CLEAR
+unreferenced script: ABYSS_VEGNASIS_LAST_STAND_1
+unreferenced script: ABYSS_VEGNASIS_LAST_STAND_2
+unreferenced script: ABYSS_VEGNASIS_LAST_STAND_3
+unreferenced script: ABYSS_VEGNASIS_LAST_STAND_4
+unreferenced script: ABYSS_VEGNASIS_LAST_STAND_5
+unreferenced script: ABYSS_AZELGARAG_TRANSFORM
+unreferenced script: ABYSS_AZELGARAG_TRANSFORM_FINAL
+
+>>> validate-story-condition-engine.js
+PASS: shared story conditions and recruited/available/party/temporary/permanent ally states behave as expected.
+
+>>> validate-story-ally-lifecycle.js
+PASS: story ally equipment return is idempotent, departure preserves recruitment history, and normal/permanent rejoin rules behave as expected.
+
+>>> validate-story-exp-system.js
+PASS: individual EXP requirements, Lv1/2000% story joins, one-time Story EXP, and aggregated mass level-up logs behave as expected.
+
+>>> validate-event-battle-rules.js
+PASS: event battle thresholds, HP floors, forced-loss timing, reward suppression, and bestiary exclusion are wired for story boss variants.
+
+>>> validate-news-data.js
+PASS: news data policy (10 dates)

@@ -1008,3 +1008,19 @@ alanState.phase = 'dead'
 - 既存runtime copyを変える時は `現行 / 修正案` を併記し、user最終判断前に変更しない。
 - 新規system/UI copyもinventoryへ追加する。
 - tutorialはUI completion gateを優先し、現レビューから除外。
+
+### 生息域エンカウント null-bound 回帰防止【2026-08-10 8F-HF1】
+
+- `MonsterData.getEncounterCandidates(options)` の `rankMin/rankMax` は任意。runtimeは未指定境界を `null` で渡す。
+- JavaScriptでは `Number(null) === 0` のため、先に数値化して presence 判定してはいけない。
+- `null / undefined / ''` は「Rank境界なし」として habitat (`mapId + floor`) を参照する。
+- 実値の `rankMin/rankMax` がある場合のみ global Rank range モードへ入る。
+- 回帰検証は関数を引数省略で直接呼ぶだけでは不十分。battle runtime同等の `rankMin:null, rankMax:null` を渡し、全fixed floor / field zoneで habitat pool と一致することを検証する。
+- 2026-08-10修正時の代表値: THUNDER_FORT F1=`MAP000019` Rank51〜52、LIGHT_PALACE F1=`MAP000023` Rank61〜65。
+
+### 納品ZIP内の開発資料配置【2026-08-10以降】
+
+- ZIP直下へhandoff・実装報告・scenario review稿・validation logを積み上げない。
+- delivery historyは `development_notes/YYYY-MM-DD/` に置く。
+- 日付配下は `handoff/`, `reports/`, `scenario/`, `review/`, `validation/` を基本とする。
+- `README.md` / `AGENTS.md` 等のproject root文書と、安定正本の `canon/` / `docs/` は従来位置を維持する。
