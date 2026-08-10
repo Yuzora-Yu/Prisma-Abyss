@@ -45,7 +45,8 @@
         resizeObserver: null,
         lastStaticSignature: null,
         lastParentWidth: 0,
-        lastParentHeight: 0
+        lastParentHeight: 0,
+        mapPointerDown: null
     };
 
     const getApp = () => (typeof App !== 'undefined' ? App : null);
@@ -1312,6 +1313,33 @@
                         state.scene = this;
                         state.ready = true;
                         addKnownTextures(this);
+
+                        // マップ上のタップ/クリックは、カメラ座標からタイル座標へ変換して
+                        // Field側の最短経路自動歩行へ渡す。描画ロジック自体は変更しない。
+                        this.input.on('pointerdown', pointer => {
+                            if (pointer?.event?.button !== undefined && pointer.event.button !== 0) return;
+                            state.mapPointerDown = {
+                                id: pointer.id,
+                                x: Number(pointer.x),
+                                y: Number(pointer.y)
+                            };
+                        });
+                        this.input.on('pointerup', pointer => {
+                            const down = state.mapPointerDown;
+                            state.mapPointerDown = null;
+                            if (!down || down.id !== pointer.id) return;
+                            const dragDistance = Math.hypot(Number(pointer.x) - down.x, Number(pointer.y) - down.y);
+                            if (dragDistance > 14) return;
+
+                            const field = state.pendingField;
+                            if (!field || typeof field.requestAutoWalkTo !== 'function') return;
+                            const worldPoint = this.cameras.main.getWorldPoint(Number(pointer.x), Number(pointer.y));
+                            const tileX = Math.floor(worldPoint.x / TILE_SIZE);
+                            const tileY = Math.floor(worldPoint.y / TILE_SIZE);
+                            field.requestAutoWalkTo(tileX, tileY);
+                        });
+                        this.input.on('pointercancel', () => { state.mapPointerDown = null; });
+
                         parent.classList.add('is-ready');
                         document.getElementById('canvas-wrapper')?.classList.add('phaser-field-active');
                         if (state.pendingField) sync(state.pendingField);

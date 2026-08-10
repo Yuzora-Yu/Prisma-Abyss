@@ -2949,11 +2949,24 @@ const Battle = {
         return Number.isFinite(id) && id >= 400000 && id < 500000;
     },
 
-    getEquipmentRewardFloor: (enemy, fallbackFloor = 1) => {
+    // 基本装備ドロップの参照値はMAP階層ではなく、倒したモンスター自身のRankを正本にする。
+    // memoryRewardRank は追憶用に強化後Rankを明示する例外で、generatedFloor は旧データ互換の最終fallback。
+    getEquipmentRewardRank: (enemy, fallbackRank = 1) => {
         const base = Battle.getMonsterBaseById(enemy?.baseId || enemy?.id) || {};
-        const raw = enemy?.memoryRewardRank ?? enemy?.generatedFloor ?? enemy?.rewardRank ?? enemy?.rank ?? base.generatedFloor ?? base.rewardRank ?? base.rank ?? base.minF ?? fallbackFloor;
-        return Math.max(1, Math.floor(Number(raw) || Number(fallbackFloor) || 1));
+        const raw = enemy?.memoryRewardRank
+            ?? enemy?.rank
+            ?? base.rank
+            ?? base.minF
+            ?? enemy?.rewardRank
+            ?? base.rewardRank
+            ?? enemy?.generatedFloor
+            ?? base.generatedFloor
+            ?? fallbackRank;
+        return Math.max(1, Math.floor(Number(raw) || Number(fallbackRank) || 1));
     },
+
+    // 既存参照との互換性を維持する。
+    getEquipmentRewardFloor: (enemy, fallbackFloor = 1) => Battle.getEquipmentRewardRank(enemy, fallbackFloor),
 
     getEnemyRewardValue: (enemy, base, key) => {
         const personal = Number(enemy?.[key]);
@@ -8352,7 +8365,7 @@ findNextActor: () => {
 				// 追憶の魔境では元モンスター固有の低Rank／物語ボス報酬を持ち込まず、
 				// 強化後Rankに連動する汎用ドロップへ統一する。
 				const monsterDrops = (e.memoryRealm && !e.memoryRarePreserveDrops) ? null : base.drops;
-				const rewardFloor = Battle.getEquipmentRewardFloor(e, floor);
+                const rewardRank = Battle.getEquipmentRewardRank(e, 1);
 
 				// 1. レアドロップ判定 (独立)
 				if (monsterDrops && monsterDrops.rare) {
@@ -8388,7 +8401,7 @@ findNextActor: () => {
 					let eq;
 					if (isBoss && Math.random() < 0.02) {
 						// 2%の確率で発生する超強力な「改」装備
-						eq = createEquipWithMinRarity(rewardFloor, 3, ['SSR', 'UR', 'EX'], '武器');
+						eq = createEquipWithMinRarity(rewardRank, 3, ['SSR', 'UR', 'EX'], '武器');
 						eq.name = eq.name.replace(/\+3$/, "") + "・改+3";
 						
 						// ★追加修正：能力増加は基礎値（主要7ステータス）のみとする
@@ -8406,7 +8419,7 @@ findNextActor: () => {
 						drops.push({ name: eq.name, isRare: true, type: 'kai', kind: 'equip' });
 					} else {
 						let fixedPlus = isBoss ? 3 : (Math.random() * 100 < (10 + bonusPlus3) ? 3 : 2);
-						eq = App.createEquipByFloor('drop', rewardFloor, fixedPlus);
+						eq = App.createEquipByFloor('drop', rewardRank, fixedPlus, { balancedDropBase:true });
 						const isPlus3 = (eq.plus === 3);
 						if (isPlus3 || isBoss) hasRareDrop = true;
 						drops.push({ name: eq.name, isRare: (isPlus3 || isBoss), type: isBoss ? 'boss' : 'normal', kind: 'equip' });

@@ -61,7 +61,8 @@ assert(southToWest?.triggerOnStep === true && Number(southToWest.x) === 1, 'Sout
 
 assert(maps.PROLOGUE_SOUTH_VILLAGE.entryEventId === 'prologue_south_arrival', 'South entry does not trigger the rescue battle.');
 assert(maps.PROLOGUE_SOUTH_VILLAGE.entryEventFlag === 'prologueFirstBattleCleared', 'South rescue battle has no victory gate.');
-assert(maps.PROLOGUE_SOUTH_VILLAGE.isDungeon === true && maps.PROLOGUE_NORTH_VILLAGE.isDungeon === true, 'Prologue encounter areas must use fixed-map encounter runtime.');
+assert(maps.PROLOGUE_SOUTH_VILLAGE.isDungeon !== true && maps.PROLOGUE_NORTH_VILLAGE.isDungeon !== true, 'Prologue villages must remain non-dungeon maps so dungeon Escape cannot skip the opening.');
+assert(/!Field\.currentMapData\.isDungeon && Field\.currentMapData\.useHabitatEncounters === true/.test(mainSource), 'Non-dungeon habitat maps must still roll local random encounters.');
 assert(maps.PROLOGUE_SOUTH_VILLAGE.useHabitatEncounters === true && maps.PROLOGUE_NORTH_VILLAGE.useHabitatEncounters === true, 'Prologue normal encounters must use monsters.js habitat master.');
 assert(!Array.isArray(maps.PROLOGUE_SOUTH_VILLAGE.monsters) && !Array.isArray(maps.PROLOGUE_NORTH_VILLAGE.monsters), 'Prologue maps must not duplicate normal encounter rosters in map.js.');
 assert(maps.PROLOGUE_SOUTH_VILLAGE.encounterRank === 1, 'South encounter rank must remain early-game rank.');

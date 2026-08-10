@@ -2879,10 +2879,10 @@ const App = {
                     return;
                 }
                 if(typeof Menu !== 'undefined' && Menu.isMenuOpen()) return;
-                if(['ArrowUp', 'w'].includes(e.key)) Field.move(0, -1);
-                if(['ArrowDown', 's'].includes(e.key)) Field.move(0, 1);
-                if(['ArrowLeft', 'a'].includes(e.key)) Field.move(-1, 0);
-                if(['ArrowRight', 'd'].includes(e.key)) Field.move(1, 0);
+                if(['ArrowUp', 'w'].includes(e.key)) { Field.stopAutoWalk(); Field.move(0, -1); }
+                if(['ArrowDown', 's'].includes(e.key)) { Field.stopAutoWalk(); Field.move(0, 1); }
+                if(['ArrowLeft', 'a'].includes(e.key)) { Field.stopAutoWalk(); Field.move(-1, 0); }
+                if(['ArrowRight', 'd'].includes(e.key)) { Field.stopAutoWalk(); Field.move(1, 0); }
                 if(e.key === 'Enter' || e.key === ' ') {
                     App.inspectCurrentTile();
                 }
@@ -2937,6 +2937,86 @@ const App = {
 		bindPad('btn-down', 0, 1);
 		bindPad('btn-left', -1, 0);
 		bindPad('btn-right', 1, 0);
+
+        const bindMoveStick = () => {
+            const stick = document.getElementById('move-stick');
+            const knob = document.getElementById('move-stick-knob');
+            if (!stick || !knob) return;
+            stick.style.touchAction = 'none';
+
+            let activePointerId = null;
+            let activeDir = null;
+            const resetKnob = () => { knob.style.transform = 'translate(-50%, -50%)'; };
+            const stopStick = (e) => {
+                if (e && e.cancelable) e.preventDefault();
+                if (e?.pointerId !== undefined && activePointerId !== null && e.pointerId !== activePointerId) return;
+                activePointerId = null;
+                activeDir = null;
+                resetKnob();
+                Field.stopMove();
+            };
+            const updateStick = (e) => {
+                if (!e || (activePointerId !== null && e.pointerId !== undefined && e.pointerId !== activePointerId)) return;
+                if (e.cancelable) e.preventDefault();
+                const rect = stick.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const vx = Number(e.clientX) - cx;
+                const vy = Number(e.clientY) - cy;
+                const distance = Math.hypot(vx, vy);
+                const maxRadius = Math.max(8, Math.min(rect.width, rect.height) * 0.27);
+                const knobScale = distance > 0 ? Math.min(1, maxRadius / distance) : 0;
+                knob.style.transform = `translate(calc(-50% + ${vx * knobScale}px), calc(-50% + ${vy * knobScale}px))`;
+
+                const deadZone = Math.max(8, Math.min(rect.width, rect.height) * 0.14);
+                if (distance < deadZone) {
+                    if (activeDir) {
+                        activeDir = null;
+                        Field.stopMove();
+                    }
+                    return;
+                }
+                const dir = Math.abs(vx) >= Math.abs(vy)
+                    ? (vx >= 0 ? [1, 0] : [-1, 0])
+                    : (vy >= 0 ? [0, 1] : [0, -1]);
+                const dirKey = `${dir[0]},${dir[1]}`;
+                if (activeDir === dirKey) return;
+                activeDir = dirKey;
+                startMove(dir[0], dir[1]);
+            };
+
+            if (window.PointerEvent) {
+                stick.onpointerdown = (e) => {
+                    if (e.cancelable) e.preventDefault();
+                    activePointerId = e.pointerId;
+                    try { stick.setPointerCapture?.(e.pointerId); } catch (err) {}
+                    updateStick(e);
+                };
+                stick.onpointermove = (e) => {
+                    if (activePointerId === null) return;
+                    updateStick(e);
+                };
+                stick.onpointerup = stopStick;
+                stick.onpointercancel = stopStick;
+                stick.onlostpointercapture = stopStick;
+            } else {
+                stick.onmousedown = (e) => { activePointerId = 1; updateStick(e); };
+                window.addEventListener('mousemove', e => { if (activePointerId !== null) updateStick(e); });
+                window.addEventListener('mouseup', stopStick);
+                stick.ontouchstart = (e) => {
+                    activePointerId = 1;
+                    const touch = e.touches?.[0];
+                    if (touch) updateStick(touch);
+                };
+                stick.ontouchmove = (e) => {
+                    const touch = e.touches?.[0];
+                    if (touch) updateStick(touch);
+                };
+                stick.ontouchend = stopStick;
+                stick.ontouchcancel = stopStick;
+            }
+        };
+        bindMoveStick();
 
 		const bindClick = (id, fn) => {
 			const el = document.getElementById(id);
@@ -7434,8 +7514,34 @@ load: () => {
         return weighted[Math.floor(Math.random() * weighted.length)];
     },
 
+    // 通常装備ドロップは「部位 → baseName」の2段階で抽選する。
+    // EQUIP_MASTERの登録件数に引っ張られず、5部位は各20%、同部位内のbaseNameは均等になる。
+    pickBasicDropEquipBase: (candidates, randomFn = Math.random) => {
+        const list = Array.isArray(candidates) ? candidates.filter(Boolean) : [];
+        if (list.length === 0) return null;
+
+        const dropTypes = ['武器', '盾', '頭', '体', '足'];
+        const availableTypes = dropTypes.filter(type => list.some(eq => eq.type === type));
+        if (availableTypes.length === 0) {
+            return list[Math.min(list.length - 1, Math.floor(Math.max(0, Math.min(0.999999999, Number(randomFn()) || 0)) * list.length))];
+        }
+
+        const pickIndex = length => {
+            const r = Math.max(0, Math.min(0.999999999, Number(randomFn()) || 0));
+            return Math.min(length - 1, Math.floor(r * length));
+        };
+        const type = availableTypes[pickIndex(availableTypes.length)];
+        const typeCandidates = list.filter(eq => eq.type === type);
+        const baseNames = [...new Set(typeCandidates.map(eq => String(eq.baseName || '')).filter(Boolean))];
+        if (baseNames.length === 0) return typeCandidates[pickIndex(typeCandidates.length)];
+
+        const baseName = baseNames[pickIndex(baseNames.length)];
+        const baseCandidates = typeCandidates.filter(eq => String(eq.baseName || '') === baseName);
+        return baseCandidates[pickIndex(baseCandidates.length)];
+    },
+
 	/* main.js: App.createEquipByFloor 関数 */
-	createEquipByFloor: (source, floor = null, fixedPlus = null) => {
+	createEquipByFloor: (source, floor = null, fixedPlus = null, options = {}) => {
 		const targetFloor = (floor !== null) ? floor : App.getVirtualFloor();
 		
 		// 1. 参照するRankを決定
@@ -7456,7 +7562,10 @@ load: () => {
 		  if (candidates.length === 0) candidates = [pool[0]];
 		}
 
-		const base = candidates[Math.floor(Math.random() * candidates.length)];
+        const useBalancedDropBase = source === 'drop' && options?.balancedDropBase === true;
+        const base = useBalancedDropBase
+            ? (App.pickBasicDropEquipBase(candidates) || candidates[0])
+            : candidates[Math.floor(Math.random() * candidates.length)];
 		
 		// 3. プラス値の決定
 		let plus = 0;
@@ -8902,7 +9011,11 @@ load: () => {
             ? worldSurface.isSea
             : (typeof App.getWorldTileAt === 'function' && App.getWorldTileAt(Field.x, Field.y) === 'W'));
         const worldEncounter = isSeaEncounter ? null : App.getWorldEncounterProfile();
-        const mapEncounter = Field.currentMapData?.isDungeon ? Field.currentMapData : null;
+        // 「ダンジョンかどうか」と「ローカルMAPでエンカウントするか」は別概念。
+        // 村・街などでも useHabitatEncounters:true なら、そのMAP固有の生息域遭遇を使う。
+        const mapEncounter = Field.currentMapData && (Field.currentMapData.isDungeon || Field.currentMapData.useHabitatEncounters === true)
+            ? Field.currentMapData
+            : null;
 
 		App.data.battle = {
 			active: false,
@@ -9095,6 +9208,9 @@ const Field = {
     minimapMode: 'normal',
     minimapTapTimer: null,
 	moveTimer: null, // ★追加：タイマー保持用
+    autoWalkTimer: null,
+    autoWalkToken: 0,
+    autoWalkActive: false,
 
     // 待機中の足踏みアニメ用タイマー。
     // 重要: これは演出専用。Field.move() は呼ばず、座標/歩数/エンカウント/セーブには一切触れない。
@@ -9196,17 +9312,213 @@ const Field = {
             clearInterval(Field.moveTimer);
             Field.moveTimer = null;
         }
+        Field.stopAutoWalk();
         // 長押し移動を離した後、フィールド上なら足踏みを再開する。
         // ただし会話/エンカウント遷移/報酬演出中は再開しない。
         if (typeof App.isFieldControlBlocked === 'function' && App.isFieldControlBlocked()) return;
         if (typeof Field.startIdleStep === 'function') Field.startIdleStep();
     },
 
+    stopAutoWalk: () => {
+        Field.autoWalkToken++;
+        Field.autoWalkActive = false;
+        if (Field.autoWalkTimer) {
+            clearTimeout(Field.autoWalkTimer);
+            Field.autoWalkTimer = null;
+        }
+    },
+
+    getAutoWalkContextKey: () => {
+        if (!Field.currentMapData) {
+            const worldKey = typeof MapRegistry !== 'undefined' && MapRegistry.getActiveWorldKey
+                ? MapRegistry.getActiveWorldKey()
+                : (App.data?.location?.worldKey || 'WORLD');
+            return `world:${worldKey}`;
+        }
+        return `map:${Field.getCurrentAreaKey()}:${Field.currentMapData.mapId || ''}:${Field.currentMapData.floorId || Field.currentMapData.floor || ''}`;
+    },
+
+    isLocalAutoWalkCellPassable: (x, y, fromX, fromY) => {
+        const map = Field.currentMapData;
+        if (!map) return false;
+        if (x < 0 || y < 0 || x >= Number(map.width) || y >= Number(map.height)) return false;
+        if (Field.isMovementRegionCrossingBlocked(fromX, fromY, x, y)) return false;
+
+        const areaKey = Field.getCurrentAreaKey();
+        const tile = String(Field.getRenderedTileForDraw(x, y, Number(map.width), Number(map.height), areaKey) || 'W').toUpperCase();
+        const isFloodedRandomFloor = !!(map.isDungeon && !map.isFixed && App.data?.dungeon?.isFloodedFloor);
+        if (Field.isTileImpassableForCurrentMap(tile)) return false;
+        if (tile === '~' && !isFloodedRandomFloor) return false;
+        if (Field.isBuildingMovementBlocked(fromX, fromY, x, y)) return false;
+
+        // 扉・宝箱・ボス・NPC等の動的障害物は経路探索では通れるものとして扱う。
+        // 実移動のField.move()側で開錠/衝突判定し、通れなければその場で自動歩行を止める。
+        return true;
+    },
+
+    findWrappedWorldAutoWalkPath: (targetX, targetY) => {
+        const worldMap = Field.getActiveWorldMap();
+        const height = Number(worldMap?.length || 0);
+        const width = Number(worldMap?.[0]?.length || 0);
+        if (width <= 0 || height <= 0) return null;
+
+        const normX = value => ((Number(value) % width) + width) % width;
+        const normY = value => ((Number(value) % height) + height) % height;
+        const sx = normX(Field.x), sy = normY(Field.y), tx = normX(targetX), ty = normY(targetY);
+        if (sx === tx && sy === ty) return [];
+
+        const keyOf = (x, y) => `${x},${y}`;
+        const startKey = keyOf(sx, sy);
+        const targetKey = keyOf(tx, ty);
+        const queue = [{ x: sx, y: sy }];
+        const parent = new Map([[startKey, null]]);
+        const stepByKey = new Map();
+        const isFlying = typeof App.isFlying === 'function' && App.isFlying();
+        const hasBoat = typeof App.hasMagicBoat === 'function' && App.hasMagicBoat();
+
+        const torusDistance = (x, y) => {
+            const dx = Math.abs(tx - x);
+            const dy = Math.abs(ty - y);
+            return Math.min(dx, width - dx) + Math.min(dy, height - dy);
+        };
+
+        for (let qi = 0; qi < queue.length; qi++) {
+            const current = queue[qi];
+            const directions = [[1,0],[-1,0],[0,1],[0,-1]].sort((a, b) =>
+                torusDistance(normX(current.x + a[0]), normY(current.y + a[1]))
+                - torusDistance(normX(current.x + b[0]), normY(current.y + b[1]))
+            );
+            for (const [dx, dy] of directions) {
+                const nx = normX(current.x + dx);
+                const ny = normY(current.y + dy);
+                const nextKey = keyOf(nx, ny);
+                if (parent.has(nextKey)) continue;
+
+                const surface = typeof MapRegistry !== 'undefined' && MapRegistry.getWorldSurfaceAt
+                    ? MapRegistry.getWorldSurfaceAt(nx, ny)
+                    : {
+                        tile: String(worldMap[ny]?.[nx] || 'W').toUpperCase(),
+                        isSea: String(worldMap[ny]?.[nx] || 'W').toUpperCase() === 'W',
+                        isImpassable: String(worldMap[ny]?.[nx] || 'W').toUpperCase() === 'M'
+                    };
+                if (!isFlying && surface.isImpassable) continue;
+                if (!isFlying && surface.isSea && !hasBoat) continue;
+
+                parent.set(nextKey, keyOf(current.x, current.y));
+                stepByKey.set(nextKey, { x: nx, y: ny, dx, dy });
+                if (nextKey === targetKey) {
+                    const reversed = [];
+                    let cursor = targetKey;
+                    while (cursor !== startKey) {
+                        reversed.push(stepByKey.get(cursor));
+                        cursor = parent.get(cursor);
+                    }
+                    return reversed.reverse();
+                }
+                queue.push({ x: nx, y: ny });
+            }
+        }
+        return null;
+    },
+
+    findAutoWalkPath: (targetX, targetY) => {
+        if (Field.currentMapData) {
+            const tx = Math.floor(Number(targetX));
+            const ty = Math.floor(Number(targetY));
+            const width = Number(Field.currentMapData.width || 0);
+            const height = Number(Field.currentMapData.height || 0);
+            if (!Number.isFinite(tx) || !Number.isFinite(ty) || tx < 0 || ty < 0 || tx >= width || ty >= height) return null;
+            if (typeof Dungeon === 'undefined' || typeof Dungeon.findShortestGridPath !== 'function') return null;
+            const path = Dungeon.findShortestGridPath(
+                Field.x,
+                Field.y,
+                tx,
+                ty,
+                (x, y, fromX, fromY) => Field.isLocalAutoWalkCellPassable(x, y, fromX, fromY),
+                width,
+                height
+            );
+            if (!Array.isArray(path)) return null;
+            let px = Number(Field.x), py = Number(Field.y);
+            return path.map(node => {
+                const step = { x: Number(node.x), y: Number(node.y), dx: Number(node.x) - px, dy: Number(node.y) - py };
+                px = Number(node.x); py = Number(node.y);
+                return step;
+            });
+        }
+        return Field.findWrappedWorldAutoWalkPath(targetX, targetY);
+    },
+
+    requestAutoWalkTo: (targetX, targetY) => {
+        if (!Field.ready || !App.data) return false;
+        if (typeof App.isFieldControlBlocked === 'function' && App.isFieldControlBlocked()) return false;
+        if (typeof Menu !== 'undefined' && Menu.isMenuOpen()) return false;
+
+        Field.stopMove();
+        const path = Field.findAutoWalkPath(targetX, targetY);
+        if (!Array.isArray(path) || path.length === 0) return false;
+
+        const token = ++Field.autoWalkToken;
+        const contextKey = Field.getAutoWalkContextKey();
+        const steps = path.slice();
+        Field.autoWalkActive = true;
+        if (typeof Field.stopIdleStep === 'function') Field.stopIdleStep();
+
+        const finish = () => {
+            if (token !== Field.autoWalkToken) return;
+            Field.autoWalkActive = false;
+            Field.autoWalkTimer = null;
+            if (typeof Field.startIdleStep === 'function') Field.startIdleStep();
+        };
+
+        const stepNext = () => {
+            if (token !== Field.autoWalkToken) return;
+            if (!Field.autoWalkActive || Field.getAutoWalkContextKey() !== contextKey ||
+                (typeof App.isFieldControlBlocked === 'function' && App.isFieldControlBlocked()) ||
+                (typeof Menu !== 'undefined' && Menu.isMenuOpen())) {
+                Field.stopAutoWalk();
+                return;
+            }
+            const fieldScene = document.getElementById('field-scene');
+            if (fieldScene && fieldScene.style.display === 'none') {
+                Field.stopAutoWalk();
+                return;
+            }
+
+            const next = steps.shift();
+            if (!next) {
+                finish();
+                return;
+            }
+
+            const beforeX = Number(Field.x);
+            const beforeY = Number(Field.y);
+            Field.move(next.dx, next.dy);
+
+            if (token !== Field.autoWalkToken) return;
+            if (Field.getAutoWalkContextKey() !== contextKey ||
+                Number(Field.x) !== Number(next.x) || Number(Field.y) !== Number(next.y) ||
+                (Number(Field.x) === beforeX && Number(Field.y) === beforeY)) {
+                Field.stopAutoWalk();
+                return;
+            }
+
+            if (steps.length === 0) {
+                finish();
+                return;
+            }
+            Field.autoWalkTimer = setTimeout(stepNext, 145);
+        };
+
+        stepNext();
+        return true;
+    },
+
     shouldIdleStep: () => {
         const fieldScene = document.getElementById('field-scene');
         if (!fieldScene || fieldScene.style.display === 'none') return false;
         if (!Field.ready || !App.data) return false;
-        if (Field.moveTimer) return false;
+        if (Field.moveTimer || Field.autoWalkActive) return false;
         if (document.hidden) return false;
         if (typeof Menu !== 'undefined' && typeof Menu.isMenuOpen === 'function' && Menu.isMenuOpen()) return false;
         if (typeof StoryManager !== 'undefined') {
@@ -12200,6 +12512,20 @@ const Field = {
             // 現在地タイルのアクション判定は refreshCurrentAction に統一。
             // move() 内だけに判定を書くと、戦闘/施設/イベント復帰時にボタンが復元されないため。
             Field.refreshCurrentAction({ silent: false });
+
+            // 村・街などのローカルMAPでも、useHabitatEncounters:true なら通常床で遭遇できる。
+            // isDungeon はエスケープ/階層/ダンジョン専用ギミックの判定にのみ使う。
+            if (!Field.currentMapData.isDungeon && Field.currentMapData.useHabitatEncounters === true &&
+                (tile === 'T' || tile === 'G' || tile === 'M') && !App.pendingAction) {
+                const occurred = App.tryRandomEncounter();
+                if (occurred) {
+                    App.save();
+                    Field.render();
+                    return;
+                }
+                if (App.data.walkCount === undefined) App.data.walkCount = 0;
+                App.data.walkCount++;
+            }
 
             if (Field.currentMapData.isDungeon) Dungeon.handleMove(nx, ny);
             if (Field.currentMapData.isDungeon && !Field.currentMapData.isFixed && typeof Dungeon !== 'undefined' && typeof Dungeon.stepRandomHunters === 'function') {

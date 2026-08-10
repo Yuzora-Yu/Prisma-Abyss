@@ -1369,6 +1369,18 @@ const STORY_DATA = {
                 color: "#d7b45a"
             }
         },
+        REES_MOUNTAIN_HUT: {
+            name: "リースの山小屋",
+            rank: 1,
+            centerX: 66,
+            centerY: 58,
+            fieldTile: {
+                img: "overlay_field_house_1",
+                color: "#d9bd84"
+            },
+            entryRequiredFlag: "prologuePresentWakeSeen",
+            entryLockedText: "今はまだ、この山小屋へ向かう理由がない。"
+        },
         FIRE_VILLAGE: {
             name: "炎の里イグニシア",
             rank: 10,
@@ -2487,7 +2499,6 @@ const FIXED_MAPS = {
         "height": 21,
         "entryPoint": { "x": 2, "y": 3 },
         "battleBg": "battle_bg_first",
-        "isDungeon": true,
         "useHabitatEncounters": true,
         "encounterRank": 1,
         "randomEncounterRateMultiplier": 0.75,
@@ -2614,14 +2625,14 @@ const FIXED_MAPS = {
                 "x": 5, "y": 7,
                 "area": "WORLD",
                 "worldKey": "WORLD",
-                "worldX": 58,
-                "worldY": 65,
+                "worldX": 66,
+                "worldY": 58,
                 "requiredFlag": "prologueReesDepartureTalkSeen",
                 "setFlag": "prologueDepartedReesHut",
                 "lockedText": "出る前に、リースへ声をかけておこう。"
             }
         ],
-        "exitPoint": { "area": "WORLD", "worldKey": "WORLD", "x": 58, "y": 65 },
+        "exitPoint": { "area": "WORLD", "worldKey": "WORLD", "x": 66, "y": 58 },
         "mapActions": []
     },
     "REXNOTE_ESTATE": {
@@ -2698,7 +2709,6 @@ const FIXED_MAPS = {
         "height": 21,
         "entryPoint": { "x": 12, "y": 18 },
         "battleBg": "battle_bg_first",
-        "isDungeon": true,
         "useHabitatEncounters": true,
         "encounterRank": 31,
         "encounterRankMin": 1,
