@@ -1462,8 +1462,8 @@ const STORY_DATA = {
         CRYSTAL_TREE: {
             name: "結晶樹の秘跡",
             rank: 60,
-            centerX: 40,
-            centerY: 19,
+            centerX: 75,
+            centerY: 43,
             worldPriority: 20,
             worldConditions: {
                 requiredFlag: "crystalTreeRouteBriefed",
@@ -7962,8 +7962,8 @@ const FIXED_MAPS = {
         "exitPoint": {
             "area": "WORLD",
             "worldKey": "WORLD",
-            "x": 40,
-            "y": 19
+            "x": 75,
+            "y": 43
         },
         "worldExits": [
             {
@@ -7971,8 +7971,8 @@ const FIXED_MAPS = {
                 "y": 19,
                 "area": "WORLD",
                 "worldKey": "WORLD",
-                "worldX": 40,
-                "worldY": 19
+                "worldX": 75,
+                "worldY": 43
             }
         ],
         "mapActions": [],
