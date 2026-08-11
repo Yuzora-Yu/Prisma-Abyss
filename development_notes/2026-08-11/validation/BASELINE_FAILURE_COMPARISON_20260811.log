@@ -1,0 +1,37 @@
+PRISMA ABYSS baseline failure comparison - 2026-08-11
+Baseline commit (local snapshot before this patch): bc83ee1
+
+Current full suite: 19/73 validator scripts failed.
+
+Asset-excluded ZIP failures (10; assets folder is intentionally absent):
+- validate-asset-fixed-names.js
+- validate-authored-map-props.js
+- validate-blocking-map-objects.js
+- validate-chest-mimics.js
+- validate-companion-map-sprites.js
+- validate-event-map-markers.js
+- validate-fixed-water-shore.js
+- validate-full-cache-assets.js
+- validate-summit-temple.js
+- validate-visual-polish.js
+
+Non-asset failures (9) were rerun against detached baseline bc83ee1 and all 9 already failed before this patch:
+- validate-crystal-tree-route-phase7c.js : baseline FAIL / patched FAIL
+- validate-galvania-geography-phase8a.js : baseline FAIL / patched FAIL
+- validate-light-palace-flashback-phase6d.js : baseline FAIL / patched FAIL
+- validate-light-palace-present-assault-phase6e.js : baseline FAIL / patched FAIL
+- validate-nadir-cave-phase8d.js : baseline FAIL / patched FAIL
+- validate-playable-prologue-phase2a.js : baseline FAIL / patched FAIL
+- validate-prologue-phase2.js : baseline FAIL / patched FAIL
+- validate-story-monster-variants.js : baseline FAIL / patched FAIL
+- validate-world-state-condition-normalizer.js : baseline FAIL / patched FAIL
+
+Patch-specific validators:
+- validate-event-battle-rules.js : PASS
+- validate-prologue-quality-audit-20260810.js : PASS
+- validate-post-battle-boss-visual-source-20260811.js : PASS
+- validate-playable-prologue-phase2b.js : PASS
+- validate-playable-prologue-phase2c.js : PASS
+- validate-news-data.js : PASS
+
+Conclusion: no new validator failure was introduced by the 2026-08-11 prologue combat/visual/recovery patch.

@@ -4691,6 +4691,12 @@ const STORY_MANAGER_DATA = {
                                 "lossEventId": "prologue_south_ambush_retry",
                                 "bestiaryExcluded": true,
                                 "noDrops": true,
+                                "guaranteedEquipmentReward": {
+                                        "rank": 10,
+                                        "plus": 3,
+                                        "count": 1,
+                                        "balancedDropBase": true
+                                },
                                 "storyVariantOf": 2
                         }
                 ],
@@ -4713,6 +4719,12 @@ const STORY_MANAGER_DATA = {
                                 "lossEventId": "prologue_south_ambush_retry",
                                 "bestiaryExcluded": true,
                                 "noDrops": true,
+                                "guaranteedEquipmentReward": {
+                                        "rank": 10,
+                                        "plus": 3,
+                                        "count": 1,
+                                        "balancedDropBase": true
+                                },
                                 "storyVariantOf": 2
                         }
                 ],
@@ -4769,6 +4781,7 @@ const STORY_MANAGER_DATA = {
                         { "type": "ITEM", "id": 701009, "count": 1, "silent": true },
                         { "type": "RESET_TEMP_ALLY", "charId": 403 },
                         { "type": "WORLD_STATE", "key": "prologueStage", "value": 100 },
+                        { "type": "HEAL", "silent": true },
                         { "type": "START_FIXED_MAP", "value": "REES_MOUNTAIN_HUT", "targetX": 5, "targetY": 5, "replaceReturnPoint": true }
                 ]
         },
@@ -4803,6 +4816,7 @@ const STORY_MANAGER_DATA = {
                         { "type": "ITEM", "id": 701009, "count": 1, "silent": true },
                         { "type": "RESET_TEMP_ALLY", "charId": 403 },
                         { "type": "WORLD_STATE", "key": "prologueStage", "value": 100 },
+                        { "type": "HEAL", "silent": true },
                         { "type": "START_FIXED_MAP", "value": "REES_MOUNTAIN_HUT", "targetX": 5, "targetY": 5, "replaceReturnPoint": true }
                 ]
         },
@@ -4854,6 +4868,7 @@ const STORY_MANAGER_DATA = {
                         { "type": "IF_ITEM", "id": 701009, "count": 1, "then": [], "else": [{ "type": "ITEM", "id": 701009, "count": 1 }] },
                         { "type": "FLAG", "key": "prologueSpecialEndingSeen", "state": true },
                         { "type": "WORLD_STATE", "key": "prologueStage", "value": 100 },
+                        { "type": "HEAL", "silent": true },
                         { "type": "START_FIXED_MAP", "value": "REES_MOUNTAIN_HUT", "targetX": 5, "targetY": 5, "replaceReturnPoint": true }
                 ]
         },
@@ -4871,6 +4886,7 @@ const STORY_MANAGER_DATA = {
                         { "type": "IF_ITEM", "id": 701009, "count": 1, "then": [], "else": [{ "type": "ITEM", "id": 701009, "count": 1 }] },
                         { "type": "FLAG", "key": "prologueSpecialEndingSeen", "state": true },
                         { "type": "WORLD_STATE", "key": "prologueStage", "value": 100 },
+                        { "type": "HEAL", "silent": true },
                         { "type": "START_FIXED_MAP", "value": "REES_MOUNTAIN_HUT", "targetX": 5, "targetY": 5, "replaceReturnPoint": true }
                 ]
         },
@@ -6186,7 +6202,6 @@ const STORY_MANAGER_DATA = {
                                                 "type": "BOSS",
                                                 "value": 803010,
                                                 "winEventId": "fire_volcano_glad_clear",
-                                                "forceAutoOff": true,
                                                 "endAtHpPercent": 50,
                                                 "targetMonsterId": 803010,
                                                 "storyVariantOf": 301010,
@@ -6254,7 +6269,6 @@ const STORY_MANAGER_DATA = {
                                 "type": "BOSS",
                                 "value": 803010,
                                 "winEventId": "fire_volcano_glad_clear",
-                                "forceAutoOff": true,
                                 "endAtHpPercent": 50,
                                 "targetMonsterId": 803010,
                                 "storyVariantOf": 301010,
@@ -6295,7 +6309,6 @@ const STORY_MANAGER_DATA = {
                                 "type": "BOSS",
                                 "value": 803010,
                                 "winEventId": "fire_volcano_glad_clear",
-                                "forceAutoOff": true,
                                 "endAtHpPercent": 50,
                                 "targetMonsterId": 803010,
                                 "storyVariantOf": 301010,

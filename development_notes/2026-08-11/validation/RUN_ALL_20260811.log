@@ -1,0 +1,1891 @@
+[validation] JavaScript syntax passed: 61 files.
+
+[validation] validate-abyss-outer-map.js
+Abyss Outer Rim validation passed: 139 reachable tiles; chasm is blocked and adjacent-interactable.
+
+[validation] validate-abyss-town-facilities.js
+Abyss town facility validation passed: 9 actions coincide with separated authored buildings and have no glowing floor markers.
+
+[validation] validate-arisa-haine-main-route-phase5b.js
+PASS validate-arisa-haine-main-route-phase5b
+
+[validation] validate-asset-fixed-names.js
+/mnt/data/rpg_work/tools/validation/validate-asset-fixed-names.js:42
+    throw new Error(`Fixed-name asset validation failed:\n${errors.join('\n')}`);
+    ^
+
+Error: Fixed-name asset validation failed:
+registered image is missing: assets/background/PRISMA ABYSS.png
+registered image is missing: assets/background/bg_alchemy_water_city.png
+registered image is missing: assets/background/bg_blacksmith.png
+registered image is missing: assets/background/bg_casino.png
+registered image is missing: assets/background/bg_inn.jpg
+registered image is missing: assets/background/bg_medal.png
+registered image is missing: assets/characters/char_face_101.gif
+registered image is missing: assets/characters/char_face_102.gif
+registered image is missing: assets/characters/char_face_103.gif
+registered image is missing: assets/characters/char_face_104.gif
+registered image is missing: assets/characters/char_face_105.gif
+registered image is missing: assets/characters/char_face_106.gif
+registered image is missing: assets/characters/char_face_107.gif
+registered image is missing: assets/characters/char_face_108.gif
+registered image is missing: assets/characters/char_face_109.gif
+registered image is missing: assets/characters/char_face_110.gif
+registered image is missing: assets/characters/char_face_201.gif
+registered image is missing: assets/characters/char_face_202.gif
+registered image is missing: assets/characters/char_face_203.gif
+registered image is missing: assets/characters/char_face_204.gif
+registered image is missing: assets/characters/char_face_205.gif
+registered image is missing: assets/characters/char_face_206.gif
+registered image is missing: assets/characters/char_face_207.gif
+registered image is missing: assets/characters/char_face_208.gif
+registered image is missing: assets/characters/char_face_209.gif
+registered image is missing: assets/characters/char_face_210.gif
+registered image is missing: assets/characters/char_face_301.gif
+registered image is missing: assets/characters/char_face_302.gif
+registered image is missing: assets/characters/char_face_303.gif
+registered image is missing: assets/characters/char_face_304.gif
+registered image is missing: assets/characters/char_face_305.gif
+registered image is missing: assets/characters/char_face_306.gif
+registered image is missing: assets/characters/char_face_401.gif
+registered image is missing: assets/characters/char_face_402.gif
+registered image is missing: assets/characters/char_face_403.gif
+registered image is missing: assets/characters/char_face_501.gif
+registered image is missing: assets/effect/fx-abyss-vortex-ai.png
+registered image is missing: assets/effect/fx-all-slash-ai.png
+registered image is missing: assets/effect/fx-buff-ai.png
+registered image is missing: assets/effect/fx-chaos-ai.png
+registered image is missing: assets/effect/fx-claw-ai.png
+registered image is missing: assets/effect/fx-combo-ai.png
+registered image is missing: assets/effect/fx-dark-ai.png
+registered image is missing: assets/effect/fx-enemy-claw-ai.png
+registered image is missing: assets/effect/fx-fire-ai.png
+registered image is missing: assets/effect/fx-heal-ai.png
+registered image is missing: assets/effect/fx-holy-burst-ai.png
+registered image is missing: assets/effect/fx-ice-ai.png
+registered image is missing: assets/effect/fx-ice-spear-ai.png
+registered image is missing: assets/effect/fx-light-ai.png
+registered image is missing: assets/effect/fx-meteor-ai.png
+registered image is missing: assets/effect/fx-party-hit-ai.png
+registered image is missing: assets/effect/fx-poison-ai.png
+registered image is missing: assets/effect/fx-slash-ai.png
+registered image is missing: assets/effect/fx-thunder-ai.png
+registered image is missing: assets/effect/fx-thunder-pillar-ai.png
+registered image is missing: assets/effect/fx-ultimate-chaos-ai.png
+registered image is missing: assets/effect/fx-wind-ai.png
+registered image is missing: assets/effect/fx_breath_cone_master.png
+registered image is missing: assets/effect/fx_critical_spark.png
+registered image is missing: assets/effect/fx_magic_arcane_burst.png
+registered image is missing: assets/effect/fx_phys_elemental_arc.png
+registered image is missing: assets/effect/fx_phys_neutral_chain.png
+registered image is missing: assets/effect/fx_phys_neutral_combo.png
+registered image is missing: assets/effect/fx_phys_neutral_heavy.png
+registered image is missing: assets/effect/fx_phys_pierce_lance.png
+registered image is missing: assets/effect/fx_phys_ranged_volley.png
+registered image is missing: assets/effect/fx_phys_slash_arc.png
+registered image is missing: assets/effect/fx_phys_smash_impact.png
+registered image is missing: assets/effect/fx_special_rupture.png
+registered image is missing: assets/effect/fx_spell_chaos.png
+registered image is missing: assets/effect/fx_spell_dark.png
+registered image is missing: assets/effect/fx_spell_fire.png
+registered image is missing: assets/effect/fx_spell_ice.png
+registered image is missing: assets/effect/fx_spell_light.png
+registered image is missing: assets/effect/fx_spell_thunder.png
+registered image is missing: assets/effect/fx_spell_wind.png
+registered image is missing: assets/effect/fx_support_buff.png
+registered image is missing: assets/effect/fx_support_debuff_hex.png
+registered image is missing: assets/effect/fx_support_heal_radiance.png
+registered image is missing: assets/effect/fx_ultimate_166_ragnarok.png
+registered image is missing: assets/effect/fx_ultimate_168_prisma_end.png
+registered image is missing: assets/effect/fx_ultimate_238_big_bang.png
+registered image is missing: assets/effect/fx_ultimate_242_abyss_wall.png
+registered image is missing: assets/effect/fx_ultimate_243_phoenix_flare.png
+registered image is missing: assets/effect/fx_ultimate_244_genesis_magic.png
+registered image is missing: assets/effect/fx_ultimate_245_chaos_shock.png
+registered image is missing: assets/effect/fx_ultimate_246_illuminati_break.png
+registered image is missing: assets/effect/fx_ultimate_247_the_end.png
+registered image is missing: assets/effect/fx_ultimate_248_lost_prisma.png
+registered image is missing: assets/gacha/back_card.png
+registered image is missing: assets/gacha/front_card.png
+registered image is missing: assets/generated/battle-abyss-ai.png
+registered image is missing: assets/generated/battle-abyss-boss.png
+registered image is missing: assets/generated/battle-abyss-floor-200.png
+registered image is missing: assets/generated/battle-big-tower.png
+registered image is missing: assets/generated/battle-boss-ai.png
+registered image is missing: assets/generated/battle-crena.png
+registered image is missing: assets/generated/battle-dark-castle.png
+registered image is missing: assets/generated/battle-dark-shrine.png
+registered image is missing: assets/generated/battle-dungeon-ai.png
+registered image is missing: assets/generated/battle-field-ai.png
+registered image is missing: assets/generated/battle-fire.png
+registered image is missing: assets/generated/battle-flooded.png
+registered image is missing: assets/generated/battle-forbidden-forest.png
+registered image is missing: assets/generated/battle-forest-ai.png
+registered image is missing: assets/generated/battle-forest-wind-hole.png
+registered image is missing: assets/generated/battle-galvania-cave.png
+registered image is missing: assets/generated/battle-grezelia.png
+registered image is missing: assets/generated/battle-light-palace.png
+registered image is missing: assets/generated/battle-maze-ai.png
+registered image is missing: assets/generated/battle-mountain-ai.png
+registered image is missing: assets/generated/battle-mountain-wind-ruins.png
+registered image is missing: assets/generated/battle-sea.png
+registered image is missing: assets/generated/battle-seabed.png
+registered image is missing: assets/generated/battle-summit-temple.png
+registered image is missing: assets/generated/battle-thunder-fort.png
+registered image is missing: assets/generated/battle-trial-shrine.png
+registered image is missing: assets/generated/battle-wind-temple.png
+registered image is missing: assets/generated/first-battle.png
+registered image is missing: assets/generated/hero-down-1.gif
+registered image is missing: assets/generated/hero-down-2.gif
+registered image is missing: assets/generated/hero-left-1.gif
+registered image is missing: assets/generated/hero-left-2.gif
+registered image is missing: assets/generated/hero-right-1.gif
+registered image is missing: assets/generated/hero-right-2.gif
+registered image is missing: assets/generated/hero-up-1.gif
+registered image is missing: assets/generated/hero-up-2.gif
+registered image is missing: assets/generated/hero-wing-down-1.png
+registered image is missing: assets/generated/hero-wing-down-2.png
+registered image is missing: assets/generated/hero-wing-left-1.png
+registered image is missing: assets/generated/hero-wing-left-2.png
+registered image is missing: assets/generated/hero-wing-right-1.png
+registered image is missing: assets/generated/hero-wing-right-2.png
+registered image is missing: assets/generated/hero-wing-up-1.png
+registered image is missing: assets/generated/hero-wing-up-2.png
+registered image is missing: assets/generated/opening-prism-collapse.png
+registered image is missing: assets/map/library/cave/blocking/maplib_cave_mine_support.png
+registered image is missing: assets/map/library/cave/blocking/maplib_cave_miner_cart.png
+registered image is missing: assets/map/library/cave/blocking/maplib_cave_purple_crystals.png
+registered image is missing: assets/map/library/cave/blocking/maplib_cave_stalagmite.png
+registered image is missing: assets/map/library/cave/decoration/maplib_cave_bone_pile.png
+registered image is missing: assets/map/library/cave/decoration/maplib_cave_mineral_puddle.png
+registered image is missing: assets/map/library/cave/decoration/maplib_cave_pale_mushrooms.png
+registered image is missing: assets/map/library/cave/decoration/maplib_cave_rock_pile.png
+registered image is missing: assets/map/library/cave/decoration/maplib_cave_spring_vent.png
+registered image is missing: assets/map/library/dark/blocking/maplib_dark_black_crystals.png
+registered image is missing: assets/map/library/dark/blocking/maplib_dark_blue_brazier.png
+registered image is missing: assets/map/library/dark/blocking/maplib_dark_gargoyle_statue.png
+registered image is missing: assets/map/library/dark/blocking/maplib_dark_iron_candelabrum.png
+registered image is missing: assets/map/library/dark/blocking/maplib_dark_sealed_obelisk.png
+registered image is missing: assets/map/library/dark/decoration/maplib_dark_broken_armor.png
+registered image is missing: assets/map/library/dark/decoration/maplib_dark_chain_pile.png
+registered image is missing: assets/map/library/dark/decoration/maplib_dark_horned_skull.png
+registered image is missing: assets/map/library/dark/decoration/maplib_dark_ritual_rune.png
+registered image is missing: assets/map/library/forest/blocking/maplib_forest_ancient_stump.png
+registered image is missing: assets/map/library/forest/blocking/maplib_forest_decayed_roadside_sign.png
+registered image is missing: assets/map/library/forest/blocking/maplib_forest_fallen_log.png
+registered image is missing: assets/map/library/forest/blocking/maplib_forest_lichen_boulder.png
+registered image is missing: assets/map/library/forest/blocking/maplib_forest_twisted_sapling.png
+registered image is missing: assets/map/library/forest/blocking/maplib_forest_vine_stone.png
+registered image is missing: assets/map/library/forest/decoration/maplib_forest_exposed_roots.png
+registered image is missing: assets/map/library/forest/decoration/maplib_forest_fern_patch.png
+registered image is missing: assets/map/library/forest/decoration/maplib_forest_glowing_fungus.png
+registered image is missing: assets/map/library/forest/decoration/maplib_forest_red_mushrooms.png
+registered image is missing: assets/map/library/light/blocking/maplib_light_crystal_pedestal.png
+registered image is missing: assets/map/library/light/blocking/maplib_light_marble_urn.png
+registered image is missing: assets/map/library/light/blocking/maplib_light_mirror_stand.png
+registered image is missing: assets/map/library/light/blocking/maplib_light_prism_cluster.png
+registered image is missing: assets/map/library/light/blocking/maplib_light_sun_altar.png
+registered image is missing: assets/map/library/light/decoration/maplib_light_gold_inlay.png
+registered image is missing: assets/map/library/light/decoration/maplib_light_luminous_flower.png
+registered image is missing: assets/map/library/light/decoration/maplib_light_marble_rubble.png
+registered image is missing: assets/map/library/light/decoration/maplib_light_star_mosaic.png
+registered image is missing: assets/map/library/ruins/blocking/maplib_ruins_ancient_tablet.png
+registered image is missing: assets/map/library/ruins/blocking/maplib_ruins_black_roots.png
+registered image is missing: assets/map/library/ruins/blocking/maplib_ruins_bone_lantern.png
+registered image is missing: assets/map/library/ruins/blocking/maplib_ruins_broken_column.png
+registered image is missing: assets/map/library/ruins/blocking/maplib_ruins_masonry_pile.png
+registered image is missing: assets/map/library/ruins/blocking/maplib_ruins_prism_shard.png
+registered image is missing: assets/map/library/ruins/blocking/maplib_ruins_ritual_brazier.png
+registered image is missing: assets/map/library/ruins/blocking/maplib_ruins_void_crystals.png
+registered image is missing: assets/map/library/ruins/blocking/maplib_ruins_weathered_rune.png
+registered image is missing: assets/map/library/thunder/blocking/maplib_thunder_battery_cell.png
+registered image is missing: assets/map/library/thunder/blocking/maplib_thunder_control_terminal.png
+registered image is missing: assets/map/library/thunder/blocking/maplib_thunder_gear_assembly.png
+registered image is missing: assets/map/library/thunder/blocking/maplib_thunder_lightning_capacitor.png
+registered image is missing: assets/map/library/thunder/blocking/maplib_thunder_transformer_coil.png
+registered image is missing: assets/map/library/thunder/blocking/maplib_thunder_warning_beacon.png
+registered image is missing: assets/map/library/thunder/decoration/maplib_thunder_broken_conduit.png
+registered image is missing: assets/map/library/thunder/decoration/maplib_thunder_cable_coil.png
+registered image is missing: assets/map/library/thunder/decoration/maplib_thunder_floor_grate.png
+registered image is missing: assets/map/library/tower/blocking/maplib_tower_gear_assembly.png
+registered image is missing: assets/map/library/tower/blocking/maplib_tower_hand_winch.png
+registered image is missing: assets/map/library/tower/blocking/maplib_tower_lens_fragment.png
+registered image is missing: assets/map/library/tower/blocking/maplib_tower_oil_lamp.png
+registered image is missing: assets/map/library/tower/blocking/maplib_tower_reinforced_crate.png
+registered image is missing: assets/map/library/tower/blocking/maplib_tower_weathered_barrel.png
+registered image is missing: assets/map/library/tower/decoration/maplib_tower_brass_pipe.png
+registered image is missing: assets/map/library/tower/decoration/maplib_tower_iron_anchor.png
+registered image is missing: assets/map/library/tower/decoration/maplib_tower_rope_coil.png
+registered image is missing: assets/map/library/village/blocking/maplib_village_clay_jar.png
+registered image is missing: assets/map/library/village/blocking/maplib_village_fence_post.png
+registered image is missing: assets/map/library/village/blocking/maplib_village_firewood_stack.png
+registered image is missing: assets/map/library/village/blocking/maplib_village_hay_bundle.png
+registered image is missing: assets/map/library/village/blocking/maplib_village_roadside_sign.png
+registered image is missing: assets/map/library/village/decoration/maplib_village_medicinal_herbs.png
+registered image is missing: assets/map/library/village/decoration/maplib_village_mossy_stone.png
+registered image is missing: assets/map/library/village/decoration/maplib_village_mushroom_patch.png
+registered image is missing: assets/map/library/village/decoration/maplib_village_wildflowers.png
+registered image is missing: assets/map/library/volcanic/blocking/maplib_volcanic_fire_rune_stone.png
+registered image is missing: assets/map/library/volcanic/blocking/maplib_volcanic_molten_boulder.png
+registered image is missing: assets/map/library/volcanic/blocking/maplib_volcanic_obsidian_shards.png
+registered image is missing: assets/map/library/volcanic/blocking/maplib_volcanic_ritual_brazier.png
+registered image is missing: assets/map/library/volcanic/blocking/maplib_volcanic_sulfur_crystals.png
+registered image is missing: assets/map/library/volcanic/decoration/maplib_volcanic_ash_heap.png
+registered image is missing: assets/map/library/volcanic/decoration/maplib_volcanic_ember_fissure.png
+registered image is missing: assets/map/library/volcanic/decoration/maplib_volcanic_lava_vent.png
+registered image is missing: assets/map/library/volcanic/decoration/maplib_volcanic_scorched_bones.png
+registered image is missing: assets/map/library/water/blocking/maplib_water_branching_coral.png
+registered image is missing: assets/map/library/water/blocking/maplib_water_broken_column.png
+registered image is missing: assets/map/library/water/blocking/maplib_water_sunken_urn.png
+registered image is missing: assets/map/library/water/decoration/maplib_water_bubble_vent.png
+registered image is missing: assets/map/library/water/decoration/maplib_water_puddle_ripple.png
+registered image is missing: assets/map/library/water/decoration/maplib_water_sea_anemone.png
+registered image is missing: assets/map/library/water/decoration/maplib_water_seaweed_clump.png
+registered image is missing: assets/map/library/water/decoration/maplib_water_shell_cluster.png
+registered image is missing: assets/map/library/water/decoration/maplib_water_starfish_debris.png
+registered image is missing: assets/map/objects/door_key_blue.png
+registered image is missing: assets/map/objects/door_key_gold.png
+registered image is missing: assets/map/objects/door_key_red.png
+registered image is missing: assets/map/objects/item_key_blue.png
+registered image is missing: assets/map/objects/item_key_gold.png
+registered image is missing: assets/map/objects/item_key_red.png
+registered image is missing: assets/map/objects/object_blocking_castle_candelabrum.png
+registered image is missing: assets/map/objects/object_blocking_cave_stalagmite.png
+registered image is missing: assets/map/objects/object_blocking_dark_shrine_obelisk.png
+registered image is missing: assets/map/objects/object_blocking_fire_brazier.png
+registered image is missing: assets/map/objects/object_blocking_forest_stump.png
+registered image is missing: assets/map/objects/object_blocking_light_crystal_pedestal.png
+registered image is missing: assets/map/objects/object_blocking_lighthouse_gear_pedestal.png
+registered image is missing: assets/map/objects/object_blocking_seabed_coral_pillar.png
+registered image is missing: assets/map/objects/object_blocking_thunder_terminal.png
+registered image is missing: assets/map/objects/object_dungeon_boss.png
+registered image is missing: assets/map/objects/object_dungeon_chest.png
+registered image is missing: assets/map/objects/object_dungeon_chest_rare.png
+registered image is missing: assets/map/objects/object_dungeon_event.png
+registered image is missing: assets/map/objects/object_dungeon_portal.png
+registered image is missing: assets/map/objects/object_dungeon_stairs.png
+registered image is missing: assets/map/objects/object_field_barrel.png
+registered image is missing: assets/map/objects/object_field_boss.png
+registered image is missing: assets/map/objects/object_field_casino.png
+registered image is missing: assets/map/objects/object_field_castle.png
+registered image is missing: assets/map/objects/object_field_cave.png
+registered image is missing: assets/map/objects/object_field_chest.png
+registered image is missing: assets/map/objects/object_field_chest_rare.png
+registered image is missing: assets/map/objects/object_field_darkcastle.png
+registered image is missing: assets/map/objects/object_field_event.png
+registered image is missing: assets/map/objects/object_field_farm.png
+registered image is missing: assets/map/objects/object_field_fire_village.png
+registered image is missing: assets/map/objects/object_field_forest.png
+registered image is missing: assets/map/objects/object_field_fortress.png
+registered image is missing: assets/map/objects/object_field_grass.png
+registered image is missing: assets/map/objects/object_field_hall.png
+registered image is missing: assets/map/objects/object_field_house_1.png
+registered image is missing: assets/map/objects/object_field_house_2.png
+registered image is missing: assets/map/objects/object_field_inn.png
+registered image is missing: assets/map/objects/object_field_lighthouse.png
+registered image is missing: assets/map/objects/object_field_lost.png
+registered image is missing: assets/map/objects/object_field_low_mountain.png
+registered image is missing: assets/map/objects/object_field_medal.png
+registered image is missing: assets/map/objects/object_field_mountain.png
+registered image is missing: assets/map/objects/object_field_pot.png
+registered image is missing: assets/map/objects/object_field_ruins.png
+registered image is missing: assets/map/objects/object_field_settlement.png
+registered image is missing: assets/map/objects/object_field_shop.png
+registered image is missing: assets/map/objects/object_field_smith.png
+registered image is missing: assets/map/objects/object_field_stairs.png
+registered image is missing: assets/map/objects/object_field_temple.png
+registered image is missing: assets/map/objects/object_field_tower.png
+registered image is missing: assets/map/objects/object_field_town.png
+registered image is missing: assets/map/objects/object_field_village.png
+registered image is missing: assets/map/objects/object_field_weapon.png
+registered image is missing: assets/map/overlays/bed.png
+registered image is missing: assets/map/overlays/guild.png
+registered image is missing: assets/map/overlays/guild_counter.png
+registered image is missing: assets/map/overlays/guild_girl.png
+registered image is missing: assets/map/overlays/overlay_abyss_black_spring.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_broken_column_stump.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_chasm_c.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_chasm_e.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_chasm_n.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_chasm_ne.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_chasm_nw.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_chasm_s.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_chasm_se.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_chasm_sw.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_chasm_w.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_fallen_pillar.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_intact_column.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_prism_pedestal_collapsed.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_prism_pedestal_intact.png
+registered image is missing: assets/map/overlays/overlay_abyss_outer_ruined_altar.png
+registered image is missing: assets/map/overlays/overlay_building_fire_forge.png
+registered image is missing: assets/map/overlays/overlay_building_water_alchemy.png
+registered image is missing: assets/map/overlays/overlay_building_water_shop.png
+registered image is missing: assets/map/overlays/overlay_building_wind_hut.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_ne.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_nw.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_se.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_sw.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_e.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_n.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_s.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_w.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_fill.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_corner_ne.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_corner_nw.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_corner_se.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_corner_sw.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_edge_e.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_edge_n.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_edge_s.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_edge_w.png
+registered image is missing: assets/map/overlays/overlay_castle_carpet_fill.png
+registered image is missing: assets/map/overlays/overlay_companion_alan.png
+registered image is missing: assets/map/overlays/overlay_companion_arisa.png
+registered image is missing: assets/map/overlays/overlay_companion_baron.png
+registered image is missing: assets/map/overlays/overlay_companion_claude.png
+registered image is missing: assets/map/overlays/overlay_companion_frieda.png
+registered image is missing: assets/map/overlays/overlay_companion_haine.png
+registered image is missing: assets/map/overlays/overlay_companion_hayate.png
+registered image is missing: assets/map/overlays/overlay_companion_karin.png
+registered image is missing: assets/map/overlays/overlay_companion_leon.png
+registered image is missing: assets/map/overlays/overlay_companion_licia.png
+registered image is missing: assets/map/overlays/overlay_companion_luna.png
+registered image is missing: assets/map/overlays/overlay_companion_marie.png
+registered image is missing: assets/map/overlays/overlay_companion_minerva.png
+registered image is missing: assets/map/overlays/overlay_companion_rin.png
+registered image is missing: assets/map/overlays/overlay_companion_ryu.png
+registered image is missing: assets/map/overlays/overlay_companion_sophia.png
+registered image is missing: assets/map/overlays/overlay_companion_sylvia.png
+registered image is missing: assets/map/overlays/overlay_companion_zelied.png
+registered image is missing: assets/map/overlays/overlay_companion_zenon.png
+registered image is missing: assets/map/overlays/overlay_decor_abyss_field_flora.png
+registered image is missing: assets/map/overlays/overlay_decor_abyss_void_dust.png
+registered image is missing: assets/map/overlays/overlay_decor_big_tower_gear_oil.png
+registered image is missing: assets/map/overlays/overlay_decor_crena_limestone_pool.png
+registered image is missing: assets/map/overlays/overlay_decor_dark_castle_chain.png
+registered image is missing: assets/map/overlays/overlay_decor_dark_shrine_sigil.png
+registered image is missing: assets/map/overlays/overlay_decor_default_cave_dust.png
+registered image is missing: assets/map/overlays/overlay_decor_fire_ember_fissure.png
+registered image is missing: assets/map/overlays/overlay_decor_forbidden_forest_moss.png
+registered image is missing: assets/map/overlays/overlay_decor_galvania_crystal.png
+registered image is missing: assets/map/overlays/overlay_decor_grezelia_fossil.png
+registered image is missing: assets/map/overlays/overlay_decor_light_palace_prism.png
+registered image is missing: assets/map/overlays/overlay_decor_ruined_shrine_glyph.png
+registered image is missing: assets/map/overlays/overlay_decor_seabed_temple_ripple.png
+registered image is missing: assets/map/overlays/overlay_decor_start_cave_damp.png
+registered image is missing: assets/map/overlays/overlay_decor_start_village_herbs.png
+registered image is missing: assets/map/overlays/overlay_decor_thunder_fort_wiring.png
+registered image is missing: assets/map/overlays/overlay_decor_water_city_puddle.png
+registered image is missing: assets/map/overlays/overlay_decor_wind_hole_root.png
+registered image is missing: assets/map/overlays/overlay_decor_wind_village_feather.png
+registered image is missing: assets/map/overlays/overlay_dungeon_adventurer.png
+registered image is missing: assets/map/overlays/overlay_dungeon_adventurer_down_1.png
+registered image is missing: assets/map/overlays/overlay_dungeon_adventurer_down_2.png
+registered image is missing: assets/map/overlays/overlay_dungeon_adventurer_left_1.png
+registered image is missing: assets/map/overlays/overlay_dungeon_adventurer_left_2.png
+registered image is missing: assets/map/overlays/overlay_dungeon_adventurer_right_1.png
+registered image is missing: assets/map/overlays/overlay_dungeon_adventurer_right_2.png
+registered image is missing: assets/map/overlays/overlay_dungeon_adventurer_up_1.png
+registered image is missing: assets/map/overlays/overlay_dungeon_adventurer_up_2.png
+registered image is missing: assets/map/overlays/overlay_dungeon_boss.png
+registered image is missing: assets/map/overlays/overlay_dungeon_chest.png
+registered image is missing: assets/map/overlays/overlay_dungeon_chest_empty.png
+registered image is missing: assets/map/overlays/overlay_dungeon_chest_rare.png
+registered image is missing: assets/map/overlays/overlay_dungeon_chest_rare_empty.png
+registered image is missing: assets/map/overlays/overlay_dungeon_event.png
+registered image is missing: assets/map/overlays/overlay_dungeon_hunter.png
+registered image is missing: assets/map/overlays/overlay_dungeon_hunter_fire.png
+registered image is missing: assets/map/overlays/overlay_dungeon_hunter_forest.png
+registered image is missing: assets/map/overlays/overlay_dungeon_hunter_sea.png
+registered image is missing: assets/map/overlays/overlay_dungeon_hunter_shadow.png
+registered image is missing: assets/map/overlays/overlay_dungeon_hunter_thunder.png
+registered image is missing: assets/map/overlays/overlay_dungeon_portal.png
+registered image is missing: assets/map/overlays/overlay_dungeon_stairs.png
+registered image is missing: assets/map/overlays/overlay_dungeon_trial_angel.png
+registered image is missing: assets/map/overlays/overlay_dungeon_warp.png
+registered image is missing: assets/map/overlays/overlay_event_blue_glimmer.png
+registered image is missing: assets/map/overlays/overlay_field_barrel.png
+registered image is missing: assets/map/overlays/overlay_field_boss.png
+registered image is missing: assets/map/overlays/overlay_field_casino.png
+registered image is missing: assets/map/overlays/overlay_field_castle.png
+registered image is missing: assets/map/overlays/overlay_field_cave.png
+registered image is missing: assets/map/overlays/overlay_field_chest.png
+registered image is missing: assets/map/overlays/overlay_field_chest_rare.png
+registered image is missing: assets/map/overlays/overlay_field_darkcastle.png
+registered image is missing: assets/map/overlays/overlay_field_event.png
+registered image is missing: assets/map/overlays/overlay_field_farm.png
+registered image is missing: assets/map/overlays/overlay_field_fire_village.png
+registered image is missing: assets/map/overlays/overlay_field_forest.png
+registered image is missing: assets/map/overlays/overlay_field_fortress.png
+registered image is missing: assets/map/overlays/overlay_field_grass.png
+registered image is missing: assets/map/overlays/overlay_field_hall.png
+registered image is missing: assets/map/overlays/overlay_field_house_1.png
+registered image is missing: assets/map/overlays/overlay_field_house_2.png
+registered image is missing: assets/map/overlays/overlay_field_inn.png
+registered image is missing: assets/map/overlays/overlay_field_lighthouse.png
+registered image is missing: assets/map/overlays/overlay_field_lost.png
+registered image is missing: assets/map/overlays/overlay_field_low_mountain.png
+registered image is missing: assets/map/overlays/overlay_field_medal.png
+registered image is missing: assets/map/overlays/overlay_field_mountain.png
+registered image is missing: assets/map/overlays/overlay_field_pot.png
+registered image is missing: assets/map/overlays/overlay_field_ruins.png
+registered image is missing: assets/map/overlays/overlay_field_settlement.png
+registered image is missing: assets/map/overlays/overlay_field_shop.png
+registered image is missing: assets/map/overlays/overlay_field_smith.png
+registered image is missing: assets/map/overlays/overlay_field_stairs.png
+registered image is missing: assets/map/overlays/overlay_field_temple.png
+registered image is missing: assets/map/overlays/overlay_field_tower.png
+registered image is missing: assets/map/overlays/overlay_field_town.png
+registered image is missing: assets/map/overlays/overlay_field_village.png
+registered image is missing: assets/map/overlays/overlay_field_weapon.png
+registered image is missing: assets/map/overlays/overlay_light_captive_king.png
+registered image is missing: assets/map/overlays/overlay_light_captive_leila_bed.png
+registered image is missing: assets/map/overlays/overlay_light_captive_priest_a.png
+registered image is missing: assets/map/overlays/overlay_light_captive_priest_b.png
+registered image is missing: assets/map/overlays/overlay_light_captive_princess.png
+registered image is missing: assets/map/overlays/overlay_light_prison_gate_horizontal.png
+registered image is missing: assets/map/overlays/overlay_magic_boat_down.png
+registered image is missing: assets/map/overlays/overlay_magic_boat_left.png
+registered image is missing: assets/map/overlays/overlay_magic_boat_right.png
+registered image is missing: assets/map/overlays/overlay_magic_boat_up.png
+registered image is missing: assets/map/overlays/overlay_named_dungeon_boss.png
+registered image is missing: assets/map/overlays/overlay_named_dungeon_chest.png
+registered image is missing: assets/map/overlays/overlay_named_dungeon_chest_rare.png
+registered image is missing: assets/map/overlays/overlay_named_dungeon_stairs_down.png
+registered image is missing: assets/map/overlays/overlay_named_dungeon_stairs_up.png
+registered image is missing: assets/map/overlays/overlay_npc_bronze_knight.png
+registered image is missing: assets/map/overlays/overlay_npc_child.png
+registered image is missing: assets/map/overlays/overlay_npc_dark_soldier.png
+registered image is missing: assets/map/overlays/overlay_npc_elder.png
+registered image is missing: assets/map/overlays/overlay_npc_villager.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_pillar.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_a.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_b.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_c.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_d.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_e.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_f.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_ritual_astrolabe.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_rusted_axe.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_rusted_spear.png
+registered image is missing: assets/map/overlays/overlay_ruined_shrine_rusted_sword.png
+registered image is missing: assets/map/overlays/overlay_shrine_healing_spring.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_cliff_edge_e.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_cliff_edge_n.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_cliff_edge_s.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_cliff_edge_w.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_cloud_bank.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_cloud_compact.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_cloud_wispy.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_a.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_b.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_c.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_d.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_e.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_f.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_g.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_h.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_i.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_j.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_k.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_l.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_m.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_n.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_stage_variant_o.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_statue_angel.png
+registered image is missing: assets/map/overlays/overlay_summit_temple_statue_divine_dragon.png
+registered image is missing: assets/map/overlays/overlay_town_demon_guard.png
+registered image is missing: assets/map/overlays/overlay_town_fire_blacksmith.png
+registered image is missing: assets/map/overlays/overlay_town_fire_coal_carrier.png
+registered image is missing: assets/map/overlays/overlay_town_fire_resident.png
+registered image is missing: assets/map/overlays/overlay_town_light_pilgrim.png
+registered image is missing: assets/map/overlays/overlay_town_water_boatman.png
+registered image is missing: assets/map/overlays/overlay_town_water_guard.png
+registered image is missing: assets/map/overlays/overlay_town_wind_watch.png
+registered image is missing: assets/map/overlays/overlay_town_wind_weaver.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_a.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_b.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_c.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_d.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_e.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_f.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_g.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_h.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_i.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_j.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_k.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_l.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_m.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_n.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_stage_variant_o.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_statue_a.png
+registered image is missing: assets/map/overlays/overlay_trial_shrine_statue_un.png
+registered image is missing: assets/map/overlays/overlay_village_goza_corner_ne.png
+registered image is missing: assets/map/overlays/overlay_village_goza_corner_nw.png
+registered image is missing: assets/map/overlays/overlay_village_goza_corner_se.png
+registered image is missing: assets/map/overlays/overlay_village_goza_corner_sw.png
+registered image is missing: assets/map/overlays/overlay_village_goza_edge_e.png
+registered image is missing: assets/map/overlays/overlay_village_goza_edge_n.png
+registered image is missing: assets/map/overlays/overlay_village_goza_edge_s.png
+registered image is missing: assets/map/overlays/overlay_village_goza_edge_w.png
+registered image is missing: assets/map/overlays/overlay_village_goza_fill.png
+registered image is missing: assets/map/overlays/overlay_world_bridge_wood.png
+registered image is missing: assets/map/overlays/overlay_world_foothill_rocks.png
+registered image is missing: assets/map/overlays/overlay_world_forest_roots.png
+registered image is missing: assets/map/overlays/overlay_world_forest_understory.png
+registered image is missing: assets/map/overlays/overlay_world_grass_detail.png
+registered image is missing: assets/map/overlays/overlay_world_grass_earth.png
+registered image is missing: assets/map/overlays/overlay_world_grass_weeds.png
+registered image is missing: assets/map/overlays/overlay_world_shore_foam.png
+registered image is missing: assets/map/overlays/prism_dark.png
+registered image is missing: assets/map/overlays/prism_fire.png
+registered image is missing: assets/map/overlays/prism_light.png
+registered image is missing: assets/map/overlays/prism_thunder.png
+registered image is missing: assets/map/overlays/prism_water.png
+registered image is missing: assets/map/overlays/prism_wind.png
+registered image is missing: assets/map/overlays/questboard.png
+registered image is missing: assets/map/terrain/magma.png
+registered image is missing: assets/map/terrain/terrain_dungeon_floor.png
+registered image is missing: assets/map/terrain/terrain_dungeon_wall.png
+registered image is missing: assets/map/terrain/terrain_dungeon_wall_face.png
+registered image is missing: assets/map/terrain/terrain_dungeon_wall_face_torch.png
+registered image is missing: assets/map/terrain/terrain_grass_field.png
+registered image is missing: assets/map/terrain/terrain_sea.png
+registered image is missing: assets/map/terrain/tile_abyss_grass.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_dark_floor_variant_a.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_dark_floor_variant_b.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_dark_floor_variant_c.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_dark_floor_variant_d.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_prism_paving_variant_a.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_prism_paving_variant_b.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_prism_paving_variant_c.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_prism_paving_variant_d.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_wall_variant_a.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_wall_variant_b.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_wall_variant_c.png
+registered image is missing: assets/map/terrain/tile_abyss_outer_wall_variant_d.png
+registered image is missing: assets/map/terrain/tile_abyss_path.png
+registered image is missing: assets/map/terrain/tile_crena_floor.png
+registered image is missing: assets/map/terrain/tile_crena_water.png
+registered image is missing: assets/map/terrain/tile_dark_castle_wall_face.png
+registered image is missing: assets/map/terrain/tile_dark_floor.png
+registered image is missing: assets/map/terrain/tile_dark_floor_alt.png
+registered image is missing: assets/map/terrain/tile_dark_floor_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_dark_floor_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_dark_shrine_floor.png
+registered image is missing: assets/map/terrain/tile_dark_shrine_floor_alt.png
+registered image is missing: assets/map/terrain/tile_dark_shrine_floor_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_dark_shrine_floor_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_dark_shrine_wall.png
+registered image is missing: assets/map/terrain/tile_dark_shrine_wall_alt.png
+registered image is missing: assets/map/terrain/tile_dark_shrine_wall_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_dark_shrine_wall_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_dark_shrine_wall_face.png
+registered image is missing: assets/map/terrain/tile_dark_wall.png
+registered image is missing: assets/map/terrain/tile_dark_wall_alt.png
+registered image is missing: assets/map/terrain/tile_dark_wall_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_dark_wall_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_fire_floor.png
+registered image is missing: assets/map/terrain/tile_fire_wall.png
+registered image is missing: assets/map/terrain/tile_fire_wall_face.png
+registered image is missing: assets/map/terrain/tile_forbidden_forest_floor.png
+registered image is missing: assets/map/terrain/tile_forbidden_forest_floor_variant_a.png
+registered image is missing: assets/map/terrain/tile_forbidden_forest_floor_variant_b.png
+registered image is missing: assets/map/terrain/tile_forbidden_forest_floor_variant_c.png
+registered image is missing: assets/map/terrain/tile_forbidden_forest_wall.png
+registered image is missing: assets/map/terrain/tile_forbidden_forest_wall_variant_a.png
+registered image is missing: assets/map/terrain/tile_forbidden_forest_wall_variant_b.png
+registered image is missing: assets/map/terrain/tile_forbidden_forest_wall_variant_c.png
+registered image is missing: assets/map/terrain/tile_forest_wall.png
+registered image is missing: assets/map/terrain/tile_galvania_floor.png
+registered image is missing: assets/map/terrain/tile_galvania_floor_alt.png
+registered image is missing: assets/map/terrain/tile_galvania_floor_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_galvania_floor_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_galvania_wall.png
+registered image is missing: assets/map/terrain/tile_galvania_wall_alt.png
+registered image is missing: assets/map/terrain/tile_galvania_wall_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_galvania_wall_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_galvania_wall_face.png
+registered image is missing: assets/map/terrain/tile_grezelia_floor.png
+registered image is missing: assets/map/terrain/tile_grezelia_floor_alt.png
+registered image is missing: assets/map/terrain/tile_grezelia_floor_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_grezelia_floor_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_grezelia_wall.png
+registered image is missing: assets/map/terrain/tile_grezelia_wall_alt.png
+registered image is missing: assets/map/terrain/tile_grezelia_wall_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_grezelia_wall_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_grezelia_wall_face.png
+registered image is missing: assets/map/terrain/tile_ice_slide.png
+registered image is missing: assets/map/terrain/tile_light_floor.png
+registered image is missing: assets/map/terrain/tile_light_wall.png
+registered image is missing: assets/map/terrain/tile_light_wall_face.png
+registered image is missing: assets/map/terrain/tile_light_wall_face_prism.png
+registered image is missing: assets/map/terrain/tile_magma.png
+registered image is missing: assets/map/terrain/tile_poison_bog.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_floor_variant_a.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_floor_variant_b.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_floor_variant_c.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_floor_variant_d.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_wall_face_variant_a.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_wall_face_variant_b.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_wall_variant_a.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_wall_variant_b.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_wall_variant_c.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_wall_variant_d.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_withered_grass_variant_a.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_withered_grass_variant_b.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_withered_grass_variant_c.png
+registered image is missing: assets/map/terrain/tile_ruined_shrine_withered_grass_variant_d.png
+registered image is missing: assets/map/terrain/tile_seabed_floor.png
+registered image is missing: assets/map/terrain/tile_seabed_floor_alt.png
+registered image is missing: assets/map/terrain/tile_seabed_floor_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_seabed_floor_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_shrine_floor.png
+registered image is missing: assets/map/terrain/tile_shrine_wall.png
+registered image is missing: assets/map/terrain/tile_stone_tablet.png
+registered image is missing: assets/map/terrain/tile_summit_temple_floor_variant_a.png
+registered image is missing: assets/map/terrain/tile_summit_temple_floor_variant_b.png
+registered image is missing: assets/map/terrain/tile_summit_temple_mountain_trail_variant_a.png
+registered image is missing: assets/map/terrain/tile_summit_temple_mountain_trail_variant_b.png
+registered image is missing: assets/map/terrain/tile_summit_temple_sky_variant_a.png
+registered image is missing: assets/map/terrain/tile_summit_temple_wall.png
+registered image is missing: assets/map/terrain/tile_summit_temple_wall_face.png
+registered image is missing: assets/map/terrain/tile_thunder_floor.png
+registered image is missing: assets/map/terrain/tile_thunder_floor_alt.png
+registered image is missing: assets/map/terrain/tile_thunder_floor_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_thunder_floor_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_thunder_wall.png
+registered image is missing: assets/map/terrain/tile_thunder_wall_alt.png
+registered image is missing: assets/map/terrain/tile_thunder_wall_alt_variant_a.png
+registered image is missing: assets/map/terrain/tile_thunder_wall_alt_variant_b.png
+registered image is missing: assets/map/terrain/tile_thunder_wall_face.png
+registered image is missing: assets/map/terrain/tile_tower_floor.png
+registered image is missing: assets/map/terrain/tile_tower_wall.png
+registered image is missing: assets/map/terrain/tile_tower_wall_face.png
+registered image is missing: assets/map/terrain/tile_trial_shrine_floor_variant_a.png
+registered image is missing: assets/map/terrain/tile_trial_shrine_floor_variant_b.png
+registered image is missing: assets/map/terrain/tile_trial_shrine_wall.png
+registered image is missing: assets/map/terrain/tile_trial_shrine_wall_face.png
+registered image is missing: assets/map/terrain/tile_water_bridge.png
+registered image is missing: assets/map/terrain/tile_water_canal.png
+registered image is missing: assets/map/terrain/tile_water_pave.png
+registered image is missing: assets/map/terrain/tile_wind_bridge.png
+registered image is missing: assets/map/terrain/tile_wind_floor.png
+registered image is missing: assets/map/terrain/tile_wind_hole_floor.png
+registered image is missing: assets/map/terrain/tile_wind_hole_floor_variant_a.png
+registered image is missing: assets/map/terrain/tile_wind_hole_floor_variant_b.png
+registered image is missing: assets/map/terrain/tile_wind_hole_floor_variant_c.png
+registered image is missing: assets/map/terrain/tile_wind_hole_wall.png
+registered image is missing: assets/map/terrain/tile_wind_hole_wall_face.png
+registered image is missing: assets/map/terrain/tile_wind_hole_wall_variant_a.png
+registered image is missing: assets/map/terrain/tile_wind_hole_wall_variant_b.png
+registered image is missing: assets/map/terrain/tile_wind_hole_wall_variant_c.png
+registered image is missing: assets/map/terrain/tile_wind_temple_floor.png
+registered image is missing: assets/map/terrain/tile_wind_temple_wall.png
+registered image is missing: assets/map/terrain/tile_wind_temple_wall_face.png
+registered image is missing: assets/monsters/monster_000103.png
+registered image is missing: assets/ui/menu-icons/item-attack.png
+registered image is missing: assets/ui/menu-icons/item-buff.png
+registered image is missing: assets/ui/menu-icons/item-debuff.png
+registered image is missing: assets/ui/menu-icons/item-growth.png
+registered image is missing: assets/ui/menu-icons/item-heal.png
+registered image is missing: assets/ui/menu-icons/item-key.png
+registered image is missing: assets/ui/menu-icons/item-material.png
+registered image is missing: assets/ui/menu-icons/item-revive.png
+registered image is missing: assets/ui/menu-icons/item-skill-book.png
+registered image is missing: assets/ui/menu-icons/item-trait-book.png
+registered image is missing: assets/ui/menu-icons/item-travel.png
+registered image is missing: assets/ui/menu-icons/item-vehicle.png
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-asset-fixed-names.js:42:11)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.16.0
+
+[validation] validate-authored-map-props.js
+node:fs:442
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/mnt/data/rpg_work/assets/map/library/manifest.json'
+    at Object.readFileSync (node:fs:442:20)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-authored-map-props.js:16:32)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/mnt/data/rpg_work/assets/map/library/manifest.json'
+}
+
+Node.js v22.16.0
+
+[validation] validate-balance-master-adjustments.js
+Balance master validation passed: equipment curves and requested monster Rank gaps are monotonic; Rank26-85 primary offense averages 59 < 131 < 141 < 148 < 154 < 194 < 240 < 257 < 267 < 274 < 299 < 310.
+
+[validation] validate-blocking-map-objects.js
+- blocking object file is missing: assets/map/objects/object_blocking_castle_candelabrum.png
+- blocking object file is missing: assets/map/objects/object_blocking_forest_stump.png
+- blocking object file is missing: assets/map/objects/object_blocking_thunder_terminal.png
+- blocking object file is missing: assets/map/objects/object_blocking_cave_stalagmite.png
+- blocking object file is missing: assets/map/objects/object_blocking_seabed_coral_pillar.png
+- blocking object file is missing: assets/map/objects/object_blocking_light_crystal_pedestal.png
+- blocking object file is missing: assets/map/objects/object_blocking_fire_brazier.png
+- blocking object file is missing: assets/map/objects/object_blocking_lighthouse_gear_pedestal.png
+- blocking object file is missing: assets/map/objects/object_blocking_dark_shrine_obelisk.png
+
+[validation] validate-chest-mimics.js
+Error: ENOENT: no such file or directory, open '/mnt/data/rpg_work/assets/monsters/monster_120301.png'
+    at Object.openSync (node:fs:562:18)
+    at Object.readFileSync (node:fs:446:35)
+    at /mnt/data/rpg_work/tools/validation/validate-chest-mimics.js:150:25 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/mnt/data/rpg_work/assets/monsters/monster_120301.png'
+}
+
+[validation] validate-companion-map-sprites.js
+node:fs:562
+  return binding.open(
+                 ^
+
+Error: ENOENT: no such file or directory, open '/mnt/data/rpg_work/assets/map/overlays/source/companion-highres-v003/manifest.json'
+    at Object.openSync (node:fs:562:18)
+    at Object.readFileSync (node:fs:446:35)
+    at read (/mnt/data/rpg_work/tools/validation/validate-companion-map-sprites.js:5:25)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-companion-map-sprites.js:9:29)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/mnt/data/rpg_work/assets/map/overlays/source/companion-highres-v003/manifest.json'
+}
+
+Node.js v22.16.0
+
+[validation] validate-container-presentations.js
+Container presentation validation passed: chest, pot and barrel text paths are distinct.
+
+[validation] validate-crystal-tree-foundation-phase7b.js
+[phase7b-foundation] PASS: Crystal Tree state/reward foundation remains synchronized.
+
+[validation] validate-crystal-tree-route-phase7c.js
+[phase7c-crystal-tree] FAIL: Crystal Tree M0 should have 21 rows, got 0.
+[phase7c-crystal-tree] FAIL: Entry must reach Minerva first-meeting position with ritual pedestals present.
+[phase7c-crystal-tree] FAIL: Entry must reach a tile adjacent to Minerva root-ritual position.
+[phase7c-crystal-tree] FAIL: Water-gate return marker must remain reachable.
+
+[validation] validate-crystal-tree-six-element-phase7d.js
+[phase7d-six-element] PASS: approved six-element medicine ritual, save compatibility, Leila gate, pedestals, and subtle hometown foreshadowing are wired.
+
+[validation] validate-dark-castle-phase8b.js
+[phase8b-dark-castle] PASS: three male officers, revised battle motives, Castle shop removal, and post-clear Empire shop activation are wired.
+
+[validation] validate-dark-castle-phase8c.js
+[phase8c-dark-castle] PASS: Luna accountability, Dark Prism memory pain, Alus non-pressure support, Galvania defense evidence, Zenon truth, second integration, Shanny choice, commit order, and old-save rescue are wired.
+
+[validation] validate-event-battle-rules.js
+PASS: event battle thresholds, omitted-rule death semantics, guaranteed equipment, reward suppression, and bestiary exclusion are wired for story boss variants.
+
+[validation] validate-event-map-markers.js
+/mnt/data/rpg_work/tools/validation/validate-event-map-markers.js:6
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+                                                         ^
+
+Error: Blue event glimmer asset is missing
+    at assert (/mnt/data/rpg_work/tools/validation/validate-event-map-markers.js:6:64)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-event-map-markers.js:21:1)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.16.0
+
+[validation] validate-field-encounter-zones.js
+Field encounter zone validation passed. Terrain-separated zones, rare metals, new dungeons, quests, items, and tile effects are valid.
+
+[validation] validate-fixed-encounter-rosters.js
+Fixed encounter roster validation passed: 444 monsters.js habitat entries, 69 authored hunter entries, depth gates, and the Crena investigation cordon are consistent.
+
+[validation] validate-fixed-exit-on-step.js
+Fixed dungeon exit validation passed: EXIT and unlinked S cells activate on contact; locked and inter-floor links remain safe.
+
+[validation] validate-fixed-hunter-pathfinding.js
+Fixed hunter pathfinding validation passed: shortest walkable detour, unreachable wait, same-cell handling, and runtime pursuit are connected.
+
+[validation] validate-fixed-water-shore.js
+/mnt/data/rpg_work/tools/validation/validate-fixed-water-shore.js:11
+    if (!condition) throw new Error(message);
+                    ^
+
+Error: World shoreline foam asset is missing
+    at assert (/mnt/data/rpg_work/tools/validation/validate-fixed-water-shore.js:11:27)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-fixed-water-shore.js:56:1)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.16.0
+
+[validation] validate-full-cache-assets.js
+missing file: assets/generated/opening-prism-collapse.png
+missing file: assets/ui/menu-icons/item-attack.png
+missing file: assets/ui/menu-icons/item-buff.png
+missing file: assets/ui/menu-icons/item-debuff.png
+missing file: assets/ui/menu-icons/item-material.png
+missing file: assets/ui/menu-icons/item-vehicle.png
+missing file: assets/ui/menu-icons/item-travel.png
+missing file: assets/ui/menu-icons/item-heal.png
+missing file: assets/ui/menu-icons/item-revive.png
+missing file: assets/ui/menu-icons/item-growth.png
+missing file: assets/ui/menu-icons/item-skill-book.png
+missing file: assets/ui/menu-icons/item-trait-book.png
+missing file: assets/ui/menu-icons/item-key.png
+missing file: assets/map/terrain/terrain_grass_field.png
+missing file: assets/map/terrain/terrain_sea.png
+missing file: assets/map/objects/object_field_forest.png
+missing file: assets/map/objects/object_field_mountain.png
+missing file: assets/map/objects/object_field_low_mountain.png
+missing file: assets/map/terrain/terrain_dungeon_wall.png
+missing file: assets/map/terrain/terrain_dungeon_wall_face.png
+missing file: assets/map/terrain/terrain_dungeon_wall_face_torch.png
+missing file: assets/map/terrain/tile_fire_wall_face.png
+missing file: assets/map/terrain/tile_wind_temple_wall_face.png
+missing file: assets/map/terrain/tile_wind_hole_wall_face.png
+missing file: assets/map/terrain/tile_tower_wall_face.png
+missing file: assets/map/terrain/tile_thunder_wall_face.png
+missing file: assets/map/terrain/tile_dark_castle_wall_face.png
+missing file: assets/map/terrain/tile_galvania_wall_face.png
+missing file: assets/map/terrain/tile_grezelia_wall_face.png
+missing file: assets/map/terrain/magma.png
+missing file: assets/map/terrain/terrain_dungeon_floor.png
+missing file: assets/map/objects/object_field_stairs.png
+missing file: assets/map/objects/object_dungeon_stairs.png
+missing file: assets/map/objects/object_field_cave.png
+missing file: assets/map/objects/object_field_hall.png
+missing file: assets/map/objects/object_field_house_1.png
+missing file: assets/map/objects/object_field_house_2.png
+missing file: assets/map/objects/object_field_village.png
+missing file: assets/map/objects/object_field_inn.png
+missing file: assets/map/objects/object_field_casino.png
+missing file: assets/map/objects/object_field_weapon.png
+missing file: assets/map/objects/object_field_shop.png
+missing file: assets/map/objects/object_field_medal.png
+missing file: assets/map/objects/object_field_town.png
+missing file: assets/map/objects/object_field_settlement.png
+missing file: assets/map/objects/object_field_castle.png
+missing file: assets/map/objects/object_field_temple.png
+missing file: assets/map/objects/object_field_fortress.png
+missing file: assets/map/objects/object_field_ruins.png
+missing file: assets/map/objects/object_field_lost.png
+missing file: assets/map/objects/object_field_darkcastle.png
+missing file: assets/map/objects/object_field_lighthouse.png
+missing file: assets/map/objects/object_field_tower.png
+missing file: assets/map/objects/object_field_farm.png
+missing file: assets/map/objects/object_field_pot.png
+missing file: assets/map/objects/object_field_barrel.png
+missing file: assets/map/objects/object_field_chest.png
+missing file: assets/map/objects/object_field_chest_rare.png
+missing file: assets/map/objects/object_dungeon_chest.png
+missing file: assets/map/objects/object_dungeon_chest_rare.png
+missing file: assets/map/objects/object_field_smith.png
+missing file: assets/map/objects/object_field_fire_village.png
+missing file: assets/map/objects/object_field_grass.png
+missing file: assets/map/objects/object_field_boss.png
+missing file: assets/map/objects/object_dungeon_boss.png
+missing file: assets/map/overlays/overlay_named_dungeon_boss.png
+missing file: assets/map/overlays/overlay_named_dungeon_chest_rare.png
+missing file: assets/map/overlays/overlay_named_dungeon_chest.png
+missing file: assets/map/overlays/overlay_named_dungeon_stairs_down.png
+missing file: assets/map/overlays/overlay_named_dungeon_stairs_up.png
+missing file: assets/map/overlays/overlay_field_barrel.png
+missing file: assets/map/overlays/overlay_field_boss.png
+missing file: assets/map/overlays/overlay_field_casino.png
+missing file: assets/map/overlays/overlay_field_castle.png
+missing file: assets/map/overlays/overlay_field_cave.png
+missing file: assets/map/overlays/overlay_field_chest.png
+missing file: assets/map/overlays/overlay_field_chest_rare.png
+missing file: assets/map/overlays/overlay_field_darkcastle.png
+missing file: assets/map/overlays/overlay_field_event.png
+missing file: assets/map/overlays/overlay_event_blue_glimmer.png
+missing file: assets/map/overlays/overlay_field_farm.png
+missing file: assets/map/overlays/overlay_field_fire_village.png
+missing file: assets/map/overlays/overlay_field_forest.png
+missing file: assets/map/overlays/overlay_field_fortress.png
+missing file: assets/map/overlays/overlay_field_grass.png
+missing file: assets/map/overlays/overlay_field_hall.png
+missing file: assets/map/overlays/overlay_field_house_1.png
+missing file: assets/map/overlays/overlay_field_house_2.png
+missing file: assets/map/overlays/overlay_field_inn.png
+missing file: assets/map/overlays/overlay_field_lighthouse.png
+missing file: assets/map/overlays/overlay_field_lost.png
+missing file: assets/map/overlays/overlay_field_low_mountain.png
+missing file: assets/map/overlays/overlay_field_medal.png
+missing file: assets/map/overlays/overlay_field_mountain.png
+missing file: assets/map/overlays/overlay_field_pot.png
+missing file: assets/map/overlays/overlay_field_ruins.png
+missing file: assets/map/overlays/overlay_field_settlement.png
+missing file: assets/map/overlays/overlay_field_shop.png
+missing file: assets/map/overlays/overlay_field_smith.png
+missing file: assets/map/overlays/overlay_field_stairs.png
+missing file: assets/map/overlays/overlay_field_temple.png
+missing file: assets/map/overlays/overlay_field_tower.png
+missing file: assets/map/overlays/overlay_field_town.png
+missing file: assets/map/overlays/overlay_field_village.png
+missing file: assets/map/overlays/overlay_field_weapon.png
+missing file: assets/map/overlays/overlay_decor_default_cave_dust.png
+missing file: assets/map/overlays/overlay_decor_start_village_herbs.png
+missing file: assets/map/overlays/overlay_decor_start_cave_damp.png
+missing file: assets/map/overlays/overlay_decor_fire_ember_fissure.png
+missing file: assets/map/overlays/overlay_decor_wind_village_feather.png
+missing file: assets/map/overlays/overlay_decor_wind_hole_root.png
+missing file: assets/map/overlays/overlay_decor_forbidden_forest_moss.png
+missing file: assets/map/overlays/overlay_decor_water_city_puddle.png
+missing file: assets/map/overlays/overlay_decor_big_tower_gear_oil.png
+missing file: assets/map/overlays/overlay_decor_thunder_fort_wiring.png
+missing file: assets/map/overlays/overlay_decor_light_palace_prism.png
+missing file: assets/map/overlays/overlay_decor_galvania_crystal.png
+missing file: assets/map/overlays/overlay_decor_dark_castle_chain.png
+missing file: assets/map/overlays/overlay_decor_crena_limestone_pool.png
+missing file: assets/map/overlays/overlay_decor_seabed_temple_ripple.png
+missing file: assets/map/overlays/overlay_decor_dark_shrine_sigil.png
+missing file: assets/map/overlays/overlay_decor_grezelia_fossil.png
+missing file: assets/map/overlays/overlay_decor_abyss_void_dust.png
+missing file: assets/map/overlays/overlay_decor_abyss_field_flora.png
+missing file: assets/map/overlays/overlay_decor_ruined_shrine_glyph.png
+missing file: assets/map/overlays/overlay_castle_carpet_fill.png
+missing file: assets/map/overlays/overlay_castle_carpet_edge_n.png
+missing file: assets/map/overlays/overlay_castle_carpet_edge_s.png
+missing file: assets/map/overlays/overlay_castle_carpet_edge_w.png
+missing file: assets/map/overlays/overlay_castle_carpet_edge_e.png
+missing file: assets/map/overlays/overlay_castle_carpet_corner_nw.png
+missing file: assets/map/overlays/overlay_castle_carpet_corner_ne.png
+missing file: assets/map/overlays/overlay_castle_carpet_corner_sw.png
+missing file: assets/map/overlays/overlay_castle_carpet_corner_se.png
+missing file: assets/map/overlays/overlay_castle_carpet_blue_silver_fill.png
+missing file: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_n.png
+missing file: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_s.png
+missing file: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_w.png
+missing file: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_e.png
+missing file: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_nw.png
+missing file: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_ne.png
+missing file: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_sw.png
+missing file: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_se.png
+missing file: assets/map/overlays/overlay_village_goza_fill.png
+missing file: assets/map/overlays/overlay_village_goza_edge_n.png
+missing file: assets/map/overlays/overlay_village_goza_edge_s.png
+missing file: assets/map/overlays/overlay_village_goza_edge_w.png
+missing file: assets/map/overlays/overlay_village_goza_edge_e.png
+missing file: assets/map/overlays/overlay_village_goza_corner_nw.png
+missing file: assets/map/overlays/overlay_village_goza_corner_ne.png
+missing file: assets/map/overlays/overlay_village_goza_corner_sw.png
+missing file: assets/map/overlays/overlay_village_goza_corner_se.png
+missing file: assets/map/overlays/overlay_world_grass_detail.png
+missing file: assets/map/overlays/overlay_world_grass_weeds.png
+missing file: assets/map/overlays/overlay_world_grass_earth.png
+missing file: assets/map/overlays/overlay_world_forest_understory.png
+missing file: assets/map/overlays/overlay_world_forest_roots.png
+missing file: assets/map/overlays/overlay_world_foothill_rocks.png
+missing file: assets/map/overlays/overlay_world_shore_foam.png
+missing file: assets/map/overlays/overlay_world_bridge_wood.png
+missing file: assets/map/overlays/overlay_dungeon_boss.png
+missing file: assets/map/overlays/overlay_dungeon_chest.png
+missing file: assets/map/overlays/overlay_dungeon_chest_rare.png
+missing file: assets/map/overlays/overlay_dungeon_chest_empty.png
+missing file: assets/map/overlays/overlay_dungeon_chest_rare_empty.png
+missing file: assets/map/overlays/overlay_dungeon_event.png
+missing file: assets/map/overlays/overlay_dungeon_portal.png
+missing file: assets/map/overlays/overlay_dungeon_stairs.png
+missing file: assets/map/objects/door_key_red.png
+missing file: assets/map/objects/door_key_blue.png
+missing file: assets/map/objects/door_key_gold.png
+missing file: assets/map/objects/object_blocking_castle_candelabrum.png
+missing file: assets/map/objects/object_blocking_forest_stump.png
+missing file: assets/map/objects/object_blocking_thunder_terminal.png
+missing file: assets/map/objects/object_blocking_cave_stalagmite.png
+missing file: assets/map/objects/object_blocking_seabed_coral_pillar.png
+missing file: assets/map/objects/object_blocking_light_crystal_pedestal.png
+missing file: assets/map/objects/object_blocking_fire_brazier.png
+missing file: assets/map/objects/object_blocking_lighthouse_gear_pedestal.png
+missing file: assets/map/objects/object_blocking_dark_shrine_obelisk.png
+missing file: assets/map/objects/item_key_red.png
+missing file: assets/map/objects/item_key_blue.png
+missing file: assets/map/objects/item_key_gold.png
+missing file: assets/map/overlays/overlay_npc_elder.png
+missing file: assets/map/overlays/overlay_npc_villager.png
+missing file: assets/map/overlays/overlay_npc_child.png
+missing file: assets/map/overlays/overlay_npc_dark_soldier.png
+missing file: assets/map/overlays/overlay_npc_bronze_knight.png
+missing file: assets/map/overlays/guild_counter.png
+missing file: assets/map/overlays/guild_girl.png
+missing file: assets/map/overlays/guild.png
+missing file: assets/map/overlays/bed.png
+missing file: assets/map/overlays/questboard.png
+missing file: assets/map/overlays/prism_fire.png
+missing file: assets/map/overlays/prism_wind.png
+missing file: assets/map/overlays/prism_water.png
+missing file: assets/map/overlays/prism_thunder.png
+missing file: assets/map/overlays/prism_light.png
+missing file: assets/map/overlays/prism_dark.png
+missing file: assets/map/overlays/overlay_light_captive_king.png
+missing file: assets/map/overlays/overlay_light_captive_princess.png
+missing file: assets/map/overlays/overlay_light_captive_priest_a.png
+missing file: assets/map/overlays/overlay_light_captive_priest_b.png
+missing file: assets/map/overlays/overlay_light_captive_leila_bed.png
+missing file: assets/map/overlays/overlay_light_prison_gate_horizontal.png
+missing file: assets/map/overlays/overlay_companion_marie.png
+missing file: assets/map/overlays/overlay_companion_zelied.png
+missing file: assets/map/overlays/overlay_companion_hayate.png
+missing file: assets/map/overlays/overlay_companion_sylvia.png
+missing file: assets/map/overlays/overlay_companion_rin.png
+missing file: assets/map/overlays/overlay_companion_sophia.png
+missing file: assets/map/overlays/overlay_companion_alan.png
+missing file: assets/map/overlays/overlay_companion_frieda.png
+missing file: assets/map/overlays/overlay_companion_baron.png
+missing file: assets/map/overlays/overlay_companion_karin.png
+missing file: assets/map/overlays/overlay_companion_arisa.png
+missing file: assets/map/overlays/overlay_companion_haine.png
+missing file: assets/map/overlays/overlay_companion_claude.png
+missing file: assets/map/overlays/overlay_companion_leon.png
+missing file: assets/map/overlays/overlay_companion_luna.png
+missing file: assets/map/overlays/overlay_companion_licia.png
+missing file: assets/map/overlays/overlay_companion_ryu.png
+missing file: assets/map/overlays/overlay_companion_minerva.png
+missing file: assets/map/overlays/overlay_companion_zenon.png
+missing file: assets/map/overlays/overlay_town_fire_blacksmith.png
+missing file: assets/map/overlays/overlay_town_fire_coal_carrier.png
+missing file: assets/map/overlays/overlay_town_fire_resident.png
+missing file: assets/map/overlays/overlay_town_wind_watch.png
+missing file: assets/map/overlays/overlay_town_wind_weaver.png
+missing file: assets/map/overlays/overlay_town_water_guard.png
+missing file: assets/map/overlays/overlay_town_water_boatman.png
+missing file: assets/map/overlays/overlay_town_light_pilgrim.png
+missing file: assets/map/overlays/overlay_town_demon_guard.png
+missing file: assets/monsters/monster_000103.png
+missing file: assets/map/overlays/overlay_building_fire_forge.png
+missing file: assets/map/overlays/overlay_building_wind_hut.png
+missing file: assets/map/overlays/overlay_building_water_shop.png
+missing file: assets/map/overlays/overlay_building_water_alchemy.png
+missing file: assets/map/overlays/overlay_dungeon_warp.png
+missing file: assets/map/overlays/overlay_dungeon_trial_angel.png
+missing file: assets/map/overlays/overlay_dungeon_adventurer.png
+missing file: assets/map/overlays/overlay_dungeon_adventurer_down_1.png
+missing file: assets/map/overlays/overlay_dungeon_adventurer_down_2.png
+missing file: assets/map/overlays/overlay_dungeon_adventurer_left_1.png
+missing file: assets/map/overlays/overlay_dungeon_adventurer_left_2.png
+missing file: assets/map/overlays/overlay_dungeon_adventurer_right_1.png
+missing file: assets/map/overlays/overlay_dungeon_adventurer_right_2.png
+missing file: assets/map/overlays/overlay_dungeon_adventurer_up_1.png
+missing file: assets/map/overlays/overlay_dungeon_adventurer_up_2.png
+missing file: assets/effect/fx-buff-ai.png
+missing file: assets/effect/fx-abyss-vortex-ai.png
+missing file: assets/map/overlays/overlay_dungeon_hunter.png
+missing file: assets/map/overlays/overlay_dungeon_hunter_fire.png
+missing file: assets/map/overlays/overlay_dungeon_hunter_forest.png
+missing file: assets/map/overlays/overlay_dungeon_hunter_sea.png
+missing file: assets/map/overlays/overlay_dungeon_hunter_thunder.png
+missing file: assets/map/overlays/overlay_dungeon_hunter_shadow.png
+missing file: assets/map/overlays/overlay_magic_boat_down.png
+missing file: assets/map/overlays/overlay_magic_boat_up.png
+missing file: assets/map/overlays/overlay_magic_boat_left.png
+missing file: assets/map/overlays/overlay_magic_boat_right.png
+missing file: assets/map/terrain/tile_fire_wall.png
+missing file: assets/map/terrain/tile_fire_floor.png
+missing file: assets/map/terrain/tile_magma.png
+missing file: assets/map/terrain/tile_poison_bog.png
+missing file: assets/map/terrain/tile_ice_slide.png
+missing file: assets/map/terrain/tile_forest_wall.png
+missing file: assets/map/terrain/tile_wind_floor.png
+missing file: assets/map/terrain/tile_wind_bridge.png
+missing file: assets/map/terrain/tile_wind_temple_wall.png
+missing file: assets/map/terrain/tile_wind_temple_floor.png
+missing file: assets/map/terrain/tile_wind_hole_wall.png
+missing file: assets/map/terrain/tile_wind_hole_floor.png
+missing file: assets/map/terrain/tile_wind_hole_wall_variant_a.png
+missing file: assets/map/terrain/tile_wind_hole_wall_variant_b.png
+missing file: assets/map/terrain/tile_wind_hole_wall_variant_c.png
+missing file: assets/map/terrain/tile_wind_hole_floor_variant_a.png
+missing file: assets/map/terrain/tile_wind_hole_floor_variant_b.png
+missing file: assets/map/terrain/tile_wind_hole_floor_variant_c.png
+missing file: assets/map/terrain/tile_forbidden_forest_wall.png
+missing file: assets/map/terrain/tile_forbidden_forest_floor.png
+missing file: assets/map/terrain/tile_forbidden_forest_wall_variant_a.png
+missing file: assets/map/terrain/tile_forbidden_forest_wall_variant_b.png
+missing file: assets/map/terrain/tile_forbidden_forest_wall_variant_c.png
+missing file: assets/map/terrain/tile_forbidden_forest_floor_variant_a.png
+missing file: assets/map/terrain/tile_forbidden_forest_floor_variant_b.png
+missing file: assets/map/terrain/tile_forbidden_forest_floor_variant_c.png
+missing file: assets/map/terrain/tile_water_canal.png
+missing file: assets/map/terrain/tile_water_pave.png
+missing file: assets/map/terrain/tile_water_bridge.png
+missing file: assets/map/terrain/tile_tower_wall.png
+missing file: assets/map/terrain/tile_tower_floor.png
+missing file: assets/map/terrain/tile_thunder_wall.png
+missing file: assets/map/terrain/tile_thunder_floor.png
+missing file: assets/map/terrain/tile_thunder_wall_alt.png
+missing file: assets/map/terrain/tile_thunder_wall_alt_variant_a.png
+missing file: assets/map/terrain/tile_thunder_wall_alt_variant_b.png
+missing file: assets/map/terrain/tile_thunder_floor_alt.png
+missing file: assets/map/terrain/tile_thunder_floor_alt_variant_a.png
+missing file: assets/map/terrain/tile_thunder_floor_alt_variant_b.png
+missing file: assets/map/terrain/tile_light_wall.png
+missing file: assets/map/terrain/tile_light_floor.png
+missing file: assets/map/terrain/tile_light_wall_face.png
+missing file: assets/map/terrain/tile_light_wall_face_prism.png
+missing file: assets/map/terrain/tile_dark_wall.png
+missing file: assets/map/terrain/tile_dark_floor.png
+missing file: assets/map/terrain/tile_dark_wall_alt.png
+missing file: assets/map/terrain/tile_dark_wall_alt_variant_a.png
+missing file: assets/map/terrain/tile_dark_wall_alt_variant_b.png
+missing file: assets/map/terrain/tile_dark_floor_alt.png
+missing file: assets/map/terrain/tile_dark_floor_alt_variant_a.png
+missing file: assets/map/terrain/tile_dark_floor_alt_variant_b.png
+missing file: assets/map/terrain/tile_crena_floor.png
+missing file: assets/map/terrain/tile_crena_water.png
+missing file: assets/map/terrain/tile_seabed_floor.png
+missing file: assets/map/terrain/tile_seabed_floor_alt.png
+missing file: assets/map/terrain/tile_seabed_floor_alt_variant_a.png
+missing file: assets/map/terrain/tile_seabed_floor_alt_variant_b.png
+missing file: assets/map/terrain/tile_dark_shrine_wall.png
+missing file: assets/map/terrain/tile_dark_shrine_floor.png
+missing file: assets/map/terrain/tile_dark_shrine_wall_alt.png
+missing file: assets/map/terrain/tile_dark_shrine_wall_alt_variant_a.png
+missing file: assets/map/terrain/tile_dark_shrine_wall_alt_variant_b.png
+missing file: assets/map/terrain/tile_dark_shrine_wall_face.png
+missing file: assets/map/terrain/tile_dark_shrine_floor_alt.png
+missing file: assets/map/terrain/tile_dark_shrine_floor_alt_variant_a.png
+missing file: assets/map/terrain/tile_dark_shrine_floor_alt_variant_b.png
+missing file: assets/map/terrain/tile_galvania_wall.png
+missing file: assets/map/terrain/tile_galvania_wall_alt.png
+missing file: assets/map/terrain/tile_galvania_wall_alt_variant_a.png
+missing file: assets/map/terrain/tile_galvania_wall_alt_variant_b.png
+missing file: assets/map/terrain/tile_galvania_floor.png
+missing file: assets/map/terrain/tile_galvania_floor_alt.png
+missing file: assets/map/terrain/tile_galvania_floor_alt_variant_a.png
+missing file: assets/map/terrain/tile_galvania_floor_alt_variant_b.png
+missing file: assets/map/terrain/tile_grezelia_wall.png
+missing file: assets/map/terrain/tile_grezelia_floor.png
+missing file: assets/map/terrain/tile_grezelia_wall_alt.png
+missing file: assets/map/terrain/tile_grezelia_wall_alt_variant_a.png
+missing file: assets/map/terrain/tile_grezelia_wall_alt_variant_b.png
+missing file: assets/map/terrain/tile_grezelia_floor_alt.png
+missing file: assets/map/terrain/tile_grezelia_floor_alt_variant_a.png
+missing file: assets/map/terrain/tile_grezelia_floor_alt_variant_b.png
+missing file: assets/map/terrain/tile_abyss_grass.png
+missing file: assets/map/terrain/tile_abyss_path.png
+missing file: assets/map/terrain/tile_abyss_outer_wall_variant_a.png
+missing file: assets/map/terrain/tile_abyss_outer_wall_variant_b.png
+missing file: assets/map/terrain/tile_abyss_outer_wall_variant_c.png
+missing file: assets/map/terrain/tile_abyss_outer_wall_variant_d.png
+missing file: assets/map/terrain/tile_abyss_outer_dark_floor_variant_a.png
+missing file: assets/map/terrain/tile_abyss_outer_dark_floor_variant_b.png
+missing file: assets/map/terrain/tile_abyss_outer_dark_floor_variant_c.png
+missing file: assets/map/terrain/tile_abyss_outer_dark_floor_variant_d.png
+missing file: assets/map/terrain/tile_abyss_outer_prism_paving_variant_a.png
+missing file: assets/map/terrain/tile_abyss_outer_prism_paving_variant_b.png
+missing file: assets/map/terrain/tile_abyss_outer_prism_paving_variant_c.png
+missing file: assets/map/terrain/tile_abyss_outer_prism_paving_variant_d.png
+missing file: assets/map/overlays/overlay_abyss_outer_chasm_nw.png
+missing file: assets/map/overlays/overlay_abyss_outer_chasm_n.png
+missing file: assets/map/overlays/overlay_abyss_outer_chasm_ne.png
+missing file: assets/map/overlays/overlay_abyss_outer_chasm_w.png
+missing file: assets/map/overlays/overlay_abyss_outer_chasm_c.png
+missing file: assets/map/overlays/overlay_abyss_outer_chasm_e.png
+missing file: assets/map/overlays/overlay_abyss_outer_chasm_sw.png
+missing file: assets/map/overlays/overlay_abyss_outer_chasm_s.png
+missing file: assets/map/overlays/overlay_abyss_outer_chasm_se.png
+missing file: assets/map/overlays/overlay_abyss_outer_ruined_altar.png
+missing file: assets/map/overlays/overlay_abyss_outer_fallen_pillar.png
+missing file: assets/map/overlays/overlay_abyss_outer_intact_column.png
+missing file: assets/map/overlays/overlay_abyss_outer_broken_column_stump.png
+missing file: assets/map/overlays/overlay_abyss_outer_prism_pedestal_intact.png
+missing file: assets/map/overlays/overlay_abyss_outer_prism_pedestal_collapsed.png
+missing file: assets/map/terrain/tile_ruined_shrine_wall_variant_a.png
+missing file: assets/map/terrain/tile_ruined_shrine_wall_variant_b.png
+missing file: assets/map/terrain/tile_ruined_shrine_wall_variant_c.png
+missing file: assets/map/terrain/tile_ruined_shrine_wall_variant_d.png
+missing file: assets/map/terrain/tile_ruined_shrine_floor_variant_a.png
+missing file: assets/map/terrain/tile_ruined_shrine_floor_variant_b.png
+missing file: assets/map/terrain/tile_ruined_shrine_floor_variant_c.png
+missing file: assets/map/terrain/tile_ruined_shrine_floor_variant_d.png
+missing file: assets/map/terrain/tile_ruined_shrine_withered_grass_variant_a.png
+missing file: assets/map/terrain/tile_ruined_shrine_withered_grass_variant_b.png
+missing file: assets/map/terrain/tile_ruined_shrine_withered_grass_variant_c.png
+missing file: assets/map/terrain/tile_ruined_shrine_withered_grass_variant_d.png
+missing file: assets/map/terrain/tile_ruined_shrine_wall_face_variant_a.png
+missing file: assets/map/terrain/tile_ruined_shrine_wall_face_variant_b.png
+missing file: assets/map/overlays/overlay_ruined_shrine_pillar.png
+missing file: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_a.png
+missing file: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_b.png
+missing file: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_c.png
+missing file: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_d.png
+missing file: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_e.png
+missing file: assets/map/overlays/overlay_ruined_shrine_raised_stage_variant_f.png
+missing file: assets/map/overlays/overlay_ruined_shrine_ritual_astrolabe.png
+missing file: assets/map/overlays/overlay_ruined_shrine_rusted_sword.png
+missing file: assets/map/overlays/overlay_ruined_shrine_rusted_spear.png
+missing file: assets/map/overlays/overlay_ruined_shrine_rusted_axe.png
+missing file: assets/map/terrain/tile_shrine_wall.png
+missing file: assets/map/terrain/tile_shrine_floor.png
+missing file: assets/map/terrain/tile_trial_shrine_floor_variant_a.png
+missing file: assets/map/terrain/tile_trial_shrine_floor_variant_b.png
+missing file: assets/map/terrain/tile_trial_shrine_wall.png
+missing file: assets/map/terrain/tile_trial_shrine_wall_face.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_a.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_b.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_c.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_d.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_e.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_f.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_g.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_h.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_i.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_j.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_k.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_l.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_m.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_n.png
+missing file: assets/map/overlays/overlay_trial_shrine_stage_variant_o.png
+missing file: assets/map/overlays/overlay_trial_shrine_statue_a.png
+missing file: assets/map/overlays/overlay_trial_shrine_statue_un.png
+missing file: assets/map/terrain/tile_summit_temple_floor_variant_a.png
+missing file: assets/map/terrain/tile_summit_temple_floor_variant_b.png
+missing file: assets/map/terrain/tile_summit_temple_mountain_trail_variant_a.png
+missing file: assets/map/terrain/tile_summit_temple_mountain_trail_variant_b.png
+missing file: assets/map/terrain/tile_summit_temple_sky_variant_a.png
+missing file: assets/map/terrain/tile_summit_temple_wall.png
+missing file: assets/map/terrain/tile_summit_temple_wall_face.png
+missing file: assets/map/overlays/overlay_summit_temple_cloud_bank.png
+missing file: assets/map/overlays/overlay_summit_temple_cloud_wispy.png
+missing file: assets/map/overlays/overlay_summit_temple_cloud_compact.png
+missing file: assets/map/overlays/overlay_summit_temple_cliff_edge_n.png
+missing file: assets/map/overlays/overlay_summit_temple_cliff_edge_e.png
+missing file: assets/map/overlays/overlay_summit_temple_cliff_edge_s.png
+missing file: assets/map/overlays/overlay_summit_temple_cliff_edge_w.png
+missing file: assets/map/overlays/overlay_shrine_healing_spring.png
+missing file: assets/map/overlays/overlay_abyss_black_spring.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_a.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_b.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_c.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_d.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_e.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_f.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_g.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_h.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_i.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_j.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_k.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_l.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_m.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_n.png
+missing file: assets/map/overlays/overlay_summit_temple_stage_variant_o.png
+missing file: assets/map/overlays/overlay_summit_temple_statue_angel.png
+missing file: assets/map/overlays/overlay_summit_temple_statue_divine_dragon.png
+missing file: assets/map/terrain/tile_stone_tablet.png
+missing file: assets/map/objects/object_field_event.png
+missing file: assets/map/objects/object_dungeon_event.png
+missing file: assets/map/objects/object_dungeon_portal.png
+missing file: assets/generated/battle-field-ai.png
+missing file: assets/generated/battle-forest-ai.png
+missing file: assets/generated/battle-forbidden-forest.png
+missing file: assets/generated/battle-mountain-ai.png
+missing file: assets/generated/battle-dungeon-ai.png
+missing file: assets/generated/battle-boss-ai.png
+missing file: assets/generated/battle-maze-ai.png
+missing file: assets/generated/battle-fire.png
+missing file: assets/generated/battle-sea.png
+missing file: assets/generated/battle-abyss-ai.png
+missing file: assets/generated/first-battle.png
+missing file: assets/generated/battle-abyss-boss.png
+missing file: assets/generated/battle-abyss-floor-200.png
+missing file: assets/generated/battle-wind-temple.png
+missing file: assets/generated/battle-mountain-wind-ruins.png
+missing file: assets/generated/battle-trial-shrine.png
+missing file: assets/generated/battle-summit-temple.png
+missing file: assets/generated/hero-down-1.gif
+missing file: assets/generated/hero-down-2.gif
+missing file: assets/generated/hero-up-1.gif
+missing file: assets/generated/hero-up-2.gif
+missing file: assets/generated/hero-left-1.gif
+missing file: assets/generated/hero-left-2.gif
+missing file: assets/generated/hero-right-1.gif
+missing file: assets/generated/hero-right-2.gif
+missing file: assets/generated/hero-wing-down-1.png
+missing file: assets/generated/hero-wing-down-2.png
+missing file: assets/generated/hero-wing-up-1.png
+missing file: assets/generated/hero-wing-up-2.png
+missing file: assets/generated/hero-wing-left-1.png
+missing file: assets/generated/hero-wing-left-2.png
+missing file: assets/generated/hero-wing-right-1.png
+missing file: assets/generated/hero-wing-right-2.png
+missing file: assets/generated/battle-thunder-fort.png
+missing file: assets/generated/battle-light-palace.png
+missing file: assets/generated/battle-big-tower.png
+missing file: assets/generated/battle-dark-castle.png
+missing file: assets/generated/battle-crena.png
+missing file: assets/generated/battle-seabed.png
+missing file: assets/generated/battle-flooded.png
+missing file: assets/generated/battle-dark-shrine.png
+missing file: assets/generated/battle-galvania-cave.png
+missing file: assets/generated/battle-grezelia.png
+missing file: assets/generated/battle-forest-wind-hole.png
+missing file: assets/map/library/village/decoration/maplib_village_wildflowers.png
+missing file: assets/map/library/village/decoration/maplib_village_medicinal_herbs.png
+missing file: assets/map/library/village/decoration/maplib_village_mushroom_patch.png
+missing file: assets/map/library/village/blocking/maplib_village_hay_bundle.png
+missing file: assets/map/library/village/blocking/maplib_village_fence_post.png
+missing file: assets/map/library/village/blocking/maplib_village_roadside_sign.png
+missing file: assets/map/library/village/blocking/maplib_village_clay_jar.png
+missing file: assets/map/library/village/decoration/maplib_village_mossy_stone.png
+missing file: assets/map/library/village/blocking/maplib_village_firewood_stack.png
+missing file: assets/map/library/forest/blocking/maplib_forest_ancient_stump.png
+missing file: assets/map/library/forest/decoration/maplib_forest_exposed_roots.png
+missing file: assets/map/library/forest/decoration/maplib_forest_fern_patch.png
+missing file: assets/map/library/forest/decoration/maplib_forest_red_mushrooms.png
+missing file: assets/map/library/forest/blocking/maplib_forest_fallen_log.png
+missing file: assets/map/library/forest/blocking/maplib_forest_lichen_boulder.png
+missing file: assets/map/library/forest/blocking/maplib_forest_twisted_sapling.png
+missing file: assets/map/library/forest/blocking/maplib_forest_vine_stone.png
+missing file: assets/map/library/forest/decoration/maplib_forest_glowing_fungus.png
+missing file: assets/map/library/forest/blocking/maplib_forest_decayed_roadside_sign.png
+missing file: assets/map/library/cave/blocking/maplib_cave_stalagmite.png
+missing file: assets/map/library/cave/decoration/maplib_cave_rock_pile.png
+missing file: assets/map/library/cave/blocking/maplib_cave_purple_crystals.png
+missing file: assets/map/library/cave/decoration/maplib_cave_mineral_puddle.png
+missing file: assets/map/library/cave/decoration/maplib_cave_pale_mushrooms.png
+missing file: assets/map/library/cave/decoration/maplib_cave_bone_pile.png
+missing file: assets/map/library/cave/blocking/maplib_cave_mine_support.png
+missing file: assets/map/library/cave/blocking/maplib_cave_miner_cart.png
+missing file: assets/map/library/cave/decoration/maplib_cave_spring_vent.png
+missing file: assets/map/library/volcanic/decoration/maplib_volcanic_lava_vent.png
+missing file: assets/map/library/volcanic/blocking/maplib_volcanic_obsidian_shards.png
+missing file: assets/map/library/volcanic/decoration/maplib_volcanic_ember_fissure.png
+missing file: assets/map/library/volcanic/blocking/maplib_volcanic_ritual_brazier.png
+missing file: assets/map/library/volcanic/decoration/maplib_volcanic_scorched_bones.png
+missing file: assets/map/library/volcanic/blocking/maplib_volcanic_sulfur_crystals.png
+missing file: assets/map/library/volcanic/blocking/maplib_volcanic_molten_boulder.png
+missing file: assets/map/library/volcanic/decoration/maplib_volcanic_ash_heap.png
+missing file: assets/map/library/volcanic/blocking/maplib_volcanic_fire_rune_stone.png
+missing file: assets/map/library/water/decoration/maplib_water_puddle_ripple.png
+missing file: assets/map/library/water/blocking/maplib_water_branching_coral.png
+missing file: assets/map/library/water/decoration/maplib_water_shell_cluster.png
+missing file: assets/map/library/water/decoration/maplib_water_seaweed_clump.png
+missing file: assets/map/library/water/blocking/maplib_water_broken_column.png
+missing file: assets/map/library/water/decoration/maplib_water_sea_anemone.png
+missing file: assets/map/library/water/blocking/maplib_water_sunken_urn.png
+missing file: assets/map/library/water/decoration/maplib_water_bubble_vent.png
+missing file: assets/map/library/water/decoration/maplib_water_starfish_debris.png
+missing file: assets/map/library/thunder/blocking/maplib_thunder_control_terminal.png
+missing file: assets/map/library/thunder/decoration/maplib_thunder_cable_coil.png
+missing file: assets/map/library/thunder/decoration/maplib_thunder_broken_conduit.png
+missing file: assets/map/library/thunder/blocking/maplib_thunder_lightning_capacitor.png
+missing file: assets/map/library/thunder/blocking/maplib_thunder_battery_cell.png
+missing file: assets/map/library/thunder/decoration/maplib_thunder_floor_grate.png
+missing file: assets/map/library/thunder/blocking/maplib_thunder_gear_assembly.png
+missing file: assets/map/library/thunder/blocking/maplib_thunder_warning_beacon.png
+missing file: assets/map/library/thunder/blocking/maplib_thunder_transformer_coil.png
+missing file: assets/map/library/light/blocking/maplib_light_crystal_pedestal.png
+missing file: assets/map/library/light/blocking/maplib_light_prism_cluster.png
+missing file: assets/map/library/light/decoration/maplib_light_gold_inlay.png
+missing file: assets/map/library/light/decoration/maplib_light_luminous_flower.png
+missing file: assets/map/library/light/blocking/maplib_light_marble_urn.png
+missing file: assets/map/library/light/blocking/maplib_light_mirror_stand.png
+missing file: assets/map/library/light/blocking/maplib_light_sun_altar.png
+missing file: assets/map/library/light/decoration/maplib_light_star_mosaic.png
+missing file: assets/map/library/light/decoration/maplib_light_marble_rubble.png
+missing file: assets/map/library/dark/blocking/maplib_dark_iron_candelabrum.png
+missing file: assets/map/library/dark/decoration/maplib_dark_chain_pile.png
+missing file: assets/map/library/dark/decoration/maplib_dark_horned_skull.png
+missing file: assets/map/library/dark/blocking/maplib_dark_gargoyle_statue.png
+missing file: assets/map/library/dark/blocking/maplib_dark_black_crystals.png
+missing file: assets/map/library/dark/blocking/maplib_dark_sealed_obelisk.png
+missing file: assets/map/library/dark/decoration/maplib_dark_broken_armor.png
+missing file: assets/map/library/dark/blocking/maplib_dark_blue_brazier.png
+missing file: assets/map/library/dark/decoration/maplib_dark_ritual_rune.png
+missing file: assets/map/library/tower/blocking/maplib_tower_gear_assembly.png
+missing file: assets/map/library/tower/decoration/maplib_tower_rope_coil.png
+missing file: assets/map/library/tower/blocking/maplib_tower_hand_winch.png
+missing file: assets/map/library/tower/blocking/maplib_tower_oil_lamp.png
+missing file: assets/map/library/tower/blocking/maplib_tower_reinforced_crate.png
+missing file: assets/map/library/tower/blocking/maplib_tower_weathered_barrel.png
+missing file: assets/map/library/tower/decoration/maplib_tower_brass_pipe.png
+missing file: assets/map/library/tower/blocking/maplib_tower_lens_fragment.png
+missing file: assets/map/library/tower/decoration/maplib_tower_iron_anchor.png
+missing file: assets/map/library/ruins/blocking/maplib_ruins_broken_column.png
+missing file: assets/map/library/ruins/blocking/maplib_ruins_ancient_tablet.png
+missing file: assets/map/library/ruins/blocking/maplib_ruins_void_crystals.png
+missing file: assets/map/library/ruins/blocking/maplib_ruins_black_roots.png
+missing file: assets/map/library/ruins/blocking/maplib_ruins_ritual_brazier.png
+missing file: assets/map/library/ruins/blocking/maplib_ruins_masonry_pile.png
+missing file: assets/map/library/ruins/blocking/maplib_ruins_weathered_rune.png
+missing file: assets/map/library/ruins/blocking/maplib_ruins_bone_lantern.png
+missing file: assets/map/library/ruins/blocking/maplib_ruins_prism_shard.png
+missing file: assets/effect/fx-slash-ai.png
+missing file: assets/effect/fx-claw-ai.png
+missing file: assets/effect/fx-fire-ai.png
+missing file: assets/effect/fx-ice-ai.png
+missing file: assets/effect/fx-thunder-ai.png
+missing file: assets/effect/fx-wind-ai.png
+missing file: assets/effect/fx-light-ai.png
+missing file: assets/effect/fx-dark-ai.png
+missing file: assets/effect/fx-chaos-ai.png
+missing file: assets/effect/fx-heal-ai.png
+missing file: assets/effect/fx_support_buff.png
+missing file: assets/effect/fx_support_debuff_hex.png
+missing file: assets/effect/fx-combo-ai.png
+missing file: assets/effect/fx-all-slash-ai.png
+missing file: assets/effect/fx-enemy-claw-ai.png
+missing file: assets/effect/fx-party-hit-ai.png
+missing file: assets/effect/fx-meteor-ai.png
+missing file: assets/effect/fx-ice-spear-ai.png
+missing file: assets/effect/fx-thunder-pillar-ai.png
+missing file: assets/effect/fx-holy-burst-ai.png
+missing file: assets/effect/fx-poison-ai.png
+missing file: assets/effect/fx-ultimate-chaos-ai.png
+missing file: assets/effect/fx_ultimate_166_ragnarok.png
+missing file: assets/effect/fx_ultimate_168_prisma_end.png
+missing file: assets/effect/fx_ultimate_238_big_bang.png
+missing file: assets/effect/fx_ultimate_242_abyss_wall.png
+missing file: assets/effect/fx_ultimate_243_phoenix_flare.png
+missing file: assets/effect/fx_ultimate_244_genesis_magic.png
+missing file: assets/effect/fx_ultimate_245_chaos_shock.png
+missing file: assets/effect/fx_ultimate_246_illuminati_break.png
+missing file: assets/effect/fx_ultimate_247_the_end.png
+missing file: assets/effect/fx_ultimate_248_lost_prisma.png
+missing file: assets/effect/fx_support_heal_radiance.png
+missing file: assets/effect/fx_phys_slash_arc.png
+missing file: assets/effect/fx_phys_smash_impact.png
+missing file: assets/effect/fx_phys_pierce_lance.png
+missing file: assets/effect/fx_phys_neutral_combo.png
+missing file: assets/effect/fx_phys_neutral_chain.png
+missing file: assets/effect/fx_phys_neutral_heavy.png
+missing file: assets/effect/fx_phys_ranged_volley.png
+missing file: assets/effect/fx_spell_fire.png
+missing file: assets/effect/fx_spell_ice.png
+missing file: assets/effect/fx_spell_thunder.png
+missing file: assets/effect/fx_spell_wind.png
+missing file: assets/effect/fx_spell_light.png
+missing file: assets/effect/fx_spell_dark.png
+missing file: assets/effect/fx_spell_chaos.png
+missing file: assets/effect/fx_breath_cone_master.png
+missing file: assets/effect/fx_magic_arcane_burst.png
+missing file: assets/effect/fx_special_rupture.png
+missing file: assets/effect/fx_critical_spark.png
+missing file: assets/effect/fx_phys_elemental_arc.png
+missing file: assets/gacha/back_card.png
+missing file: assets/gacha/front_card.png
+missing file: assets/background/PRISMA ABYSS.png
+missing file: assets/background/bg_inn.jpg
+missing file: assets/background/bg_medal.png
+missing file: assets/background/bg_casino.png
+missing file: assets/background/bg_alchemy_water_city.png
+missing file: assets/background/bg_blacksmith.png
+missing file: assets/characters/char_face_101.gif
+missing file: assets/characters/char_face_102.gif
+missing file: assets/characters/char_face_103.gif
+missing file: assets/characters/char_face_104.gif
+missing file: assets/characters/char_face_105.gif
+missing file: assets/characters/char_face_106.gif
+missing file: assets/characters/char_face_107.gif
+missing file: assets/characters/char_face_108.gif
+missing file: assets/characters/char_face_109.gif
+missing file: assets/characters/char_face_110.gif
+missing file: assets/characters/char_face_201.gif
+missing file: assets/characters/char_face_202.gif
+missing file: assets/characters/char_face_203.gif
+missing file: assets/characters/char_face_204.gif
+missing file: assets/characters/char_face_205.gif
+missing file: assets/characters/char_face_206.gif
+missing file: assets/characters/char_face_207.gif
+missing file: assets/characters/char_face_208.gif
+missing file: assets/characters/char_face_209.gif
+missing file: assets/characters/char_face_210.gif
+missing file: assets/characters/char_face_301.gif
+missing file: assets/characters/char_face_302.gif
+missing file: assets/characters/char_face_303.gif
+missing file: assets/characters/char_face_304.gif
+missing file: assets/characters/char_face_305.gif
+missing file: assets/characters/char_face_306.gif
+missing file: assets/characters/char_face_403.gif
+missing file: assets/characters/char_face_401.gif
+missing file: assets/characters/char_face_402.gif
+missing file: assets/characters/char_face_501.gif
+
+[validation] validate-galvania-geography-phase8a.js
+[phase8a-galvania] FAIL: Sky Prism order must be Gorge -> Empire -> Nadir Cave.
+
+[validation] validate-grad-first-battle-phase4.js
+PASS validate-grad-first-battle-phase4
+
+[validation] validate-inventory-equipment-display.js
+Inventory equipment display validation passed: acquisition-style cards and footer controls are active.
+
+[validation] validate-light-palace-flashback-phase6d.js
+[phase6d] FAIL: Saintess room expected 13 rows, got 15
+[phase6d] FAIL: Saintess room has invalid row width: 17,17,17,17,17,17,17,17,17,17,17,17,17,61,61
+
+[validation] validate-light-palace-present-assault-phase6e.js
+[phase6e] FAIL: prison rescue completion must be idempotent
+[phase6e] FAIL: Alan betrayal event must be idempotent
+
+[validation] validate-lighthouse-zelied-volcano-route-phase6b.js
+PASS validate-lighthouse-zelied-volcano-route-phase6b
+
+[validation] validate-long-quest-state.js
+PASS: long quest stages are monotonic by default, comparable in shared conditions, and failed chains remain closed unless explicitly retryable.
+
+[validation] validate-luna403-thunder-state-phase5d.js
+PASS validate-luna403-thunder-state-phase5d
+
+[validation] validate-main-story-routing.js
+Main-story routing validation passed.
+Fire Village -> Wind Hole -> Ignis Volcano and Water City -> Crena cordon release -> Seabed Temple are mandatory routes.
+Four blessing-gated deep floors use expanded authored layouts with hazards and rewards.
+Grezelia has a sealed third layer, and all fixed tile effects use walkable coordinates.
+
+[validation] validate-map-actor-master.js
+Map actor master validation passed: stable ID, deterministic state priority, flag/item transitions, coordinate-independent identity, and legacy-action compatibility.
+
+[validation] validate-map-actors.js
+Map actor validation passed. Coordinate-based actors checked: 159.
+Stable mapActors masters checked: 106; no person sprites remain in mapActions.
+Actor positions are walkable, unique, blocking, adjacent-interactable, and linked to existing story events.
+
+[validation] validate-map-editor.js
+Map editor validation passed. Inline scripts: 1. Placeable library props: 91. Shared floor themes: 24.
+
+[validation] validate-minimap-hazard-safety.js
+Minimap/hazard safety passed. Wall cells filtered: 235. Protected cells filtered: 244. Explicit stops: 5. Ice floors checked: 5.
+Directed navigation states: 4849. Important targets: 65. Adjacent switches: 8.
+
+[validation] validate-monster-habitat-master.js
+Monster habitat master validation passed: 111 fixed floors, 15 field zones, sea habitats, and four rare Rank bands at one 2% encounter roll.
+
+[validation] validate-nadir-cave-phase8d.js
+FAIL validate-nadir-cave-phase8d (2)
+ - missing: Nadir Cave entrance world coordinate
+ - missing: Nadir Cave altar-side world coordinate
+
+[validation] validate-news-data.js
+PASS: news data policy (11 dates)
+
+[validation] validate-passive-skills.js
+PASS: 特性互換監査（無効ID正規化・固定ON）
+
+[validation] validate-phase8e-alan-appeal.js
+[phase8e-alan] PASS: corrected original-petition quest, Hayate/Zelied relationship, Alan boss, irreversible/no-petition and player-chosen petition branches, map gating, and save migration are wired.
+
+[validation] validate-phase8e-story-infrastructure.js
+[phase8e-infra] PASS: quest-stage actions, explicit choice labels, approved canon, and global system/UI review policy are synchronized.
+
+[validation] validate-phase8f-jasper-alan-support.js
+[phase8f-jasper] PASS: Jasper trap/boast scene, death-route ambush+half stats, generic external NPC turn support, Alan four-skill cycle, post-battle rejoin choice, Legacion fallback, and 1,000,000 EXP are wired.
+
+[validation] validate-playable-prologue-phase2a.js
+/mnt/data/rpg_work/tools/validation/validate-playable-prologue-phase2a.js:15
+function assert(v, msg) { if (!v) throw new Error(msg); }
+                                  ^
+
+Error: Could not locate normalizeWorldStateConditions runtime.
+    at assert (/mnt/data/rpg_work/tools/validation/validate-playable-prologue-phase2a.js:15:41)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-playable-prologue-phase2a.js:46:1)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.16.0
+
+[validation] validate-playable-prologue-phase2b.js
+PASS validate-playable-prologue-phase2b
+
+[validation] validate-playable-prologue-phase2c.js
+PASS validate-playable-prologue-phase2c
+
+[validation] validate-player-facing-information-boundary.js
+PASS validate-player-facing-information-boundary
+
+[validation] validate-post-battle-boss-visual-source-20260811.js
+PASS validate-post-battle-boss-visual-source-20260811
+
+[validation] validate-present-day-bridge-phase3a.js
+PASS validate-present-day-bridge-phase3a
+
+[validation] validate-prologue-phase2.js
+/mnt/data/rpg_work/tools/validation/validate-prologue-phase2.js:8
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+                                                         ^
+
+Error: PROLOGUE_HILL is missing.
+    at assert (/mnt/data/rpg_work/tools/validation/validate-prologue-phase2.js:8:64)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-prologue-phase2.js:17:3)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.16.0
+
+[validation] validate-prologue-quality-audit-20260810.js
+PASS validate-prologue-quality-audit-20260810
+
+[validation] validate-recruitment-route-cleanup-phase5d.js
+PASS validate-recruitment-route-cleanup-phase5d
+
+[validation] validate-rexnote-estate-phase5c.js
+PASS validate-rexnote-estate-phase5c
+
+[validation] validate-save-safety.js
+PASS: save failures are visible, duplicate Data URLs are omitted, and imported names are safely rendered in current title/slot/allies UIs.
+
+[validation] validate-scene-context.js
+PASS: Scene Context snapshots present-day state, installs temporary flashback party/filter, suppresses saves, and fully restores present-day state.
+
+[validation] validate-scoped-cache-reset.js
+PASS: cache reset only removes this app service worker and prisma-abyss caches.
+
+[validation] validate-service-worker-shell.js
+PASS: all 59 index.html scripts are present in the Service Worker precache.
+Cache names are valid and the runtime cache is synchronized: prisma-abyss-v39.20260804-runtime
+
+[validation] validate-story-ally-lifecycle.js
+PASS: story ally equipment return is idempotent, departure preserves recruitment history, and normal/permanent rejoin rules behave as expected.
+
+[validation] validate-story-condition-engine.js
+PASS: shared story conditions and recruited/available/party/temporary/permanent ally states behave as expected.
+
+[validation] validate-story-dialogue-data.js
+Story validation passed: 388 scripts, 325 events.
+Warnings: 30 unreferenced scripts (review separately; not auto-deleted).
+unreferenced script: GAME_START_1
+unreferenced script: LIGHT_PALACE_FINAL_ENCOUNTER
+unreferenced script: ABYSS_FLOOR_010_LEON_GUARDIAN
+unreferenced script: ABYSS_FLOOR_010_CLEAR
+unreferenced script: ABYSS_FLOOR_020_GLEN_GUARDIAN
+unreferenced script: ABYSS_FLOOR_020_CLEAR
+unreferenced script: ABYSS_FLOOR_030_LEONARD
+unreferenced script: ABYSS_FLOOR_030_CLEAR
+unreferenced script: ABYSS_FLOOR_040_ELICIA
+unreferenced script: ABYSS_FLOOR_040_CLEAR
+unreferenced script: ABYSS_FLOOR_050_SYRIS
+unreferenced script: ABYSS_FLOOR_050_CLEAR
+unreferenced script: ABYSS_FLOOR_060_GRAD
+unreferenced script: ABYSS_FLOOR_060_CLEAR
+unreferenced script: ABYSS_FLOOR_070_VELD
+unreferenced script: ABYSS_FLOOR_070_VELD_CLEAR
+unreferenced script: ABYSS_FLOOR_080_LILITH
+unreferenced script: ABYSS_FLOOR_080_CLEAR
+unreferenced script: ABYSS_FLOOR_090_JASPER
+unreferenced script: ABYSS_FLOOR_090_JASPER_CLEAR
+unreferenced script: ABYSS_FLOOR_100_PHASE1
+unreferenced script: ABYSS_FLOOR_100_PHASE2
+unreferenced script: ABYSS_FLOOR_100_CLEAR
+unreferenced script: ABYSS_VEGNASIS_LAST_STAND_1
+unreferenced script: ABYSS_VEGNASIS_LAST_STAND_2
+unreferenced script: ABYSS_VEGNASIS_LAST_STAND_3
+unreferenced script: ABYSS_VEGNASIS_LAST_STAND_4
+unreferenced script: ABYSS_VEGNASIS_LAST_STAND_5
+unreferenced script: ABYSS_AZELGARAG_TRANSFORM
+unreferenced script: ABYSS_AZELGARAG_TRANSFORM_FINAL
+
+[validation] validate-story-exp-system.js
+PASS: individual EXP requirements, Lv1/2000% story joins, one-time Story EXP, and aggregated mass level-up logs behave as expected.
+
+[validation] validate-story-item-conditions.js
+Story item-condition validation passed: missing/owned branches and item consumption are deterministic.
+
+[validation] validate-story-monster-variants.js
+/mnt/data/rpg_work/tools/validation/validate-story-monster-variants.js:7
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+                                                         ^
+
+Error: Story monster variant getter is unavailable.
+    at assert (/mnt/data/rpg_work/tools/validation/validate-story-monster-variants.js:7:64)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-story-monster-variants.js:14:1)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.16.0
+
+[validation] validate-summit-temple.js
+/mnt/data/rpg_work/tools/validation/validate-summit-temple.js:7
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+                                                         ^
+
+Error: Missing Summit asset file: assets/map/terrain/tile_summit_temple_wall.png
+    at assert (/mnt/data/rpg_work/tools/validation/validate-summit-temple.js:7:64)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-summit-temple.js:96:5)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.16.0
+
+[validation] validate-system-input-update-20260810.js
+System/input update validation passed: village encounters, Rees hut coordinate, Rank drops, analog input, and tap-to-walk are wired correctly.
+
+[validation] validate-thunder-fort-defense-phase7a.js
+PASS validate-thunder-fort-defense-phase7a
+
+[validation] validate-thunder-fort-state-phase6a.js
+PASS validate-thunder-fort-state-phase6a
+
+[validation] validate-undersea-grad-phase6c.js
+PASS validate-undersea-grad-phase6c
+
+[validation] validate-undersea-volcano-phase6b.js
+PASS validate-undersea-volcano-phase6b
+
+[validation] validate-visual-polish.js
+- generated visual asset is missing: assets/map/overlays/overlay_decor_default_cave_dust.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_start_village_herbs.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_start_cave_damp.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_fire_ember_fissure.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_wind_village_feather.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_wind_hole_root.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_forbidden_forest_moss.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_water_city_puddle.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_big_tower_gear_oil.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_thunder_fort_wiring.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_light_palace_prism.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_galvania_crystal.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_dark_castle_chain.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_crena_limestone_pool.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_seabed_temple_ripple.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_dark_shrine_sigil.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_grezelia_fossil.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_abyss_void_dust.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_abyss_field_flora.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_ruined_shrine_glyph.png
+- generated visual asset is missing: assets/map/objects/door_key_red.png
+- generated visual asset is missing: assets/map/objects/door_key_blue.png
+- generated visual asset is missing: assets/map/objects/door_key_gold.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_fill.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_edge_n.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_edge_s.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_edge_w.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_edge_e.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_corner_nw.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_corner_ne.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_corner_sw.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_corner_se.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_fill.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_n.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_s.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_w.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_edge_e.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_nw.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_ne.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_sw.png
+- generated visual asset is missing: assets/map/overlays/overlay_castle_carpet_blue_silver_corner_se.png
+- generated visual asset is missing: assets/map/overlays/overlay_village_goza_fill.png
+- generated visual asset is missing: assets/map/overlays/overlay_village_goza_edge_n.png
+- generated visual asset is missing: assets/map/overlays/overlay_village_goza_edge_s.png
+- generated visual asset is missing: assets/map/overlays/overlay_village_goza_edge_w.png
+- generated visual asset is missing: assets/map/overlays/overlay_village_goza_edge_e.png
+- generated visual asset is missing: assets/map/overlays/overlay_village_goza_corner_nw.png
+- generated visual asset is missing: assets/map/overlays/overlay_village_goza_corner_ne.png
+- generated visual asset is missing: assets/map/overlays/overlay_village_goza_corner_sw.png
+- generated visual asset is missing: assets/map/overlays/overlay_village_goza_corner_se.png
+- generated visual asset is missing: assets/map/overlays/overlay_world_grass_detail.png
+- generated visual asset is missing: assets/map/overlays/overlay_world_grass_weeds.png
+- generated visual asset is missing: assets/map/overlays/overlay_world_grass_earth.png
+- generated visual asset is missing: assets/map/overlays/overlay_world_forest_understory.png
+- generated visual asset is missing: assets/map/overlays/overlay_world_forest_roots.png
+- generated visual asset is missing: assets/map/overlays/overlay_world_foothill_rocks.png
+- generated visual asset is missing: assets/map/overlays/overlay_world_shore_foam.png
+- generated visual asset is missing: assets/map/overlays/overlay_world_bridge_wood.png
+- generated visual asset is missing: assets/effect/fx_phys_elemental_arc.png
+- generated visual asset is missing: assets/effect/fx_phys_slash_arc.png
+- generated visual asset is missing: assets/effect/fx_phys_pierce_lance.png
+- generated visual asset is missing: assets/effect/fx_phys_smash_impact.png
+- generated visual asset is missing: assets/effect/fx_phys_ranged_volley.png
+- generated visual asset is missing: assets/effect/fx_magic_arcane_burst.png
+- generated visual asset is missing: assets/effect/fx_support_heal_radiance.png
+- generated visual asset is missing: assets/effect/fx_support_debuff_hex.png
+- generated visual asset is missing: assets/effect/fx_breath_cone_master.png
+- generated visual asset is missing: assets/effect/fx_ultimate_166_ragnarok.png
+- generated visual asset is missing: assets/effect/fx_ultimate_168_prisma_end.png
+- generated visual asset is missing: assets/effect/fx_ultimate_238_big_bang.png
+- generated visual asset is missing: assets/effect/fx_ultimate_242_abyss_wall.png
+- generated visual asset is missing: assets/effect/fx_ultimate_243_phoenix_flare.png
+- generated visual asset is missing: assets/effect/fx_ultimate_244_genesis_magic.png
+- generated visual asset is missing: assets/effect/fx_ultimate_245_chaos_shock.png
+- generated visual asset is missing: assets/effect/fx_ultimate_246_illuminati_break.png
+- generated visual asset is missing: assets/effect/fx_ultimate_247_the_end.png
+- generated visual asset is missing: assets/effect/fx_ultimate_248_lost_prisma.png
+
+[validation] validate-water-city-transition-phase5a.js
+PASS validate-water-city-transition-phase5a
+
+[validation] validate-world-state-condition-normalizer.js
+/mnt/data/rpg_work/tools/validation/validate-world-state-condition-normalizer.js:9
+  if (!value) throw new Error(message);
+              ^
+
+Error: Could not locate normalizeWorldStateConditions runtime.
+    at assert (/mnt/data/rpg_work/tools/validation/validate-world-state-condition-normalizer.js:9:21)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-world-state-condition-normalizer.js:13:1)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.16.0
+
+[validation] validate-world-state-schema.js
+PASS: WorldState defaults, legacy-save migration, value preservation, setters, and new-game template are consistent.
+
+Validation suite failed: 19/73 scripts.

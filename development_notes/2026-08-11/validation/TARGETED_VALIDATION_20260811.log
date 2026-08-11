@@ -1,0 +1,63 @@
+# Targeted validation 2026-08-11
+UTC 2026-08-11T03:26:52Z
+
+=== node --check battle.js ===
+=== node --check story_logic.js ===
+=== node --check dungeon.js ===
+=== node --check story.js ===
+=== node --check monsters.js ===
+=== node --check news.js ===
+=== node --check tools/validation/validate-event-battle-rules.js ===
+=== node --check tools/validation/validate-prologue-quality-audit-20260810.js ===
+=== node --check tools/validation/validate-post-battle-boss-visual-source-20260811.js ===
+
+=== node tools/validation/validate-event-battle-rules.js ===
+PASS: event battle thresholds, omitted-rule death semantics, guaranteed equipment, reward suppression, and bestiary exclusion are wired for story boss variants.
+=== node tools/validation/validate-prologue-quality-audit-20260810.js ===
+PASS validate-prologue-quality-audit-20260810
+=== node tools/validation/validate-post-battle-boss-visual-source-20260811.js ===
+PASS validate-post-battle-boss-visual-source-20260811
+=== node tools/validation/validate-playable-prologue-phase2b.js ===
+PASS validate-playable-prologue-phase2b
+=== node tools/validation/validate-playable-prologue-phase2c.js ===
+PASS validate-playable-prologue-phase2c
+=== node tools/validation/validate-news-data.js ===
+PASS: news data policy (11 dates)
+
+=== Known stale validator probes (expected legacy failures) ===
+--- node tools/validation/validate-playable-prologue-phase2a.js ---
+/mnt/data/rpg_work/tools/validation/validate-playable-prologue-phase2a.js:15
+function assert(v, msg) { if (!v) throw new Error(msg); }
+                                  ^
+
+Error: Could not locate normalizeWorldStateConditions runtime.
+    at assert (/mnt/data/rpg_work/tools/validation/validate-playable-prologue-phase2a.js:15:41)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-playable-prologue-phase2a.js:46:1)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.16.0
+--- node tools/validation/validate-prologue-phase2.js ---
+/mnt/data/rpg_work/tools/validation/validate-prologue-phase2.js:8
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+                                                         ^
+
+Error: PROLOGUE_HILL is missing.
+    at assert (/mnt/data/rpg_work/tools/validation/validate-prologue-phase2.js:8:64)
+    at Object.<anonymous> (/mnt/data/rpg_work/tools/validation/validate-prologue-phase2.js:17:3)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.16.0

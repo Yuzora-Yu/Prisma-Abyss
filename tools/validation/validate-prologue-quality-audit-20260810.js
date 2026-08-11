@@ -67,13 +67,32 @@ assert(hutReachable.has(`${reesActor.x},${reesActor.y}`), 'Rees herself is not p
 
 // 3) Opening combat pacing and victory semantics.
 const rescue = events.prologue_south_arrival;
+const rescueRetry = events.prologue_south_ambush_retry;
 const rescueBattle = rescue?.actions?.find(a => a.type === 'BOSS');
+const rescueRetryBattle = rescueRetry?.actions?.find(a => a.type === 'BOSS');
+const entranceBattle1 = events.prologue_south_exit_boss?.actions?.find(a => a.type === 'BOSS');
+const entranceBattle2 = events.prologue_first_boss_win?.actions?.find(a => a.type === 'BOSS');
+const openingEventBattles = [rescueBattle, rescueRetryBattle, entranceBattle1, entranceBattle2];
 assert(Number(rescueBattle?.value) === 802000, 'Opening rescue still uses a generic Rank-1 trash enemy.');
-assert(rescueBattle?.endAfterTurns === undefined && rescueBattle?.endAtHpPercent === undefined && rescueBattle?.forcedLoss !== true,
-  'Opening rescue must end by normal enemy HP=0, not an authored turn/HP shortcut.');
-assert(battleSource.includes("if (value === null || value === undefined || value === '') return null;"), 'Event-battle numeric rule normalizer can still convert null into a 1-turn threshold.');
+assert(Number(entranceBattle1?.value) === 802001 && Number(entranceBattle2?.value) === 802002,
+  'Opening village-entrance boss chain no longer points to the intended story variants.');
+for (const battle of openingEventBattles) {
+  assert(battle && battle.endAfterTurns === undefined && battle.endAtHpPercent === undefined && battle.hpFloor === undefined && battle.forcedLoss !== true,
+    `Opening event battle ${battle?.value ?? '?'} must end by normal death semantics, not a turn/HP shortcut.`);
+}
+assert(battleSource.includes("if (value === null || value === undefined || value === '') return null;"), 'Event-battle numeric rule normalizer is missing null handling.');
+assert(battleSource.includes('if (Number.isFinite(rules.endAfterTurns))'), 'Event-battle turn threshold still reconverts null through Number(...).');
+assert(!battleSource.includes('if (Number.isFinite(Number(rules.endAfterTurns)))'), 'Event-battle turn threshold still treats Number(null) as a configured value.');
 const rescueMonster = MonsterData?.getMonsterById?.(802000);
 assert(rescueMonster && Number(rescueMonster.hp) === 10, 'Opening rescue enemy HP must remain 10; battle duration must come from correct victory semantics, not inflated durability.');
+assert(Number(rescueMonster?.exp) === 100, 'Opening rescue enemy must grant exactly 100 EXP.');
+for (const battle of [rescueBattle, rescueRetryBattle]) {
+  const reward = battle?.guaranteedEquipmentReward;
+  assert(battle?.noDrops === true, 'Opening rescue must suppress normal random drops.');
+  assert(Number(reward?.rank) === 10 && Number(reward?.plus) === 3 && Number(reward?.count) === 1 && reward?.balancedDropBase === true,
+    'Opening rescue must guarantee exactly one Rank10-equivalent random +3 equipment reward.');
+}
+assert(battleSource.includes('grantGuaranteedEquipmentRewards'), 'Opening guaranteed equipment has no shared battle reward runtime.');
 assert(!south.enemyBoost, 'Opening normal encounters must use their original master stats without artificial HP/offense scaling.');
 const northPool = MonsterData?.getEncounterCandidates?.({ rankMin: north.encounterRankMin, rankMax: north.encounterRankMax }) || [];
 assert(Number(north.encounterRankMin) === 1 && Number(north.encounterRankMax) === 76, 'North village must span Rank 1 through Demon Castle Rank 76.');
@@ -106,8 +125,15 @@ const prologueEventJson = JSON.stringify(Object.fromEntries(Object.entries(event
 assert(!prologueEventJson.includes('RESET_HERO_BASELINE'), 'A prologue route still resets Ars before the present era.');
 for (const key of ['prologue_first_boss_loss', 'prologue_illuminacia_loss', 'prologue_hidden_special_end_win', 'prologue_hidden_special_end_loss']) {
   assert(events[key], `Missing prologue convergence event: ${key}`);
-  assert(!(events[key].actions || []).some(a => a.type === 'RESET_HERO_BASELINE'), `${key} resets Ars growth/equipment.`);
+  const actions = events[key].actions || [];
+  assert(!actions.some(a => a.type === 'RESET_HERO_BASELINE'), `${key} resets Ars growth/equipment.`);
+  const hutIndex = actions.findIndex(a => a.type === 'START_FIXED_MAP' && a.value === 'REES_MOUNTAIN_HUT');
+  const healIndex = actions.findIndex(a => a.type === 'HEAL' && a.silent === true);
+  assert(hutIndex >= 0 && healIndex >= 0 && healIndex < hutIndex,
+    `${key} must silently full-heal HP/MP before entering Rees's hut.`);
 }
+assert(logicSource.includes("if (action.type === 'HEAL')") && logicSource.includes('if (!action.silent)'),
+  'Silent prologue convergence healing is not supported by the shared HEAL runtime.');
 
 // 7) Burned pendant exists only after the collapse, never in NEW GAME defaults.
 const dbInitialStart = dbSource.indexOf('const INITIAL_DATA_TEMPLATE =');

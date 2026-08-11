@@ -1,0 +1,96 @@
+FAIL_COUNT=19/73
+
+## validate-asset-fixed-names.js (exit 1)
+    throw new Error(`Fixed-name asset validation failed:\n${errors.join('\n')}`);
+Error: Fixed-name asset validation failed:
+registered image is missing: assets/background/PRISMA ABYSS.png
+registered image is missing: assets/background/bg_alchemy_water_city.png
+registered image is missing: assets/background/bg_blacksmith.png
+registered image is missing: assets/background/bg_casino.png
+registered image is missing: assets/background/bg_inn.jpg
+registered image is missing: assets/background/bg_medal.png
+
+## validate-authored-map-props.js (exit 1)
+Error: ENOENT: no such file or directory, open '/mnt/data/rpg_work/assets/map/library/manifest.json'
+  code: 'ENOENT',
+
+## validate-blocking-map-objects.js (exit 1)
+- blocking object file is missing: assets/map/objects/object_blocking_castle_candelabrum.png
+- blocking object file is missing: assets/map/objects/object_blocking_forest_stump.png
+- blocking object file is missing: assets/map/objects/object_blocking_thunder_terminal.png
+- blocking object file is missing: assets/map/objects/object_blocking_cave_stalagmite.png
+- blocking object file is missing: assets/map/objects/object_blocking_seabed_coral_pillar.png
+- blocking object file is missing: assets/map/objects/object_blocking_light_crystal_pedestal.png
+- blocking object file is missing: assets/map/objects/object_blocking_fire_brazier.png
+- blocking object file is missing: assets/map/objects/object_blocking_lighthouse_gear_pedestal.png
+
+## validate-chest-mimics.js (exit 1)
+Error: ENOENT: no such file or directory, open '/mnt/data/rpg_work/assets/monsters/monster_120301.png'
+  code: 'ENOENT',
+
+## validate-companion-map-sprites.js (exit 1)
+Error: ENOENT: no such file or directory, open '/mnt/data/rpg_work/assets/map/overlays/source/companion-highres-v003/manifest.json'
+  code: 'ENOENT',
+
+## validate-crystal-tree-route-phase7c.js (exit 1)
+[phase7c-crystal-tree] FAIL: Crystal Tree M0 should have 21 rows, got 0.
+[phase7c-crystal-tree] FAIL: Entry must reach Minerva first-meeting position with ritual pedestals present.
+[phase7c-crystal-tree] FAIL: Entry must reach a tile adjacent to Minerva root-ritual position.
+[phase7c-crystal-tree] FAIL: Water-gate return marker must remain reachable.
+
+## validate-event-map-markers.js (exit 1)
+Error: Blue event glimmer asset is missing
+
+## validate-fixed-water-shore.js (exit 1)
+Error: World shoreline foam asset is missing
+
+## validate-full-cache-assets.js (exit 1)
+missing file: assets/generated/opening-prism-collapse.png
+missing file: assets/ui/menu-icons/item-attack.png
+missing file: assets/ui/menu-icons/item-buff.png
+missing file: assets/ui/menu-icons/item-debuff.png
+missing file: assets/ui/menu-icons/item-material.png
+missing file: assets/ui/menu-icons/item-vehicle.png
+missing file: assets/ui/menu-icons/item-travel.png
+missing file: assets/ui/menu-icons/item-heal.png
+
+## validate-galvania-geography-phase8a.js (exit 1)
+[phase8a-galvania] FAIL: Sky Prism order must be Gorge -> Empire -> Nadir Cave.
+
+## validate-light-palace-flashback-phase6d.js (exit 1)
+[phase6d] FAIL: Saintess room expected 13 rows, got 15
+[phase6d] FAIL: Saintess room has invalid row width: 17,17,17,17,17,17,17,17,17,17,17,17,17,61,61
+
+## validate-light-palace-present-assault-phase6e.js (exit 1)
+[phase6e] FAIL: prison rescue completion must be idempotent
+[phase6e] FAIL: Alan betrayal event must be idempotent
+
+## validate-nadir-cave-phase8d.js (exit 1)
+FAIL validate-nadir-cave-phase8d (2)
+ - missing: Nadir Cave entrance world coordinate
+ - missing: Nadir Cave altar-side world coordinate
+
+## validate-playable-prologue-phase2a.js (exit 1)
+Error: Could not locate normalizeWorldStateConditions runtime.
+
+## validate-prologue-phase2.js (exit 1)
+Error: PROLOGUE_HILL is missing.
+
+## validate-story-monster-variants.js (exit 1)
+Error: Story monster variant getter is unavailable.
+
+## validate-summit-temple.js (exit 1)
+Error: Missing Summit asset file: assets/map/terrain/tile_summit_temple_wall.png
+
+## validate-visual-polish.js (exit 1)
+- generated visual asset is missing: assets/map/overlays/overlay_decor_default_cave_dust.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_start_village_herbs.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_start_cave_damp.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_fire_ember_fissure.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_wind_village_feather.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_wind_hole_root.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_forbidden_forest_moss.png
+- generated visual asset is missing: assets/map/overlays/overlay_decor_water_city_puddle.png
+
+## validate-world-state-condition-normalizer.js (exit 1)
+Error: Could not locate normalizeWorldStateConditions runtime.

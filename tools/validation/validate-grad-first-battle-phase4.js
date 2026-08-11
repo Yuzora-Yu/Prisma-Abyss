@@ -37,7 +37,7 @@ for (const action of battleActions) {
   assert(Number(action.storyVariantOf) === 301010, 'First Grad event battle must retain storyVariantOf 301010.');
   assert(action.bestiaryExcluded === true && action.noDrops === true && action.noExp === true && action.noGold === true, 'First Grad event rewards/bestiary suppression is incomplete.');
   assert(action.noQuestProgress === true && action.noRecruit === true, 'First Grad event must not leak kill/recruit progress.');
-  assert(action.forceAutoOff === true, 'First Grad event battle must remain player-controlled.');
+  assert(!Object.prototype.hasOwnProperty.call(action, 'forceAutoOff'), 'First Grad event battle must allow the normal AUTO toggle; forceAutoOff must not be set.');
   const failRules = action.eventBattleRules?.skillFailureRules || [];
   assert(failRules.length === 1, 'First Grad battle must have one authored overload failure rule.');
   assert([223,224].every(id => failRules[0].skillIds?.includes(id)), 'Grad overload failure rule does not cover both large fire spells.');

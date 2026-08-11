@@ -1391,6 +1391,7 @@ const Dungeon = {
         App.data.battle = {
             active: false,
             isBossBattle: true,
+            fieldBossWasRendered: true,
             isSpecialBoss,
             isEstark: isSpecialBoss,
             fixedBossId,
@@ -6420,6 +6421,7 @@ const Dungeon = {
                     progressKey,
                     position: { x: bossX, y: bossY },
                     monsterId: App.data.battle?.fixedBossId || null,
+                    fieldBossWasRendered: App.data.battle?.fieldBossWasRendered === true || !!activeFixedBossContext,
                     storyEventId: App.data.battle?.fixedStoryEventId || null,
                     eventId: App.data.battle?.storyWinEventId || App.data.battle?.fixedStoryEventId || App.data.battle?.eventId || null,
                     phase: (App.data.battle?.storyWinEventId || App.data.battle?.fixedStoryEventId) ? 'actions' : 'win'

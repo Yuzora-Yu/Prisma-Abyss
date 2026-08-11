@@ -89,10 +89,10 @@ for (const [mapId, floor, expected] of [
 }
 
 for (const [rank, expectedId, expectedRate] of [
-    [30, null, 0], [31, 200201, 0.02], [70, 200201, 0.02],
-    [71, 200202, 0.02], [105, 200202, 0.02],
-    [106, 200203, 0.02], [150, 200203, 0.02],
-    [151, 200204, 0.02], [999, 200204, 0.02]
+    [30, null, 0], [31, 200201, 0.03], [70, 200201, 0.03],
+    [71, 200202, 0.03], [105, 200202, 0.03],
+    [106, 200203, 0.03], [150, 200203, 0.03],
+    [151, 200204, 0.03], [999, 200204, 0.03]
 ]) {
     assert(MonsterData.getRareMonsterIdForRank(rank) === expectedId,
         `Rare monster band mismatch at Rank ${rank}.`);
@@ -103,4 +103,4 @@ for (const [rank, expectedId, expectedRate] of [
         `Rare candidate mismatch at Rank ${rank}.`);
 }
 
-console.log(`Monster habitat master validation passed: ${floorsChecked} fixed floors, ${FIELD_ENCOUNTER_ZONES.length} field zones, sea habitats, and four rare Rank bands at one 2% encounter roll.`);
+console.log(`Monster habitat master validation passed: ${floorsChecked} fixed floors, ${FIELD_ENCOUNTER_ZONES.length} field zones, sea habitats, and four rare Rank bands at one 3% encounter roll.`);

@@ -214,7 +214,9 @@ const StoryManager = {
                 // 同期によって得た正規LBを、解除時の復元先として更新する。
                 temp.targets.forEach(snapshot => {
                     const char = findCharByUid(snapshot.uid);
-                    if (char) snapshot.limitBreak = clampLb(char.limitBreak);
+                    if (!char) return;
+                    snapshot.limitBreak = clampLb(char.limitBreak);
+                    App.captureStoryCharacterLimitBreakCarryover?.(char, { save:false });
                 });
 
                 const targetLb = clampLb(temp.limitBreak ?? 99);
@@ -274,6 +276,7 @@ const StoryManager = {
 
                 const targets = getPartyTargets();
                 if (targets.length === 0) return false;
+                targets.forEach(char => App.captureStoryCharacterLimitBreakCarryover?.(char, { save:false }));
 
                 App.data.progress.tempStoryPower = {
                     id,
@@ -323,6 +326,7 @@ const StoryManager = {
                             const char = App.getChar
                                 ? App.getChar(snapshot.uid)
                                 : App.data.characters.find(c => c && c.uid === snapshot.uid);
+                            if (char) App.captureStoryCharacterLimitBreakCarryover?.(char, { save:false });
                             recalcAndClampVitals(char);
                         });
                     }
@@ -848,16 +852,45 @@ const StoryManager = {
     resolvePostBattleBossSpriteConfig: function(event) {
         const raw = event?.postBattleBossSprite;
         const explicitlyDisabled = raw === false || event?.skipAutoPostBattleBossSprite === true || event?.keepPostBattleBossSprite === false;
-        if (explicitlyDisabled) return { enabled: false };
+        if (explicitlyDisabled) return { enabled: false, explicit: raw !== undefined };
         if (raw && typeof raw === 'object') {
             return {
                 enabled: raw.enabled !== false,
+                explicit: true,
                 monsterId: Number.isFinite(Number(raw.monsterId)) ? Number(raw.monsterId) : null,
                 size: Math.max(0.5, Number(raw.size || raw.sizeTiles || 2) || 2),
                 zIndex: Number.isFinite(Number(raw.zIndex ?? raw.z)) ? Number(raw.zIndex ?? raw.z) : 4
             };
         }
-        return { enabled: true, monsterId: null, size: 2, zIndex: 4 };
+        return { enabled: true, explicit: false, monsterId: null, size: 2, zIndex: 4 };
+    },
+
+    isCurrentFixedBossPosition: function(position) {
+        if (!position || typeof Field === 'undefined' || !Field.currentMapData?.isFixed ||
+            typeof MapRegistry === 'undefined' || typeof MapRegistry.findFixedBoss !== 'function') return false;
+        return !!MapRegistry.findFixedBoss(Field.currentMapData, Number(position.x), Number(position.y));
+    },
+
+    wasBattleBossRenderedOnMap: function(source) {
+        if (!source?.isBossBattle) return false;
+        if (source.fieldBossWasRendered === true) return true;
+        const active = App?.data?.progress?.activeFixedBossContext || null;
+        if (active) {
+            const nonceMatches = source.fixedBossContextNonce && active.nonce &&
+                String(source.fixedBossContextNonce) === String(active.nonce);
+            const chainMatches = source.battleChainId && active.battleChainId &&
+                String(source.battleChainId) === String(active.battleChainId);
+            if (nonceMatches || chainMatches) return true;
+        }
+        // 旧セーブ互換: 戦闘位置が現在の固定MAPで実在するボスタイルなら描画元ありとみなす。
+        return this.isCurrentFixedBossPosition(source.fixedBossPosition);
+    },
+
+    wasLastFixedBossRenderedOnMap: function(last) {
+        if (!last) return false;
+        if (last.fieldBossWasRendered === true) return true;
+        if (last.fieldBossWasRendered === false) return false;
+        return this.isCurrentFixedBossPosition(last.position);
     },
 
     selectPostBattleBossMonsterId: function(rawIds) {
@@ -874,7 +907,16 @@ const StoryManager = {
         const targetEventId = String(eventId || '');
         if (!source?.isBossBattle || !targetEventId) return false;
         const event = this.events?.[targetEventId] || null;
-        if (!this.resolvePostBattleBossSpriteConfig(event).enabled) {
+        const spriteConfig = this.resolvePostBattleBossSpriteConfig(event);
+        if (!spriteConfig.enabled) {
+            const pending = App?.data?.progress?.pendingPostBattleBossVisual;
+            if (pending && String(pending.eventId || '') === targetEventId) delete App.data.progress.pendingPostBattleBossVisual;
+            return false;
+        }
+        const hadRenderedBoss = this.wasBattleBossRenderedOnMap(source);
+        // 明示postBattleBossSpriteは演出上の意図的な出現として許可する。
+        // それ以外は、戦闘前に実際にMAP描画されていたボスだけを戦後へ引き継ぐ。
+        if (!hadRenderedBoss && !spriteConfig.explicit) {
             const pending = App?.data?.progress?.pendingPostBattleBossVisual;
             if (pending && String(pending.eventId || '') === targetEventId) delete App.data.progress.pendingPostBattleBossVisual;
             return false;
@@ -886,7 +928,7 @@ const StoryManager = {
         if (!ids.length) return false;
         const pos = source.fixedBossPosition
             || App?.data?.progress?.activeFixedBossContext?.fixedBossPosition
-            || (typeof Field !== 'undefined' ? { x: Field.x, y: Field.y } : null);
+            || (spriteConfig.explicit && typeof Field !== 'undefined' ? { x: Field.x, y: Field.y } : null);
         if (!Number.isFinite(Number(pos?.x)) || !Number.isFinite(Number(pos?.y))) return false;
 
         const progress = App.data.progress || (App.data.progress = {});
@@ -896,7 +938,9 @@ const StoryManager = {
             monsterIds: ids,
             monsterId: this.selectPostBattleBossMonsterId(ids),
             position: { x: Number(pos.x), y: Number(pos.y) },
-            progressKey: source.fixedBossProgressKey || null
+            progressKey: source.fixedBossProgressKey || null,
+            sourceWasRendered: hadRenderedBoss,
+            explicitSprite: spriteConfig.explicit === true
         };
         return true;
     },
@@ -912,7 +956,13 @@ const StoryManager = {
             ? Field.getCurrentProgressMapKey()
             : null;
         const pendingMapMatches = !pending?.progressKey || !currentProgressKey || String(pending.progressKey) === String(currentProgressKey);
-        if (pendingMatches && pendingMapMatches) {
+        const pendingSourceAllowed = pending && (
+            pending.sourceWasRendered === true ||
+            pending.explicitSprite === true ||
+            spriteConfig.explicit === true ||
+            (pending.sourceWasRendered === undefined && this.isCurrentFixedBossPosition(pending.position))
+        );
+        if (pendingMatches && pendingMapMatches && pendingSourceAllowed) {
             const monsterId = Number(spriteConfig.monsterId || pending.monsterId || pending.monsterIds?.[0] || 0);
             const pos = pending.position;
             if (Number.isFinite(monsterId) && monsterId > 0 && Number.isFinite(Number(pos?.x)) && Number.isFinite(Number(pos?.y))) {
@@ -926,12 +976,12 @@ const StoryManager = {
             String(battle.storyWinEventId || '') === targetEventId ||
             String(battle.fixedStoryEventId || '') === targetEventId
         );
-        if (battleRelated) {
+        if (battleRelated && (this.wasBattleBossRenderedOnMap(battle) || spriteConfig.explicit)) {
             const rawId = this.selectPostBattleBossMonsterId(battle.fixedBossId);
             const monsterId = Number(spriteConfig.monsterId || rawId || 0);
             const pos = battle.fixedBossPosition
                 || App?.data?.progress?.activeFixedBossContext?.fixedBossPosition
-                || (typeof Field !== 'undefined' ? { x: Field.x, y: Field.y } : null);
+                || (spriteConfig.explicit && typeof Field !== 'undefined' ? { x: Field.x, y: Field.y } : null);
             if (Number.isFinite(monsterId) && monsterId > 0 && Number.isFinite(Number(pos?.x)) && Number.isFinite(Number(pos?.y))) {
                 return { monsterId, x: Number(pos.x), y: Number(pos.y), config: spriteConfig };
             }
@@ -942,7 +992,7 @@ const StoryManager = {
             String(last.eventId || '') === targetEventId ||
             String(last.storyEventId || '') === targetEventId
         );
-        if (lastRelated) {
+        if (lastRelated && (this.wasLastFixedBossRenderedOnMap(last) || spriteConfig.explicit)) {
             const rawId = this.selectPostBattleBossMonsterId(last.monsterId);
             const monsterId = Number(spriteConfig.monsterId || rawId || 0);
             const pos = last.position;
@@ -2167,7 +2217,7 @@ const StoryManager = {
         }
         
         if (action.type === 'HEAL') {
-            if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('heal');
+            if (!action.silent && typeof AudioManager !== 'undefined') AudioManager.playSe?.('heal');
             App.data.characters.forEach(c => {
                 const stats = App.calcStats(c);
                 c.currentHp = stats.maxHp;
@@ -2175,7 +2225,7 @@ const StoryManager = {
             });
             if (!deferSave) App.save();
             if (typeof Menu !== 'undefined') Menu.renderPartyBar();
-            App.log("不思議な力で体力が回復した！");
+            if (!action.silent) App.log("不思議な力で体力が回復した！");
         }
         
         if (action.type === 'SUB')  { data.subStep = action.value; }
@@ -2565,6 +2615,9 @@ const StoryManager = {
             const openingPartyStatDebuff = action.openingPartyStatDebuff && typeof action.openingPartyStatDebuff === 'object'
                 ? JSON.parse(JSON.stringify(action.openingPartyStatDebuff))
                 : null;
+            const guaranteedEquipmentReward = action.guaranteedEquipmentReward && typeof action.guaranteedEquipmentReward === 'object'
+                ? JSON.parse(JSON.stringify(action.guaranteedEquipmentReward))
+                : null;
             const directEventBattleRuleKeys = [
                 'bestiaryExcluded', 'noDrops', 'noExp', 'noGold', 'noQuestProgress', 'noRecruit',
                 'forcedLoss', 'hpFloor', 'endAfterTurns', 'endAtHpPercent', 'storyVariantOf',
@@ -2609,6 +2662,7 @@ const StoryManager = {
                 ...(externalTurnSupports ? { externalTurnSupports } : {}),
                 ...(openingPartyStatDebuff ? { openingPartyStatDebuff } : {}),
                 fixedBossContextNonce: activeFixedBossContext?.nonce || null,
+                fieldBossWasRendered: action.fieldBossWasRendered === true || !!activeFixedBossContext,
                 ...(elementalSpiritTrial ? {
                     elementalSpiritTrial,
                     abyssSpiritElement: elementalSpiritTrial.element,
@@ -2618,7 +2672,8 @@ const StoryManager = {
                     fixedTrialRequiredElements: Array.isArray(elementalSpiritTrial.requiredElements)
                         ? elementalSpiritTrial.requiredElements.slice()
                         : []
-                } : {})
+                } : {}),
+                ...(guaranteedEquipmentReward ? { guaranteedEquipmentReward } : {})
             };
             if (!deferSave) App.save();
             this.isTyping = false;

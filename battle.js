@@ -139,11 +139,9 @@ const Battle = {
         }).length;
     },
     isDualWieldActive: (actor) => {
-        const traitLevel = Battle.getDualWieldLevel(actor);
-        if (traitLevel <= 0) return false;
-        // モンスターには装備スロットがないため、従来どおり特性所持で発動する。
-        if (typeof Monster !== 'undefined' && actor instanceof Monster) return true;
-        return Battle.getEquippedWeaponCount(actor) >= 2;
+        // 二刀流の戦闘効果は「特性が有効か」を正本とする。
+        // 武器2の装備可否は装備画面側の責務であり、武器2が空でも追撃とMP補正は発動する。
+        return Battle.getDualWieldLevel(actor) > 0;
     },
 
     getSkillMpCost: (actor, skill, mode = 'required') => {
@@ -290,9 +288,11 @@ const Battle = {
         if (!targets.includes(enemy)) return null;
         const maxHp = Math.max(1, Number(enemy.baseMaxHp || enemy.maxHp || enemy.hp || 1));
         let floor = 0;
-        if (Number.isFinite(Number(rules.hpFloor))) floor = Math.max(floor, Math.floor(Number(rules.hpFloor)));
-        if (Number.isFinite(Number(rules.endAtHpPercent))) {
-            const pct = Math.max(0, Math.min(100, Number(rules.endAtHpPercent)));
+        // getEventBattleRules() で optional 数値は number / null に正規化済み。
+        // ここで Number(null) を行うと未指定値が 0 として再び有効化されるため再変換しない。
+        if (Number.isFinite(rules.hpFloor)) floor = Math.max(floor, Math.floor(rules.hpFloor));
+        if (Number.isFinite(rules.endAtHpPercent)) {
+            const pct = Math.max(0, Math.min(100, rules.endAtHpPercent));
             floor = Math.max(floor, Math.ceil(maxHp * pct / 100));
         }
         return floor > 0 ? Math.min(maxHp, floor) : null;
@@ -310,20 +310,57 @@ const Battle = {
     isEventBattleThresholdMet: (rules = Battle.getEventBattleRules()) => {
         if (!rules?.active) return false;
         const targets = Battle.getEventBattleTargetEnemies(rules);
-        if (Number.isFinite(Number(rules.endAtHpPercent)) && targets.length > 0) {
-            const pct = Math.max(0, Math.min(100, Number(rules.endAtHpPercent)));
+        if (Number.isFinite(rules.endAtHpPercent) && targets.length > 0) {
+            const pct = Math.max(0, Math.min(100, rules.endAtHpPercent));
             const hpMet = targets.every(enemy => {
                 const maxHp = Math.max(1, Number(enemy.baseMaxHp || enemy.maxHp || enemy.hp || 1));
                 return (Math.max(0, Number(enemy.hp || 0)) / maxHp) * 100 <= pct + 0.000001;
             });
             if (hpMet) return true;
         }
-        if (Number.isFinite(Number(rules.endAfterTurns))) {
-            const requiredTurns = Math.max(1, Math.floor(Number(rules.endAfterTurns)));
+        if (Number.isFinite(rules.endAfterTurns)) {
+            const requiredTurns = Math.max(1, Math.floor(rules.endAfterTurns));
             const completedTurns = Math.max(0, Math.floor(Number(App.data?.battle?.completedTurns || 0)));
             if (completedTurns >= requiredTurns) return true;
         }
         return false;
+    },
+
+    // 通常ドロップ抽選とは独立した、イベント戦闘用の確定装備報酬。
+    // noDrops:true と併用できるため、物語戦で余計なランダム副産物を出さずに指定装備だけを渡せる。
+    grantGuaranteedEquipmentRewards: (drops = [], battleData = App.data?.battle) => {
+        const raw = battleData?.guaranteedEquipmentRewards ?? battleData?.guaranteedEquipmentReward ?? null;
+        const configs = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? [raw] : []);
+        const granted = [];
+        configs.forEach(config => {
+            if (!config || config.enabled === false) return;
+            const rank = Math.max(1, Math.floor(Number(config.rank ?? config.floor ?? 1) || 1));
+            const plusRaw = config.plus;
+            const plus = (plusRaw === null || plusRaw === undefined || plusRaw === '')
+                ? null
+                : (Number.isFinite(Number(plusRaw)) ? Math.max(0, Math.floor(Number(plusRaw))) : null);
+            const count = Math.max(1, Math.min(10, Math.floor(Number(config.count || 1) || 1)));
+            for (let i = 0; i < count; i++) {
+                const eq = App.createEquipByFloor('drop', rank, plus, {
+                    balancedDropBase: config.balancedDropBase !== false
+                });
+                if (!eq) continue;
+                if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+                App.data.inventory.push(eq);
+                drops.push({
+                    name: eq.name,
+                    isRare: Number(eq.plus) >= 3,
+                    type: config.resultType || 'normal',
+                    kind: 'equip',
+                    guaranteedEventReward: true
+                });
+                if (typeof window !== 'undefined') {
+                    window.EquipAcquisitionCard?.enqueue(eq, { source: config.cardSource || 'eventBattleReward' });
+                }
+                granted.push(eq);
+            }
+        });
+        return granted;
     },
 
     getEventBattleFinishType: (rules = Battle.getEventBattleRules()) => rules?.forcedLoss === true ? 'loss' : 'win',
@@ -2286,6 +2323,16 @@ const Battle = {
         return App?.data?.settings?.battleAutoStart === true;
     },
 
+    disableAutoForRareEncounter: () => {
+        const hasRareEnemy = Array.isArray(Battle.enemies)
+            && Battle.enemies.some(enemy => enemy?.isRare === true);
+        if (!hasRareEnemy) return false;
+        // レア遭遇時だけ開始時AUTOを解除する。設定値自体は変更せず、戦闘中の再ONも禁止しない。
+        Battle.auto = false;
+        if (typeof Battle.updateAutoButton === 'function') Battle.updateAutoButton();
+        return true;
+    },
+
     init: (options = {}) => {
         const fixedBossIds = (Array.isArray(App.data?.battle?.fixedBossId)
             ? App.data.battle.fixedBossId
@@ -2540,6 +2587,7 @@ const Battle = {
             App.save();
         }
 
+        Battle.disableAutoForRareEncounter();
         Battle.initializeLinkedBattleGroups();
         const octaprismState = Battle.initializeOctaprismBattleState();
         if (octaprismState?.active && !octaprismState.activationLogged) {
@@ -8617,6 +8665,12 @@ findNextActor: () => {
 				}
 			});
 		}
+
+        // 物語イベントが明示した確定装備報酬は、通常ドロップ抑止(noDrops)とは別枠で付与する。
+        const guaranteedEquipmentRewards = isTrainingBattle
+            ? []
+            : Battle.grantGuaranteedEquipmentRewards(drops, App.data?.battle);
+        if (guaranteedEquipmentRewards.some(eq => Number(eq?.plus) >= 3)) hasRareDrop = true;
 
         // ランダム深淵101階以降の通常ボスは、勝利結果確定時に10%で災厄の楔を追加する。
         // 専用ボス・裂け目・冒険者イベント等は対象外とし、結果ジャーナルへ抽選結果を残す。

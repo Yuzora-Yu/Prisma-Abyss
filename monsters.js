@@ -1369,7 +1369,7 @@ const STORY_EVENT_MONSTERS = [
       mag:11,
       mdef:4,
       gold:0,
-      exp:8,
+      exp:100,
       actCount:1,
       acts:[{id:1,rate:80,condition:0},{id:203,rate:20,condition:0}],
       drops:{ normal:{id:null,rate:0}, rare:{id:null,rate:0} },
@@ -1650,7 +1650,7 @@ const RARE_ENCOUNTER_RANK_BANDS = Object.freeze([
   Object.freeze({ from: 106, to: 150, monsterId: 200203 }),
   Object.freeze({ from: 151, to: Infinity, monsterId: 200204 })
 ]);
-const RARE_ENCOUNTER_RATE = 0.02;
+const RARE_ENCOUNTER_RATE = 0.03;
 
 function getRareMonsterIdForRank(rank) {
   const value = Math.max(1, Math.floor(Number(rank) || 1));

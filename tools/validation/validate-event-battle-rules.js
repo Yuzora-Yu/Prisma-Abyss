@@ -65,6 +65,44 @@ grad.hp = 0; grad.isDead = false;
 rules = Battle.getEventBattleRules();
 assert(Battle.applyEventBattleHpFloor(grad, rules) === true && grad.hp === 200, 'Absolute hpFloor did not clamp event target.');
 
+// Omitted optional numeric rules must stay disabled. Number(null) === 0 must never create a 1-turn event battle.
+App.data.battle.eventBattleRules = { bestiaryExcluded:true, noDrops:true, storyVariantOf:2 };
+App.data.battle.completedTurns = 999;
+grad.hp = 1000; grad.isDead = false;
+rules = Battle.getEventBattleRules();
+assert(rules.endAfterTurns === null && rules.endAtHpPercent === null && rules.hpFloor === null,
+    'Omitted event-battle numeric rules must normalize to null.');
+assert(Battle.isEventBattleThresholdMet(rules) === false,
+    'An event battle with omitted thresholds still auto-finishes while the enemy is alive.');
+assert(Battle.getEventBattleHpFloorValue(grad, rules) === null,
+    'Omitted HP-floor rules were reinterpreted as a numeric floor.');
+assert(Battle.isBattleFinishConditionMet('win') === false,
+    'An ordinary event battle must not win until the enemy is defeated.');
+grad.hp = 0; grad.isDead = true;
+assert(Battle.isBattleFinishConditionMet('win') === true,
+    'An ordinary event battle must resolve normally when the enemy dies.');
+grad.hp = 1000; grad.isDead = false;
+
+// Event-authored guaranteed equipment bypasses random noDrops while still using the shared equipment generator.
+App.data.inventory = [];
+let equipmentFactoryCall = null;
+App.createEquipByFloor = (source, rank, plus, options) => {
+    equipmentFactoryCall = { source, rank, plus, options };
+    return { name:'検証用装備', rank, plus, type:'武器', opts:[], data:{} };
+};
+const rewardDrops = [];
+const guaranteed = Battle.grantGuaranteedEquipmentRewards(rewardDrops, {
+    guaranteedEquipmentReward:{ rank:10, plus:3, count:1, balancedDropBase:true }
+});
+assert(guaranteed.length === 1 && App.data.inventory.length === 1 && rewardDrops.length === 1,
+    'Guaranteed event equipment was not granted exactly once.');
+assert(equipmentFactoryCall?.source === 'drop' && Number(equipmentFactoryCall?.rank) === 10 && Number(equipmentFactoryCall?.plus) === 3,
+    'Guaranteed event equipment did not use Rank10/+3 through the shared equipment generator.');
+assert(equipmentFactoryCall?.options?.balancedDropBase === true,
+    'Guaranteed event equipment lost balancedDropBase.');
+assert(rewardDrops[0]?.guaranteedEventReward === true,
+    'Guaranteed event equipment is not marked in battle result drops.');
+
 // Authoring and reward/bestiary integration checks.
 assert(storySource.includes("'endAtHpPercent'"), 'BOSS action does not accept endAtHpPercent.');
 assert(storySource.includes('...(eventBattleRules ? { eventBattleRules } : {})'), 'BOSS action does not persist eventBattleRules into battle state.');
@@ -76,5 +114,7 @@ assert(battleSource.includes('!eventBattleRules.noRecruit'), 'noRecruit is not e
 assert(battleSource.includes('eventBattleRules.bestiaryExcluded || base?.bestiaryExcluded === true'), 'bestiaryExcluded is not enforced at victory registration.');
 assert(bookSource.includes("filter(monster => monster?.bestiaryExcluded !== true)"), 'Book list does not exclude bestiaryExcluded masters.');
 assert(statusSource.includes("DB.MONSTERS.filter(monster => monster?.bestiaryExcluded !== true)"), 'Book completion denominator does not exclude bestiaryExcluded masters.');
+assert(storySource.includes('const guaranteedEquipmentReward = action.guaranteedEquipmentReward'), 'BOSS action does not accept guaranteedEquipmentReward.');
+assert(storySource.includes('...(guaranteedEquipmentReward ? { guaranteedEquipmentReward } : {})'), 'BOSS action does not persist guaranteedEquipmentReward into battle state.');
 
-console.log('PASS: event battle thresholds, HP floors, forced-loss timing, reward suppression, and bestiary exclusion are wired for story boss variants.');
+console.log('PASS: event battle thresholds, omitted-rule death semantics, guaranteed equipment, reward suppression, and bestiary exclusion are wired for story boss variants.');

@@ -1524,13 +1524,86 @@ const App = {
         return { ok:true, character, joinedParty };
     },
 
+    captureStoryCharacterLimitBreakCarryover: (character, options = {}) => {
+        if (!character || !App.data) return null;
+        const sourceCharId = Number(character.charId);
+        const master = Array.isArray(window.CHARACTERS_DATA)
+            ? window.CHARACTERS_DATA.find(entry => Number(entry?.id) === sourceCharId)
+            : null;
+        const targetCharId = Number(master?.adultCharacterId);
+        if (!Number.isFinite(sourceCharId) || !Number.isFinite(targetCharId)) return null;
+
+        const maxLb = Math.max(1, Number(App.limitBreakConfig?.max || 99));
+        let realLimitBreak = Math.max(0, Math.min(maxLb, Math.floor(Number(character.limitBreak) || 0)));
+        const temp = App.data?.progress?.tempStoryPower;
+        const tempSnapshot = Array.isArray(temp?.targets)
+            ? temp.targets.find(snapshot => snapshot?.uid === character.uid)
+            : null;
+        if (tempSnapshot) {
+            realLimitBreak = Math.max(0, Math.min(maxLb, Math.floor(Number(tempSnapshot.limitBreak) || 0)));
+        }
+        // scripted story LB（例: 隠し分岐のLB99）は引き継がず、本人が通常育成で得た分だけを残す。
+        const lbSources = character.lbProgress?.sources;
+        if (lbSources && typeof lbSources === 'object' && !Array.isArray(lbSources)) {
+            const selfEarnedTotal = Object.entries(lbSources).reduce((sum, [key, value]) => {
+                if (key === 'story') return sum;
+                return sum + Math.max(0, Math.floor(Number(value) || 0));
+            }, 0);
+            realLimitBreak = Math.min(realLimitBreak, selfEarnedTotal);
+        }
+
+        if (!App.data.progress) App.data.progress = {};
+        if (!App.data.progress.storyCharacterLimitBreakCarryover || typeof App.data.progress.storyCharacterLimitBreakCarryover !== 'object') {
+            App.data.progress.storyCharacterLimitBreakCarryover = {};
+        }
+        const store = App.data.progress.storyCharacterLimitBreakCarryover;
+        const key = String(targetCharId);
+        const previous = store[key] && typeof store[key] === 'object' ? store[key] : null;
+        if (previous?.applied === true) return previous;
+
+        store[key] = {
+            sourceCharId,
+            targetCharId,
+            limitBreak: Math.max(realLimitBreak, Math.floor(Number(previous?.limitBreak) || 0)),
+            capturedAt: Date.now(),
+            applied: false,
+            appliedAt: null
+        };
+        if (options.save === true && typeof App.save === 'function') App.save();
+        return store[key];
+    },
+
+    applyStoryCharacterLimitBreakCarryover: (character, options = {}) => {
+        if (!character || !App.data?.progress) return { changed:false, amount:0 };
+        const targetCharId = Number(character.charId);
+        const store = App.data.progress.storyCharacterLimitBreakCarryover;
+        const record = store && typeof store === 'object' ? store[String(targetCharId)] : null;
+        if (!record || record.applied === true) return { changed:false, amount:0 };
+
+        const amount = Math.max(0, Math.min(Number(App.limitBreakConfig?.max || 99), Math.floor(Number(record.limitBreak) || 0)));
+        const progress = App.ensureLimitBreakProgress?.(character);
+        if (!progress) return { changed:false, amount:0 };
+
+        App.backfillLimitBreakLegacy?.(character);
+        if (amount > 0) progress.sources.story = Math.max(0, Number(progress.sources.story) || 0) + amount;
+        const result = App.applyLimitBreakCap?.(character) || { changed:false };
+        record.applied = true;
+        record.appliedAt = Date.now();
+        record.appliedAmount = amount;
+        if (options.save === true && typeof App.save === 'function') App.save();
+        return { changed:amount > 0 || result.changed === true, amount, result };
+    },
+
     resetTemporaryStoryAlly: (charId, options = {}) => {
         const id = Number(charId);
         if (!Number.isFinite(id) || !App.data) return { ok:false, reason:'invalid_character' };
         const state = App.ensureStoryCharacterState(id);
         if (state?.temporary !== true && options.force !== true) return { ok:false, reason:'not_temporary' };
         const character = App.getStoryAllyCharacter(id);
-        if (character) App.removeStoryAllyFromParty(id, { save:false });
+        if (character) {
+            App.captureStoryCharacterLimitBreakCarryover?.(character, { save:false });
+            App.removeStoryAllyFromParty(id, { save:false });
+        }
         if (Array.isArray(App.data.characters)) {
             App.data.characters = App.data.characters.filter(char => Number(char?.charId) !== id);
         }
@@ -1573,6 +1646,7 @@ const App = {
         const state = App.ensureStoryCharacterState(id);
         const character = App.getStoryAllyCharacter(id);
         if (!state || !character) return false;
+        App.captureStoryCharacterLimitBreakCarryover?.(character, { save:false });
         state.recruited = true;
         state.available = options.available !== false;
         state.temporary = false;
@@ -4162,8 +4236,10 @@ const App = {
                     if (!options.silent) App.log(`【仲間加入】${existing.name}がパーティに加わった！`);
                 }
             }
-            if (changed && options.save !== false) App.save();
             applyCarryover(existing);
+            const lbCarryover = App.applyStoryCharacterLimitBreakCarryover?.(existing, { save:false });
+            if (lbCarryover?.changed) changed = true;
+            if (changed && options.save !== false) App.save();
             return existing;
         }
 
@@ -4217,6 +4293,7 @@ const App = {
             }
         }
         applyCarryover(saveAlly);
+        App.applyStoryCharacterLimitBreakCarryover?.(saveAlly, { save:false });
         if (options.save !== false) App.save();
         if (!options.silent) App.log(`なんと ${saveAlly.name}が仲間に加わった！`);
         return saveAlly;
