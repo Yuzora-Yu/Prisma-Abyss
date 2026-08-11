@@ -1108,7 +1108,7 @@
             dungeon.abyssBossEncounter,
             ...(Array.isArray(dungeon.randomHunters) ? dungeon.randomHunters : [])
         ].map(object => object
-            ? `${object.active}:${object.floor}:${object.x}:${object.y}:${object.direction || ''}:${object.step || ''}:${object.displayMonsterId || ''}:${Array.isArray(object.monsterIds) ? object.monsterIds.join(',') : ''}`
+            ? `${object.active}:${object.floor}:${object.x}:${object.y}:${object.direction || ''}:${object.step || ''}:${object.displayMonsterId || ''}:${object.monsterId || ''}:${Array.isArray(object.monsterIds) ? object.monsterIds.join(',') : ''}`
             : '-'
         ).join('|');
 		const randomDungeonMapSignature = (
@@ -1247,6 +1247,12 @@
             drawSpecialObject(scene, field, dungeonData.keyGuardian, null, 0xffd78a, floor);
             drawSpecialObject(scene, field, dungeonData.trialAngel, 'overlay_dungeon_trial_angel', 0xfff3a6, floor);
             (dungeonData.randomHunters || []).forEach(hunter => {
+                const monsterId = getDungeon()?.getRandomHunterMonsterId?.(hunter);
+                if (Number.isFinite(Number(monsterId)) && Number(monsterId) > 0) {
+                    const hunterKey = field.getMonsterMapSpriteKey?.(Number(monsterId)) || `monster_${Math.floor(Number(monsterId))}`;
+                    drawSpecialObject(scene, field, hunter ? { ...hunter, image:null, drawWidth:TILE_SIZE * 2, drawHeight:TILE_SIZE * 2 } : null, hunterKey, 0xff5b5b, floor);
+                    return;
+                }
                 const hunterKey = getDungeon()?.getAdventurerGraphicKey?.(hunter) || 'overlay_dungeon_adventurer';
                 drawSpecialObject(scene, field, hunter ? { ...hunter, image:null } : null, hunterKey, 0xff5b5b, floor);
             });

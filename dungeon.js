@@ -4091,6 +4091,8 @@ const Dungeon = {
                 displayRank: targetRank,
                 enemyCount: 1,
                 displayName: '混沌を纏う者',
+                monsterId: 901000,
+                isBoss: true,
                 source: 'step-milestone',
                 consumeOnEncounter: true,
                 justSpawned: true
@@ -4100,6 +4102,14 @@ const Dungeon = {
 
         App.save();
         return { handled, state };
+    },
+
+    // 500歩追跡者の旧セーブは monsterId を持たないため、source から901000へ読み替える。
+    // 冒険者由来ハンターは monsterId 未指定のまま従来処理を維持する。
+    getRandomHunterMonsterId: (hunter) => {
+        const explicitId = Number(hunter?.monsterId);
+        if (Number.isFinite(explicitId) && explicitId > 0) return Math.floor(explicitId);
+        return String(hunter?.source || '') === 'step-milestone' ? 901000 : null;
     },
 
     getRandomHunters: () => Array.isArray(App.data?.dungeon?.randomHunters)
@@ -4159,6 +4169,8 @@ const Dungeon = {
             displayRank:Math.max(0, Number(options.displayRank || 0)),
             enemyCount:Math.max(1, Number(options.enemyCount ?? master.hunterEnemyCount ?? 3)),
             displayName:String(options.displayName || '').trim() || null,
+            monsterId:Number.isFinite(Number(options.monsterId)) && Number(options.monsterId) > 0 ? Math.floor(Number(options.monsterId)) : null,
+            isBoss:options.isBoss === true,
             source:String(options.source || 'adventurer'),
             consumeOnEncounter:options.consumeOnEncounter === true,
             justSpawned:options.justSpawned === true
@@ -4172,13 +4184,15 @@ const Dungeon = {
     startRandomHunterBattle: (hunter) => {
         if (!hunter?.active) return false;
         const consumeOnEncounter = hunter.consumeOnEncounter === true;
+        const monsterId = Dungeon.getRandomHunterMonsterId(hunter);
+        const isBoss = hunter.isBoss === true || Number(monsterId) === 901000;
         if (consumeOnEncounter) {
             hunter.active = false;
             hunter.consumedAt = Date.now();
         }
         App.data.battle = {
             active:false,
-            isBossBattle:false,
+            isBossBattle:isBoss,
             isSpecialBoss:false,
             isEstark:false,
             fixedBossId:null,
@@ -4192,6 +4206,8 @@ const Dungeon = {
                 displayRank:Math.max(0, Number(hunter.displayRank || 0)),
                 enemyCount:Math.max(1, Number(hunter.enemyCount || 3)),
                 displayName:String(hunter.displayName || '').trim() || null,
+                monsterId,
+                isBoss,
                 source:String(hunter.source || 'adventurer'),
                 consumeOnEncounter,
                 consumedOnEncounter:consumeOnEncounter

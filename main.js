@@ -13269,6 +13269,12 @@ const Field = {
         drawOverlayImage(App.data?.dungeon?.trialAngel, 'assets/map/overlays/overlay_dungeon_trial_angel.png', '#fff3a6');
         (App.data?.dungeon?.randomHunters || []).forEach(hunter => {
             if (!hunter?.active) return;
+            const monsterId = typeof Dungeon.getRandomHunterMonsterId === 'function' ? Dungeon.getRandomHunterMonsterId(hunter) : Number(hunter?.monsterId);
+            if (Number.isFinite(Number(monsterId)) && Number(monsterId) > 0) {
+                const src = Field.getMonsterMapSpriteSrc?.(Number(monsterId));
+                drawOverlayImage(hunter, src || `assets/monsters/monster_${String(Math.floor(Number(monsterId))).padStart(6, '0')}.png`, '#ff5b5b');
+                return;
+            }
             const graphicKey = typeof Dungeon.getAdventurerGraphicKey === 'function' ? Dungeon.getAdventurerGraphicKey(hunter) : null;
             const src = graphicKey ? window.GRAPHICS?.data?.[graphicKey] : null;
             drawOverlayImage(hunter, src || 'assets/monsters/monster_000105.png', '#ff5b5b');

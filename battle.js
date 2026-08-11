@@ -3446,13 +3446,34 @@ const Battle = {
             return newEnemies;
         }
 
-        // 冒険者が呼び出した追跡者は、階層+20相当の通常深層敵3体で構成する。
-        if (!isBoss && battleData.randomHunter) {
+        // 追跡者。monsterId 指定時は専用マスターを既存の深層生成ロジックで強化する。
+        // monsterId 未指定の冒険者由来ハンターは、従来どおり階層+20相当の通常深層敵で構成する。
+        if (battleData.randomHunter) {
             const context = battleData.randomHunter;
             const total = Math.max(1, Number(context.enemyCount || 3));
             const targetFloor = Math.max(1, Number(context.targetFloor || abyssBalanceFloor + 20));
             const displayName = String(context.displayName || '').trim();
             const displayRank = Math.max(0, Number(context.displayRank || 0));
+            const monsterId = Number(context.monsterId);
+            if (Number.isFinite(monsterId) && monsterId > 0) {
+                const base = Battle.getMonsterBaseById(Math.floor(monsterId));
+                if (base) {
+                    const hunterIsBoss = context.isBoss === true || base.isBoss === true;
+                    const enemy = Battle.createDeepFloorMonster(Battle.cloneMonsterBase(base), targetFloor, hunterIsBoss)
+                        || Battle.createMonsterFromBase(base, { isBossBattle:hunterIsBoss });
+                    if (enemy) {
+                        enemy.name = displayName || base.name || enemy.name;
+                        if (displayRank > 0) enemy.rank = displayRank;
+                        enemy.isBoss = hunterIsBoss || enemy.isBoss === true;
+                        enemy.isRandomHunterEnemy = true;
+                        enemy.randomHunterSource = String(context.source || 'adventurer');
+                        enemy.randomHunterId = String(context.id || '');
+                        newEnemies.push(enemy);
+                    }
+                }
+                if (newEnemies.length) return newEnemies;
+            }
+
             for (let i = 0; i < total; i++) {
                 const enemy = Battle.createDeepNormalEnemy(targetFloor);
                 if (!enemy) continue;
@@ -8811,7 +8832,7 @@ findNextActor: () => {
 
 		// --- [4] 世界状態・フラグの先行確定 ---
 		// 演出中のリロード対策として、ボスマスを階段にする等の処理をログ表示前に完結させます
-		if (!isTrainingBattle && !App.data?.battle?.randomAdventurerDuel && ((isBossBattle && !isEstark) || fixedHunter)) {
+		if (!isTrainingBattle && !App.data?.battle?.randomAdventurerDuel && !App.data?.battle?.randomHunter && ((isBossBattle && !isEstark) || fixedHunter)) {
 			if (typeof Dungeon !== 'undefined' && typeof Dungeon.onBossDefeated === 'function') {
 				Dungeon.onBossDefeated(); // ここで mapChanges 等が更新される
 			}
