@@ -2620,7 +2620,7 @@ const StoryManager = {
                 : null;
             const directEventBattleRuleKeys = [
                 'bestiaryExcluded', 'noDrops', 'noExp', 'noGold', 'noQuestProgress', 'noRecruit',
-                'forcedLoss', 'hpFloor', 'endAfterTurns', 'endAtHpPercent', 'storyVariantOf',
+                'forcedLoss', 'hpFloor', 'endAfterTurns', 'endAtHpPercent', 'endAtHpConversation', 'storyVariantOf',
                 'targetMonsterId', 'targetMonsterIds'
             ];
             const explicitEventBattleRules = action.eventBattleRules && typeof action.eventBattleRules === 'object'

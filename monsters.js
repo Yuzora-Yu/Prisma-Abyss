@@ -1375,7 +1375,7 @@ const STORY_EVENT_MONSTERS = [
       actCount:1,
       acts:[{id:1,rate:80,condition:0},{id:203,rate:20,condition:0}],
       drops:{ normal:{id:null,rate:0}, rare:{id:null,rate:0} },
-      archives:['五年前の崩壊直後、異常な興奮状態で人へ襲いかかった魔物。'],
+      archives:['崩壊直後、異常な興奮状態で人へ襲いかかった魔物。'],
       storyOnly:true,
       prologueEventVariant:true,
       bestiaryExcluded:true,
@@ -1408,15 +1408,15 @@ const STORY_EVENT_MONSTERS = [
   })(),
   (() => {
     const source = ALL_FIXED_BOSS_MONSTERS.find(monster => Number(monster?.id) === 302000);
-    return { ...JSON.parse(JSON.stringify(source)), id:802001, imageId:302000, name:'深淵の化け物', rank:85, minF:85, gold:0, exp:0, drops:{ normal:{id:null,rate:0}, rare:{id:null,rate:0} }, archives:['五年前、崩壊する山村の南口を塞いだ深淵の化け物。通常の人間が対抗できる規模ではない。'], prologueEventVariant:true, storyVariantOf:302000 };
+    return { ...JSON.parse(JSON.stringify(source)), id:802001, imageId:302000, name:'深淵の化け物', rank:85, minF:85, gold:0, exp:0, drops:{ normal:{id:null,rate:0}, rare:{id:null,rate:0} }, archives:['崩壊する山村の南口を塞いだ深淵の化け物。通常の人間が対抗できる規模ではない。'], prologueEventVariant:true, storyVariantOf:302000 };
   })(),
   (() => {
     const source = ALL_FIXED_BOSS_MONSTERS.find(monster => Number(monster?.id) === 302070);
-    return { ...JSON.parse(JSON.stringify(source)), id:802002, imageId:302070, name:'深淵姫イルミナシア', gold:0, exp:0, drops:{ normal:{id:null,rate:0}, rare:{id:null,rate:0} }, archives:['五年前の崩壊時に現れたイルミナシアのイベント戦闘形態。'], prologueEventVariant:true, storyVariantOf:302070 };
+    return { ...JSON.parse(JSON.stringify(source)), id:802002, imageId:302070, name:'深淵姫イルミナシア', gold:0, exp:0, drops:{ normal:{id:null,rate:0}, rare:{id:null,rate:0} }, archives:['崩壊時に現れたイルミナシアのイベント戦闘形態。'], prologueEventVariant:true, storyVariantOf:302070 };
   })(),
   (() => {
     const source = ALL_FIXED_BOSS_MONSTERS.find(monster => Number(monster?.id) === 302100);
-    return { ...JSON.parse(JSON.stringify(source)), id:802003, imageId:302100, name:'深淵王アゼルガラグ', gold:0, exp:0, drops:{ normal:{id:null,rate:0}, rare:{id:null,rate:0} }, archives:['五年前、本来の時系列より早く引きずり出された深淵王の不完全顕現。'], prologueEventVariant:true, storyVariantOf:302100, phaseTransition:null, phaseTransitionMonsterId:null, phaseTransitionConversation:null, phaseTransitionPostConversation:null, phaseTransitionVisual:null, phaseTransitionEffects:null };
+    return { ...JSON.parse(JSON.stringify(source)), id:802003, imageId:302100, name:'深淵王アゼルガラグ', gold:0, exp:0, drops:{ normal:{id:null,rate:0}, rare:{id:null,rate:0} }, archives:['本来の時系列より早く引きずり出された深淵王の不完全顕現。'], prologueEventVariant:true, storyVariantOf:302100, phaseTransition:null, phaseTransitionMonsterId:null, phaseTransitionConversation:null, phaseTransitionPostConversation:null, phaseTransitionVisual:null, phaseTransitionEffects:null };
   })(),
   {"hit":150,"eva":18,"cri":22,"isBoss":true,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"光":65,"闇":45,"火":25,"水":25,"風":25,"雷":25},"resists":{"Poison":200,"ToxicPoison":200,"Shock":150,"Fear":200,"InstantDeath":300,"Debuff":120,"Seal":180},"traits":[{"id":19,"level":5},{"id":52,"level":5},{"id":53,"level":5}],"archives":["光の宮殿からの脱出時、レイラたちの前に立ちはだかった騎士団長。正面戦闘では勝機がないほどの力量差がある。"],"id":301064,"allyGrowthType":"DEF_MDEF_A","imageId":301050,"name":"聖騎士団長ヴェルド","race":"人","rank":78,"minF":1,"hp":24000,"mp":2400,"atk":360,"def":320,"spd":245,"mag":330,"mdef":310,"gold":0,"exp":0,"actCount":2,"acts":[{"id":140,"rate":20,"condition":0},{"id":166,"rate":25,"condition":0},{"id":218,"rate":20,"condition":0},{"id":234,"rate":20,"condition":0},{"id":314,"rate":25,"condition":2}],"bestiaryExcluded":true,"storyOnly":true,"flashbackOnly":true}
 ];

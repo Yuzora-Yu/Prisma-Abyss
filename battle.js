@@ -194,7 +194,8 @@ const Battle = {
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {
             active:false, bestiaryExcluded:false, noDrops:false, noExp:false, noGold:false,
             noQuestProgress:false, noRecruit:false, forcedLoss:false, hpFloor:null,
-            endAfterTurns:null, endAtHpPercent:null, storyVariantOf:null, targetMonsterIds:[], skillFailureRules:[]
+            endAfterTurns:null, endAtHpPercent:null, endAtHpConversation:null,
+            storyVariantOf:null, targetMonsterIds:[], skillFailureRules:[]
         };
         const toFiniteOrNull = value => {
             if (value === null || value === undefined || value === '') return null;
@@ -216,6 +217,9 @@ const Battle = {
             hpFloor: toFiniteOrNull(raw.hpFloor),
             endAfterTurns: toFiniteOrNull(raw.endAfterTurns),
             endAtHpPercent: toFiniteOrNull(raw.endAtHpPercent),
+            endAtHpConversation: typeof raw.endAtHpConversation === 'string' && raw.endAtHpConversation.trim()
+                ? raw.endAtHpConversation.trim()
+                : null,
             storyVariantOf: raw.storyVariantOf ?? null,
             targetMonsterIds: targetSource.map(Number).filter(Number.isFinite),
             skillFailureRules: Array.isArray(raw.skillFailureRules)
@@ -364,6 +368,38 @@ const Battle = {
     },
 
     getEventBattleFinishType: (rules = Battle.getEventBattleRules()) => rules?.forcedLoss === true ? 'loss' : 'win',
+
+    // HP割合で終了するイベント戦では、勝利結果へ移る前に戦闘画面上の会話を完了させる。
+    // ヴェグナシス戦と同じ battle_event 会話キューを使い、会話中は敵表示を残したままにする。
+    runEventBattleHpEndConversation: async (rules = Battle.getEventBattleRules()) => {
+        const scriptKey = typeof rules?.endAtHpConversation === 'string'
+            ? rules.endAtHpConversation.trim()
+            : '';
+        if (!rules?.active || !Number.isFinite(rules.endAtHpPercent) || !scriptKey) return true;
+
+        const battleData = App.data?.battle;
+        if (!battleData) return true;
+        if (String(battleData.eventBattleHpEndConversationCompleted || '') === scriptKey) return true;
+
+        if (!globalThis.StoryManager?.showConversation || typeof Battle.queueBattleConversation !== 'function') {
+            console.warn(`[Battle] HP割合終了会話を開始できません: ${scriptKey}`);
+            return true;
+        }
+
+        Battle.queueBattleConversation(scriptKey, {
+            persistId: `event-hp-end:${scriptKey}`,
+            resumePhase: 'battle_event',
+            continueOnError: true,
+            maxErrorAttempts: 1
+        });
+        const completed = await Battle.awaitPendingBattleEvent();
+        if (completed && App.data?.battle) {
+            App.data.battle.eventBattleHpEndConversationCompleted = scriptKey;
+            if (typeof App.save === 'function') App.save();
+        }
+        // 会話UI側の一時失敗で勝敗処理そのものを永久停止させない。
+        return completed !== false;
+    },
 
     isBattleFinishConditionMet: (type) => {
         const rules = Battle.getEventBattleRules();
@@ -7525,6 +7561,21 @@ findNextActor: () => {
             }
             Battle.finishState = 'processing';
             try {
+                if (type === 'win') {
+                    const eventRules = Battle.getEventBattleRules();
+                    if (eventRules.active && Number.isFinite(eventRules.endAtHpPercent) &&
+                        Battle.isEventBattleThresholdMet(eventRules)) {
+                        await Battle.runEventBattleHpEndConversation(eventRules);
+                        if (Battle.finishToken !== token || !Battle.active || Battle.phase === 'result') return;
+                        if (battleId && App.data?.battle?.battleId && String(App.data.battle.battleId) !== String(battleId)) return;
+                        if (Number(Battle.runtimeGeneration || 0) !== runtimeGeneration) return;
+                        if (!Battle.isBattleFinishConditionMet(type)) {
+                            Battle.finishState = 'idle';
+                            Battle.finishToken = null;
+                            return;
+                        }
+                    }
+                }
                 if (type === 'loss') await Battle.lose({ finishToken: token });
                 else await Battle.win({ finishToken: token });
             } catch (error) {

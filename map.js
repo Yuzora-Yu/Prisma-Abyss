@@ -1459,6 +1459,37 @@ const STORY_DATA = {
                 color: "#5bd6ff"
             }
         },
+        CRYSTAL_TREE: {
+            name: "結晶樹の秘跡",
+            rank: 60,
+            centerX: 40,
+            centerY: 19,
+            worldPriority: 20,
+            worldConditions: {
+                requiredFlag: "crystalTreeRouteBriefed",
+                missingFlag: "crystalTreeCleared"
+            },
+            entryRequiredFlag: "crystalTreeRouteBriefed",
+            fieldTile: {
+                img: "overlay_field_temple",
+                color: "#80d9d4"
+            }
+        },
+        REXNOTE_ESTATE: {
+            name: "レクスノート邸",
+            rank: 30,
+            centerX: 40,
+            centerY: 19,
+            worldPriority: 10,
+            worldConditions: {
+                requiredFlag: "rexnoteRouteKnown"
+            },
+            entryRequiredFlag: "rexnoteRouteKnown",
+            fieldTile: {
+                img: "overlay_field_house_1",
+                color: "#d9bd84"
+            }
+        },
         MEMORY_REALM: {
             name: "追憶の魔境",
             rank: 91,
@@ -1911,7 +1942,7 @@ const MAP_MASTER = Object.freeze({
     PROLOGUE_SOUTH_VILLAGE: { id: "MAP000067", name: "名もなき山村・南側" },
     PROLOGUE_NORTH_VILLAGE: { id: "MAP000068", name: "名もなき山村・北側" },
     REES_MOUNTAIN_HUT: { id: "MAP000069", name: "リースの山小屋" },
-    PROLOGUE_FINAL_ALTAR: { id: "MAP000070", name: "五年前・終焉の祭壇" },
+    PROLOGUE_FINAL_ALTAR: { id: "MAP000070", name: "終焉の祭壇" },
     REXNOTE_ESTATE: { id: "MAP000071", name: "レクスノート邸" },
     UNDERSEA_VOLCANO: { id: "MAP000072", name: "海底火山" },
     CRYSTAL_TREE: { id: "MAP000073", name: "結晶樹の秘跡" },
@@ -2725,8 +2756,6 @@ const FIXED_MAPS = {
         "height": 11,
         "entryPoint": { "x": 8, "y": 8 },
         "randomEncounterDisabled": true,
-        "entryEventId": "rexnote_estate_arrival",
-        "entryEventFlag": "rexnoteEstateArrivalSeen",
         "tiles": [
             "WWWWWWWWWWWWWWWWW",
             "WTTTTTTTTTTTTTTTW",
@@ -2737,21 +2766,53 @@ const FIXED_MAPS = {
             "WTTTTTTTTTTTTTTTW",
             "WTTTTTTTTTTTTTTTW",
             "WTTTTTTTTTTTTTTTW",
-            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTSTTTTTTTW",
             "WWWWWWWWWWWWWWWWW"
         ],
-        "mapActors": [],
-        "mapActions": [
+        "mapActors": [
+            {
+                "placementId": 1,
+                "actorId": "alan_rexnote_estate",
+                "name": "アラン",
+                "x": 8,
+                "y": 4,
+                "imageKey": "overlay_companion_alan",
+                "drawWidth": 32,
+                "drawHeight": 32,
+                "baseTile": "T",
+                "states": [
+                    {
+                        "stateId": "alan_waiting_at_rexnote",
+                        "priority": 100,
+                        "when": {
+                            "missingFlag": "alanJoinedAtRexnote"
+                        },
+                        "action": {
+                            "label": "アランと話す",
+                            "type": "storyEvent",
+                            "eventId": "rexnote_estate_arrival"
+                        }
+                    }
+                ]
+            }
+        ],
+        "exitPoint": {
+            "area": "WORLD",
+            "worldKey": "WORLD",
+            "x": 40,
+            "y": 19
+        },
+        "worldExits": [
             {
                 "x": 8,
                 "y": 9,
-                "type": "fixedMap",
-                "target": "WATER_CITY",
-                "targetX": 21,
-                "targetY": 13,
-                "label": "水上都市へ戻る",
-                "requiredFlag": "rexnoteEstateArrivalSeen"
-            },
+                "area": "WORLD",
+                "worldKey": "WORLD",
+                "worldX": 40,
+                "worldY": 19
+            }
+        ],
+        "mapActions": [
             {
                 "x": 4,
                 "y": 3,
@@ -2774,25 +2835,35 @@ const FIXED_MAPS = {
         ]
     },
     "PROLOGUE_FINAL_ALTAR": {
-        "name": "五年前・終焉の祭壇",
+        "name": "終焉の祭壇",
         "themeKey": "FINAL_ALTAR",
         "width": 13,
         "height": 9,
         "entryPoint": { "x": 6, "y": 6 },
         "battleBg": "battle_bg_lastboss",
         "randomEncounterDisabled": true,
-        "entryEventId": "prologue_hidden_azelgarag_start",
-        "entryEventFlag": "prologueHiddenAzelgaragResolved",
         "tiles": [
             "WWWWWWWWWWWWW",
             "WTTTTTTTTTTTW",
-            "WTTTTTTTTTTTW",
+            "WTTTTTBTTTTTW",
             "WTTTTTTTTTTTW",
             "WTTTTTTTTTTTW",
             "WTTTTTTTTTTTW",
             "WTTTTTTTTTTTW",
             "WTTTTTTTTTTTW",
             "WWWWWWWWWWWWW"
+        ],
+        "bosses": [
+            {
+                "x": 6,
+                "y": 2,
+                "monsterId": 802003,
+                "mapSpriteMonsterId": 302100,
+                "requiredFlag": "prologueIlluminaciaDefeated",
+                "clearedFlag": "prologueHiddenAzelgaragResolved",
+                "startEventId": "prologue_hidden_azelgarag_start",
+                "actionLabel": "深淵王に挑む"
+            }
         ],
         "mapActors": [],
         "mapActions": []
@@ -5513,18 +5584,6 @@ const FIXED_MAPS = {
         ],
         "mapActions": [
             {
-                "x": 19,
-                "y": 4,
-                "label": "古い水門を調べる",
-                "type": "storyEvent",
-                "eventId": "crystal_tree_route_departure",
-                "requiredFlag": "crystalTreeRouteBriefed",
-                "imageKey": "overlay_dungeon_event",
-                "baseTile": "T",
-                "blocksMovement": false,
-                "suppressShadow": true
-            },
-            {
                 "x": 31,
                 "y": 3,
                 "label": "錬金所に入る",
@@ -7843,7 +7902,7 @@ const FIXED_MAPS = {
             "WWWWWWWWWTTTTTTTTTTTWWWWWWWWW",
             "WWWWWWWWWTTTTTTTTTTTWWWWWWWWW",
             "WWWWWWWWWTTTTTTTTTTTWWWWWWWWW",
-            "WWWWWWWWWTTTTTTTTTTTWWWWWWWWW",
+            "WWWWWWWWWTTTTTSTTTTTWWWWWWWWW",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
         "nextActorPlacementId": 2,
@@ -7900,21 +7959,23 @@ const FIXED_MAPS = {
                 ]
             }
         ],
-        "mapActions": [
+        "exitPoint": {
+            "area": "WORLD",
+            "worldKey": "WORLD",
+            "x": 40,
+            "y": 19
+        },
+        "worldExits": [
             {
                 "x": 14,
-                "y": 18,
-                "label": "古い水門へ戻る",
-                "type": "fixedMap",
-                "target": "WATER_CITY",
-                "targetX": 19,
-                "targetY": 4,
-                "imageKey": "overlay_dungeon_event",
-                "baseTile": "T",
-                "blocksMovement": false,
-                "suppressShadow": true
+                "y": 19,
+                "area": "WORLD",
+                "worldKey": "WORLD",
+                "worldX": 40,
+                "worldY": 19
             }
         ],
+        "mapActions": [],
         "floorDecorations": [
             {
                 "authoredPlacementId": "crystal-ritual-pedestal-water",

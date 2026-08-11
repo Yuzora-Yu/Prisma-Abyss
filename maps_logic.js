@@ -616,17 +616,36 @@ const MapRegistry = {
         const wx = point.x;
         const wy = point.y;
         const activeWorldKey = MapRegistry.getActiveWorldKey();
+        let bestMatch = null;
+        let bestPriority = -Infinity;
         for (const [key, area] of Object.entries(STORY_DATA.areas)) {
             if (String(area.worldKey || 'WORLD') !== activeWorldKey) continue;
+            if (area.worldConditions) {
+                if (typeof App === 'undefined' || typeof App.evaluateGameConditions !== 'function' ||
+                    !App.evaluateGameConditions(area.worldConditions)) {
+                    continue;
+                }
+            }
+
+            let resolved = null;
             if (Array.isArray(area.entrances)) {
                 const entrance = area.entrances.find(pos => Number(pos.x) === wx && Number(pos.y) === wy);
-                if (entrance) return [key, { ...area, centerX: wx, centerY: wy, _entryKey: entrance.entryKey || null, _entryLabel: entrance.label || null }];
+                if (entrance) {
+                    resolved = { ...area, centerX: wx, centerY: wy, _entryKey: entrance.entryKey || null, _entryLabel: entrance.label || null };
+                }
             }
-            if (Number(area.centerX) === wx && Number(area.centerY) === wy) {
-                return [key, { ...area, _entryKey: area.defaultEntryKey || null }];
+            if (!resolved && Number(area.centerX) === wx && Number(area.centerY) === wy) {
+                resolved = { ...area, _entryKey: area.defaultEntryKey || null };
+            }
+            if (!resolved) continue;
+
+            const priority = Number.isFinite(Number(area.worldPriority)) ? Number(area.worldPriority) : 0;
+            if (!bestMatch || priority > bestPriority) {
+                bestMatch = [key, resolved];
+                bestPriority = priority;
             }
         }
-        return null;
+        return bestMatch;
     },
 
     getWorldTileConfig(x, y) {
