@@ -2834,6 +2834,33 @@ const FIXED_MAPS = {
             "WGGGGGGGGGGGTGGGGGGGGGGGW",
             "WWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
+        "healSprings": [
+            {
+                "x": 12,
+                "y": 4,
+                "imageKey": "overlay_shrine_healing_spring",
+                "drawWidth": 44,
+                "drawHeight": 44,
+                "shimmer": true
+            }
+        ],
+        "tileEffects": [
+            {
+                "id": "prologue_north_rank100_hunter",
+                "type": "hunter",
+                "x": 12,
+                "y": 4,
+                "spawnIntervalSteps": 50,
+                "spawnAnywhere": true,
+                "monsterPoolIds": [960, 965],
+                "speed": 2,
+                "range": 99,
+                "statMultiplier": 1,
+                "rewardExpMultiplier": 1.5,
+                "consumeOnEncounter": true,
+                "imageKey": "overlay_dungeon_hunter_shadow"
+            }
+        ],
         "mapActors": [],
         "mapActions": [
             {

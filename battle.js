@@ -3393,6 +3393,13 @@ const Battle = {
             if (m && options.trialEnemyBoost) {
                 Battle.applyMapEnemyBoost(m, options.trialEnemyBoost);
             }
+            if (m && battleData.fixedHunter) {
+                const rewardExpMultiplier = Math.max(1, Number(battleData.fixedHunter.rewardExpMultiplier || 1) || 1);
+                if (rewardExpMultiplier > 1) {
+                    m.exp = Math.max(1, Math.round(Number(m.exp || base.exp || 1) * rewardExpMultiplier));
+                    m.fixedHunterRewardExpMultiplier = rewardExpMultiplier;
+                }
+            }
             if (m) newEnemies.push(m);
             return m;
         };
@@ -3428,7 +3435,7 @@ const Battle = {
                 const enemy = Battle.createDeepFloorMonster(Battle.cloneMonsterBase(base), targetFloor, true)
                     || Battle.createMonsterFromBase(base, { isBossBattle:true });
                 if (enemy) {
-                    enemy.name = `${base.name || '深淵門将ガレオン'}・腕試し`;
+                    enemy.name = base.name || '深淵門将ガレオン';
                     enemy.isRandomAdventurerDuel = true;
                     delete enemy.phaseTransition;
                     delete enemy.phaseTransitionMonsterId;
@@ -3444,11 +3451,16 @@ const Battle = {
             const context = battleData.randomHunter;
             const total = Math.max(1, Number(context.enemyCount || 3));
             const targetFloor = Math.max(1, Number(context.targetFloor || abyssBalanceFloor + 20));
+            const displayName = String(context.displayName || '').trim();
+            const displayRank = Math.max(0, Number(context.displayRank || 0));
             for (let i = 0; i < total; i++) {
                 const enemy = Battle.createDeepNormalEnemy(targetFloor);
                 if (!enemy) continue;
-                enemy.name += total > 1 ? String.fromCharCode(65 + i) : '';
+                const suffixName = total > 1 ? String.fromCharCode(65 + i) : '';
+                enemy.name = displayName ? `${displayName}${suffixName}` : `${enemy.name}${suffixName}`;
+                if (displayRank > 0) enemy.rank = displayRank;
                 enemy.isRandomHunterEnemy = true;
+                enemy.randomHunterSource = String(context.source || 'adventurer');
                 newEnemies.push(enemy);
             }
             return newEnemies;

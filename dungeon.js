@@ -632,6 +632,7 @@ const Dungeon = {
         App.data.dungeon.abyssRift = null;
         App.data.dungeon.trialAngel = null;
         App.data.dungeon.randomHunters = null;
+        App.data.dungeon.randomHunterMilestone = null;
         App.data.dungeon.keyChests = null;
         App.data.dungeon.floorKeys = null;
         Dungeon.clearRandomKeyState();
@@ -710,6 +711,7 @@ const Dungeon = {
         App.data.dungeon.abyssRift = null;
         App.data.dungeon.trialAngel = null;
         App.data.dungeon.randomHunters = null;
+        App.data.dungeon.randomHunterMilestone = null;
         App.data.dungeon.keyChests = null;
         App.data.dungeon.floorKeys = null;
         Dungeon.clearRandomKeyState();
@@ -1104,6 +1106,7 @@ const Dungeon = {
         App.data.dungeon.abyssRift = null;
         App.data.dungeon.trialAngel = null;
         App.data.dungeon.randomHunters = null;
+        App.data.dungeon.randomHunterMilestone = null;
         App.data.dungeon.keyChests = null;
         App.data.dungeon.floorKeys = null;
         Dungeon.clearRandomKeyState();
@@ -1750,6 +1753,7 @@ const Dungeon = {
         App.data.dungeon.abyssRift = null;
         App.data.dungeon.trialAngel = null;
         App.data.dungeon.randomHunters = null;
+        App.data.dungeon.randomHunterMilestone = null;
         App.data.dungeon.keyChests = null;
         App.data.dungeon.floorKeys = null;
         Dungeon.clearRandomKeyState();
@@ -1808,6 +1812,7 @@ const Dungeon = {
         App.data.dungeon.abyssRift = null;
         App.data.dungeon.trialAngel = null;
         App.data.dungeon.randomHunters = null;
+        App.data.dungeon.randomHunterMilestone = null;
         App.data.dungeon.keyChests = null;
         App.data.dungeon.floorKeys = null;
         Dungeon.clearRandomKeyState();
@@ -2043,6 +2048,7 @@ const Dungeon = {
         App.data.dungeon.abyssRift = null;
         App.data.dungeon.trialAngel = null;
         App.data.dungeon.randomHunters = null;
+        App.data.dungeon.randomHunterMilestone = null;
         App.data.dungeon.keyChests = null;
         App.data.dungeon.floorKeys = null;
         Dungeon.clearRandomKeyState();
@@ -2431,6 +2437,11 @@ const Dungeon = {
 
         // 迷路フロアのミニマップは、移動後に見えている範囲を記憶する。
         Dungeon.markVisibleArea(x, y);
+
+        // ランダムダンジョン専用の歩数は通常エンカウント用walkCountと分離する。
+        // 400歩の警告時は、その一歩で通常イベントを重ねない。
+        const hunterMilestone = Dungeon.noteRandomHunterMilestoneStep?.();
+        if (hunterMilestone?.handled) return true;
         
 		//App.clearAction();
 
@@ -3052,7 +3063,11 @@ const Dungeon = {
     },
 
     triggerFixedEffectBattle: (effect, options = {}) => {
-        const ids = Array.isArray(effect.monsterIds) ? effect.monsterIds : [effect.monsterId].filter(Boolean);
+        let ids = Array.isArray(effect.monsterIds) ? effect.monsterIds.map(Number).filter(Number.isFinite) : [Number(effect.monsterId)].filter(Number.isFinite);
+        const monsterPoolIds = Array.isArray(effect.monsterPoolIds) ? effect.monsterPoolIds.map(Number).filter(Number.isFinite) : [];
+        if (ids.length === 0 && monsterPoolIds.length > 0) {
+            ids = [monsterPoolIds[Math.floor(Math.random() * monsterPoolIds.length)]];
+        }
         if (ids.length === 0) return false;
 
         const isHunter = effect.type === 'hunter';
@@ -3061,6 +3076,10 @@ const Dungeon = {
             ? (options.hunterMapKey
                 || (Field.getCurrentProgressMapKey ? Field.getCurrentProgressMapKey() : `${Field.getCurrentAreaKey()}:F${App.data.progress.floor || 1}`))
             : null;
+        const consumeOnEncounter = isHunter && effect.consumeOnEncounter === true;
+        if (consumeOnEncounter && hunterId && hunterMapKey && typeof Dungeon.consumeFixedHunter === 'function') {
+            Dungeon.consumeFixedHunter(hunterId, hunterMapKey);
+        }
 
         App.data.battle = {
             active: false,
@@ -3073,7 +3092,9 @@ const Dungeon = {
             fixedStoryEventId: effect.storyEventId || null,
             fixedHunter: (hunterId && hunterMapKey) ? {
                 id: hunterId,
-                mapKey: hunterMapKey
+                mapKey: hunterMapKey,
+                consumedOnEncounter: consumeOnEncounter,
+                rewardExpMultiplier: Math.max(1, Number(effect.rewardExpMultiplier || 1) || 1)
             } : null,
             angelTrial: effect.type === 'angel' ? {
                 id: effect.id || `${Field.getCurrentAreaKey()}:${Field.x},${Field.y}`,
@@ -3099,6 +3120,9 @@ const Dungeon = {
         if (!App.data.progress) App.data.progress = {};
         if (App.data.progress.fixedHunters && typeof App.data.progress.fixedHunters === 'object') {
             delete App.data.progress.fixedHunters[mapKey];
+        }
+        if (App.data.progress.fixedHunterSteps && typeof App.data.progress.fixedHunterSteps === 'object') {
+            delete App.data.progress.fixedHunterSteps[mapKey];
         }
         if (App.data.dungeon) {
             if (!App.data.dungeon.defeatedFixedHunters || typeof App.data.dungeon.defeatedFixedHunters !== 'object') {
@@ -3132,18 +3156,39 @@ const Dungeon = {
         return true;
     },
 
+    isRespawningFixedHunter: (definition) => Math.max(0, Number(definition?.spawnIntervalSteps || 0)) > 0,
+
+    consumeFixedHunter: (id, key = null) => {
+        if (!id) return false;
+        const mapKey = key || Dungeon.getCurrentFixedHunterKey?.();
+        const hunterState = mapKey ? App.data?.progress?.fixedHunters?.[mapKey] : null;
+        if (!hunterState?.[id]) return false;
+        hunterState[id].active = false;
+        hunterState[id].moveProgress = 0;
+        hunterState[id].consumedAtStep = Math.max(0, Number(App.data?.progress?.fixedHunterSteps?.[mapKey] || 0));
+        App.save();
+        return true;
+    },
+
     getFixedHunterState: () => {
         if (!Field.currentMapData?.isFixed) return null;
         const key = Dungeon.getCurrentFixedHunterKey();
         if (!App.data.progress.fixedHunters || typeof App.data.progress.fixedHunters !== 'object') App.data.progress.fixedHunters = {};
-        if (!App.data.progress.fixedHunters[key]) {
-            App.data.progress.fixedHunters[key] = {};
-            (Field.currentMapData.tileEffects || []).filter(e => e.type === 'hunter').forEach((e, index) => {
-                const id = e.id || `hunter_${index}`;
-                App.data.progress.fixedHunters[key][id] = { x: Number(e.x), y: Number(e.y), active: true, moveProgress: 0 };
-            });
-        }
-        return App.data.progress.fixedHunters[key];
+        if (!App.data.progress.fixedHunters[key]) App.data.progress.fixedHunters[key] = {};
+        const state = App.data.progress.fixedHunters[key];
+        (Field.currentMapData.tileEffects || []).filter(e => e.type === 'hunter').forEach((e, index) => {
+            const id = e.id || `hunter_${index}`;
+            if (state[id]) return;
+            state[id] = {
+                x: Number(e.x),
+                y: Number(e.y),
+                active: !Dungeon.isRespawningFixedHunter(e),
+                moveProgress: 0,
+                spawnCount: 0,
+                justSpawned: false
+            };
+        });
+        return state;
     },
 
     getFixedHunterAt: (x, y) => {
@@ -3154,7 +3199,7 @@ const Dungeon = {
         for (let i = 0; i < defs.length; i++) {
             const def = defs[i];
             const id = def.id || `hunter_${i}`;
-            if (Dungeon.isFixedHunterDefeated(id, key)) continue;
+            if (!Dungeon.isRespawningFixedHunter(def) && Dungeon.isFixedHunterDefeated(id, key)) continue;
             const pos = state?.[id];
             if (pos?.active && Number(pos.x) === Number(x) && Number(pos.y) === Number(y)) {
                 return { ...def, id, x: pos.x, y: pos.y };
@@ -3163,25 +3208,98 @@ const Dungeon = {
         return null;
     },
 
+    getFixedHunterSpawnCandidates: (definition, occupied = null) => {
+        const candidates = [];
+        const map = Field.currentMapData;
+        if (!map?.isFixed || !Array.isArray(map.tiles)) return candidates;
+        const width = Math.max(0, Number(map.width || map.tiles[0]?.length || 0));
+        const height = Math.max(0, Number(map.height || map.tiles.length || 0));
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                if (!Dungeon.isFixedHunterWalkable(x, y, x, y, occupied)) continue;
+                if (Dungeon.isHealSpringAt?.(x, y)) continue;
+                if (Number(x) === Number(Field.x) && Number(y) === Number(Field.y)) continue;
+                const distance = Math.abs(Number(x) - Number(Field.x)) + Math.abs(Number(y) - Number(Field.y));
+                if (distance < Math.max(3, Number(definition?.spawnMinDistance || 5))) continue;
+                const path = Dungeon.findShortestGridPath(
+                    Field.x, Field.y, x, y,
+                    (nx, ny, fromX, fromY) => Dungeon.isFixedHunterWalkable(nx, ny, fromX, fromY, occupied),
+                    width, height, Math.max(width * height, 1)
+                );
+                if (!Array.isArray(path)) continue;
+                candidates.push({ x, y, distance: path.length });
+            }
+        }
+        return candidates;
+    },
+
+    noteFixedHunterPlayerStep: (key, defs, state) => {
+        const respawningDefs = defs.filter(def => Dungeon.isRespawningFixedHunter(def));
+        if (!respawningDefs.length) return new Set();
+        if (!App.data.progress.fixedHunterSteps || typeof App.data.progress.fixedHunterSteps !== 'object') App.data.progress.fixedHunterSteps = {};
+        const stepCount = Math.max(0, Number(App.data.progress.fixedHunterSteps[key] || 0)) + 1;
+        App.data.progress.fixedHunterSteps[key] = stepCount;
+        const justSpawned = new Set();
+        const occupied = new Set();
+        defs.forEach((def, index) => {
+            const id = def.id || `hunter_${index}`;
+            const pos = state?.[id];
+            if (pos?.active) occupied.add(`${Number(pos.x)},${Number(pos.y)}`);
+        });
+
+        respawningDefs.forEach((def, index) => {
+            const interval = Math.max(1, Number(def.spawnIntervalSteps || 1));
+            if (stepCount % interval !== 0) return;
+            const defIndex = defs.indexOf(def);
+            const id = def.id || `hunter_${Math.max(0, defIndex >= 0 ? defIndex : index)}`;
+            const pos = state?.[id];
+            if (!pos || pos.active) return;
+            const candidates = def.spawnAnywhere === true
+                ? Dungeon.getFixedHunterSpawnCandidates(def, occupied)
+                : [{ x: Number(def.x), y: Number(def.y), distance: 0 }];
+            if (!candidates.length) return;
+            candidates.sort((a, b) => Number(b.distance || 0) - Number(a.distance || 0));
+            const poolSize = Math.max(1, Math.ceil(candidates.length * 0.5));
+            const selected = candidates[Math.floor(Math.random() * poolSize)] || candidates[0];
+            pos.x = Number(selected.x);
+            pos.y = Number(selected.y);
+            pos.active = true;
+            pos.moveProgress = 0;
+            pos.spawnCount = Math.max(0, Number(pos.spawnCount || 0)) + 1;
+            pos.justSpawned = true;
+            delete pos.consumedAtStep;
+            occupied.add(`${pos.x},${pos.y}`);
+            justSpawned.add(id);
+        });
+        return justSpawned;
+    },
+
     stepFixedHunters: () => {
         if (!Field.currentMapData?.isFixed || !Array.isArray(Field.currentMapData.tileEffects)) return false;
         const key = Dungeon.getCurrentFixedHunterKey();
         const state = Dungeon.getFixedHunterState();
         const defs = Field.currentMapData.tileEffects.filter(e => e.type === 'hunter');
+        const justSpawned = Dungeon.noteFixedHunterPlayerStep(key, defs, state);
         const occupied = new Set();
         defs.forEach((def, index) => {
             const hunterId = def.id || `hunter_${index}`;
             const hunterPos = state?.[hunterId];
-            if (hunterPos?.active && !Dungeon.isFixedHunterDefeated(hunterId, key)) {
+            const permanentlyDefeated = !Dungeon.isRespawningFixedHunter(def) && Dungeon.isFixedHunterDefeated(hunterId, key);
+            if (hunterPos?.active && !permanentlyDefeated) {
                 occupied.add(`${Number(hunterPos.x)},${Number(hunterPos.y)}`);
             }
         });
         for (let i = 0; i < defs.length; i++) {
             const def = defs[i];
             const id = def.id || `hunter_${i}`;
-            if (Dungeon.isFixedHunterDefeated(id, key)) continue;
+            if (!Dungeon.isRespawningFixedHunter(def) && Dungeon.isFixedHunterDefeated(id, key)) continue;
             const pos = state?.[id];
             if (!pos?.active) continue;
+            if (justSpawned.has(id) || pos.justSpawned === true) {
+                pos.justSpawned = false;
+                continue;
+            }
+
             const rawSpeed = Number.isFinite(Number(def.speed)) ? Number(def.speed) : 2;
             const speed = Math.max(0, rawSpeed);
             const range = Math.max(1, Number(def.range || 99));
@@ -3426,6 +3544,13 @@ const Dungeon = {
         if (effect.type === 'hunter') {
             App.log(effect.message || '強敵に捕捉された！');
             const hunterMapKey = Dungeon.getCurrentFixedHunterKey ? Dungeon.getCurrentFixedHunterKey() : null;
+            // 主人公側からハンターのいるマスへ踏み込んだ場合はstepFixedHuntersより先に戦闘へ入る。
+            // 再出現型だけは、この移動も「北側を歩いた1歩」として先に記録しておく。
+            if (Dungeon.isRespawningFixedHunter?.(effect) && hunterMapKey) {
+                const defs = (Field.currentMapData.tileEffects || []).filter(entry => entry.type === 'hunter');
+                const state = Dungeon.getFixedHunterState?.();
+                Dungeon.noteFixedHunterPlayerStep?.(hunterMapKey, defs, state);
+            }
             return Dungeon.triggerFixedEffectBattle(effect, { statMultiplier: 1.8, hunterId: effect.id || null, hunterMapKey });
         }
         if (effect.type === 'angel') {
@@ -3786,6 +3911,7 @@ const Dungeon = {
         App.data.dungeon.abyssRift = null;
         App.data.dungeon.trialAngel = null;
         App.data.dungeon.randomHunters = null;
+        App.data.dungeon.randomHunterMilestone = null;
 
         // 宝物庫フロアは報酬部屋として独立させる。
         // 冒険者/泉/裂け目まで重なると、宝物庫の見せ場が散るため出さない。
@@ -3920,21 +4046,76 @@ const Dungeon = {
         return true;
     },
 
+    getRandomHunterMilestoneState: () => {
+        if (!App.data?.dungeon || Dungeon.getAbyssMode() !== 'random' || Field.currentMapData?.isFixed) return null;
+        const floor = Math.max(1, Number(Dungeon.floor || App.data?.progress?.floor || 1));
+        let state = App.data.dungeon.randomHunterMilestone;
+        if (!state || state.mode !== 'random' || Number(state.floor) !== floor) {
+            state = {
+                mode: 'random',
+                floor,
+                steps: 0,
+                warningShown: false,
+                hunterSpawned: false
+            };
+            App.data.dungeon.randomHunterMilestone = state;
+        }
+        return state;
+    },
+
+    noteRandomHunterMilestoneStep: () => {
+        const state = Dungeon.getRandomHunterMilestoneState();
+        if (!state) return { handled:false, state:null };
+        state.steps = Math.max(0, Number(state.steps || 0)) + 1;
+        let handled = false;
+
+        if (state.steps >= 400 && !state.warningShown) {
+            state.warningShown = true;
+            App.save();
+            if (typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
+                StoryManager.executeEvent('random_dungeon_hunter_warning');
+                handled = true;
+            } else {
+                App.log('あたりの雰囲気が変わった気がする…');
+            }
+        }
+
+        if (state.steps >= 500 && !state.hunterSpawned) {
+            const floor = Math.max(1, Number(state.floor || Dungeon.floor || 1));
+            const targetRank = floor >= 100 ? 200 + floor : 200;
+            const spawned = Dungeon.spawnRandomHunters({
+                count: 1,
+                append: true,
+                speed: 2,
+                targetFloor: targetRank,
+                displayRank: targetRank,
+                enemyCount: 1,
+                displayName: '混沌を纏う者',
+                source: 'step-milestone',
+                consumeOnEncounter: true,
+                justSpawned: true
+            });
+            if (Array.isArray(spawned) && spawned.length > 0) state.hunterSpawned = true;
+        }
+
+        App.save();
+        return { handled, state };
+    },
+
     getRandomHunters: () => Array.isArray(App.data?.dungeon?.randomHunters)
         ? App.data.dungeon.randomHunters.filter(hunter => hunter?.active && Number(hunter.floor) === Number(Dungeon.floor))
         : [],
 
     getRandomHunterAt: (x, y) => Dungeon.getRandomHunters().find(hunter => Number(hunter.x) === Number(x) && Number(hunter.y) === Number(y)) || null,
 
-    spawnRandomHunters: () => {
+    spawnRandomHunters: (options = {}) => {
         const master = Dungeon.getPhase2IMaster().adventurer || {};
-        const count = Math.max(1, Number(master.hunterCount || 5));
+        const count = Math.max(1, Number(options.count ?? master.hunterCount ?? 5));
         const candidates = Dungeon.getSpecialSpawnCandidates();
         Dungeon.shuffle(candidates);
         const selected = candidates.slice(0, count);
 
-        // 生成形態によって安全距離を満たす候補が5マス未満になる場合も、
-        // プレイヤーから到達可能な通常床を段階的に緩和して補い、可能な限り必ず5体出す。
+        // 生成形態によって安全距離を満たす候補が不足する場合も、到達可能な床から補う。
         if (selected.length < count && Array.isArray(Dungeon.map) && Dungeon.map.length) {
             const reachable = typeof Dungeon.getProgressionReachableCells === 'function'
                 ? Dungeon.getProgressionReachableCells()
@@ -3960,24 +4141,41 @@ const Dungeon = {
                 selected.push({ x:pos.x, y:pos.y });
             }
         }
-        App.data.dungeon.randomHunters = selected.map((pos, index) => ({
-            id:`random-hunter:${Dungeon.getAbyssMode()}:F${Number(Dungeon.floor)}:${Date.now()}:${index}`,
+
+        const currentHunters = Array.isArray(App.data.dungeon.randomHunters) ? App.data.dungeon.randomHunters : [];
+        const existing = options.append === true
+            ? currentHunters
+            : currentHunters.filter(hunter => hunter?.active && hunter.source && hunter.source !== 'adventurer');
+        const now = Date.now();
+        const spawned = selected.map((pos, index) => ({
+            id:`random-hunter:${Dungeon.getAbyssMode()}:F${Number(Dungeon.floor)}:${now}:${index}`,
             active:true,
             floor:Number(Dungeon.floor),
             x:Number(pos.x), y:Number(pos.y),
             direction:'down', step:1,
-            speed:Math.max(0.1, Number(master.hunterSpeed || 1.5)),
+            speed:Math.max(0.1, Number(options.speed ?? master.hunterSpeed ?? 1.5)),
             moveProgress:0,
-            targetFloor:Math.max(1, Dungeon.getBalanceFloor() + Number(master.hunterFloorOffset || 20)),
-            enemyCount:Math.max(1, Number(master.hunterEnemyCount || 3))
+            targetFloor:Math.max(1, Number(options.targetFloor ?? (Dungeon.getBalanceFloor() + Number(master.hunterFloorOffset || 20)))),
+            displayRank:Math.max(0, Number(options.displayRank || 0)),
+            enemyCount:Math.max(1, Number(options.enemyCount ?? master.hunterEnemyCount ?? 3)),
+            displayName:String(options.displayName || '').trim() || null,
+            source:String(options.source || 'adventurer'),
+            consumeOnEncounter:options.consumeOnEncounter === true,
+            justSpawned:options.justSpawned === true
         }));
+        App.data.dungeon.randomHunters = [...existing, ...spawned];
         App.save();
         Field.render?.();
-        return App.data.dungeon.randomHunters;
+        return spawned;
     },
 
     startRandomHunterBattle: (hunter) => {
         if (!hunter?.active) return false;
+        const consumeOnEncounter = hunter.consumeOnEncounter === true;
+        if (consumeOnEncounter) {
+            hunter.active = false;
+            hunter.consumedAt = Date.now();
+        }
         App.data.battle = {
             active:false,
             isBossBattle:false,
@@ -3991,12 +4189,19 @@ const Dungeon = {
                 id:String(hunter.id),
                 floor:Number(hunter.floor),
                 targetFloor:Math.max(1, Number(hunter.targetFloor || Dungeon.getBalanceFloor() + 20)),
-                enemyCount:Math.max(1, Number(hunter.enemyCount || 3))
+                displayRank:Math.max(0, Number(hunter.displayRank || 0)),
+                enemyCount:Math.max(1, Number(hunter.enemyCount || 3)),
+                displayName:String(hunter.displayName || '').trim() || null,
+                source:String(hunter.source || 'adventurer'),
+                consumeOnEncounter,
+                consumedOnEncounter:consumeOnEncounter
             },
             enemies:[]
         };
         App.save();
-        App.log('<span style="color:#ff8a72;">深淵のハンターに追いつかれた！</span>');
+        App.log(consumeOnEncounter && hunter.displayName
+            ? `<span style="color:#ff8a72;">${hunter.displayName}に追いつかれた！</span>`
+            : '<span style="color:#ff8a72;">深淵のハンターに追いつかれた！</span>');
         App.changeScene('battle');
         return true;
     },
@@ -4004,6 +4209,10 @@ const Dungeon = {
     completeRandomHunterBattle: (context = App.data?.battle?.randomHunter) => {
         if (!context?.id || !Array.isArray(App.data?.dungeon?.randomHunters)) return false;
         const hunter = App.data.dungeon.randomHunters.find(entry => String(entry?.id) === String(context.id));
+        if (context.consumedOnEncounter === true) {
+            if (hunter) hunter.defeatedAt = Date.now();
+            return true;
+        }
         if (!hunter || hunter.active === false) return false;
         hunter.active = false;
         hunter.defeatedAt = Date.now();
@@ -4022,9 +4231,14 @@ const Dungeon = {
     stepRandomHunters: () => {
         const hunters = Dungeon.getRandomHunters();
         if (!hunters.length || Field.currentMapData?.isFixed) return false;
+        if (typeof StoryManager !== 'undefined' && StoryManager.active) return false;
         const occupied = new Set(hunters.map(hunter => `${Number(hunter.x)},${Number(hunter.y)}`));
         for (const hunter of hunters) {
             const oldKey = `${Number(hunter.x)},${Number(hunter.y)}`;
+            if (hunter.justSpawned === true) {
+                hunter.justSpawned = false;
+                continue;
+            }
             occupied.delete(oldKey);
             const path = Dungeon.findShortestGridPath(
                 hunter.x, hunter.y, Field.x, Field.y,
@@ -5199,6 +5413,7 @@ const Dungeon = {
         App.data.dungeon.abyssRift = null;
         App.data.dungeon.trialAngel = null;
         App.data.dungeon.randomHunters = null;
+        App.data.dungeon.randomHunterMilestone = null;
     },
 
     collectGeneratedKeyDoorPairs: () => {
@@ -6365,7 +6580,7 @@ const Dungeon = {
             const fixedHunter = App.data.battle?.fixedHunter;
             if (fixedHunter?.id) {
                 const hunterMapKey = fixedHunter.mapKey || Dungeon.getCurrentFixedHunterKey?.();
-                if (typeof Dungeon.markFixedHunterDefeated === 'function') {
+                if (!fixedHunter.consumedOnEncounter && typeof Dungeon.markFixedHunterDefeated === 'function') {
                     Dungeon.markFixedHunterDefeated(fixedHunter.id, hunterMapKey);
                 }
                 const fixedStoryEventId = App.data.battle?.fixedStoryEventId;

@@ -4669,9 +4669,16 @@ const STORY_MANAGER_DATA = {
         "ALAN_ALTAR_DEATH_WITH_APPEAL_PHASE8E": [
                 { "name": "アラン", "charId": 201, "text": "……そうか。" },
                 { "name": "システム", "text": "アランは床の上申書を一度だけ見た。やがて、光は完全に消えた。" }
+        ],
+        "RANDOM_DUNGEON_HUNTER_WARNING": [
+                { "name": "システム", "text": "あたりの雰囲気が変わった気がする…" }
         ]
     },
     events: {
+        "random_dungeon_hunter_warning": {
+                "actions": [{ "type": "CONV", "value": "RANDOM_DUNGEON_HUNTER_WARNING" }],
+                "winActions": []
+        },
         "game_start": {
                 "actions": [
                         { "type": "WORLD_STATE", "key": "prologueStage", "value": 1 },
