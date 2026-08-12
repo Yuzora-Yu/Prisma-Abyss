@@ -4,6 +4,8 @@
 
 ## 最優先
 
+- `../../development_notes/2026-08-13/scenario/REXNOTE_BASEMENT_PHASE3_APPROVED_20260813.md` — 暴動後水上都市、地下B1～B5、301033、701013、地下報告後の船取得・アラン加入。runtime反映済み。
+- `../../development_notes/2026-08-13/handoff/PRISMA_ABYSS_HANDOFF_20260813_REXNOTE_BASEMENT_PHASE3.md` — 2026-08-13 Phase3完了時点の最新作業引継ぎ。
 - `../../development_notes/2026-08-13/scenario/FORBIDDEN_FOREST_ARISA_HAINE_PHASE2_APPROVED_20260813.md` — 水上都市後のカザリア救援、禁忌の森深部、古びた魔笛、アリサ／ハイネ必須加入、レクスノート橋渡し。runtime反映済み。
 - `../../development_notes/2026-08-13/handoff/PRISMA_ABYSS_HANDOFF_20260813_FORBIDDEN_FOREST_PHASE2.md` — 2026-08-13時点の最新作業引継ぎ。
 - `43_JAGOREA_JASPER_ALAN_SUPPORT_PHASE8F_20260810.md` — 災禍の根ジャゴレア、ジャスパー自白、アラン援護・再加入。

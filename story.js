@@ -30,6 +30,8 @@ const STORY_MANAGER_DATA = {
         "4-7": "禁忌の森深部へ向かい、アリサとハイネを救出しよう",
         "4-8": "アリサとハイネを迎え、水上都市へ戻ろう",
         "4-9": "レクスノート邸を訪ね、アランに会おう",
+        "4-10": "レクスノート邸の地下迷宮を調査し、最奥の隠し書庫を目指そう",
+        "4-11": "レクスノートの魔道書をアランへ届けよう",
         "5-0": "船で川を進み、雷の要塞へ向かおう",
         "5-1": "機械暴走の中、要塞内部へ進む道を確保しよう",
         "5-2": "雷の制御炉へ向かい、レナードを止めよう",
@@ -1754,6 +1756,33 @@ const STORY_MANAGER_DATA = {
                 }
         ],
 
+        "WATER_CITY_POST_RIOT_SUPPLY": [
+                {
+                        "name": "備蓄係",
+                        "text": "黒鎧が押さえてた備蓄を整理してる。あんたたちが守ってくれなきゃ、倉庫ごと持っていかれてた。\n上の箱で使えそうなものがあれば持っていってくれ。"
+                }
+        ],
+        "WATER_CITY_POST_RIOT_ALCHEMIST": [
+                {
+                        "name": "錬金術師",
+                        "text": "水のプリズムが静まって、ここの水はまた澄み始めた。余計な魔力の濁りが少ないから、薬にも触媒にも向くんだ。"
+                },
+                {
+                        "name": "錬金術師",
+                        "text": "錬金所も開け直したよ。素材があるなら寄っていきな。街が戻る時は、薬がいくらあっても困らない。"
+                }
+        ],
+        "WATER_CITY_POST_RIOT_BROKER": [
+                {
+                        "name": "依頼仲介人",
+                        "text": "兵が引いた分、今度は魔物が水路へ寄ってきた。命懸けの大仕事じゃなくても、放っておけば街の傷になる。"
+                },
+                {
+                        "name": "依頼仲介人",
+                        "text": "手が空いた時でいい。隣の掲示板に、今必要な討伐をまとめてあるよ。"
+                }
+        ],
+
         "WATER_CITY_AFTER_CLEAR": [
                 {
                         "name": "システム",
@@ -2131,13 +2160,106 @@ const STORY_MANAGER_DATA = {
                 },
                 {
                         "name": "アラン",
-                        "text": "船なら動く。私にも王都側へ向かう理由がある。\n貴公らが水上都市を解放したという話も聞いた。利害は一致しているようだ。",
+                        "text": "船は貸せるが条件がある。君たちの力を見せてほしい。",
                         "charId": 201
                 },
                 {
                         "name": "アラン",
-                        "text": "船は出そう。その代わり、私も同行する。\n……断られても困る。こちらにも確かめなければならないことがあるのでね。",
+                        "text": "この屋敷の地下がいつの間にか迷宮と繋がっていてね…そこの調査をしてくれないだろうか。",
                         "charId": 201
+                },
+                {
+                        "name": "ハイネ",
+                        "text": "屋敷の地下に、自然の迷宮が繋がった……という話ではなさそうだな。",
+                        "charId": 207
+                },
+                {
+                        "name": "アラン",
+                        "text": "察しがいい。入るたび通路が組み替わる。だが最奥だけは、古い書庫らしい反応が動かない。\nそこまで辿り着いた証を持ち帰ってくれればいい。",
+                        "charId": 201
+                },
+                {
+                        "name": "ケイト",
+                        "text": "分かりました。船を借りるためだけじゃありません。街のすぐそばにそんなものがあるなら、放ってはおけません。",
+                        "charId": 104
+                },
+                {
+                        "name": "アラン",
+                        "text": "……そう言うと思った。地下口は東側の廊下だ。気をつけてくれ。",
+                        "charId": 201
+                }
+        ],
+        "REXNOTE_BASEMENT_REMINDER": [
+                {
+                        "name": "アラン",
+                        "text": "地下は入るたび形を変える。道順を覚えるより、その場で出口を探した方がいい。",
+                        "charId": 201
+                },
+                {
+                        "name": "アラン",
+                        "text": "最奥に古い書庫が残っているはずだ。レクスノートの家紋が入った記録があれば、それを持ち帰ってくれ。",
+                        "charId": 201
+                }
+        ],
+        "REXNOTE_REGULUS_ENCOUNTER": [
+                {
+                        "name": "システム",
+                        "text": "四層まで揺らいでいた迷宮が嘘のように止まり、古い書架の並ぶ空間へ出た。\n書庫の奥で、閉じた本と魔法陣がひとりでに浮かび上がる。"
+                },
+                {
+                        "name": "魔導司書レグルス",
+                        "text": "照合。レクスノート家現当主――不在。同行者――閲覧資格なし。"
+                },
+                {
+                        "name": "魔導司書レグルス",
+                        "text": "禁書区画への侵入を確認。記録保全のため、排除を開始する。"
+                },
+                {
+                        "name": "ハイネ",
+                        "text": "古い守護術式か。止めるなら、正面から壊すしかなさそうだ。",
+                        "charId": 207
+                }
+        ],
+        "REXNOTE_REGULUS_CLEAR": [
+                {
+                        "name": "システム",
+                        "text": "レグルスを形作っていた魔法陣がほどけ、書架の奥に隠されていた机が姿を現した。"
+                },
+                {
+                        "name": "ケイト",
+                        "text": "この表紙……レクスノート家の紋章です。アランさんが言っていた『証』は、これかもしれません。",
+                        "charId": 104
+                },
+                {
+                        "name": "システム",
+                        "text": "『レクスノートの魔道書』を手に入れた！"
+                }
+        ],
+        "REXNOTE_BASEMENT_REPORT": [
+                {
+                        "name": "アラン",
+                        "text": "……その封蝋。間違いない。地下の隠し書庫にしか残していない、レクスノート家の古い印だ。",
+                        "charId": 201
+                },
+                {
+                        "name": "アラン",
+                        "text": "最奥まで行ったんだな。十分だ。約束は守る。船は君たちに貸そう。",
+                        "charId": 201
+                },
+                {
+                        "name": "アラン",
+                        "text": "それと、私も同行する。この地下にこんなものが眠っていたことすら、私は知らなかった。父のことも、この国のことも、自分の目で確かめたい。",
+                        "charId": 201
+                },
+                {
+                        "name": "ハイネ",
+                        "text": "アレル侯の息子だから、という理由だけで断るつもりはない。自分の目で見て、自分で決めるといい。",
+                        "charId": 207
+                },
+                {
+                        "name": "ケイト",
+                        "text": "ええ。一緒に行きましょう。",
+                        "charId": 104
                 },
                 {
                         "name": "システム",
@@ -6855,6 +6977,18 @@ const STORY_MANAGER_DATA = {
                 "actions": [{ "type": "CONV", "value": "TOWN_WIND_SAINT_RUMOR" }],
                 "winActions": []
         },
+        "town_water_post_riot_supply": {
+                "actions": [{ "type": "CONV", "value": "WATER_CITY_POST_RIOT_SUPPLY" }],
+                "winActions": []
+        },
+        "town_water_post_riot_alchemist": {
+                "actions": [{ "type": "CONV", "value": "WATER_CITY_POST_RIOT_ALCHEMIST" }],
+                "winActions": []
+        },
+        "town_water_post_riot_broker": {
+                "actions": [{ "type": "CONV", "value": "WATER_CITY_POST_RIOT_BROKER" }],
+                "winActions": []
+        },
         "water_city_riot_wave_1": {
                 "actions": [
                         { "type": "CONV", "value": "WATER_CITY_RIOT_WAVE_1" },
@@ -7044,57 +7178,50 @@ const STORY_MANAGER_DATA = {
         },
         "rexnote_estate_arrival": {
                 "actions": [
-                        {
-                                "type": "CONV",
-                                "value": "REXNOTE_ESTATE_ARRIVAL"
-                        },
-                        {
-                                "type": "FLAG",
-                                "key": "rexnoteEstateArrivalSeen"
-                        },
-                        {
-                                "type": "ALLY",
-                                "value": 201
-                        },
-                        {
-                                "type": "FLAG",
-                                "key": "alanJoinedAtRexnote"
-                        },
-                        {
-                                "type": "WORLD_STATE",
-                                "key": "alanOutcome",
-                                "value": "active",
-                                "save": false
-                        },
-                        {
-                                "type": "ITEM",
-                                "id": 108,
-                                "count": 1
-                        },
-                        {
-                                "type": "UNLOCK",
-                                "value": "boat"
-                        },
-                        {
-                                "type": "FLAG",
-                                "key": "hasShip"
-                        },
-                        {
-                                "type": "FLAG",
-                                "key": "rexnoteShipObtained"
-                        },
-                        {
-                                "type": "STEP",
-                                "value": 5
-                        },
-                        {
-                                "type": "SUB",
-                                "value": 0
-                        },
-                        {
-                                "type": "LOG",
-                                "value": "アランが仲間に加わり、魔法の小舟を手に入れた。雷の要塞へ向かおう。"
-                        }
+                        { "type": "CONV", "value": "REXNOTE_ESTATE_ARRIVAL" },
+                        { "type": "FLAG", "key": "rexnoteEstateArrivalSeen" },
+                        { "type": "FLAG", "key": "rexnoteBasementRequested", "refreshField": true },
+                        { "type": "SUB", "value": 10 },
+                        { "type": "LOG", "value": "レクスノート邸の地下迷宮を調査し、最奥の隠し書庫を目指そう。" }
+                ],
+                "winActions": []
+        },
+        "rexnote_basement_reminder": {
+                "actions": [{ "type": "CONV", "value": "REXNOTE_BASEMENT_REMINDER" }],
+                "winActions": []
+        },
+        "rexnote_regulus_battle": {
+                "actions": [
+                        { "type": "CONV", "value": "REXNOTE_REGULUS_ENCOUNTER" },
+                        { "type": "BOSS", "value": 301033, "winEventId": "rexnote_regulus_clear" }
+                ],
+                "winActions": []
+        },
+        "rexnote_regulus_clear": {
+                "actions": [
+                        { "type": "CONV", "value": "REXNOTE_REGULUS_CLEAR" },
+                        { "type": "FLAG", "key": "rexnoteRegulusDefeated", "refreshField": true },
+                        { "type": "IF_ITEM", "id": 701013, "count": 1, "then": [], "else": [{ "type": "ITEM", "id": 701013, "count": 1 }] },
+                        { "type": "FLAG", "key": "rexnoteGrimoireObtained" },
+                        { "type": "SUB", "value": 11 },
+                        { "type": "LOG", "value": "レクスノートの魔道書をアランへ届けよう。" }
+                ],
+                "winActions": []
+        },
+        "rexnote_basement_report": {
+                "actions": [
+                        { "type": "CONV", "value": "REXNOTE_BASEMENT_REPORT" },
+                        { "type": "FLAG", "key": "rexnoteBasementCleared" },
+                        { "type": "ALLY", "value": 201 },
+                        { "type": "FLAG", "key": "alanJoinedAtRexnote", "refreshField": true },
+                        { "type": "WORLD_STATE", "key": "alanOutcome", "value": "active", "save": false },
+                        { "type": "IF_ITEM", "id": 108, "count": 1, "then": [], "else": [{ "type": "ITEM", "id": 108, "count": 1 }] },
+                        { "type": "UNLOCK", "value": "boat" },
+                        { "type": "FLAG", "key": "hasShip" },
+                        { "type": "FLAG", "key": "rexnoteShipObtained" },
+                        { "type": "STEP", "value": 5 },
+                        { "type": "SUB", "value": 0 },
+                        { "type": "LOG", "value": "アランが仲間に加わり、魔法の小舟を手に入れた。雷の要塞へ向かおう。" }
                 ],
                 "winActions": []
         },

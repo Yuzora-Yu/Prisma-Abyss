@@ -1690,3 +1690,10 @@ Status: **inventory / no automatic replacement**
 |1666|quest_complete_text|`quests.js:37`|arisa_haine_forest_depths|禁忌の森深部で二人を救出し、アリサとハイネが仲間に加わった。|（2026-08-13改稿・承認済み）|approved_rewrite|
 |1667|item_name|`items.js:7046`|Item 701012|古びた魔笛|（2026-08-13新規・承認済み）|new_copy_approved|
 |1668|item_description|`items.js:7049`|Item 701012|黒ずんだ木と銀の輪で作られた古い笛。風が抜けると、どこか懐かしい短い音を返す。|（2026-08-13新規・承認済み）|new_copy_approved|
+
+|1669|ui_story_log|`main.js:5752`|water city fountain used today|噴水の水面は静かだ。今日の祈りは、もう届いている。|（2026-08-13 Phase3新規・D3レビュー可）|new_copy_inventory|
+|1670|ui_choice|`main.js:5760`|water city fountain confirm|復旧した噴水へ 500 Gold を投げ入れますか？ / 一日に一度だけ、水の加護から小さな返礼を受けられます。|（2026-08-13 Phase3新規・D3レビュー可）|new_copy_inventory|
+|1671|story_system|`story.js:2207`|REXNOTE_REGULUS_ENCOUNTER|四層まで揺らいでいた迷宮が嘘のように止まり、古い書架の並ぶ空間へ出た。書庫の奥で、閉じた本と魔法陣がひとりでに浮かび上がる。|（2026-08-13 Phase3新規・D3レビュー可）|new_copy_inventory|
+|1672|story_system|`story.js:2226`|REXNOTE_REGULUS_CLEAR|レグルスを形作っていた魔法陣がほどけ、書架の奥に隠されていた机が姿を現した。|（2026-08-13 Phase3新規・D3レビュー可）|new_copy_inventory|
+|1673|item_name|`items.js:7063`|Item 701013|レクスノートの魔道書|（2026-08-13 Phase3新規）|new_copy_inventory|
+|1674|map_interaction_label|`map.js:2846`|rexnote basement entrance|地下迷宮へ降りる|（2026-08-13 Phase3新規）|new_copy_inventory|

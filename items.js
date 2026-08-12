@@ -7056,6 +7056,23 @@ window.ITEMS_DATA.push(
     "fieldUsable": false,
     "abyssDrop": false,
     "icon": "assets/ui/menu-icons/item-key.png"
+},
+{
+    "id": 701013,
+    "rank": 45,
+    "name": "レクスノートの魔道書",
+    "type": "貴重品",
+    "val": 0,
+    "desc": "レクスノート邸の隠し書庫に封じられていた古い魔道書。表紙にはレクスノート家の紋章と、古い封蝋が残っている。",
+    "target": "なし",
+    "price": 0,
+    "sellPrice": 0,
+    "shopAvailable": false,
+    "consumable": false,
+    "battleUsable": false,
+    "fieldUsable": false,
+    "abyssDrop": false,
+    "icon": "assets/ui/menu-icons/item-key.png"
 }
 );
 

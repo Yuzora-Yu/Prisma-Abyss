@@ -1265,6 +1265,7 @@ const FIXED_BOSS_MONSTERS = [
   {"hit":150,"eva":5,"cri":15,"isBoss":true,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":4,"rate":20},"rare":{"id":105,"rate":1}},"elmRes":{"json":0},"resists":{"InstantDeath":99},"traits":[{"id":52,"level":3},{"id":53,"level":5},{"id":49,"level":2}],"archives":[],"id":301030,"allyGrowthType":"ATK_MAG_A","name":"氷楔のシーリス","race":"人","rank":40,"minF":1,"hp":2700,"mp":720,"atk":128,"def":92,"spd":78,"mag":128,"mdef":90,"gold":4200,"exp":6800,"actCount":2,"acts":[{"id":1,"rate":30,"condition":0},{"id":105,"rate":20,"condition":0},{"id":210,"rate":20,"condition":0},{"id":301,"rate":15,"condition":0},{"id":705,"rate":10,"condition":0},{"id":305,"rate":5,"condition":2}]},
   {"hit":150,"eva":5,"cri":15,"isBoss":true,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"json":0},"resists":{"InstantDeath":99},"traits":[],"archives":[],"id":301031,"allyGrowthType":"ATK_B","name":"バトルマシーン","race":"機械","rank":42,"minF":1,"hp":2400,"mp":420,"atk":128,"def":112,"spd":42,"mag":30,"mdef":70,"gold":980,"exp":1500,"actCount":1,"acts":[{"id":1,"rate":20,"condition":0},{"id":112,"rate":20,"condition":0},{"id":113,"rate":20,"condition":0},{"id":124,"rate":20,"condition":0},{"id":120,"rate":20,"condition":0}]},
   {"hit":150,"eva":5,"cri":15,"isBoss":true,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"json":0},"resists":{"InstantDeath":99},"traits":[],"archives":[],"id":301032,"allyGrowthType":"DEF_A","name":"サンダーアーマー","race":"人","rank":44,"minF":1,"hp":2800,"mp":480,"atk":122,"def":126,"spd":58,"mag":78,"mdef":92,"gold":1050,"exp":1650,"actCount":1,"acts":[{"id":1,"rate":20,"condition":0},{"id":106,"rate":20,"condition":0},{"id":304,"rate":20,"condition":0},{"id":138,"rate":20,"condition":0},{"id":118,"rate":20,"condition":0}]},
+  {"hit":145,"eva":8,"cri":10,"isBoss":true,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"光":-20,"闇":35,"水":20,"json":0},"resists":{"Poison":90,"ToxicPoison":90,"Shock":75,"Fear":100,"InstantDeath":100,"Debuff":60,"Seal":90},"traits":[{"id":52,"level":2},{"id":53,"level":4}],"archives":["レクスノート家の隠し書庫を守るため、古い術式に人格めいた応答を与えられた魔導守護者。侵入者を『閲覧資格なし』として排除する。"],"imageId":406,"id":301033,"allyGrowthType":"MAG_A","name":"魔導司書レグルス","race":"無生物","rank":45,"minF":1,"hp":4200,"mp":980,"atk":82,"def":104,"spd":88,"mag":168,"mdef":142,"gold":3600,"exp":7600,"actCount":2,"acts":[{"id":1,"rate":10,"condition":0},{"id":208,"rate":20,"condition":0},{"id":210,"rate":15,"condition":0},{"id":221,"rate":20,"condition":0},{"id":503,"rate":15,"condition":0},{"id":601,"rate":20,"condition":0}]},
   {"hit":150,"eva":5,"cri":15,"isBoss":true,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":4,"rate":20},"rare":{"id":102,"rate":1}},"elmRes":{"json":0},"resists":{"InstantDeath":99},"traits":[{"id":52,"level":3},{"id":53,"level":5},{"id":49,"level":2}],"archives":[],"id":301040,"allyGrowthType":"ATK_MAG_A","name":"雷楔のレナード","race":"人","rank":48,"minF":1,"hp":3820,"mp":920,"atk":158,"def":112,"spd":116,"mag":116,"mdef":110,"gold":5200,"exp":8200,"actCount":2,"acts":[{"id":1,"rate":30,"condition":0},{"id":206,"rate":15,"condition":0},{"id":113,"rate":15,"condition":0},{"id":124,"rate":15,"condition":0},{"id":507,"rate":10,"condition":0},{"id":138,"rate":5,"condition":0},{"id":118,"rate":5,"condition":0},{"id":705,"rate":5,"condition":0}]},
   {"hit":120,"eva":10,"cri":20,"isBoss":true,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":4,"rate":20},"rare":{"id":101,"rate":1}},"elmRes":{"json":0},"resists":{"InstantDeath":99},"traits":[{"id":52,"level":3},{"id":53,"level":5},{"id":12,"level":2},{"id":19,"level":5}],"archives":[],"id":301050,"allyGrowthType":"ATK_MAG_A","name":"聖騎士ヴェルド","race":"人","rank":55,"minF":1,"hp":8100,"mp":980,"atk":218,"def":158,"spd":152,"mag":188,"mdef":147,"gold":6000,"exp":9200,"actCount":2,"acts":[{"id":1,"rate":30,"condition":0},{"id":124,"rate":20,"condition":0},{"id":218,"rate":15,"condition":1},{"id":137,"rate":15,"condition":2},{"id":126,"rate":15,"condition":0},{"id":510,"rate":5,"condition":2}]},
   {"hit":112,"eva":0,"cri":50,"isBoss":true,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":4,"rate":20},"rare":{"id":102,"rate":1}},"elmRes":{"json":0},"resists":{"InstantDeath":50},"traits":[{"id":52,"level":3},{"id":53,"level":5},{"id":19,"level":5}],"archives":[],"id":301060,"allyGrowthType":"ATK_B","name":"ヘルクラッシャー","race":"機械","rank":58,"minF":1,"hp":2880,"mp":650,"atk":165,"def":120,"spd":76,"mag":80,"mdef":88,"gold":2600,"exp":3600,"actCount":2,"acts":[{"id":112,"rate":25,"condition":0},{"id":111,"rate":25,"condition":0},{"id":113,"rate":25,"condition":0},{"id":123,"rate":25,"condition":0}]},
@@ -1679,14 +1680,20 @@ function getRareEncounterRate(floor) {
 }
 
 function tryGenerateRareMonster(rank, options = {}) {
-  const candidates = options.allCandidates === true ? FIXED_RARE_MONSTERS : getRareCandidatesForRank(rank);
+  const explicitIds = Array.isArray(options.candidateIds)
+    ? options.candidateIds.map(Number).filter(Number.isFinite)
+    : [];
+  const candidates = explicitIds.length > 0
+    ? FIXED_RARE_MONSTERS.filter(monster => explicitIds.includes(Number(monster?.id)))
+    : (options.allCandidates === true ? FIXED_RARE_MONSTERS : getRareCandidatesForRank(rank));
 
   if (candidates.length === 0) {
     return null;
   }
 
   const rateMultiplier = Math.max(0, Number(options.rateMultiplier || 1) || 0);
-  const rate = Math.min(1, getRareEncounterRateForRank(rank) * rateMultiplier);
+  const baseRate = explicitIds.length > 0 ? RARE_ENCOUNTER_RATE : getRareEncounterRateForRank(rank);
+  const rate = Math.min(1, baseRate * rateMultiplier);
   if (options.force !== true && Math.random() >= rate) {
     return null;
   }

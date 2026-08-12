@@ -1005,3 +1005,36 @@ Updated: 2026-08-13
 - compatibility: 完了済み旧セーブには進行を巻き戻さず Item 701012 を一度だけ補填する。
 - validation: 同梱validatorは使用せず、構文・フラグ連鎖・アイテムID・旧セーブ補填を個別確認する。
 
+
+
+## DR-20260813-rexnote-basement-phase3-runtime-dialogue
+
+Status: implemented  
+Created: 2026-08-13  
+Updated: 2026-08-13
+
+### Target
+- file: `story.js` / `map.js` / `quests.js` / `main.js`
+- script key / event ID: `REXNOTE_ESTATE_ARRIVAL`, `REXNOTE_BASEMENT_REMINDER`, `REXNOTE_REGULUS_ENCOUNTER`, `REXNOTE_REGULUS_CLEAR`, `REXNOTE_BASEMENT_REPORT`, 水上都市事後会話
+- map / area: 水上都市 → レクスノート邸 → 地下B1～B5
+- storyStep-subStep: 4-10～4-11 → 5-0
+
+### User-fixed lines
+- 「船は貸せるが条件がある。君たちの力を見せてほしい。」
+- 「この屋敷の地下がいつの間にか迷宮と繋がっていてね…そこの調査をしてくれないだろうか。」
+
+### Implemented direction
+- アランは初対面時に自分の同行を船の条件にしない。
+- 地下B1～B5調査と魔道書持ち帰りを船貸与条件とする。
+- 報告後、アラン自身が父と国を自分の目で確かめたいとして同行を申し出る。
+- ジャスパー側の秘密任務はこの場ではplayer-facingへ出さない。
+- B5の魔道書や書架から、アレル無実・陰謀の答えを先に断定しない。
+
+### Review status
+今回のユーザー指示はB1～B5までのruntime実装許可。上記2台詞以外の新規会話は、進行・人物動機が破綻しないD1完成稿として実装した。D3の最終的な語彙・間・ニュアンスは後工程で磨き込み可能。
+
+### Implementation tracking
+- implemented date: 2026-08-13
+- source: `development_notes/2026-08-13/scenario/REXNOTE_BASEMENT_PHASE3_APPROVED_20260813.md`
+- compatibility: `20260813_rexnoteBasementRouteV1`
+- validation: 同梱validatorは使用せず、構文・ID・MAP到達性・flag連鎖を個別確認する。

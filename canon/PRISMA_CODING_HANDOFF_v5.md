@@ -2,7 +2,7 @@
 
 **文書種別:** ゲーム実装・別Chat引き継ぎ用技術原本  
 **作成日:** 2026-08-10  
-**最新版更新:** Phase 7C 結晶樹M0ルート  
+**最新版更新:** 2026-08-13 Phase3 水上都市事後～レクスノート邸地下B1～B5  
 **目的:** 新しいChat／実装担当が、長い企画会話を読み直さずに最新版シナリオをコードへ落とし始められるようにする。  
 
 ---
@@ -1024,3 +1024,20 @@ alanState.phase = 'dead'
 - delivery historyは `development_notes/YYYY-MM-DD/` に置く。
 - 日付配下は `handoff/`, `reports/`, `scenario/`, `review/`, `validation/` を基本とする。
 - `README.md` / `AGENTS.md` 等のproject root文書と、安定正本の `canon/` / `docs/` は従来位置を維持する。
+
+
+### 水上都市事後～レクスノート邸地下B1～B5【2026-08-13 Phase3実装】
+
+- Phase1（水上都市暴動5戦／クロード・レオン初対面／聖女噂）とPhase2（禁忌の森／アリサ・ハイネ加入／古びた魔笛）の後続をruntime実装済み。
+- 水上都市の暴動後追加: 住民会話、錬金案内、復旧噴水、討伐依頼3件。噴水は `waterCityFountainLastDate` で1日1回、500G、アイテムまたはGEM。
+- 討伐依頼: `water_city_hunt_waterway`（Rank40相当+3武器）、`water_city_hunt_sanctum`（600410 魔泉の風）、`water_city_hunt_black_armor`（600100 鋼穿ち）。全てparty EXP付き。
+- 新固定ダンジョンmaster: `REXNOTE_BASEMENT / MAP000076`。B1～B4は既存fixed procedural基盤を再利用。通常敵は厳密にRank40～49、rare poolは `200201 メタルジェリー` のみ。
+- `Dungeon.startFixed()` の既存run管理を利用し、邸から入る時に新run、B1～B4の内部移動では同一runを維持。B1は `proceduralEntryReturnsOutside` で邸へ戻せる。
+- B5は25x17固定MAP「隠し書庫」。入口→301033→帰還陣を歩行可能。`rexnoteRegulusDefeated` 前は帰還陣を封鎖する。
+- Boss `301033 魔導司書レグルス`: Rank45 / 魔法型 / boss。既存画像ID406を再利用し、assets追加なし。
+- Item `701013 レクスノートの魔道書`: 売却・使用不可の貴重品。B5撃破後に取得し、アランへ報告する。
+- `rexnote_estate_arrival` の即加入／即船取得を廃止。地下依頼 → B5撃破 → 魔道書報告の後だけ ALLY201 / boat unlock / `hasShip` をcommitする。
+- save migration: `20260813_rexnoteBasementRouteV1`。旧版で既に船取得／アラン加入済みのsaveは巻き戻さず、地下完了flagと701013を互換補完する。未完了saveは可能な範囲で地下依頼へ接続する。
+- レクスノート邸外周のハヤテ無言接触は、正式な外周MAPが無いため今回も未実装。屋内へ代替配置しない。
+- ユーザー指示により、この納品では同梱validatorを使用しない。`node --check` と個別の静的整合監査で確認する。
+- implementation source: `development_notes/2026-08-13/reports/REXNOTE_BASEMENT_PHASE3_IMPLEMENTATION_20260813.md`。

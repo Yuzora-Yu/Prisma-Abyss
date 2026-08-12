@@ -1697,7 +1697,9 @@ const Dungeon = {
             entryPoint,
             chests,
             floorLinks: [
-                { x: entryPoint.x, y: entryPoint.y, toFloor: Number(floorNo) - 1, label: '前の階へ' },
+                template.proceduralEntryReturnsOutside === true
+                    ? { x: entryPoint.x, y: entryPoint.y, to: 'EXIT', label: template.proceduralExitLabel || '外へ戻る' }
+                    : { x: entryPoint.x, y: entryPoint.y, toFloor: Number(floorNo) - 1, label: '前の階へ' },
                 { x: exitPoint.x, y: exitPoint.y, toFloor: Number(floorNo) + 1, label: '次の階へ' }
             ]
         };

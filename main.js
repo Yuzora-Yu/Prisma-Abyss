@@ -3994,6 +3994,36 @@ const App = {
         }
     ),
 
+    // 旧版のレクスノート邸到着イベントですでにアラン加入・船取得まで進んでいるセーブは、
+    // 新しい地下迷宮を強制再演せず「調査済み」として補完する。途中到着だけのセーブは依頼開始へ接続する。
+    migrateRexnoteBasementRouteV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260813_rexnoteBasementRouteV1',
+        () => {
+            if (!data || typeof data !== 'object') return { changed:false, count:0 };
+            data.progress = (data.progress && typeof data.progress === 'object' && !Array.isArray(data.progress)) ? data.progress : {};
+            data.progress.flags = (data.progress.flags && typeof data.progress.flags === 'object' && !Array.isArray(data.progress.flags)) ? data.progress.flags : {};
+            if (!data.items || typeof data.items !== 'object' || Array.isArray(data.items)) data.items = {};
+            const flags = data.progress.flags;
+            let count = 0;
+            const oldCompleted = !!flags.alanJoinedAtRexnote || !!flags.rexnoteShipObtained || !!flags.hasShip;
+            if (oldCompleted) {
+                ['rexnoteEstateArrivalSeen','rexnoteBasementRequested','rexnoteBasementEntered','rexnoteRegulusDefeated','rexnoteGrimoireObtained','rexnoteBasementCleared'].forEach(flag => {
+                    if (!flags[flag]) { flags[flag] = true; count++; }
+                });
+                if (Math.max(0, Number(data.items[701013] || 0)) < 1) { data.items[701013] = 1; count++; }
+                return { changed:count > 0, count };
+            }
+            if (flags.rexnoteEstateArrivalSeen && !flags.rexnoteBasementRequested) {
+                flags.rexnoteBasementRequested = true;
+                data.progress.storyStep = Math.max(4, Number(data.progress.storyStep || 0));
+                if (Number(data.progress.storyStep) === 4) data.progress.subStep = Math.max(10, Number(data.progress.subStep || 0));
+                count++;
+            }
+            return { changed:count > 0, count };
+        }
+    ),
+
     // 終極形態302101の討伐済みセーブでは、旧版で欠落し得た関連3形態の討伐数を一度だけ救済する。
     migrateAbyssBossKillCountsV1: (data = App.data) => {
         if (!data || typeof data !== 'object') return false;
@@ -5419,6 +5449,14 @@ const App = {
                 lines.push(`${item?.name || `アイテム${itemId}`} x${count}`);
             });
         }
+        if (Array.isArray(quest.rewardEquipment)) {
+            quest.rewardEquipment.forEach(reward => {
+                const rank = Math.max(1, Number(reward.floor || reward.rank || 1));
+                const plus = Math.max(0, Number(reward.plus || 0));
+                lines.push(`RANK${rank} ${reward.type || '装備'}+${plus}`);
+            });
+        }
+        if (Number(quest.rewardPartyExp || 0) > 0) lines.push(`編成中の仲間 経験値 +${Math.floor(Number(quest.rewardPartyExp)).toLocaleString()}`);
         if (Array.isArray(quest.rewardAllies)) {
             quest.rewardAllies.forEach(charId => {
                 const ally = (typeof window !== 'undefined' && Array.isArray(window.CHARACTERS_DATA))
@@ -5603,6 +5641,29 @@ const App = {
                 App.data.items[itemId] = Number(App.data.items[itemId] || 0) + count;
             });
         }
+        if (Array.isArray(quest.rewardEquipment)) {
+            if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+            quest.rewardEquipment.forEach(reward => {
+                let equip = null;
+                if (typeof Guild !== 'undefined' && typeof Guild.createRewardEquipment === 'function') {
+                    equip = Guild.createRewardEquipment(reward);
+                } else if (typeof App.createEquipByFloor === 'function') {
+                    equip = App.createEquipByFloor('storyQuest', Math.max(1, Number(reward.floor || reward.rank || 1)), Number(reward.plus ?? 3));
+                    if (equip) equip.source = 'storyQuest';
+                }
+                if (!equip) return;
+                App.data.inventory.push(equip);
+                window.EquipAcquisitionCard?.enqueue?.(equip, { source:'storyQuest' });
+            });
+        }
+        const partyExp = Math.max(0, Math.floor(Number(quest.rewardPartyExp || 0)));
+        if (partyExp > 0 && Array.isArray(App.data.party) && Array.isArray(App.data.characters)) {
+            const partyUids = new Set(App.data.party.filter(Boolean).map(String));
+            App.data.characters.forEach(char => {
+                if (!char?.uid || !partyUids.has(String(char.uid))) return;
+                App.gainExp(char, partyExp, { save:false, silent:true, aggregateLevelUpLogs:true });
+            });
+        }
         if (Array.isArray(quest.rewardAllies)) {
             quest.rewardAllies.forEach(charId => App.addStoryAlly(charId, { silent: true, save: false }));
         }
@@ -5679,6 +5740,47 @@ const App = {
             return quest.reportText || '依頼人のもとへ戻り、勝利を伝えよう。';
         }
         return quest.progressText || quest.objective || quest.name;
+    },
+
+    useWaterCityFountain: async () => {
+        const progress = App.data?.progress || (App.data.progress = {});
+        const flags = progress.flags || (progress.flags = {});
+        const today = (typeof MenuExchange !== 'undefined' && typeof MenuExchange.getTodayStr === 'function')
+            ? MenuExchange.getTodayStr()
+            : new Date().toLocaleDateString('sv-SE');
+        if (String(flags.waterCityFountainLastDate || '') === today) {
+            App.log('噴水の水面は静かだ。今日の祈りは、もう届いている。');
+            return false;
+        }
+        const cost = 500;
+        if (Number(App.data.gold || 0) < cost) {
+            App.log(`噴水へ捧げるには ${cost.toLocaleString()} Gold 必要だ。`);
+            return false;
+        }
+        const accepted = await App.showConfirm(`復旧した噴水へ ${cost.toLocaleString()} Gold を投げ入れますか？
+一日に一度だけ、水の加護から小さな返礼を受けられます。`);
+        if (!accepted) return false;
+        if (String(flags.waterCityFountainLastDate || '') === today) return false;
+        if (Number(App.data.gold || 0) < cost) {
+            App.log('Goldが足りない。');
+            return false;
+        }
+        App.data.gold = Math.max(0, Number(App.data.gold || 0) - cost);
+        flags.waterCityFountainLastDate = today;
+        if (Math.random() < 0.35) {
+            const gems = 15 + Math.floor(Math.random() * 26);
+            App.data.gems = Math.max(0, Number(App.data.gems || 0)) + gems;
+            App.log(`硬貨が澄んだ光に溶け、${gems} GEM が水面へ浮かび上がった。`);
+        } else {
+            const itemPool = [4, 4, 5, 8, 9, 10, 11, 13, 13];
+            const itemId = itemPool[Math.floor(Math.random() * itemPool.length)];
+            if (!App.data.items || typeof App.data.items !== 'object') App.data.items = {};
+            App.data.items[itemId] = Number(App.data.items[itemId] || 0) + 1;
+            const item = (typeof DB !== 'undefined' && Array.isArray(DB.ITEMS)) ? DB.ITEMS.find(entry => Number(entry.id) === itemId) : null;
+            App.log(`噴水の底から ${item?.name || `アイテム${itemId}`} が一つ、流れに押されて現れた。`);
+        }
+        App.save();
+        return true;
     },
 
     runQuestAction: async (questId, options = {}) => {
@@ -8761,6 +8863,7 @@ load: () => {
         if (!data.book.killCounts || typeof data.book.killCounts !== 'object' || Array.isArray(data.book.killCounts)) data.book.killCounts = {};
         App.migrateWaterCityRiotRouteV1(data);
         App.migrateArisaHaineAncientFluteV1(data);
+        App.migrateRexnoteBasementRouteV1(data);
         App.migrateAbyssBossKillCountsV1(data);
         App.migrateAbyssBossKillCountsV2(data);
         App.migrateReincarnationGrowthFormulaV1(data);
@@ -9236,6 +9339,7 @@ load: () => {
             encounterRankMin: Number.isFinite(Number(mapEncounter?.encounterRankMin)) ? Number(mapEncounter.encounterRankMin) : null,
             encounterRankMax: Number.isFinite(Number(mapEncounter?.encounterRankMax)) ? Number(mapEncounter.encounterRankMax) : null,
             rareEncounterAll: mapEncounter?.rareEncounterAll === true,
+            rareEncounterMonsterIds: Array.isArray(mapEncounter?.rareEncounterMonsterIds) ? [...mapEncounter.rareEncounterMonsterIds] : [],
 			monsters: Array.isArray(mapEncounter?.monsters) ? [...mapEncounter.monsters] : null,
             exactMonsters: !!mapEncounter?.exactMonsters,
             memoryRealm: !!mapEncounter?.memoryRealm,
@@ -11936,6 +12040,14 @@ const Field = {
             App.changeScene('field');
             Field.render?.();
             Field.refreshCurrentAction?.({ silent: true });
+            return;
+        }
+
+        if (action.type === 'waterCityFountain' && typeof App.useWaterCityFountain === 'function') {
+            Promise.resolve(App.useWaterCityFountain()).finally(() => {
+                Field.refreshVisualState?.();
+                Field.refreshCurrentAction?.({ silent: true });
+            });
             return;
         }
 

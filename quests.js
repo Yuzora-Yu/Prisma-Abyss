@@ -146,6 +146,51 @@
             "areaKey": "LIGHT_PALACE"
         }
     },
+    "water_city_hunt_waterway": {
+        "name": "澄んだ水路の残火",
+        "area": "水上都市 / 海底神殿",
+        "kind": "hunt",
+        "unlockFlags": ["waterCityRiotSuppressed"],
+        "objective": "水上都市近海と海底神殿に残るウィスプ類を合計15体討伐する。",
+        "startText": "暴動で警備が薄くなった水路へ、魔物が寄ってきている。避難路を使う住民のため、近海と海底神殿のウィスプを減らしてほしい。",
+        "progressText": "アクアウィスプ、アクアスライム、ダークウィスプ、ファイアウィスプ、ライトウィスプを討伐しよう。",
+        "targetMonsterIds": [351, 352, 353, 354, 355],
+        "targetCount": 15,
+        "completeText": "水路の安全が戻り、修復作業の船が再び行き交い始めた。",
+        "rewardEquipment": [{ "floor": 40, "plus": 3, "type": "武器" }],
+        "rewardPartyExp": 2500,
+        "travelTarget": { "areaKey": "SEABED_TEMPLE" }
+    },
+    "water_city_hunt_sanctum": {
+        "name": "沈殿した魔力",
+        "area": "海底神殿",
+        "kind": "hunt",
+        "unlockFlags": ["waterCityRiotSuppressed"],
+        "objective": "海底神殿に残るダークソルジャーとウィスプナイトを合計18体討伐する。",
+        "startText": "水のプリズムが落ち着いても、神殿に沈殿した魔力へ古い守護兵が引き寄せられている。錬金所の採水路を守るため、数を減らしてほしい。",
+        "progressText": "海底神殿でダークソルジャーとウィスプナイトを討伐しよう。",
+        "targetMonsterIds": [356, 357],
+        "targetCount": 18,
+        "completeText": "神殿側の水路が安定し、錬金所へ澄んだ水を運べるようになった。",
+        "rewardItems": [{ "id": 600410, "count": 1 }],
+        "rewardPartyExp": 3000,
+        "travelTarget": { "areaKey": "SEABED_TEMPLE" }
+    },
+    "water_city_hunt_black_armor": {
+        "name": "黒鎧の置き土産",
+        "area": "海底神殿",
+        "kind": "hunt",
+        "unlockFlags": ["waterCityRiotSuppressed"],
+        "objective": "海底神殿に残るウィスプナイトとダークナイトを合計20体討伐する。",
+        "startText": "暴動の混乱で放置された装備や魔力に、神殿の黒鎧が反応している。街へ流れ出す前に、動く個体を片付けてほしい。",
+        "progressText": "海底神殿でウィスプナイトとダークナイトを討伐しよう。",
+        "targetMonsterIds": [357, 358],
+        "targetCount": 20,
+        "completeText": "黒鎧の活動は沈静化し、住民が神殿近くの回収作業へ戻れるようになった。",
+        "rewardItems": [{ "id": 600100, "count": 1 }],
+        "rewardPartyExp": 3500,
+        "travelTarget": { "areaKey": "SEABED_TEMPLE" }
+    },
     "marie_water_city": {
         "name": "祈り手マリーの討伐依頼",
         "area": "水上都市",

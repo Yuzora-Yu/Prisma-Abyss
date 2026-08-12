@@ -3751,7 +3751,8 @@ const Battle = {
         if (!isBoss && abyssMode !== 'memory' && window.MonsterData && typeof window.MonsterData.tryGenerateRareMonster === 'function') {
             const rareBase = window.MonsterData.tryGenerateRareMonster(rareEncounterRank, {
                 rateMultiplier:Math.max(0, Number(battleData.rareEncounterRateMultiplier || 1)),
-                allCandidates:battleData.rareEncounterAll === true
+                allCandidates:battleData.rareEncounterAll === true,
+                candidateIds:Array.isArray(battleData.rareEncounterMonsterIds) ? battleData.rareEncounterMonsterIds : []
             });
             if (rareBase && rareBase.isRare === true && !Battle.isSpecialBossBase(rareBase)) {
                 const rareEnemy = Battle.createMonsterFromBase(rareBase, { name: rareBase.name || '\u4e0d\u660e\u306a\u9b54\u7269' });

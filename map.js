@@ -1946,7 +1946,8 @@ const MAP_MASTER = Object.freeze({
     UNDERSEA_VOLCANO: { id: "MAP000072", name: "海底火山" },
     CRYSTAL_TREE: { id: "MAP000073", name: "結晶樹の秘跡" },
     GALVANIA_GORGE: { id: "MAP000074", name: "ガルヴァニア渓谷" },
-    GALVANIA_EMPIRE: { id: "MAP000075", name: "ガルヴァニア帝国" }
+    GALVANIA_EMPIRE: { id: "MAP000075", name: "ガルヴァニア帝国" },
+    REXNOTE_BASEMENT: { id: "MAP000076", name: "レクスノート邸 地下迷宮" }
 });
 
 const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
@@ -1956,7 +1957,7 @@ const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
 
 const FIXED_AREA_MAP_KEYS = Object.freeze({
     PROLOGUE_WEST_HILL: "PROLOGUE_WEST_HILL", PROLOGUE_SOUTH_VILLAGE: "PROLOGUE_SOUTH_VILLAGE", PROLOGUE_NORTH_VILLAGE: "PROLOGUE_NORTH_VILLAGE",
-    REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO", CRYSTAL_TREE: "CRYSTAL_TREE", GALVANIA_GORGE: "GALVANIA_GORGE", GALVANIA_EMPIRE: "GALVANIA_EMPIRE",
+    REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", REXNOTE_BASEMENT: "REXNOTE_BASEMENT", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO", CRYSTAL_TREE: "CRYSTAL_TREE", GALVANIA_GORGE: "GALVANIA_GORGE", GALVANIA_EMPIRE: "GALVANIA_EMPIRE",
     START_VILLAGE: "START_VILLAGE", FIRE_VILLAGE: "FIRE_VILLAGE", WIND_VILLAGE: "WIND_VILLAGE", WATER_CITY: "WATER_CITY",
     ABYSS_FIELD: "ABYSS_FIELD", RUINED_SHRINE: "RUINED_SHRINE", TRIAL_ISLAND: "TRIAL_ISLAND", SUMMIT_TEMPLE: "SUMMIT_TEMPLE",
     START_CAVE: "START_CAVE", FOREST_WIND_HOLE: "FOREST_WIND_HOLE", IGNIS_VOLCANO: "IGNIS_VOLCANO",
@@ -2782,15 +2783,21 @@ const FIXED_MAPS = {
                 "states": [
                     {
                         "stateId": "alan_waiting_at_rexnote",
-                        "priority": 100,
-                        "when": {
-                            "missingFlag": "alanJoinedAtRexnote"
-                        },
-                        "action": {
-                            "label": "アランと話す",
-                            "type": "storyEvent",
-                            "eventId": "rexnote_estate_arrival"
-                        }
+                        "priority": 300,
+                        "when": { "missingFlag": "rexnoteBasementRequested" },
+                        "action": { "label": "アランと話す", "type": "storyEvent", "eventId": "rexnote_estate_arrival" }
+                    },
+                    {
+                        "stateId": "alan_waiting_for_basement",
+                        "priority": 200,
+                        "when": { "requiredFlag": "rexnoteBasementRequested", "missingFlag": "rexnoteGrimoireObtained" },
+                        "action": { "label": "アランと話す", "type": "storyEvent", "eventId": "rexnote_basement_reminder" }
+                    },
+                    {
+                        "stateId": "alan_basement_report",
+                        "priority": 400,
+                        "when": { "requiredFlag": "rexnoteGrimoireObtained", "missingFlag": "alanJoinedAtRexnote" },
+                        "action": { "label": "アランに魔道書を見せる", "type": "storyEvent", "eventId": "rexnote_basement_report" }
                     }
                 ]
             }
@@ -2830,6 +2837,19 @@ const FIXED_MAPS = {
                 "type": "log",
                 "label": "古い家紋を見る",
                 "log": "埃をかぶった盾形の家紋に、『REXNOTE』の文字だけが残っている。"
+            },
+            {
+                "x": 13,
+                "y": 7,
+                "type": "fixedDungeon",
+                "target": "REXNOTE_BASEMENT",
+                "label": "地下迷宮へ降りる",
+                "log": "石段の下から、屋敷のものとは思えない冷たい魔力が流れてくる。",
+                "requiredFlag": "rexnoteBasementRequested",
+                "setFlagOnUse": "rexnoteBasementEntered",
+                "imageKey": "overlay_dungeon_event",
+                "blocksMovement": false,
+                "baseTile": "T"
             }
         ]
     },
@@ -5087,7 +5107,7 @@ const FIXED_MAPS = {
             "WWWWWWWWWWWWWWWWWWWLWWWWWWWWWWWWWWWWWWW",
             "WWWWWWWWWWWWWWWWWWWSWWWWWWWWWWWWWWWWWWW"
         ],
-        "nextActorPlacementId": 97,
+        "nextActorPlacementId": 100,
         "mapActors": [
             {
                 "placementId": 1,
@@ -5792,9 +5812,72 @@ const FIXED_MAPS = {
                         }
                     }
                 ]
+            },
+            {
+                "placementId": 97,
+                "actorId": "water_city_post_riot_supply",
+                "name": "備蓄係",
+                "x": 11,
+                "y": 3,
+                "imageKey": "overlay_npc_villager",
+                "states": [{
+                    "stateId": "water_city_post_riot_supply",
+                    "priority": 0,
+                    "when": { "requiredFlag": "waterCityRiotSuppressed" },
+                    "action": { "label": "備蓄係と話す", "type": "storyEvent", "eventId": "town_water_post_riot_supply" }
+                }]
+            },
+            {
+                "placementId": 98,
+                "actorId": "water_city_post_riot_alchemist",
+                "name": "錬金術師",
+                "x": 34,
+                "y": 8,
+                "imageKey": "overlay_npc_villager",
+                "states": [{
+                    "stateId": "water_city_post_riot_alchemist",
+                    "priority": 0,
+                    "when": { "requiredFlag": "waterCityRiotSuppressed" },
+                    "action": { "label": "錬金術師と話す", "type": "storyEvent", "eventId": "town_water_post_riot_alchemist" }
+                }]
+            },
+            {
+                "placementId": 99,
+                "actorId": "water_city_post_riot_broker",
+                "name": "依頼仲介人",
+                "x": 25,
+                "y": 14,
+                "imageKey": "overlay_npc_villager",
+                "states": [{
+                    "stateId": "water_city_post_riot_broker",
+                    "priority": 0,
+                    "when": { "requiredFlag": "waterCityRiotSuppressed" },
+                    "action": { "label": "依頼仲介人と話す", "type": "storyEvent", "eventId": "town_water_post_riot_broker" }
+                }]
             }
         ],
         "mapActions": [
+            {
+                "x": 22,
+                "y": 14,
+                "label": "復旧した噴水に祈る",
+                "type": "waterCityFountain",
+                "requiredFlag": "waterCityRiotSuppressed",
+                "imageKey": "overlay_field_event",
+                "blocksMovement": false,
+                "baseTile": "T"
+            },
+            {
+                "x": 24,
+                "y": 14,
+                "label": "討伐依頼を見る",
+                "type": "questBoard",
+                "requiredFlag": "waterCityRiotSuppressed",
+                "questIds": ["water_city_hunt_waterway", "water_city_hunt_sanctum", "water_city_hunt_black_armor"],
+                "imageKey": "overlay_dungeon_event",
+                "blocksMovement": false,
+                "baseTile": "T"
+            },
             {
                 "x": 31,
                 "y": 3,
@@ -8949,6 +9032,99 @@ const ABYSS_AUTHORED_DUNGEONS = Object.freeze((() => {
 })());
 
 const FIXED_DUNGEON_MAPS = {
+    REXNOTE_BASEMENT: {
+        name: "レクスノート邸 地下迷宮",
+        themeKey: "DARK_CASTLE",
+        useDungeonWallFace: true,
+        rank: 45,
+        encounterRank: 45,
+        battleBg: "battle_bg_dungeon",
+        entryFloor: 1,
+        floors: [
+            {
+                label: "地下1階",
+                floor: 1,
+                procedural: true,
+                proceduralEntryReturnsOutside: true,
+                proceduralExitLabel: "レクスノート邸へ戻る",
+                encounterRank: 40,
+                monsters: [357, 358, 401, 402, 403],
+                rareEncounterMonsterIds: [200201]
+            },
+            {
+                label: "地下2階",
+                floor: 2,
+                procedural: true,
+                encounterRank: 43,
+                monsters: [401, 402, 403, 404, 405, 406],
+                rareEncounterMonsterIds: [200201]
+            },
+            {
+                label: "地下3階",
+                floor: 3,
+                procedural: true,
+                encounterRank: 46,
+                monsters: [403, 404, 451, 452, 453, 454],
+                rareEncounterMonsterIds: [200201]
+            },
+            {
+                label: "地下4階",
+                floor: 4,
+                procedural: true,
+                encounterRank: 49,
+                monsters: [405, 406, 451, 452, 453, 454],
+                rareEncounterMonsterIds: [200201]
+            },
+            {
+                label: "隠し書庫",
+                floor: 5,
+                encounterRank: 45,
+                width: 25,
+                height: 17,
+                entryPoint: { x: 12, y: 15 },
+                disableRandomEncounters: true,
+                randomEncounterDisabled: true,
+                tiles: [
+                    "WWWWWWWWWWWWWWWWWWWWWWWWW",
+                    "WTTTTTTTTTTTSTTTTTTTTTTTW",
+                    "WTTTWWWWTTTTTTTTTWWWWTTTW",
+                    "WTTTWTTWTTTTBTTTTWTTWTTTW",
+                    "WTTTWTTWTTTTTTTTTWTTWTTTW",
+                    "WTTTWWWWTTTTTTTTTWWWWTTTW",
+                    "WTTTTTTTTTWWTWWTTTTTTTTTW",
+                    "WTTTWWTTTTTTTTTTTTTWWTTTW",
+                    "WTTTWWTTTWWTTTWWTTTWWTTTW",
+                    "WTTTTTTTTTTTTTTTTTTTTTTTW",
+                    "WTTTWWTTTWWTTTWWTTTWWTTTW",
+                    "WTTTWWTTTTTTTTTTTTTWWTTTW",
+                    "WTTTTTTTTTWWTWWTTTTTTTTTW",
+                    "WTTTWWWWTTTTTTTTTWWWWTTTW",
+                    "WTTTTTTTTTTTTTTTTTTTTTTTW",
+                    "WTTTTTTTTTTTUTTTTTTTTTTTW",
+                    "WWWWWWWWWWWWWWWWWWWWWWWWW"
+                ],
+                floorLinks: [
+                    { x: 12, y: 15, toFloor: 4, label: "地下4階へ戻る" },
+                    { x: 12, y: 1, to: "EXIT", label: "レクスノート邸へ戻る", requiredFlag: "rexnoteRegulusDefeated", lockedLog: "守護術式が帰還陣を封じている。" }
+                ],
+                bosses: [
+                    {
+                        x: 12,
+                        y: 3,
+                        monsterId: 301033,
+                        clearedFlag: "rexnoteRegulusDefeated",
+                        startEventId: "rexnote_regulus_battle",
+                        storyEventId: "rexnote_regulus_clear",
+                        actionLabel: "魔導司書と対峙する"
+                    }
+                ],
+                mapActions: [
+                    { x: 4, y: 9, type: "log", label: "書架を調べる", log: "航路用の魔導具、結界、領内の水路管理など、旧レクスノート領で使われた術式の記録が並んでいる。" },
+                    { x: 20, y: 9, type: "log", label: "書架を調べる", log: "湿気で傷んだ本が多い。中央の机に置かれた一冊だけ、レクスノート家の封蝋が残っている。" }
+                ]
+            }
+        ]
+    },
     START_CAVE: {
         name: "北東の洞穴",
         themeKey: "START_CAVE",
