@@ -316,7 +316,7 @@ Type: true_clue
 
 ## FL-007-arisa-veleria-wind-melody
 
-Status: approved_planned  
+Status: implemented  
 Type: true_clue
 
 ### Location
@@ -326,14 +326,14 @@ Type: true_clue
 - required flags: アリサ／ハイネ本編救援ルート
 
 ### Surface meaning now
-アリサは風のプリズムに強く惹かれ、本人にも理由の分からない風の音や旋律へ導かれる。古いヴェリア系の楽器が深部に残っている可能性がある。
+アリサは風のプリズムに強く惹かれ、本人にも理由の分からない風の音や旋律へ導かれる。深部では「古びた魔笛」（Item 701012）が見つかり、本人の指だけが笛穴を覚えている。
 
 ### Hidden meaning later
 アリサはヴェリアで風へ旋律を捧げてきた楽師の家系の血を引き、身体が故郷の祈りの旋律を覚えている。後にエリシアがその旋律へ反応し、同郷性が説明台詞なしで繋がる。
 
 ### Text or staging
 - 操られたのではなく、本人が礼拝へ行く意思を持った上で、風に「呼ばれる」感覚を強める。
-- 「古びた魔笛」は仮称。Item ID・正式名称・由来は禁忌の森runtime実装時に確定する。
+- 「古びた魔笛」は正式名称、Item ID 701012。出自はプレイヤーへまだ断定しない。
 - この時点でヴェリア／エリシアの全真相は説明しない。
 
 ### Speaker or object

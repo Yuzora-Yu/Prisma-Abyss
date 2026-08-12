@@ -967,9 +967,9 @@ Created: 2026-08-10
 
 ## DR-20260812-arisa-haine-forbidden-forest-main-route
 
-Status: approved_rewrite  
+Status: implemented  
 Created: 2026-08-12  
-Updated: 2026-08-12
+Updated: 2026-08-13
 
 ### Target
 - file: `story.js` / `map.js`
@@ -990,7 +990,7 @@ Updated: 2026-08-12
 - アリサは**ヴェリアで風へ旋律を捧げてきた楽師の家系**。古い祈りの旋律を身体が覚えている。
 - 救出後、プリズムを守る旅だと知ったアリサ自身が同行を望み、ハイネも本人の意思を尊重して助力を申し出る。
 - ハイネは**Bランク冒険者**で、アレル＝レクスノート侯から仕事を何度か請けた古い仕事上の知人。
-- 深部ボス後の「古びた魔笛」（仮称）は有力候補だが、正式名称・Item ID・由来は次実装単位で決める。
+- 深部ボス後の「古びた魔笛」は Item 701012 として正式採用。出自はこの時点で説明しない。
 
 ### User decision
 - decision: approved rewrite
@@ -998,6 +998,10 @@ Updated: 2026-08-12
 - user notes: 既存構造を大きく崩さず、本編必須導線として上記理由を加える。
 
 ### Implementation tracking
-- implemented file: 未実装（次実装単位）
-- validation: 今回は水上都市暴動第一単位との境界を守るため、旧禁忌の森runtimeはまだ置換しない。
+- implemented date: 2026-08-13
+- implemented files: `story.js` / `quests.js` / `items.js` / `main.js` / `news.js`
+- item: `701012 古びた魔笛`
+- source: `development_notes/2026-08-13/scenario/FORBIDDEN_FOREST_ARISA_HAINE_PHASE2_APPROVED_20260813.md`
+- compatibility: 完了済み旧セーブには進行を巻き戻さず Item 701012 を一度だけ補填する。
+- validation: 同梱validatorは使用せず、構文・フラグ連鎖・アイテムID・旧セーブ補填を個別確認する。
 

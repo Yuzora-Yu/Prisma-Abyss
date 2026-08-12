@@ -1678,3 +1678,15 @@ Status: **inventory / no automatic replacement**
 |1655|battle_system_fallback|`battle.js:2064`|openingPartyStatDebuff fallback label|特殊な呪縛|（未提案・レビュー待ち）|new_copy_inventory|
 |1656|battle_system_log|`battle.js:2065`|openingPartyStatDebuff battle log|${label}により、味方全体の能力が低下した！|（未提案・レビュー待ち）|new_copy_inventory|
 
+|1657|story_system|`story.js:1949`|QUEST_ARISA_HAINE_ENCOUNTER|折れた枝の向こうで、刃が根を弾く乾いた音がした。|（2026-08-13新規・承認済み）|new_copy_approved|
+|1658|story_system|`story.js:1968`|QUEST_ARISA_HAINE_ENCOUNTER|黒く膨れた根の向こうで、アリサの足元だけ枯葉が逆向きに舞っている。|（2026-08-13新規・承認済み）|new_copy_approved|
+|1659|story_system|`story.js:1984`|QUEST_ARISA_HAINE_CLEAR|倒れた古根の奥。土に半ば埋もれた細い笛が、風に触れてかすかな一音を返した。|（2026-08-13新規・承認済み）|new_copy_approved|
+|1660|story_system|`story.js:2013`|QUEST_ARISA_HAINE_CLEAR|アリサの指が、迷わず古い笛の穴をなぞる。本人はそれに気づくと、すぐ手を止めた。|（2026-08-13新規・承認済み）|new_copy_approved|
+|1661|story_system|`story.js:2042`|QUEST_ARISA_HAINE_CLEAR|ハイネは一度だけ目を細めた。|（2026-08-13新規・承認済み）|new_copy_approved|
+|1662|ui_story_log|`story.js:6210`|quest_arisa_haine_clear|アリサとハイネが仲間に加わった。水上都市へ戻ろう。|（既存骨格維持）|inventory_only|
+|1663|quest_objective|`quests.js:34`|arisa_haine_forest_depths|風の音を追って禁忌の森深部へ入ったアリサと、後を追ったハイネを捜す。|（2026-08-13改稿・承認済み）|approved_rewrite|
+|1664|quest_start_text|`quests.js:35`|arisa_haine_forest_depths|カザリアから、禁忌の森へ入ったアリサとハイネの救援を頼まれた。|（2026-08-13改稿・承認済み）|approved_rewrite|
+|1665|quest_progress_text|`quests.js:36`|arisa_haine_forest_depths|禁忌の森深部へ向かい、アリサとハイネを救出しよう。|（既存維持）|inventory_only|
+|1666|quest_complete_text|`quests.js:37`|arisa_haine_forest_depths|禁忌の森深部で二人を救出し、アリサとハイネが仲間に加わった。|（2026-08-13改稿・承認済み）|approved_rewrite|
+|1667|item_name|`items.js:7046`|Item 701012|古びた魔笛|（2026-08-13新規・承認済み）|new_copy_approved|
+|1668|item_description|`items.js:7049`|Item 701012|黒ずんだ木と銀の輪で作られた古い笛。風が抜けると、どこか懐かしい短い音を返す。|（2026-08-13新規・承認済み）|new_copy_approved|

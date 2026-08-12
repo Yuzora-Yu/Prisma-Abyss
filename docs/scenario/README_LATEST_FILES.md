@@ -1,9 +1,11 @@
-# PRISMA ABYSS — 最新シナリオ／実装資料（2026-08-10）
+# PRISMA ABYSS — 最新シナリオ／実装資料（2026-08-13）
 
 この一覧は現行作業で優先して参照する最新版を示す。古い草案・履歴ファイルは比較用であり、下記の正本／承認済み資料と衝突する場合は最新版を優先する。
 
 ## 最優先
 
+- `../../development_notes/2026-08-13/scenario/FORBIDDEN_FOREST_ARISA_HAINE_PHASE2_APPROVED_20260813.md` — 水上都市後のカザリア救援、禁忌の森深部、古びた魔笛、アリサ／ハイネ必須加入、レクスノート橋渡し。runtime反映済み。
+- `../../development_notes/2026-08-13/handoff/PRISMA_ABYSS_HANDOFF_20260813_FORBIDDEN_FOREST_PHASE2.md` — 2026-08-13時点の最新作業引継ぎ。
 - `43_JAGOREA_JASPER_ALAN_SUPPORT_PHASE8F_20260810.md` — 災禍の根ジャゴレア、ジャスパー自白、アラン援護・再加入。
 - `42_ALAN_AREL_KAGETORA_APPEAL_AND_ALTAR_PHASE8E_APPROVED_20260810.md` — 王への上申書原本、ハヤテ／ゼリード、統合の祭壇アラン分岐。
 - `40_NADIR_CAVE_DEFENSE_LINE_AND_INTEGRATION_ALTAR_PHASE8D_20260810.md` — 奈落への洞窟／統合の祭壇前半。

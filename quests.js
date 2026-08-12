@@ -31,10 +31,10 @@
         "unlockFlags": [
             "arisaHaineMainStoryRequired"
         ],
-        "objective": "風の集落で、禁忌の森の奥へ消えたアリサとハイネの救援依頼を受ける。",
-        "startText": "風の集落の村人から、アリサとハイネの救援を頼まれた。",
+        "objective": "風の音を追って禁忌の森深部へ入ったアリサと、後を追ったハイネを捜す。",
+        "startText": "カザリアから、禁忌の森へ入ったアリサとハイネの救援を頼まれた。",
         "progressText": "禁忌の森深部へ向かい、アリサとハイネを救出しよう。",
-        "completeText": "アリサとハイネを救出し、二人が仲間に加わった。",
+        "completeText": "禁忌の森深部で二人を救出し、アリサとハイネが仲間に加わった。",
         "startEventId": "quest_arisa_haine_start",
         "rewardAllies": [
             108,

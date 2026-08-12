@@ -7039,6 +7039,23 @@ window.ITEMS_DATA.push(
     "fieldUsable": false,
     "abyssDrop": false,
     "icon": "assets/ui/menu-icons/item-key.png"
+},
+{
+    "id": 701012,
+    "rank": 45,
+    "name": "古びた魔笛",
+    "type": "貴重品",
+    "val": 0,
+    "desc": "黒ずんだ木と銀の輪で作られた古い笛。風が抜けると、どこか懐かしい短い音を返す。",
+    "target": "なし",
+    "price": 0,
+    "sellPrice": 0,
+    "shopAvailable": false,
+    "consumable": false,
+    "battleUsable": false,
+    "fieldUsable": false,
+    "abyssDrop": false,
+    "icon": "assets/ui/menu-icons/item-key.png"
 }
 );
 

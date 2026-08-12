@@ -3971,6 +3971,29 @@ const App = {
         }
     ),
 
+    // 2026-08-13以前に禁忌の森救出を完了しているセーブへ、
+    // 新たに本編貴重品となった「古びた魔笛」を一度だけ補填する。進行や加入状態は巻き戻さない。
+    migrateArisaHaineAncientFluteV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260813_arisaHaineAncientFluteV1',
+        () => {
+            if (!data || typeof data !== 'object') return { changed:false, count:0 };
+            data.progress = (data.progress && typeof data.progress === 'object' && !Array.isArray(data.progress)) ? data.progress : {};
+            data.progress.flags = (data.progress.flags && typeof data.progress.flags === 'object' && !Array.isArray(data.progress.flags)) ? data.progress.flags : {};
+            if (!data.items || typeof data.items !== 'object' || Array.isArray(data.items)) data.items = {};
+            const flags = data.progress.flags;
+            const questState = String(data.progress.quests?.arisa_haine_forest_depths?.state || '');
+            const roster = Array.isArray(data.characters) ? data.characters : [];
+            const hasBothAllies = [108, 207].every(charId => roster.some(char => Number(char?.charId) === charId));
+            const cleared = !!flags.arisaHaineMainStoryCleared || questState === 'completed' || hasBothAllies;
+            if (!cleared) return { changed:false, count:0 };
+            const current = Math.max(0, Math.floor(Number(data.items[701012] ?? data.items['701012'] ?? 0) || 0));
+            if (current > 0) return { changed:false, count:0 };
+            data.items[701012] = 1;
+            return { changed:true, count:1 };
+        }
+    ),
+
     // 終極形態302101の討伐済みセーブでは、旧版で欠落し得た関連3形態の討伐数を一度だけ救済する。
     migrateAbyssBossKillCountsV1: (data = App.data) => {
         if (!data || typeof data !== 'object') return false;
@@ -8737,6 +8760,7 @@ load: () => {
         if (!Array.isArray(data.book.monsters)) data.book.monsters = [];
         if (!data.book.killCounts || typeof data.book.killCounts !== 'object' || Array.isArray(data.book.killCounts)) data.book.killCounts = {};
         App.migrateWaterCityRiotRouteV1(data);
+        App.migrateArisaHaineAncientFluteV1(data);
         App.migrateAbyssBossKillCountsV1(data);
         App.migrateAbyssBossKillCountsV2(data);
         App.migrateReincarnationGrowthFormulaV1(data);
