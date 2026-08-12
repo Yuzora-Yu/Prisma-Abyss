@@ -61,7 +61,7 @@ The user decides whether a legacy line becomes canon, gets revised, is rewritten
 - Do not silently polish or replace existing system/UI copy. Record it in `docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md` and, when proposing a change, show `現行` and `修正案` side by side.
 - Apply a revision only after the user makes the final decision.
 - Newly introduced system/UI copy must also be added to the inventory so it can be reviewed in later batches.
-- Tutorials remain governed by the UI-completion gate and are excluded from the current global copy-review pass until that gate is satisfied.
+- Sample tutorial copy remains excluded from player-facing review until a real trigger is approved; only triggered/approved tutorial entries are considered active UI copy.
 
 ## Game craft and player-information boundary
 
@@ -160,8 +160,8 @@ If a change touches legacy implemented dialogue, it needs a review queue entry u
 ## Current product directives
 
 - On first launch, ask whether to download the full image cache now. If the player selects Yes, show progress and wait for the complete download before starting. If the player selects No, start immediately and still cache the complete image set in the background. No means “do not wait before play,” not “disable full caching.” Do not use lazy/on-demand image fetching as the core policy. Keep every map, monster, boss, battle background, battle effect, and newly added visual registered in the centralized `assets.js` full-cache list. Optimize map rendering without reducing cache coverage. Do not repeat this prompt after the post-`PROLOGUE3` opening.
-- Do not create or implement tutorials until all target screens and interaction flows are complete. A tutorial based on an obsolete screen is invalid. Tutorial planning notes may remain, but runtime tutorial implementation is deferred until the UI completion gate is satisfied.
-- When a major feature is added or its interaction flow changes substantially, complete a tutorial-impact review after the target UI is stable. If new guidance is needed, propose the tutorial addition or revision to the user instead of silently leaving the old tutorial unchanged. Runtime implementation still requires the UI completion gate above.
+- Tutorial infrastructure may exist before all target screens are complete, but draft/sample tutorials must never appear in the player-facing tutorial list. A tutorial becomes visible only after its real runtime trigger has fired; once shown, it remains available for later review.
+- Do not treat the current sample tutorial text as approved guidance. When a major feature or interaction flow becomes stable, review whether a real trigger/tutorial is needed, draft it against the current UI, and only then connect that trigger.
 - Gacha is not planned for player use. Keep legacy code only when removal would create unnecessary risk, but do not add a player-facing route, unlock, tutorial, reward dependency, or future-release promise.
 - Do not infer effective starting combat stats from a single displayed value or one battle sample. Trace character master data, new-game copying, randomized starting equipment, `App.calcStats()`, traits, allocations, limit breaks, auras, and battle initialization first.
 

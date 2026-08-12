@@ -139,7 +139,7 @@ const MenuConfig = {
             await App.downloadFullDataFromConfig();
             return;
         }
-        alert('今は利用できないようだ。');
+        alert('全データダウンロード機能を利用できません。');
     },
 
     radioRow: (group, value, label, desc, checked, onChange) => `
@@ -225,6 +225,7 @@ const MenuConfig = {
                 ${MenuConfig.volumeRow('uiSe', 'UI・メニューSE', getVolume('uiSeVolume', 5), '決定・戻る・道具・スキル・鍛冶・錬金・購入・売却')}
                 ${MenuConfig.volumeRow('battleSe', '戦闘SE', getVolume('battleSeVolume', 5), '攻撃・スキル・回復・ダメージ・勝利・レベルアップ')}
                 ${MenuConfig.volumeRow('fieldSe', 'フィールド・イベントSE', getVolume('fieldSeVolume', 5), '宝箱・泉・階段・床・スイッチ・壁衝突・イベント演出')}
+                <div style="font-size:10px; color:#777; line-height:1.5;">今は利用できないようだ。</div>
             </div>
 
         `;

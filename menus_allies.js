@@ -1596,7 +1596,7 @@ const MenuAllies = {
             MenuAllies.updateImageEditorPreview();
         }).catch(() => {
             MenuAllies.closeImageEditor();
-            Menu.msg('画像を読み込めませんでした');
+            Menu.msg('今は利用できないようだ。');
         });
     },
 

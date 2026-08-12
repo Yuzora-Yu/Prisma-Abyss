@@ -1,7 +1,7 @@
 /* ========================================================================== 
    Prisma Abyss Tutorial Modal
    --------------------------------------------------------------------------
-   - 将来の発火処理からは MenuExchange.openTutorial('tutorial-id') を呼び出してください。
+   - ゲーム進行側からは TutorialModal.open('tutorial-id') で呼び出せます。
    - 一覧やページ内容は TUTORIAL_DATA を編集してください。
    - 現在の39件は本文・画像とも仮案です。各 pages 配列へページを追加できます。
    - 画像は assets/tutorial/0001.png のように管理する想定です。
@@ -730,28 +730,6 @@
             return this;
         },
 
-        getSeenTutorialIds() {
-            const progress = (typeof App !== 'undefined' && App.data?.progress) ? App.data.progress : null;
-            if (!progress || !Array.isArray(progress.tutorialsSeen)) return [];
-            return [...new Set(progress.tutorialsSeen.map(id => String(id || '').trim()).filter(Boolean))];
-        },
-
-        markSeen(id) {
-            if (typeof App === 'undefined' || !App.data) return false;
-            if (!App.data.progress || typeof App.data.progress !== 'object') App.data.progress = {};
-            if (!Array.isArray(App.data.progress.tutorialsSeen)) App.data.progress.tutorialsSeen = [];
-            const key = String(id || '').trim();
-            if (!key || App.data.progress.tutorialsSeen.includes(key)) return false;
-            App.data.progress.tutorialsSeen.push(key);
-            if (typeof App.save === 'function') App.save();
-            return true;
-        },
-
-        getSeenTutorials() {
-            const seen = new Set(this.getSeenTutorialIds());
-            return this.getTutorials().filter(tutorial => seen.has(tutorial.id));
-        },
-
         getTutorials() {
             return this.tutorials.map(tutorial => ({
                 no: tutorial.no,
@@ -762,6 +740,28 @@
                 screen: tutorial.screen,
                 pageCount: tutorial.pages.length
             }));
+        },
+
+        ensureSeenState() {
+            if (typeof App === 'undefined' || !App.data) return {};
+            App.data.progress = App.data.progress || {};
+            if (!App.data.progress.tutorialsSeen || typeof App.data.progress.tutorialsSeen !== 'object' || Array.isArray(App.data.progress.tutorialsSeen)) {
+                App.data.progress.tutorialsSeen = {};
+            }
+            return App.data.progress.tutorialsSeen;
+        },
+
+        getSeenTutorials() {
+            const seen = this.ensureSeenState();
+            return this.getTutorials().filter(tutorial => seen[tutorial.id] === true);
+        },
+
+        markSeen(id) {
+            const seen = this.ensureSeenState();
+            if (!seen || seen[id] === true) return false;
+            seen[id] = true;
+            if (typeof App !== 'undefined' && typeof App.save === 'function') App.save();
+            return true;
         },
 
         getTutorial(id) {
@@ -929,12 +929,12 @@
                 image.onerror = () => {
                     image.hidden = true;
                     placeholder.hidden = false;
-                    imagePath.textContent = '今は利用できないようだ。';
+                    imagePath.textContent = page.image || '画像パス未設定';
                 };
                 image.alt = page.imageAlt;
                 image.hidden = !page.image;
                 placeholder.hidden = Boolean(page.image);
-                imagePath.textContent = '今は利用できないようだ。';
+                imagePath.textContent = page.image || '画像パス未設定';
 
                 if (page.image) {
                     image.src = '';

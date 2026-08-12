@@ -192,7 +192,7 @@ const MenuItems = {
             return;
         }
         if (MenuItems.activeTab === 'materials' || MenuItems.isMaterial(item)) {
-            Menu.msg('今は利用できないようだ。');
+            Menu.msg("素材は今後の生成・加工に使用します。");
             return;
         }
 
@@ -771,7 +771,7 @@ const MenuItems = {
             // --- B. LB育成アイテム ---
             else if (item.effectKind === 'limitBreak' || Number(item.id) === 123) {
                 if (typeof App.addLimitBreak !== 'function' || typeof App.getLimitBreakTrialCap !== 'function') {
-                    Menu.msg('今は利用できないようだ。');
+                    Menu.msg("LB成長処理を利用できません。");
                     return;
                 }
                 App.backfillLimitBreakLegacy?.(target);
@@ -784,11 +784,12 @@ const MenuItems = {
                     return;
                 }
                 if (currentLb >= trialCap) {
-                    Menu.msg('現在の成長限界に達しているようだ。');
+                    const gateName = trialCap < 50 ? "中間試練" : "最終試練";
+                    Menu.msg(`${gateName}に合格するまで、これ以上LBを増やせません。`);
                     return;
                 }
                 const amount = Math.max(1, Math.floor(Number(item.limitBreakAmount) || 1));
-                const result = App.addLimitBreak(target, amount, 'prism');
+                const result = App.addLimitBreak(target, amount, 'item');
                 if (!result.changed) {
                     Menu.msg("今はLBを増やせません。");
                     return;

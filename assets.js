@@ -68,6 +68,11 @@ const formatPrismaMonsterImageId = (monsterOrId) => {
 };
 
 const prismaMonsterImagePath = (monsterOrId) => {
+  const monster = resolvePrismaMonsterDefinition(monsterOrId);
+  const explicit = typeof monster?.image === 'string' && monster.image.trim()
+    ? monster.image.trim()
+    : (typeof monster?.img === 'string' && monster.img.trim() ? monster.img.trim() : '');
+  if (explicit) return explicit;
   const imageId = formatPrismaMonsterImageId(monsterOrId);
   return imageId === null ? null : `${PRISMA_MONSTER_IMAGE_BASE}monster_${imageId}.png`;
 };

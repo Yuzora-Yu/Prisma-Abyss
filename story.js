@@ -2082,13 +2082,13 @@ const STORY_MANAGER_DATA = {
                 }
         ],
 
-        "THUNDER_FORT_HOLY_KNIGHT_CRISIS": [
+        "THUNDER_FORT_ADVENTURER_CRISIS": [
                 {
-                        "name": "聖騎士",
+                        "name": "冒険者",
                         "text": "負傷者を西側へ！　民間人を先に通せ！\n黒い鎧は追うな、今はここを守る！"
                 },
                 {
-                        "name": "聖騎士",
+                        "name": "冒険者",
                         "text": "制御炉へ向かうなら気をつけろ。\n俺たちは避難路を空ける。"
                 }
         ],
@@ -2240,34 +2240,6 @@ const STORY_MANAGER_DATA = {
         ],
         "LOCKED_LIGHT_PALACE_RECALL": [
                 { "name": "システム", "text": "宮殿へ向けた足が止まる。クロードは、まだ話していないことがあると言っていた。" }
-        ],
-        "QUEST_HAYATE_START": [
-                {
-                        "name": "ハヤテ",
-                        "text": "アランが認めた旅人ってのは、\nあんたか。"
-                },
-                {
-                        "name": "ハヤテ",
-                        "text": "近海にアクアウィスプとバンパイアが出てる。\n合わせて六体。荷運びが止まった。"
-                },
-                {
-                        "name": "ハヤテ",
-                        "text": "速さは逃げるためじゃない。\n困ってる奴のところへ、誰より先に着くためだ。"
-                },
-                {
-                        "name": "ハヤテ",
-                        "text": "どっちが先に片づける？\n海風が寝ちまう前にな。"
-                }
-        ],
-        "QUEST_HAYATE_REPORT": [
-                {
-                        "name": "ハヤテ",
-                        "text": "俺が着いた時には、\n最後の一匹が倒れてた。"
-                },
-                {
-                        "name": "ハヤテ",
-                        "text": "負けたままじゃ眠れない。\n旅の先で、もう一度勝負だ。"
-                }
         ],
         "QUEST_SYLVIA_START": [
                 {
@@ -2506,7 +2478,7 @@ const STORY_MANAGER_DATA = {
                 },
                 {
                         "name": "国王",
-                        "text": "これは『星詠みの触媒器』。\n持つ者のいる場所から、魔道通信を通して鍛冶と錬金の火をつなぐ器だ。"
+                        "text": "これは『星詠みの触媒器』。\n持つ者のいる場所から、魔道通信で各工房へ道をつなぐ器だ。"
                 },
                 {
                         "name": "国王",
@@ -2660,7 +2632,7 @@ const STORY_MANAGER_DATA = {
         "THUNDER_FORT_LUNA_AWAKENING_SKELETON": [
                 { "name": "システム", "text": "魔王軍が退いた後。救護所の静けさの中で、ルーナがゆっくりと目を開いた。" },
                 { "name": "システム", "text": "救護班に支えられたレイラは涙をこぼしながら謝り、ルーナを抱きしめた。" },
-                { "name": "システム", "text": "アルスは探し続けた幼馴染へ、震える声で呼びかける。だがルーナの瞳に、幼馴染を見る色はない。" },
+                { "name": "システム", "text": "アルスは五年間探し続けた幼馴染へ、震える声で呼びかける。だがルーナの瞳に、幼馴染を見る色はない。" },
                 { "name": "ルーナ", "charId": 401, "text": "冒険者様、助けてくださってありがとうございます。" },
                 { "name": "ケイト", "charId": 104, "text": "ルーナさんの力も、レオンさんの呪いも、普通の治療では届きません。……ソフィアさんなら、結晶樹について何か知っているかもしれません。" }
         ],
@@ -6924,14 +6896,6 @@ const STORY_MANAGER_DATA = {
                 "actions": [{ "type": "CONV", "value": "QUEST_MARIE_REPORT" }],
                 "winActions": []
         },
-        "quest_hayate_start": {
-                "actions": [{ "type": "CONV", "value": "QUEST_HAYATE_START" }],
-                "winActions": []
-        },
-        "quest_hayate_report": {
-                "actions": [{ "type": "CONV", "value": "QUEST_HAYATE_REPORT" }],
-                "winActions": []
-        },
         "quest_sylvia_start": {
                 "actions": [{ "type": "CONV", "value": "QUEST_SYLVIA_START" }],
                 "winActions": []
@@ -7096,8 +7060,8 @@ const STORY_MANAGER_DATA = {
                 ],
                 "winActions": []
         },
-        "thunder_fort_holy_knight_crisis": {
-                "actions": [{ "type": "CONV", "value": "THUNDER_FORT_HOLY_KNIGHT_CRISIS" }],
+        "thunder_fort_adventurer_crisis": {
+                "actions": [{ "type": "CONV", "value": "THUNDER_FORT_ADVENTURER_CRISIS" }],
                 "winActions": []
         },
         "thunder_fort_dark_knight_crisis": {

@@ -5354,20 +5354,6 @@ const FIXED_MAPS = {
                             "eventId": "arel_kagetora_hayate_truth_phase8e"
                         }
                     },
-                    {
-                        "stateId": "hayate_water_city",
-                        "priority": 0,
-                        "when": {
-                            "requiredFlag": "legacyHayateQuickHuntEnabled"
-                        },
-                        "action": {
-                            "label": "ハヤテと話す",
-                            "log": "水路のそばに、落ち着きなく周囲を見渡す若者がいる。",
-                            "type": "quest",
-                            "questId": "hayate_water_city",
-                            "lockedText": "ハヤテはまだ、信頼できる案内人を待っているようだ。"
-                        }
-                    }
                 ]
             },
             {
@@ -9214,7 +9200,7 @@ const FIXED_DUNGEON_MAPS = {
                         ],
                         speed: 0.65,
                         range: 26,
-                        statMultiplier: 1.3,
+                        statMultiplier: 1.08,
                         message: "炎を纏う強敵が迫る！"
                     }
                 ],
@@ -9534,13 +9520,13 @@ const FIXED_DUNGEON_MAPS = {
                         id: "volcano_furnace_guard",
                         imageKey: "overlay_dungeon_hunter_fire",
                         monsterIds: [
-                            752,
-                            505,
-                            651
+                            551,
+                            554,
+                            555
                         ],
-                        speed: 0.75,
-                        range: 28,
-                        statMultiplier: 1.35,
+                        speed: 0.70,
+                        range: 26,
+                        statMultiplier: 1.10,
                         message: "炉心の番人が迫る！"
                     }
                 ],
@@ -9988,11 +9974,11 @@ const FIXED_DUNGEON_MAPS = {
                         monsterIds: [
                             552,
                             553,
-                            752
+                            556
                         ],
                         speed: 0.65,
                         range: 25,
-                        statMultiplier: 1.3,
+                        statMultiplier: 1.08,
                         message: "呪根の追跡者が迫る！"
                     }
                 ],
@@ -10099,13 +10085,13 @@ const FIXED_DUNGEON_MAPS = {
                         id: "forest_curse_guard",
                         imageKey: "overlay_dungeon_hunter_forest",
                         monsterIds: [
-                            752,
-                            653,
-                            753
+                            552,
+                            553,
+                            555
                         ],
-                        speed: 0.75,
-                        range: 28,
-                        statMultiplier: 1.35,
+                        speed: 0.70,
+                        range: 26,
+                        statMultiplier: 1.10,
                         message: "呪風の番人が迫る！"
                     },
                     {
@@ -11953,6 +11939,17 @@ const FIXED_DUNGEON_MAPS = {
                         label: "2階へ上がる"
                     }
                 ],
+                blockingObjects: [
+                    {
+                        x: 31,
+                        y: 14,
+                        missingFlag: "thunderFortCleared",
+                        imageKey: "overlay_light_prison_gate_horizontal",
+                        drawWidth: 32,
+                        drawHeight: 32,
+                        log: "東門は雷の結界で閉ざされている…"
+                    }
+                ],
                 chests: [
                     {
                         x: 18,
@@ -12295,16 +12292,16 @@ const FIXED_DUNGEON_MAPS = {
                     },
                     {
                         "placementId": 10,
-                        "actorId": "thunder_fort_holy_knight_crisis",
-                        "name": "聖騎士",
+                        "actorId": "thunder_fort_adventurer_crisis",
+                        "name": "冒険者",
                         "x": 12,
                         "y": 11,
-                        "imageKey": "overlay_npc_bronze_knight",
+                        "imageKey": "overlay_npc_villager",
                         "blocksMovement": true,
                         "interactFromAdjacent": true,
                         "states": [
                             {
-                                "stateId": "thunder_fort_holy_knight_crisis",
+                                "stateId": "thunder_fort_adventurer_crisis",
                                 "priority": 20,
                                 "when": {
                                     "requiredWorldState": {
@@ -12312,10 +12309,10 @@ const FIXED_DUNGEON_MAPS = {
                                     }
                                 },
                                 "action": {
-                                    "label": "聖騎士と話す",
-                                    "log": "聖騎士は避難路の確保を優先している。",
+                                    "label": "冒険者と話す",
+                                    "log": "冒険者は避難路を確保しながら暴走する敵を食い止めている。",
                                     "type": "storyEvent",
-                                    "eventId": "thunder_fort_holy_knight_crisis"
+                                    "eventId": "thunder_fort_adventurer_crisis"
                                 }
                             }
                         ]

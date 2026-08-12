@@ -20,8 +20,16 @@
   const map = root.MonsterImageMap || {};
   definitions.forEach((monster) => {
     const id = Number(monster?.baseId ?? monster?.id);
+    if (!Number.isFinite(id) || id <= 0) return;
+    const explicit = typeof monster?.image === 'string' && monster.image.trim()
+      ? monster.image.trim()
+      : (typeof monster?.img === 'string' && monster.img.trim() ? monster.img.trim() : '');
+    if (explicit) {
+      map[Math.floor(id)] = explicit;
+      return;
+    }
     const imageId = Number(monster?.imageId ?? monster?.baseId ?? monster?.id);
-    if (!Number.isFinite(id) || id <= 0 || !Number.isFinite(imageId) || imageId <= 0) return;
+    if (!Number.isFinite(imageId) || imageId <= 0) return;
     map[Math.floor(id)] = `assets/monsters/monster_${String(Math.floor(imageId)).padStart(6, '0')}.png`;
   });
   root.MonsterImageMap = map;

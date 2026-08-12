@@ -1749,6 +1749,13 @@ function normalizeMonsterGraphicId(monsterOrId) {
 }
 
 function getMonsterImagePath(monsterOrId) {
+  const monster = typeof monsterOrId === 'object' && monsterOrId
+    ? monsterOrId
+    : getMonsterById(monsterOrId);
+  const explicit = typeof monster?.image === 'string' && monster.image.trim()
+    ? monster.image.trim()
+    : (typeof monster?.img === 'string' && monster.img.trim() ? monster.img.trim() : '');
+  if (explicit) return explicit;
   const imageId = normalizeMonsterImageId(monsterOrId);
   if (imageId === null) return null;
   const resolver = globalThis.PRISMA_ASSETS?.getMonsterImagePath;

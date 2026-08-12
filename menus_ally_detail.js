@@ -196,7 +196,7 @@ const MenuAllyDetail = {
         const c = MenuAllyDetail.selectedChar;
         const master = DB.CHARACTERS.find(m => m.id === c.charId) || {};
         const jobData = window.JOB_SKILLS_DATA ? window.JOB_SKILLS_DATA[c.job] : null;
-        if(!jobData) return `<div style="color:#666; text-align:center; padding:40px;">今は利用できないようだ。</div>`;
+        if(!jobData) return `<div style="color:#666; text-align:center; padding:40px;">データが存在しません</div>`;
 
         let html = `<div style="font-size:11px; color:#aaa; margin-bottom:15px; text-align:center;">解放される可能性の断片</div>`;
         
@@ -205,7 +205,7 @@ const MenuAllyDetail = {
         Object.entries(jobData).forEach(([lv, skillId]) => {
             allPossible.push({ id: skillId, type: 'LV', req: parseInt(lv) });
         });
-        // 限界突破スキル (+50, +99)
+        // 限界突破スキル (+30, +50, +99)
         if(master.lbSkills) {
             Object.entries(master.lbSkills).forEach(([lbReq, skillId]) => {
                 allPossible.push({ id: skillId, type: 'LB', req: parseInt(lbReq) });
@@ -242,72 +242,53 @@ const MenuAllyDetail = {
     renderLimitBreak: () => {
         const c = MenuAllyDetail.selectedChar;
         if (!c) return '';
-        if (typeof App !== 'undefined' && typeof App.ensureLimitBreakProgress === 'function') App.ensureLimitBreakProgress(c);
-        if (typeof App !== 'undefined' && typeof App.syncDerivedLimitBreaks === 'function') App.syncDerivedLimitBreaks();
+        App.ensureLimitBreakProgress?.(c);
+        App.syncDerivedLimitBreaks?.();
 
-        const cfg = (typeof App !== 'undefined' && App.limitBreakConfig) ? App.limitBreakConfig : {};
+        const cfg = App.limitBreakConfig || {};
         const progress = c.lbProgress || {};
         const sources = progress.sources || {};
         const counters = progress.counters || {};
         const max = Number(cfg.max || 99);
         const current = Math.max(0, Math.min(max, Math.floor(Number(c.limitBreak) || 0)));
-        const cap = typeof App !== 'undefined' && typeof App.getLimitBreakTrialCap === 'function'
-            ? Math.max(0, Math.min(max, Number(App.getLimitBreakTrialCap(c)) || max))
-            : max;
         const isHero = c.charId === 301 || c.isHero || c.uid === 'p1';
-        const battleWins = Math.max(0, Math.floor(Number(counters.battleWins) || 0));
-        const battleStep = Math.max(1, Math.floor(Number(cfg.battlesPerStep) || 20));
         const sourceVal = key => Math.max(0, Math.floor(Number(sources[key]) || 0));
-        const pct = (value, limit) => !limit ? 0 : Math.max(0, Math.min(100, Math.floor((value / limit) * 100)));
-
-        const row = (label, value, limit, note = '') => {
-            const clamped = limit ? Math.min(value, limit) : value;
-            const width = limit ? pct(clamped, limit) : (value > 0 ? 100 : 0);
-            const valueText = limit ? `+${clamped} / +${limit}` : `+${value}`;
-            return `
-                <div style="background:rgba(255,255,255,0.025); border:1px solid #333; border-radius:8px; padding:10px; margin-bottom:8px;">
-                    <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:12px;">
-                        <span style="color:#ddd;">${label}</span>
-                        <span style="color:#ffd700; white-space:nowrap;">${valueText}</span>
-                    </div>
-                    <div style="height:5px; background:#111; border:1px solid #2c2c2c; border-radius:999px; overflow:hidden; margin-top:8px;">
-                        <div style="height:100%; width:${width}%; background:linear-gradient(90deg,#53dfe7,#ffd700);"></div>
-                    </div>
-                    ${note ? `<div style="font-size:10px; color:#888; margin-top:6px; line-height:1.5;">${note}</div>` : ''}
-                </div>
-            `;
+        const pct = (val, limit) => limit > 0 ? Math.max(0, Math.min(100, Math.floor(val / limit * 100))) : 0;
+        const row = (label, value, limit = null, note = '') => {
+            const shown = limit ? Math.min(value, limit) : value;
+            const width = limit ? pct(shown, limit) : (shown > 0 ? 100 : 0);
+            return `<div style="background:rgba(255,255,255,0.025); border:1px solid #333; border-radius:8px; padding:10px; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:12px;"><span style="color:#ddd;">${label}</span><span style="color:#ffd700; white-space:nowrap;">+${shown}${limit ? ` / +${limit}` : ''}</span></div>
+                <div style="height:5px; background:#111; border:1px solid #2c2c2c; border-radius:999px; overflow:hidden; margin-top:8px;"><div style="height:100%; width:${width}%; background:linear-gradient(90deg,#53dfe7,#ffd700);"></div></div>
+                ${note ? `<div style="font-size:10px; color:#888; margin-top:6px; line-height:1.5;">${note}</div>` : ''}
+            </div>`;
         };
 
         const sourceRows = [];
+        const battleWins = Math.max(0, Math.floor(Number(counters.battleWins) || 0));
+        const interval = Math.max(1, Math.floor(Number(cfg.battlesPerStep) || 20));
         if (isHero) {
             sourceRows.push(row('ストーリー進行', sourceVal('story'), Number(cfg.heroStoryMax || 10)));
-            sourceRows.push(row('戦闘回数', sourceVal('battle'), Number(cfg.heroBattleMax || 70), `${battleWins}戦 / ${battleStep}戦ごとに進行`));
+            sourceRows.push(row('戦闘回数', sourceVal('battle'), Number(cfg.heroBattleMax || 70), `${battleWins}戦 / ${interval}戦ごとに+1`));
         } else {
-            sourceRows.push(row('パーティ戦闘', sourceVal('battle'), Number(cfg.allyBattleMax || 70), `${battleWins}戦 / ${battleStep}戦ごとに進行`));
+            sourceRows.push(row('戦闘回数', sourceVal('battle'), Number(cfg.allyBattleMax || 70), `${battleWins}戦 / ${interval}戦ごとに+1`));
         }
         sourceRows.push(row('グロウプリズム', sourceVal('prism'), null, '貴重な秘石を用いた成長'));
-        sourceRows.push(row('死闘の経験', sourceVal('random'), null, '戦闘勝利時に稀に成長'));
-        const other = sourceVal('quest') + sourceVal('boss') + sourceVal('gacha') + sourceVal('monster') + sourceVal('trial') + sourceVal('legacy');
-        sourceRows.push(row('その他', other, null));
+        sourceRows.push(row('死闘の経験', sourceVal('random'), null, '戦闘勝利時に稀に得られる成長'));
+        const other = ['quest','boss','gacha','monster','trial','item','legacy'].reduce((sum,key) => sum + sourceVal(key), 0);
+        sourceRows.push(row('その他', other));
 
-        const atGrowthLimit = current >= cap || current >= max;
-        return `
-            <div style="display:flex; flex-direction:column; gap:12px;">
-                <div style="border:1px solid #444; border-radius:10px; padding:12px; background:rgba(255,255,255,0.03);">
-                    <div>
-                        <div style="font-size:11px; color:#888;">現在値</div>
-                        <div style="font-size:26px; color:#ffd700; line-height:1;">+${current}</div>
-                    </div>
-                    <div style="height:7px; background:#111; border:1px solid #333; border-radius:999px; overflow:hidden; margin-top:10px;">
-                        <div style="height:100%; width:${pct(current, max)}%; background:linear-gradient(90deg,#53dfe7,#ffd700,#ec529c);"></div>
-                    </div>
-                    ${atGrowthLimit ? '<div style="font-size:11px; color:#ffdf7a; margin-top:9px;">現在の成長限界に達しているようだ。</div>' : ''}
-                </div>
-
-                <div style="font-size:11px; color:#aaa; text-align:center;">獲得状況</div>
-                <div>${sourceRows.join('')}</div>
+        const cap = App.getLimitBreakTrialCap?.(c) ?? max;
+        const atGrowthLimit = current >= cap;
+        return `<div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="border:1px solid #444; border-radius:10px; padding:12px; background:rgba(255,255,255,0.03);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px; margin-bottom:10px;"><div><div style="font-size:11px; color:#888;">現在値</div><div style="font-size:26px; color:#ffd700; line-height:1;">+${current}</div></div></div>
+                <div style="height:7px; background:#111; border:1px solid #333; border-radius:999px; overflow:hidden;"><div style="height:100%; width:${pct(current,max)}%; background:linear-gradient(90deg,#53dfe7,#ffd700,#ec529c);"></div></div>
+                ${atGrowthLimit ? '<div style="font-size:11px; color:#ffdf7a; margin-top:9px;">現在の成長限界に達しているようだ。</div>' : ''}
             </div>
-        `;
+            <div style="font-size:11px; color:#aaa; text-align:center;">獲得状況</div>
+            <div>${sourceRows.join('')}</div>
+        </div>`;
     },
 
     // キャラ切り替え：MenuAllies.selectedChar も同期して「もどる」時のズレを解消

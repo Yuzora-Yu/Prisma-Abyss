@@ -28,6 +28,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 507,
             "99": 140
         },
@@ -90,6 +91,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 408,
             "99": 220
         },
@@ -152,6 +154,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 700,
             "99": 313
         },
@@ -215,6 +218,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 240,
             "99": 115
         },
@@ -277,6 +281,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 145,
             "99": 149
         },
@@ -339,6 +344,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 133,
             "99": 311
         },
@@ -401,6 +407,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 306,
             "99": 167
         },
@@ -463,6 +470,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 127,
             "99": 144
         },
@@ -525,6 +533,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 141,
             "99": 509
         },
@@ -587,6 +596,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 500,
             "99": 411
         },
@@ -649,6 +659,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 226,
             "99": 162
         },
@@ -711,6 +722,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 705,
             "99": 419
         },
@@ -773,6 +785,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 604,
             "99": 230
         },
@@ -835,6 +848,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 413,
             "99": 155
         },
@@ -897,6 +911,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 149,
             "99": 310
         },
@@ -959,6 +974,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 229,
             "99": 416
         },
@@ -1021,6 +1037,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 143,
             "99": 161
         },
@@ -1083,6 +1100,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 404,
             "99": 150
         },
@@ -1145,6 +1163,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 308,
             "99": 418
         },
@@ -1207,6 +1226,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 144,
             "99": 162
         },
@@ -1269,6 +1289,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 126,
             "99": 237
         },
@@ -1331,6 +1352,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 711,
             "99": 152
         },
@@ -1393,6 +1415,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 314,
             "99": 244
         },
@@ -1455,6 +1478,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 408,
             "99": 166
         },
@@ -1517,6 +1541,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 413,
             "99": 715
         },
@@ -1579,6 +1604,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 134,
             "99": 315
         },
@@ -1649,6 +1675,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 509,
             "99": 246
         },
@@ -1713,6 +1740,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 241,
             "99": 230
         },
@@ -1775,6 +1803,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 238,
             "99": 166
         },
@@ -1837,6 +1866,7 @@ window.CHARACTERS_DATA = [
             null
         ],
         "lbSkills": {
+            "30": null,
             "50": 510,
             "99": 247
         },
@@ -1900,7 +1930,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -1939,7 +1971,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -1978,7 +2012,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -2017,7 +2053,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -2056,7 +2094,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -2095,7 +2135,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -2134,7 +2176,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -2173,7 +2217,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -2212,7 +2258,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -2251,7 +2299,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -2290,7 +2340,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -2329,7 +2381,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",
@@ -2368,7 +2422,9 @@ window.CHARACTERS_DATA = [
             null,
             null
         ],
-        "lbSkills": {},
+        "lbSkills": {
+            "30": null
+        },
         "img": null,
         "archives": {
             "base": "",

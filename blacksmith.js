@@ -237,6 +237,13 @@ const MenuBlacksmith = {
 	`;
     },
 
+    reopenCurrentWorkspace: () => {
+        const source = MenuBlacksmith.entryContext === 'facility' ? 'facility' : 'menu';
+        const mode = MenuBlacksmith.mode || 'root';
+        const returnTo = MenuBlacksmith.returnContext || null;
+        MenuBlacksmith.init({ source, mode, returnTo });
+    },
+
     resetState: () => {
         MenuBlacksmith.mode = null;
         MenuBlacksmith.step = 'target';
@@ -525,11 +532,10 @@ const MenuBlacksmith = {
                 return { name:target.name, levelUps };
             });
             if (!result.ok) {
-                MenuBlacksmith.resetState();
-                return Menu.msg(result.saveFailed ? '保存に失敗したため、装備と素材の変更をすべて取り消しました。' : '装備または素材の状態が変わったため中止しました。', () => MenuBlacksmith.init());
+                return Menu.msg(result.saveFailed ? '保存に失敗したため、装備と素材の変更をすべて取り消しました。' : '装備または素材の状態が変わったため中止しました。', () => MenuBlacksmith.reopenCurrentWorkspace());
             }
             const levelText = MenuBlacksmith.formatLevelUpText(result.result?.levelUps);
-            Menu.msg(`${preview.newName} が完成しました。${levelText}`, () => MenuBlacksmith.init());
+            Menu.msg(`${preview.newName} が完成しました。${levelText}`, () => MenuBlacksmith.reopenCurrentWorkspace());
         });
     },
 
@@ -668,16 +674,15 @@ const MenuBlacksmith = {
             });
 
             if (!result.ok) {
-                MenuBlacksmith.resetState();
                 return Menu.msg(result.saveFailed
                     ? '保存に失敗したため、合成前の装備と素材へ戻しました。'
-                    : '対象装備または素材の状態が変わったため中止しました。', () => MenuBlacksmith.init());
+                    : '対象装備または素材の状態が変わったため中止しました。', () => MenuBlacksmith.reopenCurrentWorkspace());
             }
             const outcome = result.result || {};
             const levelText = MenuBlacksmith.formatLevelUpText(outcome.levelUps);
             Menu.msg(`合成成功！
 ${outcome.name} が完成しました。
-継承: ${outcome.inheritedOption?.label || '能力'} (${outcome.inheritedOption?.rarity || '-'})${levelText}`, () => MenuBlacksmith.init());
+継承: ${outcome.inheritedOption?.label || '能力'} (${outcome.inheritedOption?.rarity || '-'})${levelText}`, () => MenuBlacksmith.reopenCurrentWorkspace());
         });
     },
 
@@ -742,10 +747,9 @@ ${outcome.name} が完成しました。
                 return { success, levelUps };
             });
             if (!result.ok) {
-                MenuBlacksmith.resetState();
                 return Menu.msg(result.saveFailed
                     ? '保存に失敗したため、GEMと装備の変更を取り消しました。'
-                    : (result.reason === 'gems' ? 'GEMが足りません。' : '対象装備の状態が変わったため中止しました。'), () => MenuBlacksmith.init());
+                    : (result.reason === 'gems' ? 'GEMが足りません。' : '対象装備の状態が変わったため中止しました。'), () => MenuBlacksmith.reopenCurrentWorkspace());
             }
             const levelText = MenuBlacksmith.formatLevelUpText(result.result?.levelUps);
             Menu.msg(`${result.result?.success ? '精錬成功！' : '精錬失敗...'}${levelText}`, () => MenuBlacksmith.renderOptionList_Refine());
@@ -839,10 +843,9 @@ ${outcome.name} が完成しました。
             });
             MenuBlacksmith.state.materials = [];
             if (!result.ok) {
-                MenuBlacksmith.resetState();
                 return Menu.msg(result.saveFailed
                     ? '保存に失敗したため、装備と素材の変更をすべて取り消しました。'
-                    : '対象装備または素材の状態が変わったため中止しました。', () => MenuBlacksmith.init());
+                    : '対象装備または素材の状態が変わったため中止しました。', () => MenuBlacksmith.reopenCurrentWorkspace());
             }
             const levelText = MenuBlacksmith.formatLevelUpText(result.result?.levelUps);
             Menu.msg(`${result.result?.success ? '強化成功！' : '強化失敗...'}${levelText}`, () => MenuBlacksmith.renderOptionList_Enhance());

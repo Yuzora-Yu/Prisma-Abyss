@@ -348,7 +348,7 @@ const MenuStatus = {
 
     travelToGuildReception: () => {
         if (typeof App.requestGuildReceptionTravel !== 'function') {
-            Menu.msg('今は利用できないようだ。');
+            Menu.msg('ギルド受付への移動機能を利用できません。');
             return false;
         }
         return App.requestGuildReceptionTravel();

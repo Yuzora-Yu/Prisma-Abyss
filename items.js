@@ -214,7 +214,7 @@ window.ITEMS_DATA = [
         "name": "星詠みの触媒器",
         "type": "貴重品",
         "val": 0,
-        "desc": "王から託された魔道通信の触媒器。所持していると、魔道通信から鍛冶や錬金を利用できる。",
+        "desc": "王から託された加工用の触媒器。所持していると、メニューから魔道通信を利用できる。",
         "target": "なし",
         "price": 0
     },
@@ -473,7 +473,7 @@ window.ITEMS_DATA = [
         "abyssDrop": false,
         "price": 0,
         "icon": "assets/ui/menu-icons/item-growth.png",
-        "desc": "仲間ひとりのLBを1増加させる。現在の成長限界を越えて使用することはできない。"
+        "desc": "仲間ひとりのLBを1増加させる。試練による上限を越えて使用することはできない。"
     },
     {
         "id": 301,

@@ -16,17 +16,19 @@ const MenuExchange = {
         if (screen) screen.style.display = 'flex';
         MenuExchange.currentPage = 0;
         MenuExchange.render();
+        // index.htmlを変更せずに新規モジュールを読み込む。
+        // 読み込み後、チュートリアルタブを開いていれば一覧を更新する。
+        MenuExchange.ensureTutorialModule()
+            .then(() => {
+                if (MenuExchange.activeTab === 'tutorials') MenuExchange.render();
+            })
+            .catch(() => {
+                if (MenuExchange.activeTab === 'tutorials') MenuExchange.render();
+            });
     },
-
-    getSeenTutorialIds: () => {
-        const seen = (typeof App !== 'undefined') ? App.data?.progress?.tutorialsSeen : null;
-        return Array.isArray(seen) ? [...new Set(seen.map(id => String(id || '').trim()).filter(Boolean))] : [];
-    },
-
-    hasSeenTutorials: () => MenuExchange.getSeenTutorialIds().length > 0,
 
     setTab: (tab) => {
-        MenuExchange.activeTab = tab === 'tutorials' && MenuExchange.hasSeenTutorials() ? 'tutorials' : 'news';
+        MenuExchange.activeTab = tab === 'tutorials' ? 'tutorials' : 'news';
         MenuExchange.currentPage = 0;
         MenuExchange.render();
         if (MenuExchange.activeTab === 'tutorials') {
@@ -146,9 +148,18 @@ const MenuExchange = {
         const container = document.getElementById('sub-screen-exchange');
         if (!container) return;
 
-        const hasTutorials = MenuExchange.hasSeenTutorials();
-        if (!hasTutorials && MenuExchange.activeTab === 'tutorials') MenuExchange.activeTab = 'news';
+        const seenTutorials = window.TutorialModal && typeof window.TutorialModal.getSeenTutorials === 'function'
+            ? window.TutorialModal.getSeenTutorials()
+            : [];
+        if (MenuExchange.activeTab === 'tutorials' && !seenTutorials.length) MenuExchange.activeTab = 'news';
         const isNews = MenuExchange.activeTab === 'news';
+        const tutorialTab = seenTutorials.length ? `
+                <button
+                    id="exchange-tab-tutorials"
+                    type="button"
+                    style="flex:1; min-width:0; padding:10px 4px; border:none; font-weight:bold; font-size:11px; font-family:inherit; background:${isNews ? '#111' : '#ffd700'}; color:${isNews ? '#777' : '#000'};"
+                    onclick="MenuExchange.setTab('tutorials')"
+                >チュートリアル</button>` : '';
         container.innerHTML = `
             <div class="header-bar">
                 <span>📢 お知らせ</span>
@@ -161,12 +172,7 @@ const MenuExchange = {
                     style="flex:1; min-width:0; padding:10px 4px; border:none; font-weight:bold; font-size:11px; font-family:inherit; background:${isNews ? '#ffd700' : '#111'}; color:${isNews ? '#000' : '#777'};"
                     onclick="MenuExchange.setTab('news')"
                 >お知らせ</button>
-                ${hasTutorials ? `<button
-                    id="exchange-tab-tutorials"
-                    type="button"
-                    style="flex:1; min-width:0; padding:10px 4px; border:none; font-weight:bold; font-size:11px; font-family:inherit; background:${isNews ? '#111' : '#ffd700'}; color:${isNews ? '#777' : '#000'};"
-                    onclick="MenuExchange.setTab('tutorials')"
-                >チュートリアル</button>` : ''}
+                ${tutorialTab}
             </div>
             <div id="exchange-tab-content" class="scroll-area" style="padding:15px; background:#111; flex:1 1 auto; min-height:0; overflow-y:auto;">
                 ${isNews ? MenuExchange.renderNewsTab() : MenuExchange.renderTutorialTab()}
@@ -236,7 +242,9 @@ const MenuExchange = {
             if (MenuExchange._tutorialLoadError) {
                 return `
                     <div style="padding:24px 14px; text-align:center; border:1px solid #553b3b; border-radius:8px; background:#241717;">
-                        <div style="font-size:14px; color:#ffb0b0; font-weight:bold;">今は利用できないようだ。</div>
+                        <div style="font-size:14px; color:#ffb0b0; font-weight:bold;">チュートリアルを読み込めませんでした</div>
+                        <div style="margin-top:8px; color:#998888; font-size:11px; line-height:1.6;">tutorial.js が同じ階層に配置されているか確認してください。</div>
+                        <button class="btn" style="margin-top:14px; min-width:130px;" onclick="MenuExchange.retryTutorialLoad()">再読み込み</button>
                     </div>
                 `;
             }
@@ -269,7 +277,7 @@ const MenuExchange = {
                         </span>
                         <span style="flex:0 0 auto; color:#d2bd68; font-size:10px;">${Number(tutorial.pageCount || 0)}ページ<br><span style="font-size:16px;">›</span></span>
                     </button>
-                `).join('') : '<div style="padding:20px; color:#777; font-size:12px; text-align:center;">登録済みのチュートリアルはありません。</div>'}
+                `).join('') : '<div style="padding:20px; color:#777; font-size:12px; text-align:center;">まだ確認できるチュートリアルはありません。</div>'}
             </div>
         `;
     },

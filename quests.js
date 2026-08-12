@@ -112,11 +112,11 @@
             "lightPalaceCleared"
         ],
         "objective": "国王が示した四種の素材を集め、光の宮殿の地下牢へ届ける。",
-        "startText": "国王は、途絶えていた魔道通信を再びつなぐための素材を探している。素材をそろえて地下牢の国王へ届けよう。",
+        "startText": "国王は、失われた加工術式を再び動かすための素材を探している。素材をそろえて地下牢の国王へ届けよう。",
         "startEventId": "light_palace_catalyst_quest_start",
         "progressText": "業火の壺3つ、星銀鋼1つ、虹の結晶1つ、星の涙1つを集め、国王へ届けよう。",
         "reportEventId": "light_palace_catalyst_quest_report",
-        "completeText": "素材を国王へ渡し、貴重品『星詠みの触媒器』を受け取った。『魔道通信』が利用可能になった。",
+        "completeText": "素材を国王へ渡し、貴重品『星詠みの触媒器』を受け取った。メニューの『魔道通信』が利用可能になった。",
         "itemRequirements": [
             {
                 "id": 1001,
@@ -201,33 +201,6 @@
             "areaKey": "WATER_CITY"
         }
     },
-    "hayate_water_city": {
-        "name": "ハヤテの早駆け討伐",
-        "disabled": true,
-        "legacyConvertedToLongArc": true,
-        "area": "水上都市",
-        "kind": "hunt",
-        "requiredAllies": [
-            201
-        ],
-        "objective": "水上都市近海のアクアウィスプとバンパイアを合計6体討伐する。",
-        "startText": "ハヤテは、アランの名を聞くと水上都市近海のアクアウィスプとバンパイア討伐を持ちかけた。",
-        "progressText": "水上都市近海でアクアウィスプとバンパイアを討伐し、ハヤテへ報告しよう。",
-        "startEventId": "quest_hayate_start",
-        "reportEventId": "quest_hayate_report",
-        "targetMonsterIds": [
-            351,
-            508
-        ],
-        "targetCount": 6,
-        "completeText": "ハヤテは速度だけでなく覚悟も認め、仲間に加わった。",
-        "rewardAllies": [
-            203
-        ],
-        "travelTarget": {
-            "areaKey": "WATER_CITY"
-        }
-    },
     "sylvia_water_city": {
         "name": "シルビアの護衛依頼",
         "area": "水上都市",
@@ -235,7 +208,7 @@
         "requiredAllies": [
             101
         ],
-        "objective": "水上都市外縁のウィスプナイトとバンパイアを合計5体討伐する。",
+        "objective": "ジョセフ加入後、水上都市外縁のウィスプナイトとバンパイアを合計5体討伐する。",
         "startText": "シルビアは、水上都市外縁で荷を止めているウィスプナイトとバンパイアの討伐を依頼した。",
         "progressText": "水上都市外縁でウィスプナイトとバンパイアを討伐し、シルビアへ報告しよう。",
         "startEventId": "quest_sylvia_start",
@@ -260,7 +233,7 @@
         "requiredAllies": [
             204
         ],
-        "objective": "ライザーク要塞に残るキラーナイトとサンダーバットを合計6体討伐する。",
+        "objective": "レイラ加入後、ライザーク要塞に残るキラーナイトとサンダーバットを合計6体討伐する。",
         "startText": "リンは、ライザーク要塞に残るキラーナイトとサンダーバットの討伐を願い出た。",
         "progressText": "ライザーク要塞でキラーナイトとサンダーバットを討伐し、リンへ報告しよう。",
         "startEventId": "quest_rin_start",
@@ -285,7 +258,7 @@
         "unlockFlags": [
             "lightPalaceCleared"
         ],
-        "objective": "闇の神殿跡地の最奥へ向かい、クロードとレオンを追う。",
+        "objective": "闇の神殿跡地へ向かい、クロードとレオンの行方を追う。",
         "startText": "クロードとレオンは、光の宮殿の影に残った闇を断つため神殿跡地へ向かった。",
         "progressText": "闇の神殿跡地の最奥へ進もう。",
         "completeText": "闇の残滓は退けられ、クロードとレオンが仲間に加わった。",
@@ -304,7 +277,7 @@
         "unlockFlags": [
             "darkCastleCleared"
         ],
-        "objective": "禁則地グレゼリアの深部へ向かい、リュウとミネルバを追う。",
+        "objective": "禁則地グレゼリアへ向かい、リュウとミネルバの行方を追う。",
         "startText": "リュウとミネルバは、魔王城の奥に残った禁則の術式を追っている。",
         "progressText": "禁則地グレゼリアの深部へ進もう。",
         "completeText": "禁則の術式は破られ、リュウとミネルバが仲間に加わった。",
@@ -329,9 +302,9 @@
         "requiredQuests": [
             "ryu_minerva_grezelia"
         ],
-        "objective": "禁則地グレゼリアの最深部に残る強大な魔力を断つ。",
+        "objective": "禁則地グレゼリアの最深部に潜む強敵を討伐する。",
         "startText": "ゼノンは、禁則の底に残る最悪の魔力を封じられる者を探している。",
-        "progressText": "禁則地グレゼリアの最深部へ進み、禁則の底に残る影と対峙しよう。",
+        "progressText": "禁則地グレゼリアの最深部で待つ強敵に挑もう。",
         "completeText": "禁則の残響は沈黙し、ゼノンが仲間に加わった。",
         "rewardAllies": [
             402

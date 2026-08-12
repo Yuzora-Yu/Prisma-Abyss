@@ -1207,6 +1207,17 @@ const StoryManager = {
         return entry;
     },
 
+    hasPendingFieldResume: function() {
+        const progress = App?.data?.progress;
+        if (!progress) return false;
+        const journal = this.ensureEventJournal?.();
+        if (journal?.active && journal.active.status !== 'completed') return true;
+        if (Array.isArray(journal?.queue) && journal.queue.some(entry => entry && entry.status !== 'completed')) return true;
+        if (progress.activeEvent && progress.activeEvent.status !== 'completed') return true;
+        if (progress.pendingEventId || progress.pendingBattleWinEventId || progress.activeConversation) return true;
+        return false;
+    },
+
     activateQueuedEvent: function(entry) {
         const progress = App?.data?.progress;
         const journal = this.ensureEventJournal();
