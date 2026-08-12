@@ -78,7 +78,7 @@ const MenuConfig = {
 
     openSaveSlots: (mode) => {
         if (typeof SaveSlotUI === 'undefined' || typeof SaveSlotUI.open !== 'function') {
-            Menu.msg('セーブスロット機能を読み込めませんでした。');
+            Menu.msg('今は利用できないようだ。');
             return;
         }
         SaveSlotUI.open(mode === 'save' ? 'save' : 'load', { context: 'game' });
@@ -139,7 +139,7 @@ const MenuConfig = {
             await App.downloadFullDataFromConfig();
             return;
         }
-        alert('全データダウンロード機能を利用できません。');
+        alert('今は利用できないようだ。');
     },
 
     radioRow: (group, value, label, desc, checked, onChange) => `
@@ -225,7 +225,6 @@ const MenuConfig = {
                 ${MenuConfig.volumeRow('uiSe', 'UI・メニューSE', getVolume('uiSeVolume', 5), '決定・戻る・道具・スキル・鍛冶・錬金・購入・売却')}
                 ${MenuConfig.volumeRow('battleSe', '戦闘SE', getVolume('battleSeVolume', 5), '攻撃・スキル・回復・ダメージ・勝利・レベルアップ')}
                 ${MenuConfig.volumeRow('fieldSe', 'フィールド・イベントSE', getVolume('fieldSeVolume', 5), '宝箱・泉・階段・床・スイッチ・壁衝突・イベント演出')}
-                <div style="font-size:10px; color:#777; line-height:1.5;">音源ファイルが無音プレースホルダーの項目は、処理だけ実行されます。</div>
             </div>
 
         `;

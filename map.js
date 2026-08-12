@@ -1466,8 +1466,7 @@ const STORY_DATA = {
             centerY: 43,
             worldPriority: 20,
             worldConditions: {
-                requiredFlag: "crystalTreeRouteBriefed",
-                missingFlag: "crystalTreeCleared"
+                requiredFlag: "crystalTreeRouteBriefed"
             },
             entryRequiredFlag: "crystalTreeRouteBriefed",
             fieldTile: {
@@ -5420,8 +5419,8 @@ const FIXED_MAPS = {
                 "placementId": 12,
                 "actorId": "sophia_water_city",
                 "name": "ソフィア",
-                "x": 32,
-                "y": 15,
+                "x": 19,
+                "y": 13,
                 "imageKey": "overlay_companion_sophia",
                 "states": [
                     {
@@ -5432,7 +5431,7 @@ const FIXED_MAPS = {
                             "missingFlag": "crystalTreeRouteBriefed"
                         },
                         "placement": {
-                            "x": 22,
+                            "x": 19,
                             "y": 13
                         },
                         "action": {
@@ -5492,7 +5491,7 @@ const FIXED_MAPS = {
                             "missingFlag": "waterCityPostClearTalked"
                         },
                         "placement": {
-                            "x": 20,
+                            "x": 19,
                             "y": 13
                         },
                         "action": {
@@ -5509,7 +5508,7 @@ const FIXED_MAPS = {
                             "missingFlag": "rexnoteRouteKnown"
                         },
                         "placement": {
-                            "x": 21,
+                            "x": 19,
                             "y": 13
                         },
                         "action": {
@@ -11240,20 +11239,6 @@ const FIXED_DUNGEON_MAPS = {
                                     "eventId": "lighthouse_zelied_story_support"
                                 }
                             },
-                            {
-                                "stateId": "zelied_big_tower",
-                                "priority": 0,
-                                "when": {
-                                    "requiredFlag": "legacyZeliedJoinQuestEnabled"
-                                },
-                                "action": {
-                                    "label": "ゼリードと話す",
-                                    "log": "ゼリードが、頂上に残る歪みを見上げている。",
-                                    "type": "quest",
-                                    "questId": "zelied_big_tower",
-                                    "lockedText": "ゼリードはまだ、灯台の異変を見極めているようだ。"
-                                }
-                            }
                         ]
                     }
                 ],
@@ -11712,23 +11697,6 @@ const FIXED_DUNGEON_MAPS = {
                         storyEventId: "big_tower_clear",
                         actionLabel: "リリスと対峙する"
                     },
-                    {
-                        x: 11,
-                        y: 10,
-                        monsterId: [
-                            301060,
-                            303205
-                        ],
-                        questId: "zelied_big_tower",
-                        requiredFlag: "legacyZeliedJoinQuestEnabled",
-                        inactiveTile: "G",
-                        mapSpriteMonsterId: 301060,
-                        startEventId: "quest_zelied_tower_echo_encounter",
-                        storyEventId: "quest_zelied_tower_echo_clear",
-                        bossStatMultiplier: 1.25,
-                        actionLabel: "灯火の残響に挑む",
-                        challengeText: "砕けた結界から、二つの影が滲み出す。\n灯火の残響に挑みますか？"
-                    }
                 ],
                 entryPoint: {
                     x: 19,
@@ -17566,29 +17534,6 @@ const FIXED_DUNGEON_MAPS = {
                 ],
                 nextActorPlacementId: 2,
                 mapActors: [
-                    {
-                        "placementId": 1,
-                        "actorId": "luna_hidden_dark_shrine",
-                        "name": "月影の声",
-                        "x": 16,
-                        "y": 21,
-                        "imageKey": "overlay_companion_luna",
-                        "states": [
-                            {
-                                "stateId": "luna_hidden_dark_shrine",
-                                "priority": 0,
-                                "when": {
-                                    "requiredFlag": "legacyLunaHiddenJoinQuestEnabled"
-                                },
-                                "action": {
-                                    "label": "月影の声を聞く",
-                                    "log": "月光の向こうから、静かな呼び声が届く。",
-                                    "type": "quest",
-                                    "questId": "luna_hidden_dark_shrine"
-                                }
-                            }
-                        ]
-                    }
                 ],
                 mapActions: [
                     {
@@ -17601,17 +17546,6 @@ const FIXED_DUNGEON_MAPS = {
                     }
                 ],
                 bosses: [
-                    {
-                        x: 16,
-                        y: 6,
-                        monsterId: 401170,
-                        questId: "luna_hidden_dark_shrine",
-                        startEventId: "quest_luna_hidden_encounter",
-                        storyEventId: "quest_luna_hidden_clear",
-                        requiredFlag: "legacyLunaHiddenJoinQuestEnabled",
-                        actionLabel: "月影の試練に挑む",
-                        inspectLog: "月光を飲む影が、祭壇の中央で脈打っている。"
-                    }
                 ],
                 chests: [
                     {

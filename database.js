@@ -356,7 +356,7 @@ const INITIAL_DATA_TEMPLATE = {
 			limitBreak:0, sp:1,
             lbProgress: {
                 counters: { battleWins: 0 },
-                sources: { story: 0, battle: 0, dungeon: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, trial: 0, legacy: 0 },
+                sources: { story: 0, battle: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, trial: 0, legacy: 0 },
                 trials: { mid: false, final: false, midClearedAt: null, finalClearedAt: null }
             },
             tree:{"ATK":0,"MAG":0,"SPD":0,"HP":0,"MP":0, "WARRIOR":0, "MAGE":0, "PRIEST":0, "M_KNIGHT":0}, 

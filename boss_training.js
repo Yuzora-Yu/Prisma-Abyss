@@ -189,7 +189,7 @@ const BossTraining = {
     startBattle: (entry, difficulty) => {
         if (!entry || !difficulty) return false;
         const monsterIds = entry.monsterIds.map(Number).filter(id => BossTraining.getMonsterMaster(id));
-        if (!monsterIds.length) return Menu.msg('訓練用のボスデータが見つかりません。');
+        if (!monsterIds.length) return Menu.msg('今は利用できないようだ。');
         const context = {
             version: 1,
             trainingId: entry.id,

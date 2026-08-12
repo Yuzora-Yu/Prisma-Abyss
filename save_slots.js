@@ -724,7 +724,7 @@
                     await SaveSlotUI.showMessage(`セーブNo.${slotId}へ保存しました。`);
                 } catch (error) {
                     console.error(error);
-                    await SaveSlotUI.showMessage(error?.message || '手動セーブに失敗しました。');
+                    await SaveSlotUI.showMessage('今は利用できないようだ。');
                 } finally {
                     SaveSlotUI.busy = false;
                     await SaveSlotUI.render();
@@ -754,7 +754,7 @@
             } catch (error) {
                 console.error(error);
                 SaveSlotUI.busy = false;
-                await SaveSlotUI.showMessage(error?.message || 'セーブデータを読み込めませんでした。');
+                await SaveSlotUI.showMessage('今は利用できないようだ。');
                 await SaveSlotUI.render();
             }
         }

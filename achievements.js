@@ -491,7 +491,7 @@ const AchievementManager = {
     claim: (id) => {
         AchievementManager.checkProgress({ save: false });
         const ach = ACHIEVEMENTS_DATA.find(a => Number(a.id) === Number(id));
-        if (!ach) return { ok: false, message: '実績データが見つかりません。' };
+        if (!ach) return { ok: false, message: '今は利用できないようだ。' };
 
         const key = String(ach.id);
         const state = App.data.achievements[key];

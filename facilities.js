@@ -365,7 +365,7 @@ const Facilities = {
     claimCoinSpendingReward: (milestone) => {
         const rewardMaster = Array.isArray(DB.COIN_SPENDING_REWARDS) ? DB.COIN_SPENDING_REWARDS : [];
         const entry = rewardMaster.find(reward => Number(reward.coins) === Number(milestone));
-        if (!entry) return Menu.msg('累計報酬データが見つかりません。');
+        if (!entry) return Menu.msg('今は利用できないようだ。');
         const state = typeof App.ensureCoinSpendingRewardProgress === 'function'
             ? App.ensureCoinSpendingRewardProgress(App.data)
             : (App.data.progress.coinSpendingRewards ||= { claimedMilestones: [] });
@@ -406,7 +406,7 @@ const Facilities = {
                 : null;
             if (!eq) {
                 App.data.items[99] += r.medals;
-                Menu.msg("景品装備のデータを読み込めませんでした。");
+                Menu.msg('今は利用できないようだ。');
                 return;
             }
             eq.source = 'coinExchange';

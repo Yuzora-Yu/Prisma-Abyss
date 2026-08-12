@@ -36,11 +36,15 @@
         worldObjects: [],
         actorObjects: [],
         waterObjects: [],
+        waterWaveGraphics: null,
         uiObjects: [],
         atmosphereObjects: [],
         atmosphereLight: null,
         atmosphereSignature: null,
         textureKeys: new Set(),
+        mapTextureKeys: new Set(),
+        textureMapSignature: null,
+        collectingTextureKeys: null,
         lastPlayerTextureKey: null,
         resizeObserver: null,
         lastStaticSignature: null,
@@ -61,6 +65,7 @@
         while (objects.length) {
             const object = objects.pop();
             object?.__prismaTween?.remove?.();
+            state.scene?.tweens?.killTweensOf?.(object);
             if (object && object.destroy) object.destroy();
         }
     };
@@ -75,6 +80,10 @@
         if (error) {
             console.error('[PhaserField] 描画同期に失敗したためCanvas描画へ戻します。', error);
         }
+        if (state.resizeObserver) {
+            state.resizeObserver.disconnect?.();
+            state.resizeObserver = null;
+        }
         if (state.game) {
             try {
                 state.game.destroy(true);
@@ -83,6 +92,11 @@
             }
             state.game = null;
             state.scene = null;
+            state.textureKeys.clear();
+            state.mapTextureKeys.clear();
+            state.textureMapSignature = null;
+            state.collectingTextureKeys = null;
+            state.waterWaveGraphics = null;
         }
     };
 
@@ -96,20 +110,41 @@
         return fallback;
     };
 
-    const addKnownTextures = (scene) => {
-        const graphics = window.GRAPHICS;
-        if (!graphics || !graphics.images) return;
+    const ensureTexture = (scene, key) => {
+        if (!scene || !key) return false;
+        if (state.collectingTextureKeys) state.collectingTextureKeys.add(key);
+        if (scene.textures.exists(key)) {
+            state.textureKeys.add(key);
+            return true;
+        }
 
-        Object.entries(graphics.images).forEach(([key, image]) => {
-            if (!image || !image.complete || !image.naturalWidth || state.textureKeys.has(key)) return;
-            if (!scene.textures.exists(key)) scene.textures.addImage(key, image);
-            // High-resolution companion masters are reduced once at render time.
-            // Per-texture linear filtering avoids the aliasing caused by forcing a
-            // 1200px source through the global nearest-neighbour tile filter.
+        const graphics = window.GRAPHICS;
+        const image = graphics?.images?.[key] || graphics?.get?.(key);
+        if (!image || !image.complete || !image.naturalWidth) return false;
+        try {
+            scene.textures.addImage(key, image);
             if (String(key).startsWith('overlay_companion_') && typeof Phaser !== 'undefined') {
                 scene.textures.get(key)?.setFilter?.(Phaser.Textures.FilterMode.LINEAR);
             }
             state.textureKeys.add(key);
+            return true;
+        } catch (error) {
+            console.warn(`[PhaserField] テクスチャ登録を継続できませんでした: ${key}`, error);
+            return false;
+        }
+    };
+
+    const releaseMapTextures = (scene, previousKeys, keepKeys) => {
+        if (!scene || !previousKeys) return;
+        previousKeys.forEach(key => {
+            if (!key || keepKeys?.has(key) || !state.textureKeys.has(key)) return;
+            try {
+                if (scene.textures.exists(key)) scene.textures.remove(key);
+                state.textureKeys.delete(key);
+                if (state.lastPlayerTextureKey === key) state.lastPlayerTextureKey = null;
+            } catch (error) {
+                console.warn(`[PhaserField] テクスチャ解放を継続できませんでした: ${key}`, error);
+            }
         });
     };
 
@@ -122,11 +157,7 @@
 
     const addImage = (scene, key, x, y, options = {}, target = state.worldObjects) => {
         key = resolveTextureKey(key);
-        if (!key) return null;
-        if (!scene.textures.exists(key)) {
-            window.GRAPHICS?.get?.(key);
-            return null;
-        }
+        if (!key || !ensureTexture(scene, key)) return null;
         const image = scene.add.image(x, y, key);
         image.setOrigin(options.originX ?? 0.5, options.originY ?? 1);
         const bleed = options.bleed || 0;
@@ -380,7 +411,7 @@
         if (!image) return;
         image.setFlipX(decor.flipX);
         image.setAngle(decor.angle);
-        if (decor.animate === 'electric') {
+        if (decor.animate === 'electric' && (decor.hash & 3) === 0) {
             scene.tweens.add({
                 targets: image,
                 alpha: Math.max(0.42, decor.alpha - 0.28),
@@ -518,19 +549,34 @@
                 bleed: 0.6
             });
             if (water) {
-                const waveA = scene.add.rectangle(px + 9, py + 11, 11, 1, 0xa8e8ff, 0.18);
-                const waveB = scene.add.rectangle(px + 21, py + 22, 13, 1, 0x061f35, 0.16);
-                waveA.setDepth(waterDepth + 1);
-                waveB.setDepth(waterDepth + 1);
-                state.worldObjects.push(waveA, waveB);
-                state.waterObjects.push({
-                    image: water,
-                    waveA,
-                    waveB,
-                    baseAX: px + 9,
-                    baseBX: px + 21,
-                    phase: (tileX + tileY) & 1
-                });
+                if (isLowerWaterTile) {
+                    // 広い水面では、1マスごとに2つのRectangleを持つと
+                    // 可視範囲だけで数百GameObjectになる。波紋だけGraphics 1枚へまとめる。
+                    state.waterObjects.push({
+                        image: water,
+                        batched: true,
+                        waveDepth: waterDepth + 1,
+                        baseAX: px + 9,
+                        baseBX: px + 21,
+                        baseAY: py + 11,
+                        baseBY: py + 22,
+                        phase: (tileX + tileY) & 1
+                    });
+                } else {
+                    const waveA = scene.add.rectangle(px + 9, py + 11, 11, 1, 0xa8e8ff, 0.18);
+                    const waveB = scene.add.rectangle(px + 21, py + 22, 13, 1, 0x061f35, 0.16);
+                    waveA.setDepth(waterDepth + 1);
+                    waveB.setDepth(waterDepth + 1);
+                    state.worldObjects.push(waveA, waveB);
+                    state.waterObjects.push({
+                        image: water,
+                        waveA,
+                        waveB,
+                        baseAX: px + 9,
+                        baseBX: px + 21,
+                        phase: (tileX + tileY) & 1
+                    });
+                }
             } else {
                 addTileFallback(scene, px, py, objectConfig.color, waterDepth);
             }
@@ -1145,6 +1191,67 @@
         ].join('::');
     };
 
+    const getTextureMapSignature = (field) => {
+        const dungeon = getApp()?.data?.dungeon || {};
+        return [
+            field.getCurrentAreaKey?.() || 'WORLD',
+            field.currentMapData?.name || 'WORLD',
+            field.currentMapData?.themeKey || 'DEFAULT',
+            getDungeon()?.floor || field.currentMapData?.floor || 0,
+            dungeon.floorPlanType || '',
+            dungeon.visualThemeId || ''
+        ].join('::');
+    };
+
+    const refreshWaterAnimation = (scene, field) => {
+        if (!scene) return;
+        const batched = state.waterObjects.filter(water => water?.batched === true);
+        if (batched.length > 0) {
+            let graphics = state.waterWaveGraphics;
+            if (!graphics || !graphics.active) {
+                graphics = scene.add.graphics();
+                state.waterWaveGraphics = graphics;
+                state.worldObjects.push(graphics);
+            }
+            graphics.clear();
+            graphics.setDepth(Math.max(...batched.map(water => Number(water.waveDepth) || -49999)));
+
+            const shifted = [];
+            const normal = [];
+            batched.forEach(water => (((field.step + water.phase) & 1) === 0 ? shifted : normal).push(water));
+            const drawWaveSet = (items, color, alpha, isA) => {
+                if (!items.length) return;
+                graphics.lineStyle(1, color, alpha);
+                items.forEach(water => {
+                    const isShifted = ((field.step + water.phase) & 1) === 0;
+                    const x = (isA ? water.baseAX : water.baseBX) + (isA ? (isShifted ? 2 : -1) : (isShifted ? -2 : 1));
+                    const y = isA ? water.baseAY : water.baseBY;
+                    const width = isA ? 11 : 13;
+                    graphics.lineBetween(x - width / 2, y, x + width / 2, y);
+                });
+            };
+            drawWaveSet(shifted, 0xa8e8ff, 0.24, true);
+            drawWaveSet(normal, 0xa8e8ff, 0.12, true);
+            drawWaveSet(shifted, 0x061f35, 0.11, false);
+            drawWaveSet(normal, 0x061f35, 0.20, false);
+        } else if (state.waterWaveGraphics) {
+            state.waterWaveGraphics.clear?.();
+        }
+
+        state.waterObjects.forEach(water => {
+            if (!water || water.batched === true) {
+                if (water?.image) water.image.setAlpha(1);
+                return;
+            }
+            const isShifted = ((field.step + water.phase) & 1) === 0;
+            water.waveA.x = water.baseAX + (isShifted ? 2 : -1);
+            water.waveB.x = water.baseBX + (isShifted ? -2 : 1);
+            water.waveA.setAlpha(isShifted ? 0.24 : 0.12);
+            water.waveB.setAlpha(isShifted ? 0.11 : 0.20);
+            water.image.setAlpha(1);
+        });
+    };
+
     const drawPlayer = (scene, field) => {
         destroyObjects(state.actorObjects);
         const px = Number(field.x) * TILE_SIZE + TILE_SIZE / 2;
@@ -1168,9 +1275,10 @@
         }
         // Request the desired frame, but never replace the actor with a white circle while
         // a newly cached wing frame is being promoted into Phaser's texture manager.
-        window.GRAPHICS?.get?.(heroKey);
         const normalKey = `hero_${direction}_${field.step}`;
         const fallbackKeys = [state.lastPlayerTextureKey, normalKey, 'hero_down_1'];
+        ensureTexture(scene, heroKey);
+        fallbackKeys.forEach(key => { if (key) ensureTexture(scene, key); });
         const drawKey = scene.textures.exists(heroKey)
             ? heroKey
             : fallbackKeys.find(key => key && scene.textures.exists(key));
@@ -1183,21 +1291,12 @@
         if (state.atmosphereLight?.active) {
             state.atmosphereLight.setPosition(px, py - TILE_SIZE / 2);
         }
-        state.waterObjects.forEach((water) => {
-            const shifted = ((field.step + water.phase) & 1) === 0;
-            // タイル画像と描画矩形は動かさず、1マス内の波紋だけを左右へ揺らす。
-            water.waveA.x = water.baseAX + (shifted ? 2 : -1);
-            water.waveB.x = water.baseBX + (shifted ? -2 : 1);
-            water.waveA.setAlpha(shifted ? 0.24 : 0.12);
-            water.waveB.setAlpha(shifted ? 0.11 : 0.20);
-            water.image.setAlpha(1);
-        });
+        refreshWaterAnimation(scene, field);
     };
 
     const sync = (field) => {
         const scene = state.scene;
         if (!scene || !field || !field.ready) return;
-        addKnownTextures(scene);
         const parent = document.getElementById('phaser-field-root');
         if (parent && state.game && parent.clientWidth > 0 && parent.clientHeight > 0) {
             const parentWidth = parent.clientWidth;
@@ -1221,6 +1320,13 @@
         destroyObjects(state.actorObjects);
         destroyObjects(state.uiObjects);
         state.waterObjects = [];
+        state.waterWaveGraphics = null;
+
+        const textureMapSignature = getTextureMapSignature(field);
+        const mapChanged = state.textureMapSignature !== null && state.textureMapSignature !== textureMapSignature;
+        const previousMapTextureKeys = mapChanged ? new Set(state.mapTextureKeys) : null;
+        if (mapChanged) state.mapTextureKeys.clear();
+        state.collectingTextureKeys = new Set();
 
         const mapSize = getMapSize(field);
         const areaKey = field.getCurrentAreaKey();
@@ -1279,6 +1385,12 @@
         drawPlayer(scene, field);
         drawAtmosphere(scene, field);
         if (typeof field.drawHudMinimap === 'function') field.drawHudMinimap();
+
+        state.collectingTextureKeys.forEach(key => state.mapTextureKeys.add(key));
+        const currentMapTextureKeys = new Set(state.mapTextureKeys);
+        state.collectingTextureKeys = null;
+        if (mapChanged) releaseMapTextures(scene, previousMapTextureKeys, currentMapTextureKeys);
+        state.textureMapSignature = textureMapSignature;
         state.lastStaticSignature = staticSignature;
     };
 
@@ -1319,8 +1431,6 @@
                     create: function () {
                         state.scene = this;
                         state.ready = true;
-                        addKnownTextures(this);
-
                         // マップ上のタップ/クリックは、カメラ座標からタイル座標へ変換して
                         // Field側の最短経路自動歩行へ渡す。描画ロジック自体は変更しない。
                         this.input.on('pointerdown', pointer => {
@@ -1420,7 +1530,11 @@
         setActive(active) {
             if (state.failed) return;
             if (!active) {
-                if (state.scene) state.scene.scene.setVisible(false);
+                if (state.scene) {
+                    state.scene.scene.setVisible(false);
+                    state.scene.scene.sleep();
+                }
+                state.game?.loop?.sleep?.();
                 return;
             }
 

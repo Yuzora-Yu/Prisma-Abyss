@@ -56,7 +56,7 @@ const MenuAchievements = {
                     <button class="btn" onclick="Menu.closeSubScreen('achievements')">もどる</button>
                 </div>
                 <div class="scroll-area" style="padding:16px; background:#111; color:#ccc;">
-                    実績管理ロジックが読み込まれていません。achievements.js の読み込み順を確認してください。
+                    今は利用できないようだ。
                 </div>
             `;
             return;

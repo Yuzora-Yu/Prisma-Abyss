@@ -3031,6 +3031,35 @@ const Dungeon = {
         return null;
     },
 
+    buildGridDistanceMap: (startX, startY, isWalkable, width, height, maxDistance = Infinity) => {
+        const sx = Number(startX), sy = Number(startY), w = Number(width), h = Number(height);
+        if (![sx, sy, w, h].every(Number.isFinite) || w <= 0 || h <= 0 || typeof isWalkable !== 'function') return new Map();
+        const maxSteps = Number.isFinite(Number(maxDistance))
+            ? Math.max(0, Math.floor(Number(maxDistance)))
+            : w * h;
+        const startKey = `${sx},${sy}`;
+        const distances = new Map([[startKey, 0]]);
+        const queue = [{ x: sx, y: sy, distance: 0 }];
+        const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+        for (let qi = 0; qi < queue.length; qi++) {
+            const current = queue[qi];
+            if (current.distance >= maxSteps) continue;
+            for (const [dx, dy] of directions) {
+                const nx = current.x + dx;
+                const ny = current.y + dy;
+                if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                const nextKey = `${nx},${ny}`;
+                if (distances.has(nextKey)) continue;
+                if (!isWalkable(nx, ny, current.x, current.y)) continue;
+                const distance = current.distance + 1;
+                distances.set(nextKey, distance);
+                queue.push({ x: nx, y: ny, distance });
+            }
+        }
+        return distances;
+    },
+
     isFixedHunterWalkable: (x, y, fromX, fromY, occupied = null) => {
         if (!Dungeon.isFixedWalkableForEffect(x, y)) return false;
         const map = Field.currentMapData;
@@ -3214,6 +3243,11 @@ const Dungeon = {
         if (!map?.isFixed || !Array.isArray(map.tiles)) return candidates;
         const width = Math.max(0, Number(map.width || map.tiles[0]?.length || 0));
         const height = Math.max(0, Number(map.height || map.tiles.length || 0));
+        const distances = Dungeon.buildGridDistanceMap(
+            Field.x, Field.y,
+            (nx, ny, fromX, fromY) => Dungeon.isFixedHunterWalkable(nx, ny, fromX, fromY, occupied),
+            width, height, Math.max(width * height, 1)
+        );
         for (let y = 1; y < height - 1; y++) {
             for (let x = 1; x < width - 1; x++) {
                 if (!Dungeon.isFixedHunterWalkable(x, y, x, y, occupied)) continue;
@@ -3221,13 +3255,9 @@ const Dungeon = {
                 if (Number(x) === Number(Field.x) && Number(y) === Number(Field.y)) continue;
                 const distance = Math.abs(Number(x) - Number(Field.x)) + Math.abs(Number(y) - Number(Field.y));
                 if (distance < Math.max(3, Number(definition?.spawnMinDistance || 5))) continue;
-                const path = Dungeon.findShortestGridPath(
-                    Field.x, Field.y, x, y,
-                    (nx, ny, fromX, fromY) => Dungeon.isFixedHunterWalkable(nx, ny, fromX, fromY, occupied),
-                    width, height, Math.max(width * height, 1)
-                );
-                if (!Array.isArray(path)) continue;
-                candidates.push({ x, y, distance: path.length });
+                const pathDistance = distances.get(`${x},${y}`);
+                if (!Number.isFinite(Number(pathDistance))) continue;
+                candidates.push({ x, y, distance: Number(pathDistance) });
             }
         }
         return candidates;

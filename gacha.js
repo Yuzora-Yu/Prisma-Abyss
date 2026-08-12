@@ -330,7 +330,7 @@ const Gacha = {
                     limitBreak: 0,
                     lbProgress: {
                         counters: { battleWins: 0 },
-                        sources: { story: 0, battle: 0, dungeon: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, trial: 0, legacy: 0 },
+                        sources: { story: 0, battle: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, trial: 0, legacy: 0 },
                         trials: { mid: false, final: false, midClearedAt: null, finalClearedAt: null }
                     },
                     equips: {},

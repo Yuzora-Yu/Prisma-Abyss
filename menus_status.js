@@ -134,9 +134,7 @@ const MenuStatus = {
                 </div>
                 ${row('プレイ時間', `<span data-play-time style="white-space:nowrap; font-variant-numeric:tabular-nums;">${App.formatPlayTime?.(App.getCurrentPlayTimeMs?.() || 0) || '0000:00:00'}</span>`, '#fff', '16px')}
                 ${row('ストーリー進行度', storyProgress, '#fff', '16px')}
-                ${row('深淵世界の踏破', flags.abyssAzelgaragDefeated ? '達成' : '攻略中', '#d7b8ff', '16px')}
                 ${row('深淵の亀裂 最高到達', `${randomMaxFloor} 階`, '#ffd700', '16px')}
-                ${row('深淵挑戦回数（合計）', `${dungeon.tryCount || 0} 回`)}
                 ${row('深淵の亀裂の挑戦', `${dungeon.randomTryCount || 0} 回`)}
                 ${row('冒険者ランク', `${guildRank}ランク`, '#ffd56b')}
                 ${row('通常クエストクリア', `${normalQuestClears} 件`, '#9fd8ff')}
@@ -350,7 +348,7 @@ const MenuStatus = {
 
     travelToGuildReception: () => {
         if (typeof App.requestGuildReceptionTravel !== 'function') {
-            Menu.msg('ギルド受付への移動機能を利用できません。');
+            Menu.msg('今は利用できないようだ。');
             return false;
         }
         return App.requestGuildReceptionTravel();

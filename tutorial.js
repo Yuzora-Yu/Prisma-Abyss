@@ -1,7 +1,7 @@
 /* ========================================================================== 
    Prisma Abyss Tutorial Modal
    --------------------------------------------------------------------------
-   - ゲーム進行側からは TutorialModal.open('tutorial-id') で呼び出せます。
+   - 将来の発火処理からは MenuExchange.openTutorial('tutorial-id') を呼び出してください。
    - 一覧やページ内容は TUTORIAL_DATA を編集してください。
    - 現在の39件は本文・画像とも仮案です。各 pages 配列へページを追加できます。
    - 画像は assets/tutorial/0001.png のように管理する想定です。
@@ -557,17 +557,17 @@
         {
             "no": "T33",
             "id": "t33-magic-communication",
-            "title": "魔法通信を使おう",
+            "title": "魔道通信を使おう",
             "description": "離れた場所から施設を利用",
             "phase": "光の宮殿後",
-            "screen": "魔法通信",
+            "screen": "魔道通信",
             "triggerHint": "item111取得 or craftingMenuUnlocked",
             "pages": [
                 {
-                    "title": "魔法通信を使おう",
+                    "title": "魔道通信を使おう",
                     "image": "assets/tutorial/0033.png",
-                    "imageAlt": "魔法通信から各施設を選ぶ画面",
-                    "body": "魔法通信を使うと、現在地から鍛冶、錬金、ギルドなどの施設へアクセスできます。\n\n新しい製作機能が増えるのではなく、すでに解放した施設を離れた場所から利用できる便利な機能です。"
+                    "imageAlt": "魔道通信から各施設を選ぶ画面",
+                    "body": "魔道通信を使うと、現在地から鍛冶、錬金、ギルドなどの施設へアクセスできます。\n\n新しい製作機能が増えるのではなく、すでに解放した施設を離れた場所から利用できる便利な機能です。"
                 }
             ]
         },
@@ -730,6 +730,28 @@
             return this;
         },
 
+        getSeenTutorialIds() {
+            const progress = (typeof App !== 'undefined' && App.data?.progress) ? App.data.progress : null;
+            if (!progress || !Array.isArray(progress.tutorialsSeen)) return [];
+            return [...new Set(progress.tutorialsSeen.map(id => String(id || '').trim()).filter(Boolean))];
+        },
+
+        markSeen(id) {
+            if (typeof App === 'undefined' || !App.data) return false;
+            if (!App.data.progress || typeof App.data.progress !== 'object') App.data.progress = {};
+            if (!Array.isArray(App.data.progress.tutorialsSeen)) App.data.progress.tutorialsSeen = [];
+            const key = String(id || '').trim();
+            if (!key || App.data.progress.tutorialsSeen.includes(key)) return false;
+            App.data.progress.tutorialsSeen.push(key);
+            if (typeof App.save === 'function') App.save();
+            return true;
+        },
+
+        getSeenTutorials() {
+            const seen = new Set(this.getSeenTutorialIds());
+            return this.getTutorials().filter(tutorial => seen.has(tutorial.id));
+        },
+
         getTutorials() {
             return this.tutorials.map(tutorial => ({
                 no: tutorial.no,
@@ -751,11 +773,12 @@
             if (!tutorial) {
                 console.warn(`[TutorialModal] チュートリアルが見つかりません: ${id}`);
                 if (typeof Menu !== 'undefined' && typeof Menu.msg === 'function') {
-                    Menu.msg('チュートリアルを読み込めませんでした。');
+                    Menu.msg('今は利用できないようだ。');
                 }
                 return false;
             }
 
+            this.markSeen(tutorial.id);
             this.ensureStyles();
             const root = this.ensureDOM();
             this.currentTutorialId = tutorial.id;
@@ -906,12 +929,12 @@
                 image.onerror = () => {
                     image.hidden = true;
                     placeholder.hidden = false;
-                    imagePath.textContent = page.image || '画像パス未設定';
+                    imagePath.textContent = '今は利用できないようだ。';
                 };
                 image.alt = page.imageAlt;
                 image.hidden = !page.image;
                 placeholder.hidden = Boolean(page.image);
-                imagePath.textContent = page.image || '画像パス未設定';
+                imagePath.textContent = '今は利用できないようだ。';
 
                 if (page.image) {
                     image.src = '';

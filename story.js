@@ -2423,86 +2423,6 @@ const STORY_MANAGER_DATA = {
                 }
         ],
 
-        "QUEST_ZELIED_START": [
-            {
-                "name": "ゼリード",
-                "text": "ん、[N:101]、か…まだ生きていたとは驚きだ。\n灯台の火は戻ったようだな。",
-                "charId": 103
-            },
-            {
-                "name": "ジョセフ",
-                "text": "お、お前、[N:103]じゃねえか！！\n今までどこで何してやがった。勝手にいなくなって、悪い噂しか聞かなくなって、死んだとばかり…",
-                "charId": 101
-            },
-            {
-                "name": "ゼリード",
-                "text": "…騎士様にはわからねえよ。\nんなことより、まだ、上に嫌な気配が残ってるぜ。",
-                "charId": 103
-            },
-            {
-                "name": "ゼリード",
-                "text": "あれを放っておけば、ここはまた闇を生み出す。\n…性分じゃねえが、頼まれてな。手伝ってくれ。",
-                "charId": 103
-            }
-        ],
-        "QUEST_ZELIED_TOWER_ECHO_ENCOUNTER": [
-            {
-                "name": "ゼリード",
-                "text": "傀儡の機械と魔獣風情が、妙な力を持っちまったみたいだな…",
-                "charId": 103
-            },
-            {
-                "name": "ゼリード",
-                "text": "来るぞ。構えろ！",
-                "charId": 103
-            }
-        ],
-        "QUEST_ZELIED_TOWER_ECHO_CLEAR": [
-                {
-                        "name": "ゼリード",
-                        "text": "……消えたか。これで灯台は本当に静かになる。"
-                },
-                {
-                        "name": "ゼリード",
-                        "text": "一階へ戻ろう。俺の答えも、そこで渡す。"
-                }
-        ],
-        "QUEST_ZELIED_REPORT": [
-            {
-                "name": "ゼリード",
-                "text": "改めて、ありがとな。[N:301]、[N:101]。\n俺一人じゃ、あんな化け物倒すのは厳しかった。",
-                "charId": 103
-            },
-            {
-                "name": "ゼリード",
-                "text": "あの儀式のあと、俺みたいな斥候は王国から追放された…いや違うな、全ての犯人にされたんだ。",
-                "charId": 103
-            },
-            {
-                "name": "ゼリード",
-                "text": "だから今日までずっと身を潜めてきた。会いに行けなくて悪かったな、戦友。",
-                "charId": 103
-            },
-            {
-                "name": "ジョセフ",
-                "text": "そんなことが…何も知らず、すまなかった。\nお前はそれでも影から、民を守っていたんだな。",
-                "charId": 101
-            },
-            {
-                "name": "ゼリード",
-                "text": "柄じゃねえけどな。俺にも騎士様の志とやらが\nしみこんじまったみたいだ。",
-                "charId": 103
-            },
-            {
-                "name": "ゼリード",
-                "text": "……俺も、お前たちの旅に連れてってくれ。\n世界の真実とやら、奪いに行かせてくれ。",
-                "charId": 103
-            },
-            {
-                "name": "システム",
-                "text": "[N:103]が仲間に加わった！"
-            }
-        ],
         "LOCKED_LIGHT_PALACE": [
                 {
                         "name": "システム",
@@ -2586,7 +2506,7 @@ const STORY_MANAGER_DATA = {
                 },
                 {
                         "name": "国王",
-                        "text": "これは『星詠みの触媒器』。\n持つ者のいる場所を仮の工房として、鍛冶と錬金の火をつなぐ器だ。"
+                        "text": "これは『星詠みの触媒器』。\n持つ者のいる場所から、魔道通信を通して鍛冶と錬金の火をつなぐ器だ。"
                 },
                 {
                         "name": "国王",
@@ -2740,7 +2660,7 @@ const STORY_MANAGER_DATA = {
         "THUNDER_FORT_LUNA_AWAKENING_SKELETON": [
                 { "name": "システム", "text": "魔王軍が退いた後。救護所の静けさの中で、ルーナがゆっくりと目を開いた。" },
                 { "name": "システム", "text": "救護班に支えられたレイラは涙をこぼしながら謝り、ルーナを抱きしめた。" },
-                { "name": "システム", "text": "アルスは五年間探し続けた幼馴染へ、震える声で呼びかける。だがルーナの瞳に、幼馴染を見る色はない。" },
+                { "name": "システム", "text": "アルスは探し続けた幼馴染へ、震える声で呼びかける。だがルーナの瞳に、幼馴染を見る色はない。" },
                 { "name": "ルーナ", "charId": 401, "text": "冒険者様、助けてくださってありがとうございます。" },
                 { "name": "ケイト", "charId": 104, "text": "ルーナさんの力も、レオンさんの呪いも、普通の治療では届きません。……ソフィアさんなら、結晶樹について何か知っているかもしれません。" }
         ],
@@ -3792,26 +3712,6 @@ const STORY_MANAGER_DATA = {
                 {
                         "name": "クロード",
                         "text": "借りが増えたな。\n旅の中で、二人分返させてくれ。"
-                }
-        ],
-        "QUEST_LUNA_ENCOUNTER": [
-                {
-                        "name": "ルーナ",
-                        "text": "月の光が、ここだけ届かない。\n影がこちらを見ています。"
-                },
-                {
-                        "name": "ルーナ",
-                        "text": "私は退きません。\n共に、あれを止めてください。"
-                }
-        ],
-        "QUEST_LUNA_CLEAR": [
-                {
-                        "name": "ルーナ",
-                        "text": "誰かの祈りに守られるだけでは、\nまた同じ場所で震えてしまう。"
-                },
-                {
-                        "name": "ルーナ",
-                        "text": "今度は私が立ちます。\nこの光は、私が選んだものです。"
                 }
         ],
         "QUEST_RIN_START": [
@@ -5943,21 +5843,6 @@ const STORY_MANAGER_DATA = {
                 ],
                 "winActions": []
         },
-        "quest_luna_hidden_encounter": {
-                "actions": [
-                        { "type": "CONV", "value": "QUEST_LUNA_ENCOUNTER" },
-                        { "type": "BOSS", "value": 401170, "winEventId": "quest_luna_hidden_clear" }
-                ],
-                "winActions": []
-        },
-        "quest_luna_hidden_clear": {
-                "postBattleBossSprite": false,
-                "actions": [
-                        { "type": "CONV", "value": "QUEST_LUNA_CLEAR" },
-                        { "type": "QUEST_COMPLETE", "value": "luna_hidden_dark_shrine" }
-                ],
-                "winActions": []
-        },
         "quest_ryu_minerva_encounter": {
                 "actions": [
                         { "type": "CONV", "value": "QUEST_RYU_MINERVA_ENCOUNTER" },
@@ -7037,25 +6922,6 @@ const STORY_MANAGER_DATA = {
         },
         "quest_marie_report": {
                 "actions": [{ "type": "CONV", "value": "QUEST_MARIE_REPORT" }],
-                "winActions": []
-        },
-        "quest_zelied_start": {
-                "actions": [{ "type": "CONV", "value": "QUEST_ZELIED_START" }],
-                "winActions": []
-        },
-        "quest_zelied_report": {
-                "actions": [{ "type": "CONV", "value": "QUEST_ZELIED_REPORT" }],
-                "winActions": []
-        },
-        "quest_zelied_tower_echo_encounter": {
-                "actions": [
-                        { "type": "CONV", "value": "QUEST_ZELIED_TOWER_ECHO_ENCOUNTER" },
-                        { "type": "BOSS", "value": [301060, 302205], "bossStatMultiplier": 1.25, "winEventId": "quest_zelied_tower_echo_clear" }
-                ],
-                "winActions": []
-        },
-        "quest_zelied_tower_echo_clear": {
-                "actions": [{ "type": "CONV", "value": "QUEST_ZELIED_TOWER_ECHO_CLEAR" }],
                 "winActions": []
         },
         "quest_hayate_start": {

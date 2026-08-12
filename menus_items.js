@@ -192,7 +192,7 @@ const MenuItems = {
             return;
         }
         if (MenuItems.activeTab === 'materials' || MenuItems.isMaterial(item)) {
-            Menu.msg("素材は今後の生成・加工に使用します。");
+            Menu.msg('今は利用できないようだ。');
             return;
         }
 
@@ -208,7 +208,7 @@ const MenuItems = {
         // 特性書は、所持キャラクターと交換可能枠を専用UIで選択する。
         else if (item.type === '特性書' || Number(item.traitId) > 0) {
             if (item.traitBookImplemented === false) {
-                Menu.msg('この特性書はマスター登録済みですが、交換機能はまだ準備中です。');
+                Menu.msg('今は利用できないようだ。');
                 return;
             }
             MenuItems.selectedItem = item;
@@ -254,7 +254,7 @@ const MenuItems = {
         const current = typeof MenuBlacksmith !== 'undefined'
             ? MenuBlacksmith.findEquipmentMaster(equip)
             : null;
-        if (!current) return { ok:false, reason:'対応する正式装備マスターを特定できません。' };
+        if (!current) return { ok:false, reason:'今は利用できないようだ。' };
         if (current.specialEquip === true || current.noRandom === true || /^真・/.test(String(equip?.name || ''))) {
             return { ok:false, reason:'特殊装備・レプリカ・真装備は対象外です。' };
         }
@@ -517,7 +517,7 @@ const MenuItems = {
             return;
         }
         if (typeof PassiveSkill === 'undefined' || !PassiveSkill.MASTER?.[Number(item.traitId)]) {
-            Menu.msg('特性データを読み込めませんでした。');
+            Menu.msg('今は利用できないようだ。');
             return;
         }
         const targetTraitName = PassiveSkill.MASTER[Number(item.traitId)].name;
@@ -771,7 +771,7 @@ const MenuItems = {
             // --- B. LB育成アイテム ---
             else if (item.effectKind === 'limitBreak' || Number(item.id) === 123) {
                 if (typeof App.addLimitBreak !== 'function' || typeof App.getLimitBreakTrialCap !== 'function') {
-                    Menu.msg("LB成長処理を利用できません。");
+                    Menu.msg('今は利用できないようだ。');
                     return;
                 }
                 App.backfillLimitBreakLegacy?.(target);
@@ -784,12 +784,11 @@ const MenuItems = {
                     return;
                 }
                 if (currentLb >= trialCap) {
-                    const gateName = trialCap < 50 ? "中間試練" : "最終試練";
-                    Menu.msg(`${gateName}に合格するまで、これ以上LBを増やせません。`);
+                    Menu.msg('現在の成長限界に達しているようだ。');
                     return;
                 }
                 const amount = Math.max(1, Math.floor(Number(item.limitBreakAmount) || 1));
-                const result = App.addLimitBreak(target, amount, 'item');
+                const result = App.addLimitBreak(target, amount, 'prism');
                 if (!result.changed) {
                     Menu.msg("今はLBを増やせません。");
                     return;

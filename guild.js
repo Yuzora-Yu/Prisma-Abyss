@@ -1625,7 +1625,7 @@
             const trial = PROMOTION_TRIALS[progress.next];
             const opponent = trial ? global.MonsterData?.getMonsterById?.(Number(trial.monsterId)) : null;
             if (!trial || !opponent?.isGuildPromotionBoss || opponent.promotionRank !== progress.next) {
-                Facilities.showModal('guild-scene', '昇格試験', '<div style="padding:18px; text-align:center; color:#f88;">昇格試験マスターが見つかりません。</div>');
+                Facilities.showModal('guild-scene', '昇格試験', '<div style="padding:18px; text-align:center; color:#f88;">今は利用できないようだ。</div>');
                 return;
             }
             const ready = Guild.canTakePromotion();

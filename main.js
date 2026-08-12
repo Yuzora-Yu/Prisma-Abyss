@@ -509,8 +509,8 @@ const App = {
         209: 28,  // シルビア（ジョセフ加入後⇒水上都市）
         
         201: 38,  // アラン（海底神殿後⇒レクスノート邸。本格バランスは後工程）
-        202: 35,  // ソフィア（結晶樹導線の連続SQへ移行予定）
-        203: 40,  // ハヤテ（アラン加入後⇒水上都市）
+        202: 35,  // ソフィア（水上都市の既存加入導線を暫定保持）
+        203: 40,  // ハヤテ（長編イベント側の加入あり。旧早駆け導線はdisabledで保持）
         
         103: 35,  // ゼリード（大灯台クリア後）
         
@@ -526,7 +526,7 @@ const App = {
 
         303: 55,  // リーシア（魔王城クリア後⇒クレナ鍾乳洞深部）
 
-        401: 70,  // ルーナ（隠し高難度クエスト）
+        401: 70,  // ルーナ（結晶樹の本編進行で正式加入）
         402: 70,  // ゼノン（隠し高難度クエスト）
 
         501: 99  // リュシオン（隠し高難度クエスト）
@@ -3265,9 +3265,9 @@ const App = {
 
     getFeatureLockedMessage: (key) => {
         if (key === 'craftingMenu') {
-            return `まだ解放されていません！\n光の宮殿クリア後、地下牢の国王の依頼を達成すると利用できます。`;
+            return `まだ解放されていません！\n条件を満たすと利用できるようになります。`;
         }
-        return `まだ解放されていません！\nストーリーを進めると利用できるようになります。`;
+        return `まだ解放されていません！\n条件を満たすと利用できるようになります。`;
     },
 
     isFeatureUnlocked: (key) => {
@@ -3557,7 +3557,7 @@ const App = {
         if (!visited[areaKey]) return { ok: false, message: 'まだ発見していない場所には移動できない。' };
 
         const info = App.getFixedMapDef(areaKey);
-        if (!info) return { ok: false, message: 'この場所の定義が見つかりません。' };
+        if (!info) return { ok: false, message: '今は利用できないようだ。' };
         const targetWorldKey = info.kind === 'world'
             ? areaKey
             : ((typeof STORY_DATA !== 'undefined' && STORY_DATA.areas?.[areaKey]?.worldKey) || visited[areaKey]?.worldKey || 'WORLD');
@@ -3571,7 +3571,7 @@ const App = {
             return { ok: false, message: '統合の祭壇へ向かうには、先に奈落への洞窟の祭壇側出口を確保する必要がある。' };
         }
         const dest = App.getFixedMapWorldDestination(areaKey);
-        if (!dest) return { ok: false, message: 'この場所のフィールド座標が見つかりません。' };
+        if (!dest) return { ok: false, message: '今は利用できないようだ。' };
         const authoredEntry = info.kind === 'field' && info.def?.skyPrismEntryPoint
             ? info.def.skyPrismEntryPoint
             : null;
@@ -3704,7 +3704,7 @@ const App = {
             : (typeof FIXED_DUNGEON_MAPS !== 'undefined' && FIXED_DUNGEON_MAPS[areaKey]
                 ? { ...FIXED_DUNGEON_MAPS[areaKey], isDungeon: true, isFixed: true, areaKey, floor: floorNo }
                 : null);
-        if (!floorData) return { ok: false, message: 'ギルド受付のマップ情報を読み込めませんでした。' };
+        if (!floorData) return { ok: false, message: '今は利用できないようだ。' };
 
         if (typeof Field !== 'undefined' && typeof Field.stopMove === 'function') Field.stopMove();
         if (typeof App.clearAction === 'function') App.clearAction();
@@ -4022,7 +4022,6 @@ const App = {
             if (!progress) return { changed:false, count:0 };
             const completed = questId => progress.quests?.[questId]?.state === 'completed';
             const targets = {
-                luna_hidden_dark_shrine: { eventId:'quest_luna_hidden_clear', monsterId:401170 },
                 zenon_hidden_grezelia: { eventId:'quest_zenon_hidden_clear', monsterId:401180 }
             };
             const completedTargets = Object.entries(targets).filter(([questId]) => completed(questId)).map(([, value]) => value);
@@ -4269,7 +4268,7 @@ const App = {
             limitBreak: 0,
             lbProgress: {
                 counters: { battleWins: 0 },
-                sources: { story: 0, battle: 0, dungeon: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, monster: 0, trial: 0, item: 0, legacy: 0 },
+                sources: { story: 0, battle: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, monster: 0, trial: 0, legacy: 0 },
                 trials: { mid: false, final: false, midClearedAt: null, finalClearedAt: null }
             },
             reincarnationCount: 0,
@@ -4470,7 +4469,7 @@ const App = {
     },
 
     releaseMonsterAlly: (uid) => {
-        if (!App.data || !Array.isArray(App.data.characters)) return { ok:false, message:'仲間データを確認できません。' };
+        if (!App.data || !Array.isArray(App.data.characters)) return { ok:false, message:'今は利用できないようだ。' };
         const index = App.data.characters.findIndex(char => String(char?.uid) === String(uid));
         if (index < 0) return { ok:false, message:'対象の仲間が見つかりません。' };
         const char = App.data.characters[index];
@@ -5049,7 +5048,7 @@ const App = {
             limitBreak: 0,
             lbProgress: {
                 counters: { battleWins: 0 },
-                sources: { story: 0, battle: 0, dungeon: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, monster: 0, trial: 0, legacy: 0 },
+                sources: { story: 0, battle: 0, quest: 0, boss: 0, prism: 0, random: 0, gacha: 0, monster: 0, trial: 0, legacy: 0 },
                 trials: { mid: false, final: false, midClearedAt: null, finalClearedAt: null }
             },
             reincarnationCount: 0,
@@ -5105,8 +5104,7 @@ const App = {
             if (before >= max) {
                 message = `【仲間モンスター】${existing.name}のLBはすでに最大だ。`;
             } else if (before >= trialCap) {
-                const gateName = trialCap < 50 ? '中間試練' : '最終試練';
-                message = `【仲間モンスター】${existing.name}は${gateName}を越えるまで、これ以上LBを増やせない。`;
+                message = `【仲間モンスター】${existing.name}は現在の成長限界に達しているようだ。`;
             } else if (typeof App.addLimitBreak === 'function') {
                 const result = App.addLimitBreak(existing, 1, 'monster');
                 lbChanged = result.after > before;
@@ -5752,9 +5750,10 @@ const App = {
         max: 99,
         midGate: 49,
         finalGate: 98,
-        heroStoryMax: 20,
+        heroStoryMax: 10,
         heroBattleMax: 70,
         allyBattleMax: 70,
+        battlesPerStep: 20,
         randomBattleChance: 0.002,
         midTrialBossId: 401120,
         finalTrialBossId: 401130
@@ -5766,28 +5765,9 @@ const App = {
 
     getBattleLimitBreakSteps: (battleWins) => {
         const wins = Math.max(0, Math.floor(Number(battleWins) || 0));
-        const max = App.limitBreakConfig.heroBattleMax || 70;
-        if (wins < 20) return 0;
-
-        let steps = 1;
-        let remaining = wins - 20;
-        const tiers = [
-            { count: 4, interval: 50 },   // +2〜+5
-            { count: 5, interval: 100 },  // +6〜+10
-            { count: 10, interval: 200 }, // +11〜+20
-            { count: 50, interval: 200 }, // +21〜+70（後半の既存ペースを維持）
-        ];
-
-        for (const tier of tiers) {
-            for (let i = 0; i < tier.count; i++) {
-                if (remaining < tier.interval) return Math.min(max, steps);
-                remaining -= tier.interval;
-                steps += 1;
-                if (steps >= max) return max;
-            }
-        }
-
-        return Math.min(max, steps);
+        const max = Math.max(0, Number(App.limitBreakConfig.heroBattleMax || 70));
+        const interval = Math.max(1, Number(App.limitBreakConfig.battlesPerStep || 20));
+        return Math.min(max, Math.floor(wins / interval));
     },
 
     ensureLimitBreakProgress: (char) => {
@@ -5800,10 +5780,17 @@ const App = {
         if (!p.sources || typeof p.sources !== 'object' || Array.isArray(p.sources)) p.sources = {};
         if (!p.trials || typeof p.trials !== 'object' || Array.isArray(p.trials)) p.trials = {};
 
-        const sourceKeys = ['story', 'battle', 'dungeon', 'quest', 'boss', 'prism', 'random', 'gacha', 'monster', 'trial', 'item', 'legacy'];
+        // 廃止済みの旧成長源は、既存の獲得値だけを一度だけ現行カテゴリへ寄せる。
+        const retiredDungeonValue = Math.max(0, Math.floor(Number(p.sources.dungeon) || 0));
+        const retiredItemValue = Math.max(0, Math.floor(Number(p.sources.item) || 0));
+        const sourceKeys = ['story', 'battle', 'quest', 'boss', 'prism', 'random', 'gacha', 'monster', 'trial', 'legacy'];
         sourceKeys.forEach(key => {
             p.sources[key] = Math.max(0, Math.floor(Number(p.sources[key]) || 0));
         });
+        if (retiredDungeonValue > 0) p.sources.legacy += retiredDungeonValue;
+        if (retiredItemValue > 0) p.sources.prism += retiredItemValue;
+        if (Object.prototype.hasOwnProperty.call(p.sources, 'dungeon')) delete p.sources.dungeon;
+        if (Object.prototype.hasOwnProperty.call(p.sources, 'item')) delete p.sources.item;
         p.counters.battleWins = Math.max(0, Math.floor(Number(p.counters.battleWins) || 0));
         const midClearedAt = Math.max(0, Math.floor(Number(p.trials.midClearedAt) || 0));
         const finalClearedAt = Math.max(0, Math.floor(Number(p.trials.finalClearedAt) || 0));
@@ -5829,7 +5816,8 @@ const App = {
     getLimitBreakSourceTotal: (char) => {
         const p = App.ensureLimitBreakProgress(char);
         if (!p) return 0;
-        return Object.values(p.sources).reduce((sum, value) => sum + (Number(value) || 0), 0);
+        const activeKeys = ['story', 'battle', 'quest', 'boss', 'prism', 'random', 'gacha', 'monster', 'trial', 'legacy'];
+        return activeKeys.reduce((sum, key) => sum + Math.max(0, Number(p.sources[key]) || 0), 0);
     },
 
     backfillLimitBreakLegacy: (char) => {
@@ -5892,10 +5880,8 @@ const App = {
 
             if (isHero) {
                 const storyStep = App.data.progress ? Number(App.data.progress.storyStep || 0) : 0;
-                const maxFloor = App.getAbyssLegacyProgressFloor ? App.getAbyssLegacyProgressFloor() : (App.data.dungeon ? Number(App.data.dungeon.maxFloor || 0) : 0);
                 p.sources.story = App.clampLimitBreakPart(storyStep, cfg.heroStoryMax);
                 p.sources.battle = App.clampLimitBreakPart(battleSteps, cfg.heroBattleMax);
-                p.sources.dungeon = Math.max(0, Math.floor(Math.max(0, maxFloor - 1) / 10) * 5);
             } else {
                 p.sources.battle = App.clampLimitBreakPart(battleSteps, cfg.allyBattleMax);
             }
@@ -6712,7 +6698,7 @@ load: () => {
 			localStorage.setItem(CONST.SAVE_KEY, App.serializeSaveData(App.data));
 			window.location.href = 'index.html';
 		} catch(e) {
-			App.showMessage("データ作成失敗");
+			App.showMessage('今は利用できないようだ。');
 		}
     },
     
@@ -8236,7 +8222,7 @@ load: () => {
         const character = typeof characterOrUid === 'string' ? App.getChar(characterOrUid) : characterOrUid;
         const id = Math.floor(Number(skillId));
         const skill = typeof DB !== 'undefined' ? DB.SKILLS.find(entry => Number(entry.id) === id) : null;
-        if (!character || !skill || id < 100) return { ok: false, reason: 'invalid', message: 'スキルデータを確認できません。' };
+        if (!character || !skill || id < 100) return { ok: false, reason: 'invalid', message: '今は利用できないようだ。' };
 
         const uniqueSkills = values => Array.from(new Set((Array.isArray(values) ? values : [])
             .map(Number).filter(value => Number.isFinite(value) && value > 0)));
@@ -8782,7 +8768,7 @@ load: () => {
             return;
         }
         if (typeof SaveCrypto === 'undefined' || typeof SaveCrypto.encodeSaveData !== 'function') {
-            App.showMessage("暗号化セーブ機能を読み込めませんでした");
+            App.showMessage('今は利用できないようだ。');
             return;
         }
 
@@ -9220,6 +9206,9 @@ load: () => {
         // 足踏みは描画だけの軽量演出だが、戦闘/施設/メニュー裏で動かし続ける必要はない。
         if (sceneId !== 'field' && typeof Field !== 'undefined' && typeof Field.stopIdleStep === 'function') {
             Field.stopIdleStep();
+        }
+        if (sceneId !== 'field' && typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.setActive === 'function') {
+            PhaserFieldRenderer.setActive(false);
         }
 
         document.querySelectorAll('.scene-layer').forEach(e => {

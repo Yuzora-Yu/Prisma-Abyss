@@ -112,11 +112,11 @@
             "lightPalaceCleared"
         ],
         "objective": "国王が示した四種の素材を集め、光の宮殿の地下牢へ届ける。",
-        "startText": "国王は、失われた加工術式を再び動かすための素材を探している。素材をそろえて地下牢の国王へ届けよう。",
+        "startText": "国王は、途絶えていた魔道通信を再びつなぐための素材を探している。素材をそろえて地下牢の国王へ届けよう。",
         "startEventId": "light_palace_catalyst_quest_start",
         "progressText": "業火の壺3つ、星銀鋼1つ、虹の結晶1つ、星の涙1つを集め、国王へ届けよう。",
         "reportEventId": "light_palace_catalyst_quest_report",
-        "completeText": "素材を国王へ渡し、貴重品『星詠みの触媒器』を受け取った。メニューの『加工』が利用可能になった。",
+        "completeText": "素材を国王へ渡し、貴重品『星詠みの触媒器』を受け取った。『魔道通信』が利用可能になった。",
         "itemRequirements": [
             {
                 "id": 1001,
@@ -146,32 +146,6 @@
             "areaKey": "LIGHT_PALACE"
         }
     },
-    "fire_water_attunement": {
-        "name": "火脈と水脈の調律",
-        "area": "水上都市",
-        "kind": "conversation",
-        "unlockFlags": [
-            "forestHolyWaterObtained",
-            "blueCrystalObtained"
-        ],
-        "objective": "妖精の聖水と青の結晶の記録を合わせ、次の異変に備える。",
-        "startText": "水上都市の技師は、火山と神殿の異常が同じ脈動に連なる可能性を語った。",
-        "progressText": "水上都市の技師と、火脈と水脈の記録を照合しよう。",
-        "completeText": "火と水の流れを読む調律の羅針片を受け取った。",
-        "rewardFlags": [
-            "attunementCompassObtained"
-        ],
-        "rewardItems": [
-            {
-                "id": 306,
-                "count": 1
-            }
-        ],
-        "initialComplete": true,
-        "travelTarget": {
-            "areaKey": "WATER_CITY"
-        }
-    },
     "marie_water_city": {
         "name": "祈り手マリーの討伐依頼",
         "area": "水上都市",
@@ -196,29 +170,6 @@
         ],
         "travelTarget": {
             "areaKey": "WATER_CITY"
-        }
-    },
-    "zelied_big_tower": {
-        "name": "大灯台のゼリード",
-        "disabled": true,
-        "legacyConvertedToStory": true,
-        "area": "大灯台",
-        "kind": "boss",
-        "unlockFlags": [
-            "bigTowerCleared"
-        ],
-        "objective": "大灯台1階でゼリードと話し、再び頂上のボスを倒す。",
-        "startText": "ゼリードは、大灯台の頂に残る歪みを確かめたいと申し出た。",
-        "progressText": "大灯台の頂上へ向かい、再出現した強敵を倒そう。",
-        "reportText": "頂を覆っていた歪みは消えた。大灯台1階のゼリードへ知らせよう。",
-        "startEventId": "quest_zelied_start",
-        "reportEventId": "quest_zelied_report",
-        "completeText": "頂の歪みは消え、ゼリードが仲間に加わった。",
-        "rewardAllies": [
-            103
-        ],
-        "travelTarget": {
-            "areaKey": "BIG_TOWER"
         }
     },
     "arel_kagetora_appeal": {
@@ -259,7 +210,7 @@
         "requiredAllies": [
             201
         ],
-        "objective": "アラン加入後、水上都市近海のアクアウィスプとバンパイアを合計6体討伐する。",
+        "objective": "水上都市近海のアクアウィスプとバンパイアを合計6体討伐する。",
         "startText": "ハヤテは、アランの名を聞くと水上都市近海のアクアウィスプとバンパイア討伐を持ちかけた。",
         "progressText": "水上都市近海でアクアウィスプとバンパイアを討伐し、ハヤテへ報告しよう。",
         "startEventId": "quest_hayate_start",
@@ -284,7 +235,7 @@
         "requiredAllies": [
             101
         ],
-        "objective": "ジョセフ加入後、水上都市外縁のウィスプナイトとバンパイアを合計5体討伐する。",
+        "objective": "水上都市外縁のウィスプナイトとバンパイアを合計5体討伐する。",
         "startText": "シルビアは、水上都市外縁で荷を止めているウィスプナイトとバンパイアの討伐を依頼した。",
         "progressText": "水上都市外縁でウィスプナイトとバンパイアを討伐し、シルビアへ報告しよう。",
         "startEventId": "quest_sylvia_start",
@@ -309,7 +260,7 @@
         "requiredAllies": [
             204
         ],
-        "objective": "レイラ加入後、ライザーク要塞に残るキラーナイトとサンダーバットを合計6体討伐する。",
+        "objective": "ライザーク要塞に残るキラーナイトとサンダーバットを合計6体討伐する。",
         "startText": "リンは、ライザーク要塞に残るキラーナイトとサンダーバットの討伐を願い出た。",
         "progressText": "ライザーク要塞でキラーナイトとサンダーバットを討伐し、リンへ報告しよう。",
         "startEventId": "quest_rin_start",
@@ -334,36 +285,13 @@
         "unlockFlags": [
             "lightPalaceCleared"
         ],
-        "objective": "闇の神殿跡地でクロードとレオンの加入クエストを進める。",
+        "objective": "闇の神殿跡地の最奥へ向かい、クロードとレオンを追う。",
         "startText": "クロードとレオンは、光の宮殿の影に残った闇を断つため神殿跡地へ向かった。",
         "progressText": "闇の神殿跡地の最奥へ進もう。",
         "completeText": "闇の残滓は退けられ、クロードとレオンが仲間に加わった。",
         "rewardAllies": [
             304,
             305
-        ],
-        "travelTarget": {
-            "areaKey": "DARK_SHRINE_RUINS"
-        }
-    },
-    "luna_hidden_dark_shrine": {
-        "name": "月影のルーナ",
-        "disabled": true,
-        "legacyConvertedToStory": true,
-        "area": "闇の神殿跡地",
-        "kind": "boss",
-        "unlockFlags": [
-            "lightPalaceCleared"
-        ],
-        "requiredQuests": [
-            "claude_leon_dark_shrine"
-        ],
-        "objective": "闇の神殿跡地の隠し超強ボスを討伐する。",
-        "startText": "ルーナは、月光すら飲み込む影を討てる者だけを待っている。",
-        "progressText": "闇の神殿跡地の隠し祭壇で超強ボスに挑もう。",
-        "completeText": "月影を縛る闇は砕け、ルーナが仲間に加わった。",
-        "rewardAllies": [
-            401
         ],
         "travelTarget": {
             "areaKey": "DARK_SHRINE_RUINS"
@@ -376,7 +304,7 @@
         "unlockFlags": [
             "darkCastleCleared"
         ],
-        "objective": "禁則地グレゼリアでリュウとミネルバの加入クエストを進める。",
+        "objective": "禁則地グレゼリアの深部へ向かい、リュウとミネルバを追う。",
         "startText": "リュウとミネルバは、魔王城の奥に残った禁則の術式を追っている。",
         "progressText": "禁則地グレゼリアの深部へ進もう。",
         "completeText": "禁則の術式は破られ、リュウとミネルバが仲間に加わった。",
@@ -401,9 +329,9 @@
         "requiredQuests": [
             "ryu_minerva_grezelia"
         ],
-        "objective": "禁則地グレゼリアの隠し超強ボスを討伐する。",
+        "objective": "禁則地グレゼリアの最深部に残る強大な魔力を断つ。",
         "startText": "ゼノンは、禁則の底に残る最悪の魔力を封じられる者を探している。",
-        "progressText": "禁則地グレゼリアの最深部で超強ボスに挑もう。",
+        "progressText": "禁則地グレゼリアの最深部へ進み、禁則の底に残る影と対峙しよう。",
         "completeText": "禁則の残響は沈黙し、ゼノンが仲間に加わった。",
         "rewardAllies": [
             402
