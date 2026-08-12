@@ -965,3 +965,39 @@ Created: 2026-08-10
 - `DR-20260810-galvania-empire-arrival-exposition-phase8c-review`
 - 現行と修正案を台帳にも併記済み。runtimeは未変更。
 
+## DR-20260812-arisa-haine-forbidden-forest-main-route
+
+Status: approved_rewrite  
+Created: 2026-08-12  
+Updated: 2026-08-12
+
+### Target
+- file: `story.js` / `map.js`
+- script key / event ID: `WATER_CITY_WIND_MESSENGER`, `QUEST_ARISA_HAINE_START`, `QUEST_ARISA_HAINE_CLEAR`, 関連MAP actor
+- map / area: 水上都市 → カザリア → 禁忌の森深部
+- storyStep-subStep: 4-6～4-8
+- speaker: 風の集落の使い、ソフィア、アリサ、ハイネ、アルス一行
+
+### Current implemented text
+現行runtimeには「アリサとハイネが森奥から戻らないため救出する」という骨格はあるが、アリサが森へ向かった理由、ヴェリア文化との接続、救出後に本人が同行を望む動機、ハイネとアレル侯の仕事上の関係が不足している。
+
+### Approved rewrite direction
+- ハイネ／アリサは旅の途中でカザリアへ立ち寄っていた。
+- アリサは森奥の神殿から届く風の音を感じ、風のプリズムへ祈りを捧げるため単身礼拝へ向かう。
+- 礼拝後、風に導かれるように禁忌の森深部へ進んで戻らず、ハイネが後を追う。
+- カザリア住民が、以前集落を救ったアルスたちを頼って水上都市へ救援要請に来る。
+- ソフィアは救援へ送り出し、その間に船の持ち主を調べる。
+- アリサは**ヴェリアで風へ旋律を捧げてきた楽師の家系**。古い祈りの旋律を身体が覚えている。
+- 救出後、プリズムを守る旅だと知ったアリサ自身が同行を望み、ハイネも本人の意思を尊重して助力を申し出る。
+- ハイネは**Bランク冒険者**で、アレル＝レクスノート侯から仕事を何度か請けた古い仕事上の知人。
+- 深部ボス後の「古びた魔笛」（仮称）は有力候補だが、正式名称・Item ID・由来は次実装単位で決める。
+
+### User decision
+- decision: approved rewrite
+- approved date: 2026-08-12
+- user notes: 既存構造を大きく崩さず、本編必須導線として上記理由を加える。
+
+### Implementation tracking
+- implemented file: 未実装（次実装単位）
+- validation: 今回は水上都市暴動第一単位との境界を守るため、旧禁忌の森runtimeはまだ置換しない。
+

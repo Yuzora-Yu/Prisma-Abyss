@@ -834,7 +834,8 @@ const App = {
     getDefaultWorldState: () => ({
         prologueStage: 0,
         fireVillageRecovery: 0,
-        waterCityState: 0, // 0:未到達/未確定 1:暗黒騎士占拠 2:解放後 3:後期変化
+        waterCityState: 0, // 0:未到達/未確定 1:暗黒騎士占拠/暴動中 2:解放後 3:後期変化
+        waterCityRiotWave: 0, // 0～4:鎮圧中の次戦、5:鎮圧済み
         thunderFortState: 0, // 0:未到達 1:機械暴走 2:要塞確保・大灯台期 3:大灯台後・海底火山期 4:海底火山後 5:魔王軍急襲警戒 6:防衛中 7:防衛成功/ルーナ覚醒後
         underseaVolcanoState: 0, // 0:未発見 1:位置判明 2:侵入 3:研究区画 4:最奥 5:攻略済み
         lightPalaceState: 0, // 0:攻略前 1:回想完了 2:現在攻略中 3:地下牢確認 4:祭壇戦後/アラン離脱 5:宮殿解放
@@ -3922,6 +3923,53 @@ const App = {
         };
         return { applied:true, changed:result.changed === true || count > 0, count };
     },
+
+    // 2026-08-12以前の「海底神殿クリア直後に水上都市解放」セーブを、新しい暴動導線へ安全に接続する。
+    // 既に暴動後より先へ進んだセーブは巻き戻さず、暴動鎮圧済みとして補完する。
+    migrateWaterCityRiotRouteV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260812_waterCityRiotRouteV1',
+        () => {
+            if (!data || typeof data !== 'object') return { changed:false, count:0 };
+            data.progress = (data.progress && typeof data.progress === 'object' && !Array.isArray(data.progress)) ? data.progress : {};
+            data.progress.flags = (data.progress.flags && typeof data.progress.flags === 'object' && !Array.isArray(data.progress.flags)) ? data.progress.flags : {};
+            const worldState = App.ensureWorldState(data);
+            if (!worldState) return { changed:false, count:0 };
+            const flags = data.progress.flags;
+            if (flags.waterCityRiotSuppressed) return { changed:false, count:0 };
+
+            const step = Math.max(0, Number(data.progress.storyStep || 0));
+            const sub = Math.max(0, Number(data.progress.subStep || 0));
+            const oldClear = !!flags.waterCityCleared;
+            if (!oldClear) return { changed:false, count:0 };
+
+            let count = 0;
+            const exactlyPostTemple = step === 4 && sub === 4
+                && !flags.waterCityPostClearTalked
+                && !flags.arisaHaineMainStoryRequired
+                && !flags.arisaHaineMainStoryStarted
+                && !flags.rexnoteRouteKnown;
+
+            flags.waterCityRiotReported = true;
+            flags.waterCityRiotStarted = true;
+            count += 2;
+
+            if (exactlyPostTemple) {
+                delete flags.waterCityCleared;
+                worldState.waterCityState = 1;
+                worldState.waterCityRiotWave = 0;
+                count += 3;
+            } else {
+                // 旧版ですでに事後会話・禁忌の森・レクスノート以降へ進んでいる場合、
+                // 新イベントを強制再生して進行を巻き戻さない。
+                flags.waterCityRiotSuppressed = true;
+                worldState.waterCityState = Math.max(2, Number(worldState.waterCityState || 0));
+                worldState.waterCityRiotWave = 5;
+                count += 3;
+            }
+            return { changed:true, count };
+        }
+    ),
 
     // 終極形態302101の討伐済みセーブでは、旧版で欠落し得た関連3形態の討伐数を一度だけ救済する。
     migrateAbyssBossKillCountsV1: (data = App.data) => {
@@ -8688,6 +8736,7 @@ load: () => {
         if (!data.book || typeof data.book !== 'object' || Array.isArray(data.book)) data.book = { monsters: [] };
         if (!Array.isArray(data.book.monsters)) data.book.monsters = [];
         if (!data.book.killCounts || typeof data.book.killCounts !== 'object' || Array.isArray(data.book.killCounts)) data.book.killCounts = {};
+        App.migrateWaterCityRiotRouteV1(data);
         App.migrateAbyssBossKillCountsV1(data);
         App.migrateAbyssBossKillCountsV2(data);
         App.migrateReincarnationGrowthFormulaV1(data);

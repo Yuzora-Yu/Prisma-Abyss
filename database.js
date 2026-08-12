@@ -330,6 +330,7 @@ const INITIAL_DATA_TEMPLATE = {
             prologueStage: 0,
             fireVillageRecovery: 0,
             waterCityState: 0,
+            waterCityRiotWave: 0,
             thunderFortState: 0,
             underseaVolcanoState: 0,
             lightPalaceState: 0,

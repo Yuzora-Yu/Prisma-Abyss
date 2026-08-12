@@ -4777,6 +4777,11 @@ const FIXED_MAPS = {
                             "type": "log",
                             "events": [
                                 {
+                                    "requiredFlag": "waterCityRiotSuppressed",
+                                    "missingFlag": "lunaSurvivalRevealed",
+                                    "eventId": "town_wind_saint_rumor"
+                                },
+                                {
                                     "requiredFlag": "windVillageCleared",
                                     "eventId": "town_wind_villager_1"
                                 },
@@ -5082,7 +5087,7 @@ const FIXED_MAPS = {
             "WWWWWWWWWWWWWWWWWWWLWWWWWWWWWWWWWWWWWWW",
             "WWWWWWWWWWWWWWWWWWWSWWWWWWWWWWWWWWWWWWW"
         ],
-        "nextActorPlacementId": 91,
+        "nextActorPlacementId": 97,
         "mapActors": [
             {
                 "placementId": 1,
@@ -5097,7 +5102,7 @@ const FIXED_MAPS = {
                         "stateId": "water_city_blockade_guard",
                         "priority": 0,
                         "when": {
-                            "missingFlag": "waterCityCleared"
+                            "missingFlags": ["waterCityCleared", "waterCityRiotStarted"]
                         },
                         "action": {
                             "label": "兵士と話す",
@@ -5121,7 +5126,7 @@ const FIXED_MAPS = {
                         "stateId": "water_city_blockade_guard",
                         "priority": 0,
                         "when": {
-                            "missingFlag": "waterCityCleared"
+                            "missingFlags": ["waterCityCleared", "waterCityRiotStarted"]
                         },
                         "action": {
                             "label": "兵士と話す",
@@ -5145,7 +5150,7 @@ const FIXED_MAPS = {
                         "stateId": "water_city_blockade_guard",
                         "priority": 0,
                         "when": {
-                            "missingFlag": "waterCityCleared"
+                            "missingFlags": ["waterCityCleared", "waterCityRiotStarted"]
                         },
                         "action": {
                             "label": "兵士と話す",
@@ -5164,6 +5169,19 @@ const FIXED_MAPS = {
                 "y": 8,
                 "imageKey": "overlay_npc_elder",
                 "states": [
+                    {
+                        "stateId": "water_city_riot_elder",
+                        "priority": 200,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed"
+                        },
+                        "action": {
+                            "label": "老人と話す",
+                            "type": "storyEvent",
+                            "eventId": "town_water_riot_elder"
+                        }
+                    },
                     {
                         "stateId": "log",
                         "priority": 0,
@@ -5195,6 +5213,19 @@ const FIXED_MAPS = {
                 "imageKey": "overlay_town_water_boatman",
                 "states": [
                     {
+                        "stateId": "water_city_riot_boatman",
+                        "priority": 200,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed"
+                        },
+                        "action": {
+                            "label": "船大工と話す",
+                            "type": "storyEvent",
+                            "eventId": "town_water_riot_boatman"
+                        }
+                    },
+                    {
                         "stateId": "log",
                         "priority": 0,
                         "when": {},
@@ -5225,6 +5256,19 @@ const FIXED_MAPS = {
                 "imageKey": "overlay_npc_bronze_knight",
                 "states": [
                     {
+                        "stateId": "water_city_riot_veteran",
+                        "priority": 200,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed"
+                        },
+                        "action": {
+                            "label": "元兵士と話す",
+                            "type": "storyEvent",
+                            "eventId": "town_water_riot_veteran"
+                        }
+                    },
+                    {
                         "stateId": "town_water_villager_3",
                         "priority": 0,
                         "when": {},
@@ -5245,6 +5289,19 @@ const FIXED_MAPS = {
                 "y": 20,
                 "imageKey": "overlay_town_water_boatman",
                 "states": [
+                    {
+                        "stateId": "water_city_riot_ferryman",
+                        "priority": 200,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed"
+                        },
+                        "action": {
+                            "label": "渡し守と話す",
+                            "type": "storyEvent",
+                            "eventId": "town_water_riot_ferryman"
+                        }
+                    },
                     {
                         "stateId": "log",
                         "priority": 0,
@@ -5410,6 +5467,23 @@ const FIXED_MAPS = {
                 "imageKey": "overlay_companion_sophia",
                 "states": [
                     {
+                        "stateId": "water_city_riot_support",
+                        "priority": 300,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed"
+                        },
+                        "placement": {
+                            "x": 17,
+                            "y": 20
+                        },
+                        "action": {
+                            "label": "ソフィアと話す",
+                            "type": "storyEvent",
+                            "eventId": "water_city_riot_sophia"
+                        }
+                    },
+                    {
                         "stateId": "crystal_tree_main_route",
                         "priority": 100,
                         "when": {
@@ -5562,6 +5636,159 @@ const FIXED_MAPS = {
                             "type": "quest",
                             "questId": "sophia_alan_seabed_depths",
                             "lockedText": "今はまだ、海底神殿の奥へ進む手段がない。"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 91,
+                "actorId": "water_city_riot_wave_1",
+                "name": "暴走する暗黒騎士",
+                "x": 19,
+                "y": 22,
+                "imageKey": "overlay_npc_dark_soldier",
+                "states": [
+                    {
+                        "stateId": "water_city_riot_wave_1",
+                        "priority": 500,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed",
+                            "requiredWorldState": {
+                                "waterCityRiotWave": { "op": "==", "value": 0 }
+                            }
+                        },
+                        "action": {
+                            "label": "暗黒騎士を止める",
+                            "type": "storyEvent",
+                            "eventId": "water_city_riot_wave_1"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 92,
+                "actorId": "water_city_riot_wave_2",
+                "name": "暴走する暗黒騎士",
+                "x": 10,
+                "y": 20,
+                "imageKey": "overlay_npc_dark_soldier",
+                "states": [
+                    {
+                        "stateId": "water_city_riot_wave_2",
+                        "priority": 500,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed",
+                            "requiredWorldState": {
+                                "waterCityRiotWave": { "op": "==", "value": 1 }
+                            }
+                        },
+                        "action": {
+                            "label": "船渠の暗黒騎士を止める",
+                            "type": "storyEvent",
+                            "eventId": "water_city_riot_wave_2"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 93,
+                "actorId": "water_city_riot_wave_3",
+                "name": "暴走する暗黒騎士",
+                "x": 14,
+                "y": 15,
+                "imageKey": "overlay_npc_dark_soldier",
+                "states": [
+                    {
+                        "stateId": "water_city_riot_wave_3",
+                        "priority": 500,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed",
+                            "requiredWorldState": {
+                                "waterCityRiotWave": { "op": "==", "value": 2 }
+                            }
+                        },
+                        "action": {
+                            "label": "中央水路の暗黒騎士を止める",
+                            "type": "storyEvent",
+                            "eventId": "water_city_riot_wave_3"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 94,
+                "actorId": "water_city_riot_wave_4",
+                "name": "暴走する暗黒騎士",
+                "x": 34,
+                "y": 13,
+                "imageKey": "overlay_npc_dark_soldier",
+                "states": [
+                    {
+                        "stateId": "water_city_riot_wave_4",
+                        "priority": 500,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed",
+                            "requiredWorldState": {
+                                "waterCityRiotWave": { "op": "==", "value": 3 }
+                            }
+                        },
+                        "action": {
+                            "label": "北側の暗黒騎士を止める",
+                            "type": "storyEvent",
+                            "eventId": "water_city_riot_wave_4"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 95,
+                "actorId": "water_city_riot_wave_5",
+                "name": "暴走する暗黒騎士",
+                "x": 19,
+                "y": 13,
+                "imageKey": "overlay_npc_dark_soldier",
+                "states": [
+                    {
+                        "stateId": "water_city_riot_wave_5",
+                        "priority": 500,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed",
+                            "requiredWorldState": {
+                                "waterCityRiotWave": { "op": "==", "value": 4 }
+                            }
+                        },
+                        "action": {
+                            "label": "広場の暗黒騎士を止める",
+                            "type": "storyEvent",
+                            "eventId": "water_city_riot_wave_5"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 96,
+                "actorId": "water_city_saint_rumor",
+                "name": "荷運び人",
+                "x": 8,
+                "y": 14,
+                "imageKey": "overlay_npc_villager",
+                "states": [
+                    {
+                        "stateId": "water_city_saint_rumor",
+                        "priority": 0,
+                        "when": {
+                            "requiredFlag": "waterCityRiotSuppressed",
+                            "missingFlag": "lunaSurvivalRevealed"
+                        },
+                        "action": {
+                            "label": "荷運び人と話す",
+                            "type": "storyEvent",
+                            "eventId": "town_water_saint_rumor"
                         }
                     }
                 ]

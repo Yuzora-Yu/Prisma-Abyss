@@ -24,8 +24,8 @@ const STORY_MANAGER_DATA = {
         "4-1": "クレナ鍾乳洞で青の結晶を探そう",
         "4-2": "水上都市のソフィアへ青の結晶を届けよう",
         "4-3": "海底神殿へ向かい、水のプリズムを守ろう",
-        "4-4": "解放された水上都市へ戻り、ソフィアと今後を相談しよう",
-        "4-5": "水上都市で一息つき、街に残る手掛かりを探そう",
+        "4-4": "暴動が起きた水上都市へ戻り、住民を守りながら暗黒騎士を鎮圧しよう",
+        "4-5": "暴動後の水上都市で街の様子を確かめ、ソフィアと話そう",
         "4-6": "風の集落へ戻り、アリサとハイネの消息を確かめよう",
         "4-7": "禁忌の森深部へ向かい、アリサとハイネを救出しよう",
         "4-8": "アリサとハイネを迎え、水上都市へ戻ろう",
@@ -1497,31 +1497,285 @@ const STORY_MANAGER_DATA = {
                 {
                         "name": "システム",
                         "text": "[N:104]が正式に仲間に加わった！"
+                },
+                {
+                        "name": "システム",
+                        "text": "その時、祭壇の床に残った水が小さく震えた。\n青い波紋とともに、遠くからソフィアの声が届く。"
+                },
+                {
+                        "name": "ソフィア",
+                        "charId": 202,
+                        "text": "ケイト、聞こえるかい。返事はいらない。今すぐ戻ってきな。"
+                },
+                {
+                        "name": "ソフィア",
+                        "charId": 202,
+                        "text": "黒鎧の連中が街の中で剣を抜いた。命令を聞く顔じゃない。\n住民まで追ってる。"
+                },
+                {
+                        "name": "ケイト",
+                        "charId": 104,
+                        "text": "ソフィアさん……！\n[N:301]、急ぎましょう。水上都市が危ない！"
+                }
+        ],
+
+        "WATER_CITY_RIOT_WAVE_1": [
+                {
+                        "name": "システム",
+                        "text": "水上都市へ駆け戻ると、南の水路まで怒号が響いていた。\n黒鎧の兵が、逃げ遅れた住民へ刃を向けている。"
+                },
+                {
+                        "name": "ケイト",
+                        "charId": 104,
+                        "text": "神殿から引いた兵たちです……でも、様子が違う。"
+                },
+                {
+                        "name": "暗黒騎士",
+                        "text": "退避命令に従わぬ者は敵性とみなす。排除する。"
+                },
+                {
+                        "name": "主人公",
+                        "charId": 301,
+                        "text": "住民を下がらせろ。ここは通さない。"
+                }
+        ],
+        "WATER_CITY_RIOT_WAVE_1_CLEAR": [
+                {
+                        "name": "町人",
+                        "text": "西の船渠にも黒鎧がいる！　子どもたちが逃げ込んだんだ！"
+                },
+                {
+                        "name": "ケイト",
+                        "charId": 104,
+                        "text": "まだ終わってません。急ぎましょう！"
+                }
+        ],
+        "WATER_CITY_RIOT_WAVE_2": [
+                {
+                        "name": "システム",
+                        "text": "西の船渠。倉庫の扉を背に、船大工たちが追い詰められている。"
+                },
+                {
+                        "name": "船大工",
+                        "text": "中には子どもがいる！　ここから先へは行かせるな！"
+                },
+                {
+                        "name": "暗黒騎士",
+                        "text": "進路を妨害する者を排除する。"
+                }
+        ],
+        "WATER_CITY_RIOT_WAVE_2_CLEAR": [
+                {
+                        "name": "船大工",
+                        "text": "助かった……！　中央橋でも剣の音がした。まだいるぞ！"
+                }
+        ],
+        "WATER_CITY_RIOT_WAVE_3": [
+                {
+                        "name": "システム",
+                        "text": "中央水路へ回ると、黒鎧の一隊が避難路を塞いでいた。"
+                },
+                {
+                        "name": "ケイト",
+                        "charId": 104,
+                        "text": "ここを抜かれたら、北側へ逃げた人たちが挟まれます。止めましょう！"
+                }
+        ],
+        "WATER_CITY_RIOT_WAVE_3_CLEAR": [
+                {
+                        "name": "ソフィア",
+                        "charId": 202,
+                        "text": "聞こえるかい！　北橋にも回り込んでる。\n広場へ抜かせるんじゃないよ！"
+                }
+        ],
+        "WATER_CITY_RIOT_WAVE_4": [
+                {
+                        "name": "システム",
+                        "text": "北側の橋では、負傷者を運ぶ住民へ暗黒騎士が迫っていた。"
+                },
+                {
+                        "name": "主人公",
+                        "charId": 301,
+                        "text": "負傷者を先に。ここは俺たちが止める。"
+                }
+        ],
+        "WATER_CITY_RIOT_WAVE_4_CLEAR": [
+                {
+                        "name": "元兵士",
+                        "text": "広場に残った連中が集まってる！　あそこが最後だ！"
+                }
+        ],
+        "WATER_CITY_RIOT_WAVE_5": [
+                {
+                        "name": "システム",
+                        "text": "中央広場。最後に残った黒鎧の一隊が、街の中心を占拠している。"
+                },
+                {
+                        "name": "暗黒騎士",
+                        "text": "王国の秩序を乱す者を排除する。例外はない。"
+                },
+                {
+                        "name": "ケイト",
+                        "charId": 104,
+                        "text": "街の人を斬っておいて……それが秩序だって言うんですか！"
+                }
+        ],
+        "WATER_CITY_RIOT_SUPPRESSED": [
+                {
+                        "name": "システム",
+                        "text": "最後の黒鎧が膝をつく。\nその直後、北橋から揃った軍靴の音が響いた。"
+                },
+                {
+                        "name": "システム",
+                        "text": "白銀の甲冑をまとった騎士たちが広場へなだれ込み、残存する暗黒騎士を一気に取り囲む。"
+                },
+                {
+                        "name": "クロード",
+                        "charId": 304,
+                        "text": "第一班は負傷者を運べ！　第二班、武器を捨てた奴には手を出すな！"
+                },
+                {
+                        "name": "レオン",
+                        "charId": 305,
+                        "text": "東橋を塞げ。追撃はするな。民間人の避難を最優先にしろ。"
+                },
+                {
+                        "name": "システム",
+                        "text": "指示は迷いなく通り、街に残っていた剣戟の音がようやく途切れていく。"
+                },
+                {
+                        "name": "クロード",
+                        "charId": 304,
+                        "text": "……遅れた。王国の鎧を着た連中が民に剣を向けた。\n別系統の部隊だ、で済ませる気はない。すまなかった。"
+                },
+                {
+                        "name": "町人",
+                        "text": "謝るのはあんたらじゃないよ！　この人たちがいなきゃ、もっと大勢やられてた！"
+                },
+                {
+                        "name": "町人",
+                        "text": "そうだ！　神殿も街も救ってくれたんだ。救世主ってのは、こういう人たちのことだろ！"
+                },
+                {
+                        "name": "レオン",
+                        "charId": 305,
+                        "text": "……救世主、か。"
+                },
+                {
+                        "name": "レオン",
+                        "charId": 305,
+                        "text": "民を守ったことは認める。だが、お前たちは王国の制止を振り切り、各地のプリズムへ踏み込んでいる。\n結果が正しかったからといって、独断まで正しくなるわけじゃない。"
+                },
+                {
+                        "name": "主人公",
+                        "charId": 301,
+                        "text": "目の前で助けを求める人がいた。命令を待って見捨てる気はない。"
+                },
+                {
+                        "name": "レオン",
+                        "charId": 305,
+                        "text": "……そういうところだ。"
+                },
+                {
+                        "name": "クロード",
+                        "charId": 304,
+                        "text": "レオン。気持ちは分かる。けど、今それをぶつける相手が違う。\nこいつらがいなきゃ、もっと死んでた。そこは曲げるな。"
+                },
+                {
+                        "name": "レオン",
+                        "charId": 305,
+                        "text": "……分かっている。だから厄介なんだ。"
+                },
+                {
+                        "name": "クロード",
+                        "charId": 304,
+                        "text": "俺はクロード。こっちはレオン。聖騎士団だ。\n今日の不始末は俺たちが調べる。お前たちにも聞きたいことはあるが――今は休め。"
+                },
+                {
+                        "name": "レオン",
+                        "charId": 305,
+                        "text": "次に会う時までに、自分たちが何に刃を向けているのか考えておけ。"
+                },
+                {
+                        "name": "クロード",
+                        "charId": 304,
+                        "text": "……言い方。\nまあ、俺たちも調べる。今度は遅れないようにな。"
+                }
+        ],
+        "WATER_CITY_RIOT_SOPHIA": [
+                {
+                        "name": "ソフィア",
+                        "charId": 202,
+                        "text": "こっちは住民を水路裏へ逃がす。あんたたちは黒鎧を止めて。\n北へ抜かせるんじゃないよ。"
+                }
+        ],
+        "WATER_CITY_RIOT_ELDER": [
+                {
+                        "name": "老人",
+                        "text": "水路沿いへ出るな。裏手を通れ。\n若いのが時間を稼いでるうちに、子どもから逃がすんだ。"
+                }
+        ],
+        "WATER_CITY_RIOT_BOATMAN": [
+                {
+                        "name": "船大工",
+                        "text": "子どもは船渠の倉庫へ入れた。扉は厚い。\n俺はここで、逃げる道を空ける。"
+                }
+        ],
+        "WATER_CITY_RIOT_VETERAN": [
+                {
+                        "name": "元兵士",
+                        "text": "剣はもう振れんが、盾なら持てる。\nあんたらは前へ行け。ここは通させない。"
+                }
+        ],
+        "WATER_CITY_RIOT_FERRYMAN": [
+                {
+                        "name": "渡し守",
+                        "text": "橋を渡るな！　黒鎧が向こう側を走ってる！\n水路なら俺が逃がす。陸は頼んだぞ！"
+                }
+        ],
+        "TOWN_WATER_SAINT_RUMOR": [
+                {
+                        "name": "荷運び人",
+                        "text": "あの聖騎士団、すごかったよな。噂だけど、王都には聖女様ってのもいるらしいぜ。"
+                },
+                {
+                        "name": "荷運び人",
+                        "text": "つい最近も、魔族の拠点を聖なる光で浄化したって話だ。\n教団には頭が上がらないな。"
+                }
+        ],
+        "TOWN_WIND_SAINT_RUMOR": [
+                {
+                        "name": "見張り",
+                        "text": "王都には、奇跡を起こす聖女様がいるらしい。\n水上都市から来た商人が、そう話してたよ。"
+                },
+                {
+                        "name": "見張り",
+                        "text": "どこまで本当かは知らないけどね。今は、明るい噂が一つあるだけでもありがたいさ。"
                 }
         ],
 
         "WATER_CITY_AFTER_CLEAR": [
                 {
                         "name": "システム",
-                        "text": "水上都市へ戻ると、濁っていた水路に青い光が差していた。\n橋を塞いでいた黒鎧の兵士たちの姿もない。"
+                        "text": "暴動が収まり、水上都市にはようやく人の声が戻り始めた。\n澄んだ水路のそばで、住民たちが倒れた看板や荷を起こしている。"
                 },
                 {
                         "name": "都市の長",
-                        "text": "水が戻った……。荷を止められていた商人も、ようやく港へ戻れる。\n君たちのおかげだ。本当にありがとう。"
+                        "text": "水のプリズムだけじゃない。この街まで守ってもらった。\n君たちには、何度礼を言っても足りない。"
                 },
                 {
                         "name": "ソフィア",
-                        "text": "ひとまず勝った。だから今くらいは肩の力を抜きな。\n神殿から戻ったばかりで、次の修羅場へ走る必要はないよ。",
+                        "text": "神殿から戻った足で五度も斬り合ったんだ。今くらいは肩の力を抜きな。",
                         "charId": 202
                 },
                 {
                         "name": "ソフィア",
-                        "text": "それに、兵が引いた今なら見られる物も、話してくれる人も増える。\nこの街は昔から水とプリズムの研究で王都と繋がってきた。気になるなら歩いてみるといい。",
+                        "text": "兵が引いた今なら、閉じてた店も記録庫も動き出す。\n気になるなら街を歩いてみるといい。私も少し状況を整理する。",
                         "charId": 202
                 },
                 {
                         "name": "ケイト",
-                        "text": "……少しだけ、街を見て回りませんか？\nさっきまで閉じていた店も、もう戸を開け始めています。",
+                        "text": "……少しだけ、街の様子を見て回りましょう。\n助けを必要としている人が、まだいるかもしれません。",
                         "charId": 104
                 }
         ],
@@ -6496,6 +6750,133 @@ const STORY_MANAGER_DATA = {
                 ],
                 "winActions": []
         },
+        "water_city_riot_sophia": {
+                "actions": [{ "type": "CONV", "value": "WATER_CITY_RIOT_SOPHIA" }],
+                "winActions": []
+        },
+        "town_water_riot_elder": {
+                "actions": [{ "type": "CONV", "value": "WATER_CITY_RIOT_ELDER" }],
+                "winActions": []
+        },
+        "town_water_riot_boatman": {
+                "actions": [{ "type": "CONV", "value": "WATER_CITY_RIOT_BOATMAN" }],
+                "winActions": []
+        },
+        "town_water_riot_veteran": {
+                "actions": [{ "type": "CONV", "value": "WATER_CITY_RIOT_VETERAN" }],
+                "winActions": []
+        },
+        "town_water_riot_ferryman": {
+                "actions": [{ "type": "CONV", "value": "WATER_CITY_RIOT_FERRYMAN" }],
+                "winActions": []
+        },
+        "town_water_saint_rumor": {
+                "actions": [{ "type": "CONV", "value": "TOWN_WATER_SAINT_RUMOR" }],
+                "winActions": []
+        },
+        "town_wind_saint_rumor": {
+                "actions": [{ "type": "CONV", "value": "TOWN_WIND_SAINT_RUMOR" }],
+                "winActions": []
+        },
+        "water_city_riot_wave_1": {
+                "actions": [
+                        { "type": "CONV", "value": "WATER_CITY_RIOT_WAVE_1" },
+                        {
+                                "type": "BOSS",
+                                "value": [301021, 301021, 301021],
+                                "winEventId": "water_city_riot_wave_1_clear"
+                        }
+                ],
+                "winActions": []
+        },
+        "water_city_riot_wave_1_clear": {
+                "actions": [
+                        { "type": "CONV", "value": "WATER_CITY_RIOT_WAVE_1_CLEAR" },
+                        { "type": "WORLD_STATE", "key": "waterCityRiotWave", "value": 1, "refreshField": true },
+                        { "type": "LOG", "value": "西の船渠へ向かい、暴動した暗黒騎士を止めよう。" }
+                ],
+                "winActions": []
+        },
+        "water_city_riot_wave_2": {
+                "actions": [
+                        { "type": "CONV", "value": "WATER_CITY_RIOT_WAVE_2" },
+                        {
+                                "type": "BOSS",
+                                "value": [301021, 301022],
+                                "winEventId": "water_city_riot_wave_2_clear"
+                        }
+                ],
+                "winActions": []
+        },
+        "water_city_riot_wave_2_clear": {
+                "actions": [
+                        { "type": "CONV", "value": "WATER_CITY_RIOT_WAVE_2_CLEAR" },
+                        { "type": "WORLD_STATE", "key": "waterCityRiotWave", "value": 2, "refreshField": true },
+                        { "type": "LOG", "value": "中央水路へ急ぎ、避難路を確保しよう。" }
+                ],
+                "winActions": []
+        },
+        "water_city_riot_wave_3": {
+                "actions": [
+                        { "type": "CONV", "value": "WATER_CITY_RIOT_WAVE_3" },
+                        {
+                                "type": "BOSS",
+                                "value": [301022, 301022],
+                                "winEventId": "water_city_riot_wave_3_clear"
+                        }
+                ],
+                "winActions": []
+        },
+        "water_city_riot_wave_3_clear": {
+                "actions": [
+                        { "type": "CONV", "value": "WATER_CITY_RIOT_WAVE_3_CLEAR" },
+                        { "type": "WORLD_STATE", "key": "waterCityRiotWave", "value": 3, "refreshField": true },
+                        { "type": "LOG", "value": "北側の橋へ回り、負傷者の退路を守ろう。" }
+                ],
+                "winActions": []
+        },
+        "water_city_riot_wave_4": {
+                "actions": [
+                        { "type": "CONV", "value": "WATER_CITY_RIOT_WAVE_4" },
+                        {
+                                "type": "BOSS",
+                                "value": [301021, 301022, 301021],
+                                "winEventId": "water_city_riot_wave_4_clear"
+                        }
+                ],
+                "winActions": []
+        },
+        "water_city_riot_wave_4_clear": {
+                "actions": [
+                        { "type": "CONV", "value": "WATER_CITY_RIOT_WAVE_4_CLEAR" },
+                        { "type": "WORLD_STATE", "key": "waterCityRiotWave", "value": 4, "refreshField": true },
+                        { "type": "LOG", "value": "中央広場へ向かい、最後の暗黒騎士部隊を止めよう。" }
+                ],
+                "winActions": []
+        },
+        "water_city_riot_wave_5": {
+                "actions": [
+                        { "type": "CONV", "value": "WATER_CITY_RIOT_WAVE_5" },
+                        {
+                                "type": "BOSS",
+                                "value": [301022, 301022, 301021],
+                                "winEventId": "water_city_riot_suppressed"
+                        }
+                ],
+                "winActions": []
+        },
+        "water_city_riot_suppressed": {
+                "actions": [
+                        { "type": "CONV", "value": "WATER_CITY_RIOT_SUPPRESSED" },
+                        { "type": "WORLD_STATE", "key": "waterCityRiotWave", "value": 5 },
+                        { "type": "FLAG", "key": "waterCityRiotSuppressed" },
+                        { "type": "FLAG", "key": "waterCityCleared" },
+                        { "type": "WORLD_STATE", "key": "waterCityState", "value": 2, "refreshField": true },
+                        { "type": "SUB", "value": 5 },
+                        { "type": "LOG", "value": "水上都市の暴動は鎮圧された。街の様子を確かめ、ソフィアと話そう。" }
+                ],
+                "winActions": []
+        },
         "water_city_after_clear": {
                 "actions": [
                         {
@@ -7306,12 +7687,21 @@ const STORY_MANAGER_DATA = {
                         },
                         {
                                 "type": "FLAG",
-                                "key": "waterCityCleared"
+                                "key": "waterCityRiotReported"
+                        },
+                        {
+                                "type": "FLAG",
+                                "key": "waterCityRiotStarted"
+                        },
+                        {
+                                "type": "WORLD_STATE",
+                                "key": "waterCityRiotWave",
+                                "value": 0
                         },
                         {
                                 "type": "WORLD_STATE",
                                 "key": "waterCityState",
-                                "value": 2
+                                "value": 1
                         },
                         {
                                 "type": "SUB",
@@ -7319,7 +7709,7 @@ const STORY_MANAGER_DATA = {
                         },
                         {
                                 "type": "LOG",
-                                "value": "海底神殿の水が戻った。解放された水上都市へ戻ろう。"
+                                "value": "水上都市で暗黒騎士が暴動を起こした。急いで街へ戻ろう。"
                         }
                 ],
                 "winActions": []
