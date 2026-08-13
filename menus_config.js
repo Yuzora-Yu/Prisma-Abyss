@@ -53,8 +53,8 @@ const MenuConfig = {
                 <button class="btn" onclick="Menu.closeSubScreen('config')">もどる</button>
             </div>
             <div class="config-tab-bar" role="tablist" aria-label="設定メニュー切替">
-                <button id="config-tab-settings" class="config-tab-button" type="button" role="tab" onclick="MenuConfig.setTab('settings')">設定</button>
                 <button id="config-tab-save" class="config-tab-button" type="button" role="tab" onclick="MenuConfig.setTab('save')">セーブ</button>
+                <button id="config-tab-settings" class="config-tab-button" type="button" role="tab" onclick="MenuConfig.setTab('settings')">設定</button>
             </div>
             <div id="config-content" class="scroll-area" style="flex:1; padding:14px; background:#111; overflow-y:auto;"></div>
             <div class="sub-screen-bottom-panel">

@@ -37,6 +37,9 @@
         actorObjects: [],
         waterObjects: [],
         waterWaveGraphics: null,
+        animatedDecorObjects: [],
+        decorAnimationTimer: null,
+        decorAnimationTick: 0,
         uiObjects: [],
         atmosphereObjects: [],
         atmosphereLight: null,
@@ -66,7 +69,46 @@
         }
     };
 
+
+    const stopDecorAnimation = () => {
+        state.decorAnimationTimer?.remove?.();
+        state.decorAnimationTimer = null;
+        state.decorAnimationTick = 0;
+        state.animatedDecorObjects = [];
+    };
+
+    const registerDecorAnimation = (image, decor) => {
+        if (!image || !decor) return;
+        state.animatedDecorObjects.push({
+            image,
+            baseAlpha: Number(decor.alpha ?? 1),
+            lowAlpha: Math.max(0.42, Number(decor.alpha ?? 1) - 0.28),
+            phase: Number(decor.hash || 0) & 15
+        });
+    };
+
+    const startDecorAnimation = (scene) => {
+        if (!scene?.time || !state.animatedDecorObjects.length) return;
+        state.decorAnimationTimer?.remove?.();
+        state.decorAnimationTick = 0;
+        // 各小物ごとの無限Tweenを作らず、電気床の点滅は1本のscene timerでまとめて更新する。
+        state.decorAnimationTimer = scene.time.addEvent({
+            delay: 120,
+            loop: true,
+            callback: () => {
+                state.decorAnimationTick = (state.decorAnimationTick + 1) & 255;
+                state.animatedDecorObjects.forEach(entry => {
+                    const image = entry.image;
+                    if (!image?.active) return;
+                    const phaseTick = (state.decorAnimationTick + entry.phase) & 15;
+                    image.setAlpha(phaseTick <= 1 ? entry.lowAlpha : entry.baseAlpha);
+                });
+            }
+        });
+    };
+
     const activateLegacyFallback = (error) => {
+        stopDecorAnimation();
         state.failed = true;
         state.ready = false;
         state.lastStaticSignature = null;
@@ -401,15 +443,7 @@
         image.setFlipX(decor.flipX);
         image.setAngle(decor.angle);
         if (decor.animate === 'electric' && (decor.hash & 3) === 0) {
-            image.__prismaTween = scene.tweens.add({
-                targets: image,
-                alpha: Math.max(0.42, decor.alpha - 0.28),
-                duration: 420 + (decor.hash % 240),
-                ease: 'Stepped',
-                yoyo: true,
-                repeat: -1,
-                repeatDelay: 1800 + ((decor.hash >>> 10) % 1300)
-            });
+            registerDecorAnimation(image, decor);
         }
     };
 
@@ -491,7 +525,118 @@
         y: Math.ceil((scene.scale.height || FIELD_VIEW_TILES * TILE_SIZE) / (2 * TILE_SIZE * Math.max(0.1, scene.cameras.main.zoom || 1))) + VIEW_PADDING
     });
 
-    const drawTile = (scene, field, mapSize, areaKey, tileX, tileY) => {
+    const isFixedMapCoordinateInBounds = (field, mapSize, tileX, tileY) => !field.currentMapData?.isFixed
+        || (tileX >= 0 && tileY >= 0 && tileX < mapSize.width && tileY < mapSize.height);
+
+    const getGroundPlanForTile = (field, mapSize, areaKey, tileX, tileY) => {
+        const tile = field.getRenderedTileForDraw(tileX, tileY, mapSize.width, mapSize.height, areaKey);
+        const parts = field.getMapDrawParts
+            ? field.getMapDrawParts(tile, tileX, tileY)
+            : { upper: String(tile).toUpperCase(), baseTile: tile, overlayConfig: null };
+        const rawUpper = String(tile || '').toUpperCase();
+        const isRandomAbyssBossTile = rawUpper === 'B' && field.currentMapData?.isDungeon && !field.currentMapData?.isFixed && areaKey === 'ABYSS';
+        const upper = isRandomAbyssBossTile ? 'T' : parts.upper;
+        const overlay = parts.overlayConfig;
+        const objectConfig = field.getTileConfigForDraw
+            ? field.getTileConfigForDraw(upper, tileX, tileY)
+            : field.getTileConfig(upper);
+        if (!objectConfig) return null;
+        const isBaseTerrainTile = upper === 'T' || upper === 'G' || objectConfig.terrain === true;
+        const groundTile = overlay ? parts.baseTile : (isBaseTerrainTile ? upper : 'T');
+        const floorConfig = parts.worldOverlay
+            ? field.getTileConfig(groundTile)
+            : (field.getTileConfigForDraw
+                ? field.getTileConfigForDraw(groundTile, tileX, tileY)
+                : field.getTileConfig(groundTile));
+        return { tile, parts, rawUpper, upper, overlay, objectConfig, floorConfig };
+    };
+
+    const addCoveringTileSprite = (scene, key, bounds, depth, target = state.worldObjects) => {
+        key = resolveTextureKey(key);
+        if (!key || !scene?.add?.tileSprite || !ensureTexture(scene, key)) return null;
+        const width = Math.max(1, bounds.width);
+        const height = Math.max(1, bounds.height);
+        const sprite = scene.add.tileSprite(bounds.x, bounds.y, width, height, key);
+        sprite.setOrigin(0, 0);
+        sprite.setDepth(depth);
+        const source = scene.textures.get(key)?.getSourceImage?.();
+        if (source?.width && source?.height && sprite.setTileScale) {
+            sprite.setTileScale(TILE_SIZE / source.width, TILE_SIZE / source.height);
+        }
+        target.push(sprite);
+        return sprite;
+    };
+
+    const drawFixedMapBoundaryBackdrop = (scene, field, mapSize, areaKey, range) => {
+        if (!field.currentMapData?.isFixed) return false;
+        const minX = Number(field.x) - range.x;
+        const maxX = Number(field.x) + range.x;
+        const minY = Number(field.y) - range.y;
+        const maxY = Number(field.y) + range.y;
+        if (minX >= 0 && minY >= 0 && maxX < mapSize.width && maxY < mapSize.height) return false;
+
+        // fixed mapの外側を各座標でedge clampして何百枚も複製せず、境界見本1枚を背景として反復する。
+        const sampleX = 0;
+        const sampleY = 0;
+        const plan = getGroundPlanForTile(field, mapSize, areaKey, sampleX, sampleY);
+        if (!plan) return false;
+        const wallGraphic = field.getDungeonWallGraphicForDraw
+            ? field.getDungeonWallGraphicForDraw(sampleX, sampleY, plan.upper, mapSize.width, mapSize.height, areaKey)
+            : null;
+        const sampleKey = wallGraphic || ((plan.upper !== 'T' && plan.upper !== 'G') ? plan.objectConfig?.img : null) || plan.floorConfig?.img;
+        const bounds = {
+            x: minX * TILE_SIZE,
+            y: minY * TILE_SIZE,
+            width: (maxX - minX + 1) * TILE_SIZE,
+            height: (maxY - minY + 1) * TILE_SIZE
+        };
+        if (addCoveringTileSprite(scene, sampleKey, bounds, -1000000)) return true;
+
+        const rect = scene.add.rectangle(
+            bounds.x + bounds.width / 2,
+            bounds.y + bounds.height / 2,
+            bounds.width,
+            bounds.height,
+            colorToInt(plan.objectConfig?.color || plan.floorConfig?.color, 0x171b1d)
+        );
+        rect.setDepth(-1000000);
+        state.worldObjects.push(rect);
+        return true;
+    };
+
+    const drawUniformFixedMapGround = (scene, field, mapSize, areaKey, range) => {
+        if (!field.currentMapData?.isFixed) return false;
+        const minX = Math.max(0, Number(field.x) - range.x);
+        const maxX = Math.min(mapSize.width - 1, Number(field.x) + range.x);
+        const minY = Math.max(0, Number(field.y) - range.y);
+        const maxY = Math.min(mapSize.height - 1, Number(field.y) + range.y);
+        if (minX > maxX || minY > maxY) return false;
+
+        let sharedTextureKey = null;
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                const plan = getGroundPlanForTile(field, mapSize, areaKey, x, y);
+                if (!plan || plan.objectConfig?.animatedWater === true) return false;
+                const key = resolveTextureKey(plan.floorConfig?.img);
+                if (!key) return false;
+                if (sharedTextureKey === null) sharedTextureKey = key;
+                else if (sharedTextureKey !== key) return false;
+            }
+        }
+        if (!sharedTextureKey) return false;
+
+        // 画像がまだdecodeされていない場合は従来の1tileずつの経路へ戻す。
+        // 高速化のために「画像が出ない」状態を許容しない。
+        const bounds = {
+            x: minX * TILE_SIZE,
+            y: minY * TILE_SIZE,
+            width: (maxX - minX + 1) * TILE_SIZE,
+            height: (maxY - minY + 1) * TILE_SIZE
+        };
+        return !!addCoveringTileSprite(scene, sharedTextureKey, bounds, -900000);
+    };
+
+    const drawTile = (scene, field, mapSize, areaKey, tileX, tileY, options = {}) => {
         const tile = field.getRenderedTileForDraw(tileX, tileY, mapSize.width, mapSize.height, areaKey);
         const parts = field.getMapDrawParts
             ? field.getMapDrawParts(tile, tileX, tileY)
@@ -550,7 +695,7 @@
             } else {
                 addTileFallback(scene, px, py, objectConfig.color, waterDepth);
             }
-        } else {
+        } else if (options.skipUniformGround !== true) {
             if (!addImage(scene, floorConfig.img, px + TILE_SIZE / 2, py + TILE_SIZE, {
                 depth: groundDepth,
                 originY: 1,
@@ -1239,6 +1384,7 @@
             return;
         }
 
+        stopDecorAnimation();
         destroyObjects(state.worldObjects);
         destroyObjects(state.actorObjects);
         destroyObjects(state.uiObjects);
@@ -1248,12 +1394,18 @@
         const areaKey = field.getCurrentAreaKey();
         applyFieldCamera(scene, field);
         const range = getVisibleRange(scene);
+        drawFixedMapBoundaryBackdrop(scene, field, mapSize, areaKey, range);
+        const uniformGroundDrawn = drawUniformFixedMapGround(scene, field, mapSize, areaKey, range);
 
         for (let dy = -range.y; dy <= range.y; dy++) {
             for (let dx = -range.x; dx <= range.x; dx++) {
-                drawTile(scene, field, mapSize, areaKey, Number(field.x) + dx, Number(field.y) + dy);
+                const tileX = Number(field.x) + dx;
+                const tileY = Number(field.y) + dy;
+                if (!isFixedMapCoordinateInBounds(field, mapSize, tileX, tileY)) continue;
+                drawTile(scene, field, mapSize, areaKey, tileX, tileY, { skipUniformGround: uniformGroundDrawn });
             }
         }
+        startDecorAnimation(scene);
         drawMapSkyOverlays(scene, field);
 
         const dungeonData = getApp()?.data?.dungeon;

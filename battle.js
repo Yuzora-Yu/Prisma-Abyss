@@ -2359,11 +2359,19 @@ const Battle = {
         return App?.data?.settings?.battleAutoStart === true;
     },
 
-    disableAutoForRareEncounter: () => {
-        const hasRareEnemy = Array.isArray(Battle.enemies)
-            && Battle.enemies.some(enemy => enemy?.isRare === true);
-        if (!hasRareEnemy) return false;
-        // レア遭遇時だけ開始時AUTOを解除する。設定値自体は変更せず、戦闘中の再ONも禁止しない。
+    getManualStartEncounterReason: () => {
+        const enemies = Array.isArray(Battle.enemies) ? Battle.enemies : [];
+        const isBossEncounter = App?.data?.battle?.isBossBattle === true
+            || enemies.some(enemy => enemy?.isBoss === true || enemy?.isSpecialBoss === true || enemy?.isEstark === true);
+        if (isBossEncounter) return 'boss';
+        if (enemies.some(enemy => enemy?.isRare === true)) return 'rare';
+        return null;
+    },
+
+    disableAutoForManualStartEncounter: () => {
+        const reason = Battle.getManualStartEncounterReason();
+        if (!reason) return false;
+        // レア／ボスは開始時だけ手動へ戻す。設定値は維持し、通常のボス戦では戦闘中の再ONを禁止しない。
         Battle.auto = false;
         if (typeof Battle.updateAutoButton === 'function') Battle.updateAutoButton();
         return true;
@@ -2456,9 +2464,8 @@ const Battle = {
             const bgKey = Field.getBattleBg();
             const g = (typeof GRAPHICS !== 'undefined' && GRAPHICS.images) ? GRAPHICS.images : {};
 
-            // GRAPHICS.load() completes before gameplay begins. A corrupt individual file
-            // must still never produce a blank battle frame, so resolve a loaded fallback
-            // synchronously instead of drawing a temporary solid-color area.
+            // 起動時メモリ先読みには全battle_bg_*を含める。個別ファイルが最終的に壊れていても
+            // 戦闘画面を空白にしないため、decode済み背景だけから同期fallbackを選ぶ。
             const fallbackKeys = ['battle_bg_dungeon', 'battle_bg_field'];
             const resolvedBgKey = [bgKey, ...fallbackKeys].find(key => {
                 const image = g[key];
@@ -2623,7 +2630,7 @@ const Battle = {
             App.save();
         }
 
-        Battle.disableAutoForRareEncounter();
+        Battle.disableAutoForManualStartEncounter();
         Battle.initializeLinkedBattleGroups();
         const octaprismState = Battle.initializeOctaprismBattleState();
         if (octaprismState?.active && !octaprismState.activationLogged) {

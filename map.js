@@ -1479,6 +1479,7 @@ const STORY_DATA = {
             rank: 30,
             centerX: 40,
             centerY: 19,
+            fixedMapKey: "REXNOTE_ESTATE_GROUNDS",
             worldPriority: 10,
             worldConditions: {
                 requiredFlag: "rexnoteRouteKnown"
@@ -1947,7 +1948,8 @@ const MAP_MASTER = Object.freeze({
     CRYSTAL_TREE: { id: "MAP000073", name: "結晶樹の秘跡" },
     GALVANIA_GORGE: { id: "MAP000074", name: "ガルヴァニア渓谷" },
     GALVANIA_EMPIRE: { id: "MAP000075", name: "ガルヴァニア帝国" },
-    REXNOTE_BASEMENT: { id: "MAP000076", name: "レクスノート邸 地下迷宮" }
+    REXNOTE_BASEMENT: { id: "MAP000076", name: "レクスノート邸 地下迷宮" },
+    REXNOTE_ESTATE_GROUNDS: { id: "MAP000077", name: "レクスノート邸 外周" }
 });
 
 const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
@@ -1957,7 +1959,7 @@ const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
 
 const FIXED_AREA_MAP_KEYS = Object.freeze({
     PROLOGUE_WEST_HILL: "PROLOGUE_WEST_HILL", PROLOGUE_SOUTH_VILLAGE: "PROLOGUE_SOUTH_VILLAGE", PROLOGUE_NORTH_VILLAGE: "PROLOGUE_NORTH_VILLAGE",
-    REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", REXNOTE_BASEMENT: "REXNOTE_BASEMENT", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO", CRYSTAL_TREE: "CRYSTAL_TREE", GALVANIA_GORGE: "GALVANIA_GORGE", GALVANIA_EMPIRE: "GALVANIA_EMPIRE",
+    REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", REXNOTE_ESTATE_GROUNDS: "REXNOTE_ESTATE_GROUNDS", REXNOTE_BASEMENT: "REXNOTE_BASEMENT", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO", CRYSTAL_TREE: "CRYSTAL_TREE", GALVANIA_GORGE: "GALVANIA_GORGE", GALVANIA_EMPIRE: "GALVANIA_EMPIRE",
     START_VILLAGE: "START_VILLAGE", FIRE_VILLAGE: "FIRE_VILLAGE", WIND_VILLAGE: "WIND_VILLAGE", WATER_CITY: "WATER_CITY",
     ABYSS_FIELD: "ABYSS_FIELD", RUINED_SHRINE: "RUINED_SHRINE", TRIAL_ISLAND: "TRIAL_ISLAND", SUMMIT_TEMPLE: "SUMMIT_TEMPLE",
     START_CAVE: "START_CAVE", FOREST_WIND_HOLE: "FOREST_WIND_HOLE", IGNIS_VOLCANO: "IGNIS_VOLCANO",
@@ -2749,6 +2751,85 @@ const FIXED_MAPS = {
         "exitPoint": { "area": "WORLD", "worldKey": "WORLD", "x": 66, "y": 58 },
         "mapActions": []
     },
+    "REXNOTE_ESTATE_GROUNDS": {
+        "name": "レクスノート邸 外周",
+        "themeKey": "WATER_CITY",
+        "worldKey": "WORLD",
+        "width": 17,
+        "height": 13,
+        "entryPoint": { "x": 8, "y": 10 },
+        "randomEncounterDisabled": true,
+        "tiles": [
+            "WWWWWWWWWWWWWWWWW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTSTTTTTTTW",
+            "WWWWWWWWWWWWWWWWW"
+        ],
+        "mapActors": [
+            {
+                "placementId": 1,
+                "actorId": "hayate_rexnote_sighting",
+                "name": "ハヤテ",
+                "x": 5,
+                "y": 7,
+                "imageKey": "overlay_companion_hayate",
+                "baseTile": "T",
+                "states": [
+                    {
+                        "stateId": "hayate_rexnote_sighting",
+                        "priority": 100,
+                        "when": {
+                            "requiredFlag": "rexnoteRouteKnown",
+                            "missingFlag": "hayateRexnoteSighted"
+                        },
+                        "action": {
+                            "label": "ハヤテに声をかける",
+                            "type": "storyEvent",
+                            "eventId": "hayate_rexnote_sighting"
+                        }
+                    }
+                ]
+            }
+        ],
+        "worldExits": [
+            {
+                "x": 8,
+                "y": 11,
+                "area": "WORLD",
+                "worldKey": "WORLD",
+                "worldX": 40,
+                "worldY": 19
+            }
+        ],
+        "exitPoint": {
+            "area": "WORLD",
+            "worldKey": "WORLD",
+            "x": 40,
+            "y": 19
+        },
+        "mapActions": [
+            {
+                "x": 8,
+                "y": 2,
+                "type": "fixedMap",
+                "target": "REXNOTE_ESTATE",
+                "targetX": 8,
+                "targetY": 8,
+                "returnX": 8,
+                "returnY": 3,
+                "label": "邸内へ入る"
+            }
+        ]
+    },
     "REXNOTE_ESTATE": {
         "name": "レクスノート邸",
         "themeKey": "WATER_CITY",
@@ -2808,17 +2889,20 @@ const FIXED_MAPS = {
             "x": 40,
             "y": 19
         },
-        "worldExits": [
+        "worldExits": [],
+        "mapActions": [
             {
                 "x": 8,
                 "y": 9,
-                "area": "WORLD",
-                "worldKey": "WORLD",
-                "worldX": 40,
-                "worldY": 19
-            }
-        ],
-        "mapActions": [
+                "type": "fixedMap",
+                "target": "REXNOTE_ESTATE_GROUNDS",
+                "targetX": 8,
+                "targetY": 3,
+                "returnX": 8,
+                "returnY": 8,
+                "triggerOnStep": true,
+                "label": "邸外へ出る"
+            },
             {
                 "x": 4,
                 "y": 3,
@@ -12775,6 +12859,7 @@ const FIXED_DUNGEON_MAPS = {
                             {
                                 "stateId": "undersea_volcano_departure_story",
                                 "priority": 30,
+                                "placement": { "x": 13, "y": 21 },
                                 "when": {
                                     "requiredWorldState": {
                                         "thunderFortState": { "op": "==", "value": 3 }

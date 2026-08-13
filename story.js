@@ -7176,6 +7176,12 @@ const STORY_MANAGER_DATA = {
                 ],
                 "winActions": []
         },
+        "hayate_rexnote_sighting": {
+                "actions": [
+                        { "type": "FLAG", "key": "hayateRexnoteSighted", "refreshField": true }
+                ],
+                "winActions": []
+        },
         "rexnote_estate_arrival": {
                 "actions": [
                         { "type": "CONV", "value": "REXNOTE_ESTATE_ARRIVAL" },

@@ -686,7 +686,7 @@ const PRISMA_ASSETS = {
   // installImages: Service Worker の初回install時にキャッシュする画像全体。
   // backgroundImages: install後の再試行/補助ウォームキャッシュ用。
   cacheWarmup: {
-    version: "2026-07-29-balance-and-actor-identity-v16",
+    version: "2026-08-13-startup-loader-v17",
     initialGraphicKeys: [
       "floor", "sea", "forest", "mountain", "Low_mountain", "cave", "house-1", "house-2", "inn", "wall", "dungeon_floor",
       "item_icon_attack", "item_icon_buff", "item_icon_debuff", "item_icon_material", "item_icon_vehicle", "item_icon_travel",
@@ -840,8 +840,11 @@ function refreshPrismaAssetWarmupLists() {
     ...PRISMA_MONSTER_IMAGE_FILES,
   ]);
 
+  const battleBackgroundGraphicKeys = Object.keys(PRISMA_ASSETS.graphics || {})
+    .filter((key) => key.startsWith("battle_bg_"));
   PRISMA_ASSETS.cacheWarmup.initialGraphicKeys = unique([
     ...PRISMA_BASE_INITIAL_GRAPHIC_KEYS,
+    ...battleBackgroundGraphicKeys,
     ...PRISMA_STARTUP_MONSTER_GRAPHIC_KEYS,
   ]);
   PRISMA_ASSETS.cacheWarmup.criticalImages = critical;
@@ -936,44 +939,100 @@ refreshPrismaAssetWarmupLists();
 const GRAPHICS = {
   images: {},
   loading: {},
+  loadPromises: {},
   spriteDefs: {},
   loadedCount: 0,
   totalCount: 0,
+  redrawQueued: false,
   data: PRISMA_ASSETS.graphics,
 
+  queueFieldRedraw() {
+    if (GRAPHICS.redrawQueued || typeof requestAnimationFrame === "undefined") return;
+    GRAPHICS.redrawQueued = true;
+    requestAnimationFrame(() => {
+      GRAPHICS.redrawQueued = false;
+      // Phaser側は静的マップ署名が同じだとプレイヤーだけを更新する。
+      // 遅延画像をテクスチャへ追加した直後は静的層を明示的に破棄し、
+      // 「一歩歩くまで画像が出ない」状態を作らない。
+      if (typeof PhaserFieldRenderer !== "undefined" && typeof PhaserFieldRenderer.refresh === "function") {
+        PhaserFieldRenderer.refresh();
+      } else if (typeof Field !== "undefined" && typeof Field.render === "function") {
+        Field.render();
+      }
+    });
+  },
+
+  request(key, options = {}) {
+    if (GRAPHICS.images[key]) return Promise.resolve(GRAPHICS.images[key]);
+    if (GRAPHICS.loadPromises[key]) return GRAPHICS.loadPromises[key];
+
+    const src = GRAPHICS.data[key];
+    if (!src || typeof Image === "undefined") return Promise.resolve(null);
+
+    const maxAttempts = Math.max(1, Math.min(5, Math.floor(Number(options.maxAttempts) || 3)));
+    const retryDelayMs = Math.max(0, Math.floor(Number(options.retryDelayMs) || 180));
+    const redrawOnLoad = options.redraw !== false;
+    let attempt = 0;
+    let resolvePromise = null;
+    const promise = new Promise((resolve) => { resolvePromise = resolve; });
+    GRAPHICS.loadPromises[key] = promise;
+
+    const tryLoad = () => {
+      attempt += 1;
+      const img = new Image();
+      GRAPHICS.loading[key] = img;
+      img.onload = () => {
+        if (GRAPHICS.loading[key] === img) delete GRAPHICS.loading[key];
+        GRAPHICS.images[key] = img;
+        delete GRAPHICS.loadPromises[key];
+        if (redrawOnLoad) GRAPHICS.queueFieldRedraw();
+        resolvePromise(img);
+      };
+      img.onerror = () => {
+        if (GRAPHICS.loading[key] === img) delete GRAPHICS.loading[key];
+        delete GRAPHICS.images[key];
+        if (attempt < maxAttempts) {
+          setTimeout(tryLoad, retryDelayMs * attempt);
+          return;
+        }
+        delete GRAPHICS.loadPromises[key];
+        console.warn(`[GRAPHICS] 画像読み込み失敗(${attempt}回): ${key} -> ${src}`);
+        resolvePromise(null);
+      };
+      img.src = src;
+    };
+    tryLoad();
+    return promise;
+  },
+
   load(callback, options = {}) {
-    const keys = options.keys || Object.keys(GRAPHICS.data);
+    const requestedKeys = Array.isArray(options.keys) ? options.keys : Object.keys(GRAPHICS.data);
+    const keys = Array.from(new Set(requestedKeys.filter((key) => !!GRAPHICS.data[key])));
+    const concurrency = Math.max(1, Math.min(12, Math.floor(Number(options.concurrency) || 6)));
+    const maxAttempts = Math.max(1, Math.min(5, Math.floor(Number(options.maxAttempts) || 3)));
     GRAPHICS.loadedCount = 0;
     GRAPHICS.totalCount = keys.length;
 
     if (!keys.length) {
       if (callback) callback();
-      return;
+      return Promise.resolve([]);
     }
 
-    const done = () => {
-      GRAPHICS.loadedCount += 1;
-      if (GRAPHICS.loadedCount >= GRAPHICS.totalCount && callback) callback();
+    let cursor = 0;
+    const worker = async () => {
+      while (cursor < keys.length) {
+        const index = cursor;
+        cursor += 1;
+        const key = keys[index];
+        await GRAPHICS.request(key, { maxAttempts, redraw: false });
+        GRAPHICS.loadedCount += 1;
+      }
     };
 
-    keys.forEach((key) => {
-      const src = GRAPHICS.data[key];
-      if (!src) {
-        done();
-        return;
-      }
-
-      const img = new Image();
-      img.onload = () => {
-        GRAPHICS.images[key] = img;
-        done();
-      };
-      img.onerror = () => {
-        delete GRAPHICS.images[key];
-        console.warn(`[GRAPHICS] 画像読み込み失敗: ${key} -> ${src}`);
-        done();
-      };
-      img.src = src;
+    const workers = Array.from({ length: Math.min(concurrency, keys.length) }, () => worker());
+    return Promise.all(workers).then(() => {
+      if (callback) callback();
+      return keys.map((key) => GRAPHICS.images[key] || null);
     });
   },
 
@@ -982,38 +1041,10 @@ const GRAPHICS = {
   get(key) {
     if (GRAPHICS.images[key]) return GRAPHICS.images[key];
     if (GRAPHICS.loading[key]) return GRAPHICS.loading[key];
+    if (!GRAPHICS.data[key]) return null;
 
-    const src = GRAPHICS.data[key];
-    if (!src) return null;
-
-    const img = new Image();
-    GRAPHICS.loading[key] = img;
-    img.onload = () => {
-      delete GRAPHICS.loading[key];
-      GRAPHICS.images[key] = img;
-      if (!GRAPHICS.redrawQueued) {
-        GRAPHICS.redrawQueued = true;
-        requestAnimationFrame(() => {
-          GRAPHICS.redrawQueued = false;
-          // Phaser側は静的マップ署名が同じだとプレイヤーだけを更新する。
-          // 遅延画像をテクスチャへ追加した直後は静的層を明示的に破棄し、
-          // 「一歩歩くまで画像が出ない」状態を作らない。
-          if (typeof PhaserFieldRenderer !== "undefined" && typeof PhaserFieldRenderer.refresh === "function") {
-            PhaserFieldRenderer.refresh();
-          } else if (typeof Field !== "undefined" && typeof Field.render === "function") {
-            Field.render();
-          }
-        });
-      }
-    };
-    img.onerror = () => {
-      delete GRAPHICS.loading[key];
-      delete GRAPHICS.images[key];
-      console.warn(`[GRAPHICS] 遅延読み込み失敗: ${key} -> ${src}`);
-    };
-    img.src = src;
-    return img;
+    GRAPHICS.request(key, { maxAttempts: 3 });
+    return GRAPHICS.loading[key] || null;
   },
 };
-
 globalThis.GRAPHICS = GRAPHICS;

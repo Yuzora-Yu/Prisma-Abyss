@@ -40,11 +40,9 @@ class Entity {
         this.rarity = data.rarity || 'N';
         this.level = data.level || 1;
 		
-		// ★画像読み込みロジックの修正
-        // data.img（セーブデータ/個別データ）があればそれを、
-        // なければマスタデータ（characters.js）からIDを元に探す
-        const master = DB.CHARACTERS.find(c => c.id === (data.charId || data.id));
-        this.img = data.img || data.image || (master ? master.img : null);
+		// 画像参照はEntityでは種別を跨いで解決しない。
+        // Character / MonsterでID空間が重なるため、各subclassが自分のmasterだけを参照する。
+        this.img = data.img || data.image || null;
         this.image = data.image || this.img || null;
 		
         this.limitBreak = data.limitBreak || 0;
@@ -130,6 +128,11 @@ class Entity {
 class Player extends Entity {
     constructor(data) {
         super(data);
+        // Playerだけがcharacters.jsを画像masterとして参照する。
+        // セーブ側の明示画像は常に優先し、旧セーブのcharIdだけでも従来表示を維持する。
+        const imageMaster = DB.CHARACTERS.find(c => c.id === (data.charId || data.id));
+        this.img = data.img || data.image || imageMaster?.img || null;
+        this.image = data.image || this.img || null;
         this.originData = data; 
         this.uid = data.uid;
         this.equips = data.equips || {};
@@ -264,7 +267,10 @@ class Monster extends Entity {
         this.isRare = data.isRare || false;
         this.isEstark = data.isEstark || false;
         this.isSpecialBoss = data.isSpecialBoss || data.isEstark || false;
-        this.image = data.image || data.img || null;
+        // Monsterはmonster master上の画像情報だけを使う。
+        // Characterと同じ数値IDを持っても顔グラフィックへ誤解決させない。
+        this.img = data.img || data.image || null;
+        this.image = data.image || this.img || null;
         
         // ★追加: ブレス耐性などの初期化（あれば）
         this.resists = data.resists || {};
@@ -2689,15 +2695,20 @@ const App = {
 	 * - 画像リストの正本は assets.js の PRISMA_ASSETS.cacheWarmup.startupImages。
 	 * - 長時間待ちすぎると起動体験が悪くなるため、短いタイムアウト付きで実行する。
 	 */
-	preloadStartupImages: async () => {
+	preloadStartupImages: async (options = {}) => {
 		if (typeof window === 'undefined' || !window.PRISMA_ASSETS || !window.PRISMA_ASSETS.cacheWarmup) return;
 
-		const urls = Array.from(new Set((window.PRISMA_ASSETS.cacheWarmup.startupImages || []).filter(Boolean)));
+		const excluded = new Set(Array.isArray(options.excludeUrls) ? options.excludeUrls.filter(Boolean) : []);
+		const urls = Array.from(new Set(
+			(window.PRISMA_ASSETS.cacheWarmup.startupImages || [])
+				.filter(src => src && !excluded.has(src))
+		));
 		if (!urls.length) return;
 
-		const timeoutMs = 2400;
-		const concurrency = 6;
+		const timeoutMs = Math.max(250, Math.floor(Number(options.timeoutMs) || 2400));
+		const concurrency = Math.max(1, Math.min(6, Math.floor(Number(options.concurrency) || 4)));
 		let index = 0;
+		let cancelled = false;
 
 		const loadOne = (src) => new Promise((resolve) => {
 			const img = new Image();
@@ -2707,7 +2718,7 @@ const App = {
 		});
 
 		const worker = async () => {
-			while (index < urls.length) {
+			while (!cancelled && index < urls.length) {
 				const src = urls[index++];
 				await loadOne(src);
 			}
@@ -2717,8 +2728,15 @@ const App = {
 			Array.from({ length: Math.min(concurrency, urls.length) }, worker)
 		);
 
-		const timeoutTask = new Promise((resolve) => setTimeout(resolve, timeoutMs));
-		await Promise.race([preloadTask, timeoutTask]);
+		let timeoutId = null;
+		const timeoutTask = new Promise((resolve) => {
+			timeoutId = setTimeout(() => {
+				cancelled = true;
+				resolve('timeout');
+			}, timeoutMs);
+		});
+		const result = await Promise.race([preloadTask, timeoutTask]);
+		if (result !== 'timeout' && timeoutId) clearTimeout(timeoutId);
 	},
 
 	/*
@@ -2807,13 +2825,25 @@ const App = {
 			}
 
 			// どちらの選択でも、初期画面と開幕戦に必要な画像はメモリへ先読みする。
+            // GRAPHICSが担当するURLはraw Image先読みから除外し、同一画像の二重decode/二重通信を防ぐ。
+            const startupKeys = (typeof GRAPHICS !== 'undefined' && GRAPHICS.data)
+                ? Array.from(new Set(
+                    (window.PRISMA_ASSETS?.cacheWarmup?.initialGraphicKeys || [])
+                        .filter(key => !!GRAPHICS.data?.[key])
+                ))
+                : [];
+            const startupGraphicUrls = startupKeys
+                .map(key => GRAPHICS.data?.[key])
+                .filter(Boolean);
 			if (typeof App.preloadStartupImages === 'function') {
-				await App.preloadStartupImages();
+				await App.preloadStartupImages({ excludeUrls: startupGraphicUrls, concurrency: 4, timeoutMs: 2400 });
 			}
 			if (typeof GRAPHICS !== 'undefined' && typeof GRAPHICS.load === 'function') {
+                // 全画像のHTTP/Cache warmupはApp.warmImageCache()へ任せ、起動時のImage生成は
+                // initialGraphicKeysだけを有限並列・再試行つきで処理する。
 				GRAPHICS.load(() => {
 					start();
-				});
+				}, { keys: startupKeys, concurrency: 6, maxAttempts: 3 });
 			} else {
 				// なければ即開始
 				start();
@@ -12340,16 +12370,23 @@ const Field = {
             }
         }
 
+        const targetStoryArea = targetAreaKey && typeof STORY_DATA !== 'undefined' && STORY_DATA.areas
+            ? STORY_DATA.areas[targetAreaKey]
+            : null;
+        // ワールド上のstory areaと、実際に最初に入る固定MAPを分離する。
+        // 邸宅の「外周→屋内」のような導線を個別分岐なしで定義できる共通契約。
+        const targetFixedMapKey = targetStoryArea?.fixedMapKey || targetAreaKey;
+
         if (targetAreaKey === 'MEMORY_REALM') {
             App.setAction('追憶の魔境へ入る', () => {
                 if (typeof App.discoverFixedMap === 'function') App.discoverFixedMap('MEMORY_REALM', { save:false });
                 Dungeon.startMemoryRealm();
             });
-        } else if (targetAreaKey && typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[targetAreaKey]) {
-            const areaDef = FIXED_MAPS[targetAreaKey];
-            App.setAction(`${areaDef.name}に入る`, () => {
+        } else if (targetAreaKey && typeof FIXED_MAPS !== 'undefined' && FIXED_MAPS[targetFixedMapKey]) {
+            const areaDef = FIXED_MAPS[targetFixedMapKey];
+            App.setAction(`${targetStoryArea?.name || areaDef.name}に入る`, () => {
                 const flags = App.data?.progress?.flags || {};
-                const storyArea = (typeof STORY_DATA !== 'undefined' && STORY_DATA.areas) ? STORY_DATA.areas[targetAreaKey] : null;
+                const storyArea = targetStoryArea;
                 const entranceDef = Array.isArray(storyArea?.entrances)
                     ? storyArea.entrances.find(entry => (entry.entryKey || null) === (targetEntryKey || null))
                     : null;
@@ -12358,7 +12395,7 @@ const Field = {
                     App.log(entranceDef?.lockedText || storyArea?.entryLockedText || '結界に阻まれ、今は入れない。');
                     return;
                 }
-                Field.enterFixedMap(targetAreaKey, { entryKey: targetEntryKey || null });
+                Field.enterFixedMap(targetFixedMapKey, { entryKey: targetEntryKey || null });
             });
         } else if (targetAreaKey && typeof FIXED_DUNGEON_MAPS !== 'undefined' && FIXED_DUNGEON_MAPS[targetAreaKey]) {
             const areaDef = FIXED_DUNGEON_MAPS[targetAreaKey];
