@@ -27,7 +27,7 @@ const normalizeFixedMapSchema = (fieldDefs, dungeonDefs) => {
             });
         }
         target.areaKey = target.areaKey || context.areaKey || null;
-        target.regionKey = target.regionKey || context.regionKey || context.areaKey || null;
+        target.regionKey = target.regionKey || target.canonicalMapKey || context.regionKey || context.areaKey || null;
         target.mapKind = target.mapKind || context.mapKind || 'field';
         return target;
     };
@@ -95,9 +95,29 @@ const MapRegistry = {
         return MapRegistry.getMapDefinition(mapIdOrKey)?.name || null;
     },
 
+    getMapBindingForArea(areaKey) {
+        const mapKey = (typeof STORY_AREA_MAP_KEYS !== 'undefined')
+            ? STORY_AREA_MAP_KEYS[areaKey]
+            : ((typeof FIXED_AREA_MAP_KEYS !== 'undefined') ? FIXED_AREA_MAP_KEYS[areaKey] : null);
+        const mapId = mapKey && typeof MAP_IDS !== 'undefined' ? MAP_IDS[mapKey] : null;
+        const section = (typeof FIXED_AREA_MAP_SECTION_INDEX !== 'undefined')
+            ? Math.max(0, Number(FIXED_AREA_MAP_SECTION_INDEX[areaKey] ?? 0) || 0)
+            : 0;
+        return {
+            areaKey: areaKey || null,
+            mapKey: mapKey || null,
+            mapId: mapId || null,
+            section,
+            sectionId: mapId ? MapRegistry.formatFloorId(mapId, section) : null
+        };
+    },
+
     getMapIdForArea(areaKey) {
-        const mapKey = (typeof STORY_AREA_MAP_KEYS !== 'undefined') ? STORY_AREA_MAP_KEYS[areaKey] : ((typeof FIXED_AREA_MAP_KEYS !== 'undefined') ? FIXED_AREA_MAP_KEYS[areaKey] : null);
-        return mapKey && typeof MAP_IDS !== 'undefined' ? MAP_IDS[mapKey] : null;
+        return MapRegistry.getMapBindingForArea(areaKey).mapId;
+    },
+
+    getMapSectionIdForArea(areaKey) {
+        return MapRegistry.getMapBindingForArea(areaKey).sectionId;
     },
 
     formatFloorId(mapId, floor = 0) {

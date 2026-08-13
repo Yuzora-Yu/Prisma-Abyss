@@ -2,7 +2,7 @@
 
 **文書種別:** ゲーム実装・別Chat引き継ぎ用技術原本  
 **作成日:** 2026-08-10  
-**最新版更新:** 2026-08-13 Phase3 水上都市事後～レクスノート邸地下B1～B5  
+**最新版更新:** 2026-08-13 MAP区画統合・リースの山小屋導線・海底火山可変化  
 **目的:** 新しいChat／実装担当が、長い企画会話を読み直さずに最新版シナリオをコードへ落とし始められるようにする。  
 
 ---
@@ -1025,6 +1025,15 @@ alanState.phase = 'dead'
 - 日付配下は `handoff/`, `reports/`, `scenario/`, `review/`, `validation/` を基本とする。
 - `README.md` / `AGENTS.md` 等のproject root文書と、安定正本の `canon/` / `docs/` は従来位置を維持する。
 
+### 固定ロケーションのMAP／区画管理【2026-08-13確定】
+
+- 同一施設の屋外・屋内、同一ダンジョンの階層違いは、原則として**同じ `mapId` の区画**として管理する。屋外／屋内だけを理由に新しいMAP IDを払い出さない。
+- `areaKey` はruntime上の区画識別子、`mapId` はロケーションの正規MAP識別子、`floorId` / `sectionId` は同一MAP内の区画識別子として扱う。
+- 固定ロケーションの区画対応は `FIXED_AREA_MAP_KEYS` と `FIXED_AREA_MAP_SECTION_INDEX` を正本とし、区画追加時も同じ仕組みへ登録する。
+- `MAP000069`: section 00 = `リースの山小屋`、section 01 = `リースの山小屋内`。5年前の起床イベントは屋内区画を維持し、ワールドとの出入りは屋外区画を経由する。
+- `MAP000071`: section 00 = `レクスノート邸`、section 01 = `レクスノート邸内`。内部互換用areaKey `REXNOTE_ESTATE_GROUNDS` は残すが、プレイヤー向け名称は `レクスノート邸` に統一する。
+- 旧 `MAP000077` はレクスノート邸の別MAP化を取り消したため `RETIRED_MAP_IDS` で廃止予約とし、別用途へ安易に再利用しない。
+
 
 ### 水上都市事後～レクスノート邸地下B1～B5【2026-08-13 Phase3実装】
 
@@ -1038,6 +1047,8 @@ alanState.phase = 'dead'
 - Item `701013 レクスノートの魔道書`: 売却・使用不可の貴重品。B5撃破後に取得し、アランへ報告する。
 - `rexnote_estate_arrival` の即加入／即船取得を廃止。地下依頼 → B5撃破 → 魔道書報告の後だけ ALLY201 / boat unlock / `hasShip` をcommitする。
 - save migration: `20260813_rexnoteBasementRouteV1`。旧版で既に船取得／アラン加入済みのsaveは巻き戻さず、地下完了flagと701013を互換補完する。未完了saveは可能な範囲で地下依頼へ接続する。
-- レクスノート邸外周のハヤテ無言接触は、正式な外周MAPが無いため今回も未実装。屋内へ代替配置しない。
+- レクスノート邸の屋外区画を `MAP000071-00`、屋内区画を `MAP000071-01` として同一MAPへ統合。屋外区画でハヤテ無言接触を実装し、接触後はその場から消える。
+- リースの山小屋も `MAP000069-00` = 山小屋、`MAP000069-01` = 山小屋内として同一MAP管理へ統一。プロローグ起床は従来どおり屋内、出発時は屋外区画を経由してワールドへ戻る。
+- 海底火山F1～F3を既存fixed procedural基盤へ載せ、再進入時に構造が変化する探索区画へ拡張。溶岩は階層ごとに通行不可または既存のダメージ床として適用し、研究区画F4とグラド戦F5は固定のまま維持する。
 - ユーザー指示により、この納品では同梱validatorを使用しない。`node --check` と個別の静的整合監査で確認する。
-- implementation source: `development_notes/2026-08-13/reports/REXNOTE_BASEMENT_PHASE3_IMPLEMENTATION_20260813.md`。
+- implementation source: `development_notes/2026-08-13/reports/MAP_SECTION_REES_VOLCANO_CONTINUATION_20260813.md`。

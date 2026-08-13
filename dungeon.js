@@ -1523,6 +1523,92 @@ const Dungeon = {
         return App.data.progress;
     },
 
+    // Optional terrain layer for story dungeons that reuse the abyss procedural generator.
+    // The template owns terrain semantics; the generator only places terrain on ordinary floor
+    // while preserving a guaranteed route between every required anchor.
+    applyFixedProceduralTerrain: (generated, template = {}, anchors = {}) => {
+        if (!Array.isArray(generated) || !generated.length || !Array.isArray(generated[0])) {
+            return { impassableTiles: Array.isArray(template.impassableTiles) ? [...template.impassableTiles] : [], applied: [] };
+        }
+        const configs = (Array.isArray(template.proceduralTerrain) ? template.proceduralTerrain : [template.proceduralTerrain])
+            .filter(config => config && typeof config === 'object');
+        const impassableTiles = new Set((Array.isArray(template.impassableTiles) ? template.impassableTiles : [])
+            .map(sign => String(sign || '').toUpperCase()).filter(Boolean));
+        if (!configs.length) return { impassableTiles: [...impassableTiles], applied: [] };
+
+        const height = generated.length;
+        const width = generated[0].length;
+        const keyOf = (point) => `${Number(point?.x)},${Number(point?.y)}`;
+        const inside = (point) => Number.isInteger(Number(point?.x)) && Number.isInteger(Number(point?.y))
+            && Number(point.x) >= 0 && Number(point.y) >= 0 && Number(point.x) < width && Number(point.y) < height;
+        const requiredAnchors = [anchors.entryPoint, anchors.exitPoint, ...(anchors.chests || [])].filter(inside);
+        const root = requiredAnchors[0] || { x: 1, y: 1 };
+        const applied = [];
+
+        const findPath = (start, goal, blockedTiles) => {
+            if (!inside(start) || !inside(goal)) return [];
+            const startKey = keyOf(start);
+            const goalKey = keyOf(goal);
+            const queue = [{ x: Number(start.x), y: Number(start.y) }];
+            const previous = new Map([[startKey, null]]);
+            for (let index = 0; index < queue.length; index++) {
+                const current = queue[index];
+                const currentKey = keyOf(current);
+                if (currentKey === goalKey) break;
+                for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+                    const next = { x: current.x + dx, y: current.y + dy };
+                    const nextKey = keyOf(next);
+                    if (!inside(next) || previous.has(nextKey)) continue;
+                    const tile = String(generated[next.y]?.[next.x] || 'W').toUpperCase();
+                    if (blockedTiles.has(tile)) continue;
+                    previous.set(nextKey, currentKey);
+                    queue.push(next);
+                }
+            }
+            if (!previous.has(goalKey)) return [];
+            const path = [];
+            for (let cursor = goalKey; cursor; cursor = previous.get(cursor)) {
+                const [x, y] = cursor.split(',').map(Number);
+                path.push({ x, y });
+            }
+            return path.reverse();
+        };
+
+        for (const config of configs) {
+            const tile = String(config.tile || '').trim().toUpperCase();
+            if (!tile || tile === 'W' || tile.length !== 1) continue;
+            const mode = String(config.mode || 'damage').toLowerCase();
+            const density = Math.max(0, Math.min(0.35, Number(config.density || 0)));
+            if (density <= 0) continue;
+
+            const protectedCells = new Set(requiredAnchors.map(keyOf));
+            if (mode === 'impassable') {
+                // Protect one concrete route from the entry to every required anchor. This makes
+                // placement O(cells) and avoids repeatedly running articulation-point checks.
+                const blockedTiles = new Set(['W', ...impassableTiles]);
+                requiredAnchors.slice(1).forEach(target => {
+                    findPath(root, target, blockedTiles).forEach(point => protectedCells.add(keyOf(point)));
+                });
+            }
+
+            const candidates = [];
+            generated.forEach((row, y) => row.forEach((cell, x) => {
+                if (String(cell || '').toUpperCase() !== 'T') return;
+                if (protectedCells.has(`${x},${y}`)) return;
+                candidates.push({ x, y });
+            }));
+            for (let i = candidates.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+            }
+            const count = Math.min(candidates.length, Math.max(0, Math.floor(candidates.length * density)));
+            candidates.slice(0, count).forEach(point => { generated[point.y][point.x] = tile; });
+            if (mode === 'impassable') impassableTiles.add(tile);
+            applied.push({ tile, mode, density, count });
+        }
+        return { impassableTiles: [...impassableTiles], applied };
+    },
+
     isValidFixedProceduralFloor: (floorDef) => {
         if (!floorDef || !Array.isArray(floorDef.tiles) || floorDef.tiles.length < 3) return false;
         const width = Number(floorDef.width || floorDef.tiles[0]?.length || 0);
@@ -1532,6 +1618,18 @@ const Dungeon = {
         if (!rectangular) return false;
         if (!floorDef.generatedFromAbyssLogic || !Array.isArray(floorDef.chests)) return true;
         if (Number(floorDef.proceduralGenerationVersion || 0) !== Number(Dungeon.fixedProceduralGenerationVersion)) return false;
+
+        // Cached procedural floors are accepted only when all generated anchors are still reachable
+        // under the authored impassable-terrain contract. This also makes future terrain additions
+        // fail closed instead of reviving a broken cached layout.
+        const rows = floorDef.tiles.map(row => Array.isArray(row) ? [...row] : String(row).split(''));
+        const blocked = new Set(['W', ...(Array.isArray(floorDef.impassableTiles) ? floorDef.impassableTiles : [])]
+            .map(sign => String(sign || '').toUpperCase()));
+        const reachable = Dungeon.floodFill(rows, floorDef.entryPoint?.x, floorDef.entryPoint?.y, tile => !blocked.has(String(tile || 'W').toUpperCase()));
+        const requiredPoints = [floorDef.entryPoint, ...(floorDef.floorLinks || []), ...floorDef.chests]
+            .filter(point => Number.isFinite(Number(point?.x)) && Number.isFinite(Number(point?.y)));
+        if (requiredPoints.some(point => !reachable.has(`${Number(point.x)},${Number(point.y)}`))) return false;
+
         const items = globalThis.DB?.ITEMS || globalThis.ITEMS_DATA || [];
         return floorDef.chests.every(chest => {
             const item = items.find(entry => Number(entry.id) === Number(chest?.itemId));
@@ -1685,12 +1783,15 @@ const Dungeon = {
         generated.forEach((row, y) => row.forEach((tile, x) => {
             if (tile === 'C' || tile === 'R') chests.push({ x, y, itemId: pickItemId(), rare: tile === 'R' });
         }));
+        const terrain = Dungeon.applyFixedProceduralTerrain(generated, template, { entryPoint, exitPoint, chests });
         const result = {
             ...template,
             procedural: false,
             generatedFromAbyssLogic: true,
             proceduralGenerationVersion: Dungeon.fixedProceduralGenerationVersion,
             proceduralRunId: runId,
+            proceduralTerrainApplied: terrain.applied,
+            impassableTiles: terrain.impassableTiles,
             width: generated[0].length,
             height: generated.length,
             tiles: generated.map(row => row.join('')),

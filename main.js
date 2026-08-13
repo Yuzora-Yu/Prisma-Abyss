@@ -12828,9 +12828,13 @@ const Field = {
 
             // 同一MAP内の区画境界などは、床を踏んだ瞬間に遷移する。
             // 別MAPへの主要な出入口は従来どおりアクションボタンを使う。
-            if (targetMapAction?.triggerOnStep === true && Field.isMapActionAvailable(targetMapAction)) {
-                Field.executeMapAction(targetMapAction);
-                return;
+            if (targetMapAction?.triggerOnStep === true) {
+                if (Field.isMapActionAvailable(targetMapAction)) {
+                    Field.executeMapAction(targetMapAction);
+                    return;
+                }
+                const lockedMessage = targetMapAction.lockedText || targetMapAction.lockedLog || null;
+                if (lockedMessage) App.log(lockedMessage);
             }
 
             if (Field.currentMapData?.isFixed && typeof Dungeon !== 'undefined' && typeof Dungeon.markFixedVisibleArea === 'function') {

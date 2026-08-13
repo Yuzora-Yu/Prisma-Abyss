@@ -39,10 +39,15 @@ function testMapData() {
   vm.runInContext(read('maps_logic.js'), context);
   const { STORY_DATA, MAP_MASTER, FIXED_AREA_MAP_KEYS, FIXED_MAPS, FIXED_DUNGEON_MAPS } = context.__map;
   assert.strictEqual(STORY_DATA.areas.REXNOTE_ESTATE.fixedMapKey, 'REXNOTE_ESTATE_GROUNDS');
-  assert.strictEqual(MAP_MASTER.REXNOTE_ESTATE_GROUNDS.id, 'MAP000077');
-  assert.strictEqual(FIXED_AREA_MAP_KEYS.REXNOTE_ESTATE_GROUNDS, 'REXNOTE_ESTATE_GROUNDS');
+  assert.strictEqual(MAP_MASTER.REXNOTE_ESTATE.id, 'MAP000071');
+  assert.strictEqual(MAP_MASTER.REXNOTE_ESTATE_GROUNDS, undefined);
+  assert.strictEqual(FIXED_AREA_MAP_KEYS.REXNOTE_ESTATE_GROUNDS, 'REXNOTE_ESTATE');
   const grounds = FIXED_MAPS.REXNOTE_ESTATE_GROUNDS;
   assert(grounds && grounds.width === 17 && grounds.height === 13);
+  assert.strictEqual(grounds.mapId, 'MAP000071');
+  assert.strictEqual(grounds.floorId, 'MAP000071-00');
+  assert.strictEqual(FIXED_MAPS.REXNOTE_ESTATE.mapId, 'MAP000071');
+  assert.strictEqual(FIXED_MAPS.REXNOTE_ESTATE.floorId, 'MAP000071-01');
   const hayate = grounds.mapActors.find(a => a.actorId === 'hayate_rexnote_sighting');
   assert(hayate && hayate.x === 5 && hayate.y === 7);
   assert.strictEqual(grounds.tiles[11][8], 'S', 'grounds world exit must be an exit tile');

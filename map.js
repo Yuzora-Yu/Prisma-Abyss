@@ -1422,6 +1422,7 @@ const STORY_DATA = {
             rank: 1,
             centerX: 66,
             centerY: 58,
+            fixedMapKey: "REES_MOUNTAIN_HUT_EXTERIOR",
             fieldTile: {
                 img: "overlay_field_house_1",
                 color: "#d9bd84"
@@ -1948,8 +1949,14 @@ const MAP_MASTER = Object.freeze({
     CRYSTAL_TREE: { id: "MAP000073", name: "結晶樹の秘跡" },
     GALVANIA_GORGE: { id: "MAP000074", name: "ガルヴァニア渓谷" },
     GALVANIA_EMPIRE: { id: "MAP000075", name: "ガルヴァニア帝国" },
-    REXNOTE_BASEMENT: { id: "MAP000076", name: "レクスノート邸 地下迷宮" },
-    REXNOTE_ESTATE_GROUNDS: { id: "MAP000077", name: "レクスノート邸 外周" }
+    REXNOTE_BASEMENT: { id: "MAP000076", name: "レクスノート邸 地下迷宮" }
+});
+
+// MAP000077 was briefly allocated to the Rexnote outdoor section in a development build.
+// Outdoor/interior sections now share MAP000071; keep the retirement metadata only so the
+// obsolete id is never silently recycled for another location.
+const RETIRED_MAP_IDS = Object.freeze({
+    MAP000077: Object.freeze({ canonicalMapKey: "REXNOTE_ESTATE", reason: "merged-location-section" })
 });
 
 const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
@@ -1959,7 +1966,7 @@ const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
 
 const FIXED_AREA_MAP_KEYS = Object.freeze({
     PROLOGUE_WEST_HILL: "PROLOGUE_WEST_HILL", PROLOGUE_SOUTH_VILLAGE: "PROLOGUE_SOUTH_VILLAGE", PROLOGUE_NORTH_VILLAGE: "PROLOGUE_NORTH_VILLAGE",
-    REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", REXNOTE_ESTATE_GROUNDS: "REXNOTE_ESTATE_GROUNDS", REXNOTE_BASEMENT: "REXNOTE_BASEMENT", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO", CRYSTAL_TREE: "CRYSTAL_TREE", GALVANIA_GORGE: "GALVANIA_GORGE", GALVANIA_EMPIRE: "GALVANIA_EMPIRE",
+    REES_MOUNTAIN_HUT_EXTERIOR: "REES_MOUNTAIN_HUT", REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", REXNOTE_ESTATE_GROUNDS: "REXNOTE_ESTATE", REXNOTE_BASEMENT: "REXNOTE_BASEMENT", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO", CRYSTAL_TREE: "CRYSTAL_TREE", GALVANIA_GORGE: "GALVANIA_GORGE", GALVANIA_EMPIRE: "GALVANIA_EMPIRE",
     START_VILLAGE: "START_VILLAGE", FIRE_VILLAGE: "FIRE_VILLAGE", WIND_VILLAGE: "WIND_VILLAGE", WATER_CITY: "WATER_CITY",
     ABYSS_FIELD: "ABYSS_FIELD", RUINED_SHRINE: "RUINED_SHRINE", TRIAL_ISLAND: "TRIAL_ISLAND", SUMMIT_TEMPLE: "SUMMIT_TEMPLE",
     START_CAVE: "START_CAVE", FOREST_WIND_HOLE: "FOREST_WIND_HOLE", IGNIS_VOLCANO: "IGNIS_VOLCANO",
@@ -1973,6 +1980,16 @@ const FIXED_AREA_MAP_KEYS = Object.freeze({
     MAGIC_WIND_MAUSOLEUM: "MAGIC_WIND_MAUSOLEUM", FROZEN_FOREST: "FROZEN_FOREST", PURGATORY_MOUNTAINS: "PURGATORY_MOUNTAINS",
     ICE_PENANCE_ROAD: "ICE_PENANCE_ROAD", SCORCHING_OLD_CASTLE: "SCORCHING_OLD_CASTLE", RIDPALM_DREAM_CORRIDOR: "RIDPALM_DREAM_CORRIDOR",
     JAGOREA_ROOT: "JAGOREA_ROOT", CHRONO_ABYSS: "CHRONO_ABYSS"
+});
+
+// A location may contain multiple fixed-map sections while retaining one canonical MAP id.
+// Section 00 is the outdoor/entry section, 01+ are interior sections, mirroring dungeon floors.
+// Keep areaKey as the runtime section identity; mapId is the player-facing/canonical location identity.
+const FIXED_AREA_MAP_SECTION_INDEX = Object.freeze({
+    REES_MOUNTAIN_HUT_EXTERIOR: 0,
+    REES_MOUNTAIN_HUT: 1,
+    REXNOTE_ESTATE_GROUNDS: 0,
+    REXNOTE_ESTATE: 1
 });
 
 const STORY_AREA_MAP_KEYS = Object.freeze({ ...FIXED_AREA_MAP_KEYS, ABYSS: "ABYSS", MEDAL: "MEDAL", WORLD: "WORLD", ABYSS_WORLD: "ABYSS_WORLD" });
@@ -2682,8 +2699,56 @@ const FIXED_MAPS = {
             }
         ]
     },
-    "REES_MOUNTAIN_HUT": {
+    "REES_MOUNTAIN_HUT_EXTERIOR": {
         "name": "リースの山小屋",
+        "themeKey": "START_VILLAGE",
+        "worldKey": "WORLD",
+        "width": 17,
+        "height": 13,
+        "entryPoint": { "x": 8, "y": 10 },
+        "randomEncounterDisabled": true,
+        "impassableTiles": ["H"],
+        "tiles": [
+            "WWWWWWWWWWWWWWWWW",
+            "WTTTTTHHHHHTTTTTW",
+            "WTTTTTHHHHHTTTTTW",
+            "WTTTTTHHTHHTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTTTTTTTTTW",
+            "WTTTTTTTSTTTTTTTW",
+            "WWWWWWWWWWWWWWWWW"
+        ],
+        "worldExits": [
+            {
+                "x": 8, "y": 11,
+                "area": "WORLD",
+                "worldKey": "WORLD",
+                "worldX": 66,
+                "worldY": 58,
+                "setFlag": "prologueDepartedReesHut"
+            }
+        ],
+        "exitPoint": { "area": "WORLD", "worldKey": "WORLD", "x": 66, "y": 58 },
+        "mapActions": [
+            {
+                "x": 8, "y": 3,
+                "type": "fixedMap",
+                "target": "REES_MOUNTAIN_HUT",
+                "targetX": 5,
+                "targetY": 6,
+                "returnX": 8,
+                "returnY": 4,
+                "label": "山小屋に入る"
+            }
+        ]
+    },
+    "REES_MOUNTAIN_HUT": {
+        "name": "リースの山小屋内",
         "themeKey": "START_VILLAGE",
         "width": 11,
         "height": 9,
@@ -2736,23 +2801,26 @@ const FIXED_MAPS = {
                 ]
             }
         ],
-        "worldExits": [
+        "worldExits": [],
+        "exitPoint": { "area": "REES_MOUNTAIN_HUT_EXTERIOR", "x": 8, "y": 4 },
+        "mapActions": [
             {
                 "x": 5, "y": 7,
-                "area": "WORLD",
-                "worldKey": "WORLD",
-                "worldX": 66,
-                "worldY": 58,
+                "type": "fixedMap",
+                "target": "REES_MOUNTAIN_HUT_EXTERIOR",
+                "targetX": 8,
+                "targetY": 4,
+                "returnX": 5,
+                "returnY": 6,
+                "triggerOnStep": true,
+                "label": "外へ出る",
                 "requiredFlag": "prologueReesDepartureTalkSeen",
-                "setFlag": "prologueDepartedReesHut",
                 "lockedText": "出る前に、リースへ声をかけておこう。"
             }
-        ],
-        "exitPoint": { "area": "WORLD", "worldKey": "WORLD", "x": 66, "y": 58 },
-        "mapActions": []
+        ]
     },
     "REXNOTE_ESTATE_GROUNDS": {
-        "name": "レクスノート邸 外周",
+        "name": "レクスノート邸",
         "themeKey": "WATER_CITY",
         "worldKey": "WORLD",
         "width": 17,
@@ -2831,7 +2899,7 @@ const FIXED_MAPS = {
         ]
     },
     "REXNOTE_ESTATE": {
-        "name": "レクスノート邸",
+        "name": "レクスノート邸内",
         "themeKey": "WATER_CITY",
         "width": 17,
         "height": 11,
@@ -12189,79 +12257,30 @@ const FIXED_DUNGEON_MAPS = {
         entryPoint: { x: 9, y: 13 },
         floors: [
             {
-                label: "第1層・海底火道", encounterRank: 52, width: 19, height: 15,
-                tiles: [
-                    "WWWWWWWWWWWWWWWWWWW",
-                    "WWWWWWWWWDWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWTTTTTTTTTTTTTWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWTTTTTTTTTTTTTWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWTTTTTTTTTTTTTWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWSWWWWWWWWW",
-                    "WWWWWWWWWWWWWWWWWWW"
-                ],
-                floorLinks: [
-                    { x:9, y:13, to:"EXIT", label:"大灯台沖へ戻る" },
-                    { x:9, y:1, toFloor:2, targetX:9, targetY:13, label:"第2層へ" }
-                ],
-                entryPoint:{x:9,y:13}, themeKey:"FIRE_VILLAGE"
+                label: "第1層・海底火道",
+                encounterRank: 52,
+                procedural: true,
+                forceMaze: true,
+                proceduralEntryReturnsOutside: true,
+                proceduralExitLabel: "大灯台沖へ戻る",
+                proceduralTerrain: { tile: "M", density: 0.08, mode: "impassable" },
+                themeKey: "FIRE_VILLAGE"
             },
             {
-                label: "第2層・圧熱回廊", encounterRank: 53, width: 19, height: 15,
-                tiles: [
-                    "WWWWWWWWWWWWWWWWWWW",
-                    "WWWWWWWWWDWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWTTTTTTTTTTTTTWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWTTTTTTTTTTTTTWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWTTTTTTTTTTTTTWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWUWWWWWWWWW",
-                    "WWWWWWWWWWWWWWWWWWW"
-                ],
-                floorLinks: [
-                    { x:9, y:13, toFloor:1, targetX:9, targetY:1, label:"第1層へ戻る" },
-                    { x:9, y:1, toFloor:3, targetX:9, targetY:13, label:"第3層へ" }
-                ],
-                entryPoint:{x:9,y:13}, themeKey:"FIRE_VILLAGE"
+                label: "第2層・圧熱回廊",
+                encounterRank: 53,
+                procedural: true,
+                forceMaze: true,
+                proceduralTerrain: { tile: "M", density: 0.10, mode: "damage" },
+                themeKey: "FIRE_VILLAGE"
             },
             {
-                label: "第3層・火脈深部", encounterRank: 54, width: 19, height: 15,
-                tiles: [
-                    "WWWWWWWWWWWWWWWWWWW",
-                    "WWWWWWWWWDWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWTTTTTTTTTTTTTWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWTTTTTTTTTTTTTWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWTTTTTTTTTTTTTWWW",
-                    "WWWWWWWWWTWWWWWWWWW",
-                    "WWWWWWWWWUWWWWWWWWW",
-                    "WWWWWWWWWWWWWWWWWWW"
-                ],
-                floorLinks: [
-                    { x:9, y:13, toFloor:2, targetX:9, targetY:1, label:"第2層へ戻る" },
-                    { x:9, y:1, toFloor:4, targetX:9, targetY:13, label:"研究区画へ" }
-                ],
-                entryPoint:{x:9,y:13}, themeKey:"FIRE_VILLAGE"
+                label: "第3層・火脈深部",
+                encounterRank: 54,
+                procedural: true,
+                forceMaze: true,
+                proceduralTerrain: { tile: "M", density: 0.12, mode: "impassable" },
+                themeKey: "FIRE_VILLAGE"
             },
             {
                 label: "研究区画", encounterRank: 55, randomEncounterDisabled:true, disableRandomEncounters:true, width: 19, height: 15,
@@ -12287,7 +12306,7 @@ const FIXED_DUNGEON_MAPS = {
                     { x:9, y:7, type:"log", label:"研究記録を調べる", log:"火の力を長期間肉体へ馴染ませるための観測記録が残されている。海水圧と周囲の水属性を安全弁として利用していたようだ。", imageKey:"overlay_dungeon_event" }
                 ],
                 floorLinks: [
-                    { x:9, y:13, toFloor:3, targetX:9, targetY:1, label:"第3層へ戻る" },
+                    { x:9, y:13, toFloor:3, label:"第3層へ戻る" },
                     { x:9, y:1, toFloor:5, targetX:9, targetY:13, label:"最奥へ" }
                 ],
                 entryPoint:{x:9,y:13}, themeKey:"THUNDER_FORT"
@@ -18544,8 +18563,11 @@ const decorateMapDefinitionsWithIds = () => {
         const mapKey = FIXED_AREA_MAP_KEYS[areaKey];
         const mapId = mapKey ? MAP_IDS[mapKey] : null;
         if (!def || !mapId) return;
+        const mapSection = Math.max(0, Number(FIXED_AREA_MAP_SECTION_INDEX[areaKey] ?? 0) || 0);
         def.mapId = mapId;
-        def.floorId = createMapFloorId(mapId, 0);
+        def.canonicalMapKey = mapKey;
+        def.mapSection = mapSection;
+        def.floorId = createMapFloorId(mapId, mapSection);
     });
     Object.entries(FIXED_DUNGEON_MAPS || {}).forEach(([areaKey, base]) => {
         const mapKey = FIXED_AREA_MAP_KEYS[areaKey];
@@ -18567,6 +18589,9 @@ decorateMapDefinitionsWithIds();
 if (typeof window !== "undefined") {
     window.MAP_MASTER = MAP_MASTER;
     window.MAP_IDS = MAP_IDS;
+    window.RETIRED_MAP_IDS = RETIRED_MAP_IDS;
+    window.FIXED_AREA_MAP_KEYS = FIXED_AREA_MAP_KEYS;
+    window.FIXED_AREA_MAP_SECTION_INDEX = FIXED_AREA_MAP_SECTION_INDEX;
     window.STORY_AREA_MAP_KEYS = STORY_AREA_MAP_KEYS;
     window.createMapFloorId = createMapFloorId;
     window.STORY_MAP_MUTATIONS = STORY_MAP_MUTATIONS;
