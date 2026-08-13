@@ -1939,9 +1939,7 @@ const MAP_MASTER = Object.freeze({
     LEGACION_WEST_TOWER: { id: "MAP000063", name: "混沌魔城レガシオン 西塔" },
     LEGACION_EAST_TOWER: { id: "MAP000064", name: "混沌魔城レガシオン 東塔" },
     MEMORY_REALM: { id: "MAP000065", name: "追憶の魔境" },
-    PROLOGUE_WEST_HILL: { id: "MAP000066", name: "名もなき山村・西の高台" },
-    PROLOGUE_SOUTH_VILLAGE: { id: "MAP000067", name: "名もなき山村・南側" },
-    PROLOGUE_NORTH_VILLAGE: { id: "MAP000068", name: "名もなき山村・北側" },
+    PROLOGUE_NAMELESS_VILLAGE: { id: "MAP000066", name: "名もなき山村", showMonsterHabitatInEncyclopedia: false },
     REES_MOUNTAIN_HUT: { id: "MAP000069", name: "リースの山小屋" },
     PROLOGUE_FINAL_ALTAR: { id: "MAP000070", name: "終焉の祭壇" },
     REXNOTE_ESTATE: { id: "MAP000071", name: "レクスノート邸" },
@@ -1952,20 +1950,35 @@ const MAP_MASTER = Object.freeze({
     REXNOTE_BASEMENT: { id: "MAP000076", name: "レクスノート邸 地下迷宮" }
 });
 
-// MAP000077 was briefly allocated to the Rexnote outdoor section in a development build.
-// Outdoor/interior sections now share MAP000071; keep the retirement metadata only so the
-// obsolete id is never silently recycled for another location.
+// MAP ids that were once allocated to what are now sections of another canonical location.
+// Keep them reserved so old development data cannot silently turn into a different place.
 const RETIRED_MAP_IDS = Object.freeze({
+    MAP000067: Object.freeze({ canonicalMapKey: "PROLOGUE_NAMELESS_VILLAGE", reason: "merged-location-section" }),
+    MAP000068: Object.freeze({ canonicalMapKey: "PROLOGUE_NAMELESS_VILLAGE", reason: "merged-location-section" }),
     MAP000077: Object.freeze({ canonicalMapKey: "REXNOTE_ESTATE", reason: "merged-location-section" })
 });
 
-const MAP_IDS = Object.freeze(Object.keys(MAP_MASTER).reduce((ids, key) => {
-    ids[key] = MAP_MASTER[key].id;
+// Legacy map-key aliases remain available to old tools/data, but resolve to the same canonical MAP id.
+// Runtime section identity is carried by areaKey + FIXED_AREA_MAP_SECTION_INDEX, never by another MAP id.
+const MAP_ID_ALIASES = Object.freeze({
+    PROLOGUE_WEST_HILL: "PROLOGUE_NAMELESS_VILLAGE",
+    PROLOGUE_SOUTH_VILLAGE: "PROLOGUE_NAMELESS_VILLAGE",
+    PROLOGUE_NORTH_VILLAGE: "PROLOGUE_NAMELESS_VILLAGE"
+});
+
+const MAP_IDS = Object.freeze((() => {
+    const ids = Object.keys(MAP_MASTER).reduce((result, key) => {
+        result[key] = MAP_MASTER[key].id;
+        return result;
+    }, {});
+    Object.entries(MAP_ID_ALIASES).forEach(([aliasKey, canonicalKey]) => {
+        if (MAP_MASTER[canonicalKey]?.id) ids[aliasKey] = MAP_MASTER[canonicalKey].id;
+    });
     return ids;
-}, {}));
+})());
 
 const FIXED_AREA_MAP_KEYS = Object.freeze({
-    PROLOGUE_WEST_HILL: "PROLOGUE_WEST_HILL", PROLOGUE_SOUTH_VILLAGE: "PROLOGUE_SOUTH_VILLAGE", PROLOGUE_NORTH_VILLAGE: "PROLOGUE_NORTH_VILLAGE",
+    PROLOGUE_WEST_HILL: "PROLOGUE_NAMELESS_VILLAGE", PROLOGUE_SOUTH_VILLAGE: "PROLOGUE_NAMELESS_VILLAGE", PROLOGUE_NORTH_VILLAGE: "PROLOGUE_NAMELESS_VILLAGE",
     REES_MOUNTAIN_HUT_EXTERIOR: "REES_MOUNTAIN_HUT", REES_MOUNTAIN_HUT: "REES_MOUNTAIN_HUT", PROLOGUE_FINAL_ALTAR: "PROLOGUE_FINAL_ALTAR", REXNOTE_ESTATE: "REXNOTE_ESTATE", REXNOTE_ESTATE_GROUNDS: "REXNOTE_ESTATE", REXNOTE_BASEMENT: "REXNOTE_BASEMENT", UNDERSEA_VOLCANO: "UNDERSEA_VOLCANO", CRYSTAL_TREE: "CRYSTAL_TREE", GALVANIA_GORGE: "GALVANIA_GORGE", GALVANIA_EMPIRE: "GALVANIA_EMPIRE",
     START_VILLAGE: "START_VILLAGE", FIRE_VILLAGE: "FIRE_VILLAGE", WIND_VILLAGE: "WIND_VILLAGE", WATER_CITY: "WATER_CITY",
     ABYSS_FIELD: "ABYSS_FIELD", RUINED_SHRINE: "RUINED_SHRINE", TRIAL_ISLAND: "TRIAL_ISLAND", SUMMIT_TEMPLE: "SUMMIT_TEMPLE",
@@ -1983,9 +1996,13 @@ const FIXED_AREA_MAP_KEYS = Object.freeze({
 });
 
 // A location may contain multiple fixed-map sections while retaining one canonical MAP id.
-// Section 00 is the outdoor/entry section, 01+ are interior sections, mirroring dungeon floors.
+// Section 00 is the first canonical area; 01+ are additional outdoor/interior/sub-area sections.
 // Keep areaKey as the runtime section identity; mapId is the player-facing/canonical location identity.
+// Non-dungeon encounter pools use mapId + mapSection, not mapSection-as-floor.
 const FIXED_AREA_MAP_SECTION_INDEX = Object.freeze({
+    PROLOGUE_WEST_HILL: 0,
+    PROLOGUE_SOUTH_VILLAGE: 1,
+    PROLOGUE_NORTH_VILLAGE: 2,
     REES_MOUNTAIN_HUT_EXTERIOR: 0,
     REES_MOUNTAIN_HUT: 1,
     REXNOTE_ESTATE_GROUNDS: 0,
@@ -18567,7 +18584,10 @@ const decorateMapDefinitionsWithIds = () => {
         def.mapId = mapId;
         def.canonicalMapKey = mapKey;
         def.mapSection = mapSection;
-        def.floorId = createMapFloorId(mapId, mapSection);
+        def.sectionId = createMapFloorId(mapId, mapSection);
+        // floorId remains a compatibility identity used by shared renderer/cache code.
+        // Encounter selection must use mapSection separately so non-dungeon sections are not displayed as floors.
+        def.floorId = def.sectionId;
     });
     Object.entries(FIXED_DUNGEON_MAPS || {}).forEach(([areaKey, base]) => {
         const mapKey = FIXED_AREA_MAP_KEYS[areaKey];
@@ -18589,6 +18609,7 @@ decorateMapDefinitionsWithIds();
 if (typeof window !== "undefined") {
     window.MAP_MASTER = MAP_MASTER;
     window.MAP_IDS = MAP_IDS;
+    window.MAP_ID_ALIASES = MAP_ID_ALIASES;
     window.RETIRED_MAP_IDS = RETIRED_MAP_IDS;
     window.FIXED_AREA_MAP_KEYS = FIXED_AREA_MAP_KEYS;
     window.FIXED_AREA_MAP_SECTION_INDEX = FIXED_AREA_MAP_SECTION_INDEX;

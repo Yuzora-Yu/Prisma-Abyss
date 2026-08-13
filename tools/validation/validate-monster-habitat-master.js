@@ -31,8 +31,14 @@ assert((battleSource.match(/tryGenerateRareMonster\(/g) || []).length === 1,
     'Rare selection must be rolled exactly once per encounter in battle.js.');
 assert(battleSource.includes('allowRare: false'),
     'Normal enemy slots can still reroll a rare monster after the encounter-level roll.');
+assert(battleSource.includes('section: battleData.encounterSection'),
+    'Battle habitat lookup does not preserve fixed-map section identity.');
 
-const { MonsterData, MapRegistry, FIXED_DUNGEON_MAPS, FIELD_ENCOUNTER_ZONES, MAP_IDS } = context;
+const { MonsterData, MapRegistry, MAP_MASTER, FIXED_DUNGEON_MAPS, FIELD_ENCOUNTER_ZONES, MAP_IDS } = context;
+assert(MAP_MASTER.PROLOGUE_NAMELESS_VILLAGE?.showMonsterHabitatInEncyclopedia === false,
+    'Nameless Village must be hidden from monster encyclopedia habitat labels at map-master level.');
+assert(MapRegistry.shouldShowMonsterHabitatInEncyclopedia(MAP_IDS.PROLOGUE_NAMELESS_VILLAGE) === false,
+    'MapRegistry does not honor the map-level monster habitat display policy.');
 let floorsChecked = 0;
 for (const [areaKey, dungeon] of Object.entries(FIXED_DUNGEON_MAPS)) {
     const floors = dungeon.floors || [dungeon];
@@ -65,27 +71,33 @@ for (const zone of FIELD_ENCOUNTER_ZONES) {
 assert(MonsterData.getEncounterCandidates({ mapId: MAP_IDS.SEA, floor: 0 }).length > 0,
     'Sea encounters have no monsters.js habitat candidates.');
 
+const prologueJellyLabels = MonsterData.getHabitatLabels(1);
+const prologueArmorLabels = MonsterData.getHabitatLabels(51);
+assert(!prologueJellyLabels.some(label => label.includes('名もなき山村'))
+    && !prologueArmorLabels.some(label => label.includes('名もなき山村')),
+    'Nameless Village must remain an encounter habitat without being listed in the monster encyclopedia.');
+
 const explicitRange = MonsterData.getEncounterCandidates({ mapId: MAP_IDS.THUNDER_FORT, floor: 1, rankMin: 68, rankMax: 76 });
 assert(explicitRange.length > 0 && explicitRange.every(monster => Number(monster.rank) >= 68 && Number(monster.rank) <= 76),
     'Explicit encounterRankMin/Max no longer selects the intended global Rank range.');
-assert(MonsterData.getEncounterCandidates({ mapId: MAP_IDS.PROLOGUE_SOUTH_VILLAGE, floor: 0 }).some(monster => [1,2,3,4].includes(monster.id)),
-    'Playable prologue south area has no early-game habitat candidates.');
-assert(MonsterData.getEncounterCandidates({ mapId: MAP_IDS.PROLOGUE_NORTH_VILLAGE, floor: 0 }).some(monster => [51,52,53,54].includes(monster.id)),
-    'Playable prologue north area has no stronger habitat candidates.');
+assert(MonsterData.getEncounterCandidates({ mapId: MAP_IDS.PROLOGUE_SOUTH_VILLAGE, section: 1, floor: 0 }).some(monster => [1,2,3,4].includes(monster.id)),
+    'Playable prologue south section has no early-game habitat candidates.');
+assert(MonsterData.getEncounterCandidates({ mapId: MAP_IDS.PROLOGUE_NORTH_VILLAGE, section: 2, floor: 0 }).some(monster => [51,52,53,54].includes(monster.id)),
+    'Playable prologue north section has no stronger habitat candidates.');
 
 const monster51 = MonsterData.getMonsterById(51);
 assert(JSON.stringify(monster51.habitats) === JSON.stringify([
     { mapId: 'MAP000004', floors: [{ from: 1, to: 2 }] },
     { mapId: 'MAP000005', floors: [{ from: 0, to: 0 }] },
-    { mapId: 'MAP000068', floors: [{ from: 0, to: 0 }] }
+    { mapId: 'MAP000066', sections: [2] }
 ]), 'Monster 51 habitat master was changed.');
-for (const [mapId, floor, expected] of [
-    ['MAP000004', 1, true], ['MAP000004', 2, true], ['MAP000004', 3, false],
-    ['MAP000005', 0, true], ['MAP000005', 1, false],
-    ['MAP000068', 0, true], ['MAP000068', 1, false]
+for (const [mapId, floor, section, expected] of [
+    ['MAP000004', 1, null, true], ['MAP000004', 2, null, true], ['MAP000004', 3, null, false],
+    ['MAP000005', 0, null, true], ['MAP000005', 1, null, false],
+    ['MAP000066', 0, 2, true], ['MAP000066', 0, 1, false], ['MAP000066', 0, null, false]
 ]) {
-    const found = MonsterData.getEncounterCandidates({ mapId, floor }).some(monster => monster.id === 51);
-    assert(found === expected, `Monster 51 habitat resolution mismatch: ${mapId} floor ${floor}.`);
+    const found = MonsterData.getEncounterCandidates({ mapId, floor, section }).some(monster => monster.id === 51);
+    assert(found === expected, `Monster 51 habitat resolution mismatch: ${mapId} floor ${floor} section ${section}.`);
 }
 
 for (const [rank, expectedId, expectedRate] of [

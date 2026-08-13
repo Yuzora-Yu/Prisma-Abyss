@@ -2,7 +2,7 @@
 
 **文書種別:** ゲーム実装・別Chat引き継ぎ用技術原本  
 **作成日:** 2026-08-10  
-**最新版更新:** 2026-08-13 MAP区画統合・リースの山小屋導線・海底火山可変化  
+**最新版更新:** 2026-08-13 名もなき山村・図鑑生息域非掲載ポリシー／差分ZIP納品運用  
 **目的:** 新しいChat／実装担当が、長い企画会話を読み直さずに最新版シナリオをコードへ落とし始められるようにする。  
 
 ---
@@ -1025,6 +1025,13 @@ alanState.phase = 'dead'
 - 日付配下は `handoff/`, `reports/`, `scenario/`, `review/`, `validation/` を基本とする。
 - `README.md` / `AGENTS.md` 等のproject root文書と、安定正本の `canon/` / `docs/` は従来位置を維持する。
 
+### 納品ZIP運用【2026-08-13確定】
+
+- 今後の納品は、累積版ZIPに加えて**変更・新規作成ファイルだけを格納した差分ZIP**を必ず共有する。
+- 差分ZIPはproject rootからの相対パスを保持し、そのまま既存作業フォルダへ上書き展開できる構成にする。
+- 削除ファイルが発生した場合はZIPだけでは削除を表現できないため、削除対象をmanifest／handoffへ明記する。必要なら削除用manifestも同梱する。
+- 差分ZIPにはruntimeだけでなく、その工程で更新した `canon/`、`development_notes/`、validator maintenance等も含める。
+
 ### 固定ロケーションのMAP／区画管理【2026-08-13確定】
 
 - 同一施設の屋外・屋内、同一ダンジョンの階層違いは、原則として**同じ `mapId` の区画**として管理する。屋外／屋内だけを理由に新しいMAP IDを払い出さない。
@@ -1033,6 +1040,11 @@ alanState.phase = 'dead'
 - `MAP000069`: section 00 = `リースの山小屋`、section 01 = `リースの山小屋内`。5年前の起床イベントは屋内区画を維持し、ワールドとの出入りは屋外区画を経由する。
 - `MAP000071`: section 00 = `レクスノート邸`、section 01 = `レクスノート邸内`。内部互換用areaKey `REXNOTE_ESTATE_GROUNDS` は残すが、プレイヤー向け名称は `レクスノート邸` に統一する。
 - 旧 `MAP000077` はレクスノート邸の別MAP化を取り消したため `RETIRED_MAP_IDS` で廃止予約とし、別用途へ安易に再利用しない。
+- 冒頭の名もなき山村3区画も同じ契約へ統合する。正規MAPは `PROLOGUE_NAMELESS_VILLAGE / MAP000066`、section 00=`名もなき山村・西の高台`、section 01=`名もなき山村・南側`、section 02=`名もなき山村・北側`。旧 `MAP000067` / `MAP000068` は廃止予約とする。
+- 同一MAPの非ダンジョン区画で敵生息域を分ける場合、ダンジョンの `floor` を流用して「1階/2階」と見せない。runtimeは `mapId + section`、モンスターmasterは `habitats[].sections` を使う。
+- **遭遇用の生息域データと、モンスター図鑑へ表示する生息域は別責務**とする。特殊／チュートリアルMAPを遭遇候補から外すためにmonster側の `habitats` を削除してはならない。MAP masterの `showMonsterHabitatInEncyclopedia:false` で、そのMAPだけ図鑑の生息域一覧から非掲載にできる。既定値は掲載。
+- `PROLOGUE_NAMELESS_VILLAGE / MAP000066` は冒頭専用の特殊選定MAPのため `showMonsterHabitatInEncyclopedia:false`。南／北sectionの通常遭遇・北側のrare/hunter仕様は維持しつつ、図鑑には「名もなき山村」を生息域として表示しない。
+- 表示可否は `MapRegistry.shouldShowMonsterHabitatInEncyclopedia()`、section名は `getMapSections()` / `getMapSectionName()` を共通解決口とする。location-specificなmonster ID分岐を追加しない。旧area由来のMAP key aliasは `MAP_ID_ALIASES` で同じ正規MAP IDへ解決し、新しいMAP IDを増やさない。
 
 
 ### 水上都市事後～レクスノート邸地下B1～B5【2026-08-13 Phase3実装】

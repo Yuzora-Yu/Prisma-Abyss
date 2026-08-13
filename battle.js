@@ -3862,6 +3862,7 @@ const Battle = {
                 monsterData = window.MonsterData.generateEnemyForEncounter({
                     mapId: battleData.encounterMapId,
                     floor: battleData.encounterFloor,
+                    section: battleData.encounterSection,
                     abyssFloor: battleData.abyssFloor,
                     rank: battleData.abyssBalanceFloor || battleData.encounterRank || floor,
                     rankMin: battleData.encounterRankMin,

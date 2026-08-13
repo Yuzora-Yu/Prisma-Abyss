@@ -88,11 +88,22 @@ const MapRegistry = {
     getMapDefinition(mapIdOrKey) {
         const value = String(mapIdOrKey || '');
         if (!value || typeof MAP_MASTER === 'undefined') return null;
-        return MAP_MASTER[value] || Object.values(MAP_MASTER).find((entry) => String(entry?.id) === value) || null;
+        if (MAP_MASTER[value]) return MAP_MASTER[value];
+        const aliasId = (typeof MAP_IDS !== 'undefined') ? MAP_IDS[value] : null;
+        const resolvedId = aliasId || value;
+        return Object.values(MAP_MASTER).find((entry) => String(entry?.id) === String(resolvedId)) || null;
     },
 
     getMapName(mapIdOrKey) {
         return MapRegistry.getMapDefinition(mapIdOrKey)?.name || null;
+    },
+
+    // Monster encounter habitats and encyclopedia habitat labels are separate concerns.
+    // Special/tutorial locations can remain valid encounter habitats while opting out only
+    // from the player-facing habitat list. Default is visible for backward compatibility.
+    shouldShowMonsterHabitatInEncyclopedia(mapIdOrKey) {
+        const mapDef = MapRegistry.getMapDefinition(mapIdOrKey);
+        return mapDef?.showMonsterHabitatInEncyclopedia !== false;
     },
 
     getMapBindingForArea(areaKey) {
@@ -118,6 +129,27 @@ const MapRegistry = {
 
     getMapSectionIdForArea(areaKey) {
         return MapRegistry.getMapBindingForArea(areaKey).sectionId;
+    },
+
+    getMapSections(mapIdOrKey) {
+        const mapDef = MapRegistry.getMapDefinition(mapIdOrKey);
+        const mapId = mapDef?.id || ((typeof MAP_IDS !== 'undefined') ? MAP_IDS[String(mapIdOrKey || '')] : null) || String(mapIdOrKey || '');
+        if (!mapId || typeof FIXED_AREA_MAP_SECTION_INDEX === 'undefined') return [];
+        return Object.keys(FIXED_AREA_MAP_SECTION_INDEX).map((areaKey) => {
+            const binding = MapRegistry.getMapBindingForArea(areaKey);
+            if (String(binding.mapId || '') !== String(mapId)) return null;
+            const fixedDef = (typeof FIXED_MAPS !== 'undefined') ? FIXED_MAPS[areaKey] : null;
+            return {
+                ...binding,
+                name: fixedDef?.name || mapDef?.name || areaKey
+            };
+        }).filter(Boolean).sort((a, b) => Number(a.section) - Number(b.section));
+    },
+
+    getMapSectionName(mapIdOrKey, section = 0) {
+        const target = Math.max(0, Number(section) || 0);
+        return MapRegistry.getMapSections(mapIdOrKey).find((entry) => Number(entry.section) === target)?.name
+            || MapRegistry.getMapName(mapIdOrKey);
     },
 
     formatFloorId(mapId, floor = 0) {

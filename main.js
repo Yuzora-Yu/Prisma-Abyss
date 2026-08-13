@@ -9361,6 +9361,7 @@ load: () => {
             encounterMapId: mapEncounter?.mapId || (isSeaEncounter ? window.MAP_IDS?.SEA : worldEncounter?.mapId) || null,
             encounterFloorId: mapEncounter?.floorId || null,
             encounterFloor: Math.max(0, Number(mapEncounter?.floor || 0) || 0),
+            encounterSection: Number.isFinite(Number(mapEncounter?.mapSection)) ? Math.max(0, Number(mapEncounter.mapSection)) : null,
             abyssFloor: mapEncounter?.mapId === window.MAP_IDS?.ABYSS && mapEncounter?.useHabitatEncounters ? Math.max(1, Number(App.data.progress?.floor || 1)) : null,
             abyssMode: mapEncounter?.abyssMode || null,
             abyssBalanceFloor: mapEncounter?.balanceFloor || null,

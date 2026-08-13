@@ -1,0 +1,56 @@
+PRISMA ABYSS targeted validation - 2026-08-13
+
+> node --check map.js
+PASS
+> node --check maps_logic.js
+PASS
+> node --check main.js
+PASS
+> node --check battle.js
+PASS
+> node --check monsters.js
+PASS
+> node --check news.js
+PASS
+> node --check tools/validation/validate-monster-habitat-master.js
+PASS
+
+> node development_notes/2026-08-13/targeted_followup_check_20260813.js
+{
+  "entityIdentity": "ok",
+  "mapData": "ok",
+  "staticContracts": "ok",
+  "graphics": {
+    "all": 698,
+    "startup": 186,
+    "battle": 28,
+    "startupRaw": 55,
+    "startupSupplemental": 2,
+    "maxActive": 3
+  }
+}
+PASS
+
+> node development_notes/2026-08-13/targeted_map_section_volcano_check_20260813.js
+{
+  "mapGrouping": "ok",
+  "reesExterior": "ok",
+  "underseaVolcano": "ok",
+  "proceduralTerrain": "ok",
+  "generatedFloorIntegration": "ok"
+}
+PASS
+
+> node development_notes/2026-08-13/targeted_prologue_map_section_check_20260813.js
+{
+  "canonicalMap": "MAP000066",
+  "sections": "00/01/02 ok",
+  "southHabitat": "ok",
+  "northHabitat": "ok",
+  "northHunter": "ok",
+  "encyclopediaLabels": "ok",
+  "encounterSectionRuntime": "ok"
+}
+PASS
+
+Bundled tools/validation validators were intentionally not executed per current handoff policy.

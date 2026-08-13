@@ -756,10 +756,10 @@ const MONSTER_BANDS_1_200 = [
     "bandEnd": 5,
     "offsetType": "low_1_5",
     "monsters": [
-      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"火":-30,"雷":-20,"json":0},"resists":{},"traits":[],"archives":[],"preloadAtStartup":true,"id":1,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000001","floors":[{"from":0,"to":0}]},{"mapId":"MAP000003","floors":[{"from":1,"to":1}]},{"mapId":"MAP000067","floors":[{"from":0,"to":0}]}],"abyssFloors":[],"name":"ジェリー","race":"粘体","rank":1,"minF":1,"hp":11,"mp":16,"atk":12,"def":6,"spd":4,"mag":5,"mdef":4,"gold":14,"exp":7,"actCount":1,"acts":[{"id":1,"rate":70,"condition":0},{"id":200,"rate":15,"condition":0},{"id":2,"rate":7,"condition":0}],"dropSeed":1},
-      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"雷":-20,"光":-30,"json":0},"resists":{},"traits":[],"archives":[],"preloadAtStartup":true,"id":2,"allyGrowthType":"ATK_MAG_B","habitats":[{"mapId":"MAP000001","floors":[{"from":0,"to":0}]},{"mapId":"MAP000003","floors":[{"from":1,"to":1}]},{"mapId":"MAP000067","floors":[{"from":0,"to":0}]}],"abyssFloors":[],"name":"やみこうもり","race":"獣","rank":1,"minF":1,"hp":10,"mp":32,"atk":15,"def":7,"spd":5,"mag":11,"mdef":4,"gold":18,"exp":8,"actCount":1,"acts":[{"id":1,"rate":70,"condition":0},{"id":203,"rate":20,"condition":0},{"id":601,"rate":10,"condition":0}],"dropSeed":2},
-      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"火":-20,"闇":-20,"json":0},"resists":{},"traits":[],"archives":[],"preloadAtStartup":true,"id":3,"allyGrowthType":"MAG_B","habitats":[{"mapId":"MAP000001","floors":[{"from":0,"to":0}]},{"mapId":"MAP000003","floors":[{"from":1,"to":1}]},{"mapId":"MAP000067","floors":[{"from":0,"to":0}]}],"abyssFloors":[],"name":"ウィスプ","race":"精霊","rank":1,"minF":1,"hp":8,"mp":27,"atk":9,"def":8,"spd":4,"mag":14,"mdef":7,"gold":19,"exp":8,"actCount":1,"acts":[{"id":1,"rate":65,"condition":0},{"id":202,"rate":20,"condition":0},{"id":600,"rate":15,"condition":0}],"dropSeed":3},
-      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"火":-20,"雷":-30,"json":0},"resists":{},"traits":[],"archives":[],"preloadAtStartup":true,"id":4,"allyGrowthType":"MDEF_B","habitats":[{"mapId":"MAP000001","floors":[{"from":0,"to":0}]},{"mapId":"MAP000003","floors":[{"from":1,"to":1}]},{"mapId":"MAP000067","floors":[{"from":0,"to":0}]}],"abyssFloors":[],"name":"ヒールジェリー","race":"粘体","rank":2,"minF":2,"hp":13,"mp":19,"atk":8,"def":5,"spd":1,"mag":4,"mdef":9,"gold":30,"exp":16,"actCount":1,"acts":[{"id":1,"rate":65,"condition":0},{"id":400,"rate":25,"condition":0},{"id":2,"rate":7,"condition":0}],"dropSeed":4}
+      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"火":-30,"雷":-20,"json":0},"resists":{},"traits":[],"archives":[],"preloadAtStartup":true,"id":1,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000001","floors":[{"from":0,"to":0}]},{"mapId":"MAP000003","floors":[{"from":1,"to":1}]},{"mapId":"MAP000066","sections":[1]}],"abyssFloors":[],"name":"ジェリー","race":"粘体","rank":1,"minF":1,"hp":11,"mp":16,"atk":12,"def":6,"spd":4,"mag":5,"mdef":4,"gold":14,"exp":7,"actCount":1,"acts":[{"id":1,"rate":70,"condition":0},{"id":200,"rate":15,"condition":0},{"id":2,"rate":7,"condition":0}],"dropSeed":1},
+      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"雷":-20,"光":-30,"json":0},"resists":{},"traits":[],"archives":[],"preloadAtStartup":true,"id":2,"allyGrowthType":"ATK_MAG_B","habitats":[{"mapId":"MAP000001","floors":[{"from":0,"to":0}]},{"mapId":"MAP000003","floors":[{"from":1,"to":1}]},{"mapId":"MAP000066","sections":[1]}],"abyssFloors":[],"name":"やみこうもり","race":"獣","rank":1,"minF":1,"hp":10,"mp":32,"atk":15,"def":7,"spd":5,"mag":11,"mdef":4,"gold":18,"exp":8,"actCount":1,"acts":[{"id":1,"rate":70,"condition":0},{"id":203,"rate":20,"condition":0},{"id":601,"rate":10,"condition":0}],"dropSeed":2},
+      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"火":-20,"闇":-20,"json":0},"resists":{},"traits":[],"archives":[],"preloadAtStartup":true,"id":3,"allyGrowthType":"MAG_B","habitats":[{"mapId":"MAP000001","floors":[{"from":0,"to":0}]},{"mapId":"MAP000003","floors":[{"from":1,"to":1}]},{"mapId":"MAP000066","sections":[1]}],"abyssFloors":[],"name":"ウィスプ","race":"精霊","rank":1,"minF":1,"hp":8,"mp":27,"atk":9,"def":8,"spd":4,"mag":14,"mdef":7,"gold":19,"exp":8,"actCount":1,"acts":[{"id":1,"rate":65,"condition":0},{"id":202,"rate":20,"condition":0},{"id":600,"rate":15,"condition":0}],"dropSeed":3},
+      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"火":-20,"雷":-30,"json":0},"resists":{},"traits":[],"archives":[],"preloadAtStartup":true,"id":4,"allyGrowthType":"MDEF_B","habitats":[{"mapId":"MAP000001","floors":[{"from":0,"to":0}]},{"mapId":"MAP000003","floors":[{"from":1,"to":1}]},{"mapId":"MAP000066","sections":[1]}],"abyssFloors":[],"name":"ヒールジェリー","race":"粘体","rank":2,"minF":2,"hp":13,"mp":19,"atk":8,"def":5,"spd":1,"mag":4,"mdef":9,"gold":30,"exp":16,"actCount":1,"acts":[{"id":1,"rate":65,"condition":0},{"id":400,"rate":25,"condition":0},{"id":2,"rate":7,"condition":0}],"dropSeed":4}
     ]
   },
   {
@@ -767,10 +767,10 @@ const MONSTER_BANDS_1_200 = [
     "bandEnd": 10,
     "offsetType": "low_6_10",
     "monsters": [
-      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"水":-10,"雷":-30,"json":0},"resists":{"Poison":30},"traits":[],"archives":[],"id":51,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000004","floors":[{"from":1,"to":2}]},{"mapId":"MAP000005","floors":[{"from":0,"to":0}]},{"mapId":"MAP000068","floors":[{"from":0,"to":0}]}],"abyssFloors":[],"name":"さまよう鎧","race":"無生物","rank":6,"minF":6,"hp":65,"mp":33,"atk":24,"def":17,"spd":5,"mag":8,"mdef":9,"gold":55,"exp":28,"actCount":1,"acts":[{"id":1,"rate":70,"condition":0},{"id":107,"rate":20,"condition":0},{"id":105,"rate":5,"condition":0}],"dropSeed":54},
-      {"hit":101,"eva":3,"cri":3,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"闇":55,"光":-45,"json":0},"resists":{"Poison":90,"Fear":70},"traits":[],"archives":["壁際の陰を六本脚で渡る捕食者。獲物の技を封じてから死角へ潜り込む。"],"id":52,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000004","floors":[{"from":1,"to":2}]},{"mapId":"MAP000005","floors":[{"from":0,"to":0}]},{"mapId":"MAP000068","floors":[{"from":0,"to":0}]}],"abyssFloors":[],"name":"シェイドクローラー","race":"魔族","rank":6,"minF":6,"hp":67,"mp":45,"atk":22,"def":9,"spd":15,"mag":6,"mdef":7,"gold":40,"exp":23,"actCount":1,"acts":[{"id":1,"rate":45,"condition":0},{"id":110,"rate":20,"condition":0},{"id":203,"rate":20,"condition":0},{"id":601,"rate":15,"condition":0}],"dropSeed":1356},
-      {"hit":0,"eva":1,"cri":3,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"雷":30,"風":-35,"json":0},"resists":{"Poison":100,"Shock":60},"traits":[],"archives":["岩盤を泳ぐように掘り進む魔獣。地鳴りの直後、足元から硬い爪を突き上げる。"],"id":53,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000004","floors":[{"from":1,"to":2}]},{"mapId":"MAP000005","floors":[{"from":0,"to":0}]},{"mapId":"MAP000068","floors":[{"from":0,"to":0}]}],"abyssFloors":[],"name":"ストーンモール","race":"獣","rank":6,"minF":6,"hp":74,"mp":32,"atk":21,"def":15,"spd":8,"mag":3,"mdef":7,"gold":41,"exp":24,"actCount":1,"acts":[{"id":1,"rate":50,"condition":0},{"id":107,"rate":20,"condition":0},{"id":101,"rate":15,"condition":0},{"id":2,"rate":15,"condition":0}],"dropSeed":1405},
-      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"火":-30,"雷":-20,"json":0},"resists":{"Poison":30},"traits":[],"archives":[],"id":54,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000004","floors":[{"from":1,"to":2}]},{"mapId":"MAP000005","floors":[{"from":0,"to":0}]},{"mapId":"MAP000068","floors":[{"from":0,"to":0}]}],"abyssFloors":[],"name":"ポイズンジェリー","race":"粘体","rank":6,"minF":6,"hp":52,"mp":32,"atk":19,"def":11,"spd":11,"mag":7,"mdef":6,"gold":40,"exp":23,"actCount":1,"acts":[{"id":1,"rate":65,"condition":0},{"id":110,"rate":20,"condition":0},{"id":700,"rate":15,"condition":0}],"dropSeed":52},
+      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"水":-10,"雷":-30,"json":0},"resists":{"Poison":30},"traits":[],"archives":[],"id":51,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000004","floors":[{"from":1,"to":2}]},{"mapId":"MAP000005","floors":[{"from":0,"to":0}]},{"mapId":"MAP000066","sections":[2]}],"abyssFloors":[],"name":"さまよう鎧","race":"無生物","rank":6,"minF":6,"hp":65,"mp":33,"atk":24,"def":17,"spd":5,"mag":8,"mdef":9,"gold":55,"exp":28,"actCount":1,"acts":[{"id":1,"rate":70,"condition":0},{"id":107,"rate":20,"condition":0},{"id":105,"rate":5,"condition":0}],"dropSeed":54},
+      {"hit":101,"eva":3,"cri":3,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"闇":55,"光":-45,"json":0},"resists":{"Poison":90,"Fear":70},"traits":[],"archives":["壁際の陰を六本脚で渡る捕食者。獲物の技を封じてから死角へ潜り込む。"],"id":52,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000004","floors":[{"from":1,"to":2}]},{"mapId":"MAP000005","floors":[{"from":0,"to":0}]},{"mapId":"MAP000066","sections":[2]}],"abyssFloors":[],"name":"シェイドクローラー","race":"魔族","rank":6,"minF":6,"hp":67,"mp":45,"atk":22,"def":9,"spd":15,"mag":6,"mdef":7,"gold":40,"exp":23,"actCount":1,"acts":[{"id":1,"rate":45,"condition":0},{"id":110,"rate":20,"condition":0},{"id":203,"rate":20,"condition":0},{"id":601,"rate":15,"condition":0}],"dropSeed":1356},
+      {"hit":0,"eva":1,"cri":3,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"雷":30,"風":-35,"json":0},"resists":{"Poison":100,"Shock":60},"traits":[],"archives":["岩盤を泳ぐように掘り進む魔獣。地鳴りの直後、足元から硬い爪を突き上げる。"],"id":53,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000004","floors":[{"from":1,"to":2}]},{"mapId":"MAP000005","floors":[{"from":0,"to":0}]},{"mapId":"MAP000066","sections":[2]}],"abyssFloors":[],"name":"ストーンモール","race":"獣","rank":6,"minF":6,"hp":74,"mp":32,"atk":21,"def":15,"spd":8,"mag":3,"mdef":7,"gold":41,"exp":24,"actCount":1,"acts":[{"id":1,"rate":50,"condition":0},{"id":107,"rate":20,"condition":0},{"id":101,"rate":15,"condition":0},{"id":2,"rate":15,"condition":0}],"dropSeed":1405},
+      {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"火":-30,"雷":-20,"json":0},"resists":{"Poison":30},"traits":[],"archives":[],"id":54,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000004","floors":[{"from":1,"to":2}]},{"mapId":"MAP000005","floors":[{"from":0,"to":0}]},{"mapId":"MAP000066","sections":[2]}],"abyssFloors":[],"name":"ポイズンジェリー","race":"粘体","rank":6,"minF":6,"hp":52,"mp":32,"atk":19,"def":11,"spd":11,"mag":7,"mdef":6,"gold":40,"exp":23,"actCount":1,"acts":[{"id":1,"rate":65,"condition":0},{"id":110,"rate":20,"condition":0},{"id":700,"rate":15,"condition":0}],"dropSeed":52},
       {"hit":0,"eva":0,"cri":0,"isBoss":false,"isRare":false,"isEstark":false,"isSpecialBoss":false,"drops":{"normal":{"id":null,"rate":0},"rare":{"id":null,"rate":0}},"elmRes":{"火":-20,"闇":-10,"json":0},"resists":{},"traits":[],"archives":[],"id":55,"allyGrowthType":"ATK_B","habitats":[{"mapId":"MAP000004","floors":[{"from":1,"to":2}]},{"mapId":"MAP000005","floors":[{"from":0,"to":0}]}],"abyssFloors":[],"name":"ホーンラビット","race":"獣","rank":6,"minF":6,"hp":37,"mp":41,"atk":22,"def":8,"spd":22,"mag":3,"mdef":5,"gold":34,"exp":19,"actCount":1,"acts":[{"id":1,"rate":70,"condition":0},{"id":103,"rate":15,"condition":0},{"id":101,"rate":15,"condition":0}],"dropSeed":51}
     ]
   },
@@ -1514,6 +1514,8 @@ function matchesFloorRanges(ranges, floor) {
 function getEncounterCandidates(options = {}) {
   const mapId = String(options.mapId || '').trim();
   const floor = normalizeEncounterFloor(options.floor, 0);
+  const hasSection = options.section !== null && options.section !== undefined && options.section !== '';
+  const section = hasSection ? normalizeEncounterFloor(options.section, 0) : null;
   const abyssFloor = normalizeEncounterFloor(options.abyssFloor, 0);
   // rankMin / rankMax are optional. Runtime battle data stores an omitted bound as null;
   // Number(null) === 0, so coercing first would incorrectly turn every habitat encounter
@@ -1532,7 +1534,13 @@ function getEncounterCandidates(options = {}) {
       return rank >= rankMin && rank <= rankMax;
     }
     if (!mapId) return false;
-    return (monster.habitats || []).some((habitat) => String(habitat?.mapId || '') === mapId && matchesFloorRanges(habitat?.floors, floor));
+    return (monster.habitats || []).some((habitat) => {
+      if (String(habitat?.mapId || '') !== mapId) return false;
+      if (Array.isArray(habitat?.sections) && habitat.sections.length > 0) {
+        return hasSection && matchesFloorRanges(habitat.sections, section);
+      }
+      return matchesFloorRanges(habitat?.floors, floor);
+    });
   });
 }
 
@@ -1587,15 +1595,39 @@ function getHabitatLabels(monsterOrId) {
     return `${name}${floors.length ? `（${floors.join('・')}）` : ''}`;
   };
 
-  const labels = (monster.habitats || []).map((habitat) =>
-    formatAreaLabel(mapName(habitat?.mapId), habitat?.floors)
-  );
+  const shouldShowHabitat = (mapId) => {
+    const registryDecision = globalThis.MapRegistry?.shouldShowMonsterHabitatInEncyclopedia?.(mapId);
+    if (registryDecision === false) return false;
+    if (registryDecision === true) return true;
+    const defs = globalThis.MAP_MASTER || {};
+    const entry = Object.values(defs).find((value) => String(value?.id) === String(mapId));
+    return entry?.showMonsterHabitatInEncyclopedia !== false;
+  };
+
+  const labels = [];
+  (monster.habitats || []).forEach((habitat) => {
+    if (!shouldShowHabitat(habitat?.mapId)) return;
+    if (Array.isArray(habitat?.sections) && habitat.sections.length > 0) {
+      const sections = globalThis.MapRegistry?.getMapSections?.(habitat?.mapId) || [];
+      const names = sections
+        .filter((entry) => matchesFloorRanges(habitat.sections, entry.section))
+        .map((entry) => entry.name)
+        .filter(Boolean);
+      if (names.length > 0) {
+        labels.push(...names);
+        return;
+      }
+    }
+    labels.push(formatAreaLabel(mapName(habitat?.mapId), habitat?.floors));
+  });
 
   // 深淵も通常MAPと同じ「エリア名（○～○階）」形式で表示する。
   // 例: 深淵（101～105階）
   if (Array.isArray(monster.abyssFloors) && monster.abyssFloors.length > 0) {
     const abyssMapId = globalThis.MAP_IDS?.ABYSS || 'MAP000033';
-    labels.push(formatAreaLabel(mapName(abyssMapId), monster.abyssFloors));
+    if (shouldShowHabitat(abyssMapId)) {
+      labels.push(formatAreaLabel(mapName(abyssMapId), monster.abyssFloors));
+    }
   }
 
   return Array.from(new Set(labels.filter(Boolean)));

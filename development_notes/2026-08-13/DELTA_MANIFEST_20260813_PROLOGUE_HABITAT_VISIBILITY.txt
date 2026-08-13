@@ -1,0 +1,21 @@
+PRISMA ABYSS delta package manifest
+Date: 2026-08-13
+Purpose: Nameless Village monster-encyclopedia habitat suppression + delta ZIP delivery policy
+
+CHANGED
+map.js
+maps_logic.js
+monsters.js
+canon/PRISMA_CODING_HANDOFF_v5.md
+canon/PRISMA_DEVELOPMENT_ROADMAP_v2.md
+tools/validation/validate-monster-habitat-master.js
+development_notes/2026-08-13/targeted_prologue_map_section_check_20260813.js
+
+NEW
+development_notes/2026-08-13/reports/PROLOGUE_HABITAT_VISIBILITY_AND_DELTA_DELIVERY_20260813.md
+development_notes/2026-08-13/handoff/PRISMA_ABYSS_HANDOFF_20260813_PROLOGUE_HABITAT_VISIBILITY_DELTA.md
+development_notes/2026-08-13/validation/PROLOGUE_HABITAT_VISIBILITY_CHECK_20260813.log
+development_notes/2026-08-13/DELTA_MANIFEST_20260813_PROLOGUE_HABITAT_VISIBILITY.txt
+
+DELETED
+(none)
