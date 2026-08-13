@@ -258,7 +258,7 @@ const Dungeon = {
     // Mは通行可能だが、踏むたびに最大HPの3%ダメージを受ける。
     lavaFloorMinFloor: 50,
     lavaFloorSpawnRate: 0.10,
-    lavaTileImagePath: 'assets/map/terrain/magma.png',
+    lavaTileImagePath: 'assets/map/terrain/runtime/magma.png',
     lavaBattleBgKey: 'battle_bg_fire',
 
     // 浸水フロア: 41階以降の通常ランダムフロアで10%発生。
