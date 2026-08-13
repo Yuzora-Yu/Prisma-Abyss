@@ -1,6 +1,6 @@
 # PRISMA ABYSS Development Policy
 
-Last updated: 2026-07-14
+Last updated: 2026-08-14
 
 This document records the current long-term development direction. Treat it as a product/design policy, not just an implementation TODO.
 
@@ -41,6 +41,15 @@ The game has become feature-rich, but the next direction is to reorganize it as 
 - Phaser itself currently uses its Canvas backend for asset compatibility. This is separate from the legacy Canvas fallback above; “Phaser-first” still applies.
 - After the Phaser implementation is complete, mirror the minimum equivalent behavior into the legacy Canvas path so a renderer failure does not break movement or essential readability.
 - A map-editor preview or a passing legacy-Canvas check does not prove the production renderer is correct. Visual changes must be checked in the active Phaser game view, and validation must assert both paths when fallback parity matters.
+
+### 町・建物マップの外周と出入口
+
+- 町や家などの固定マップの出入口は、壁と壁の間に通行可能な床マスを配置し、その床マスを出入りの導線とする。壁自体や不透過オブジェクトを出入口の代用にしない。
+- 出入口にする床マスは、出入りする方向の前後が通行可能な床へ連続していることを必須とする。周囲を壁に囲まれ、歩行で出入りできない床マスを出入口として設定することは原則として認めない。ただし、階段、魔法陣、転送装置など、その床マス自体が歩行以外の移動手段であることが見た目と演出から明らかな場合は例外とする。
+- マップ最下部の壁帯は、原則として縦2マス以上の厚みを確保する。1マスのみで画面端を塞ぐ構造は避ける。
+- マップは原則として、壁のさらに外側へ1～2マス分の床タイル等を配置し、壁をマップ配列の最外縁に直接置かない。
+- 上記は、出入口の読みやすさ、マップ下端の壁の見え方、外周描画の安定性を保つための標準とする。演出上の明確な理由で例外とする場合は、通行判定、画面端の露出、Phaserと旧Canvasの描画を実画面で確認し、例外の意図をマップ定義または関連設計文書に残す。
+- 既存マップには上記標準へ未対応のものが多い。それらの現状を仕様として追認せず、今後のマップ点検・改修における変更検討対象とする。ただし、進行、座標、イベント、帰還先との整合を確認せずに一括変更しない。
 
 手抜き作業と、その場しのぎのつぎはぎ修正を禁止する。症状だけを局所的に隠すのではなく、描画・移動・イベント・データ参照の正本を確認し、同種の挙動が一つの共有ロジックへ収束するよう修正すること。
 
