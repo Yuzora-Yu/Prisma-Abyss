@@ -420,18 +420,42 @@ const App = {
 
     getCharacterMaster: (charOrId) => {
         const id = (charOrId && typeof charOrId === 'object')
-            ? (charOrId.charId || charOrId.id)
+            ? (charOrId.charId || charOrId.id || charOrId.originData?.charId || charOrId.originData?.id)
             : charOrId;
         if (!id) return null;
         const list = (typeof DB !== 'undefined' && DB.CHARACTERS) ? DB.CHARACTERS : (window.CHARACTERS_DATA || []);
         return list.find(c => c.id === id) || null;
     },
 
+    isFiveYearsAgoPrologueActive: (data = App.data) => {
+        if (!data) return false;
+        const stage = Math.max(0, Number(data.progress?.worldState?.prologueStage || 0));
+        if (stage >= 100) return false;
+        const areaKey = String(data.location?.area || '');
+        return [
+            'PROLOGUE_WEST_HILL',
+            'PROLOGUE_SOUTH_VILLAGE',
+            'PROLOGUE_NORTH_VILLAGE',
+            'PROLOGUE_FINAL_ALTAR'
+        ].includes(areaKey);
+    },
+
+    getPrologueCharacterImageOverride: (charOrId, kind = 'face', data = App.data) => {
+        const id = Number((charOrId && typeof charOrId === 'object')
+            ? (charOrId.charId || charOrId.id || charOrId.originData?.charId || charOrId.originData?.id)
+            : charOrId);
+        if (id !== 301 || !App.isFiveYearsAgoPrologueActive(data)) return null;
+        return kind === 'portrait'
+            ? 'assets/characters/char_icon_301_past5y.png'
+            : 'assets/characters/face/301_past5y.png';
+    },
+
     getDefaultFaceIconPath: (charOrId) => {
         const id = (charOrId && typeof charOrId === 'object')
-            ? (charOrId.charId || charOrId.id)
+            ? (charOrId.charId || charOrId.id || charOrId.originData?.charId || charOrId.originData?.id)
             : charOrId;
-        return id ? `assets/characters/face/${id}.png` : null;
+        return App.getPrologueCharacterImageOverride(charOrId, 'face')
+            || (id ? `assets/characters/face/${id}.png` : null);
     },
 
     isDefaultCharacterImagePath: (src) => {
@@ -452,6 +476,8 @@ const App = {
 
 	getCharacterDisplayImage: (charOrId) => {
 		const char = (charOrId && typeof charOrId === 'object') ? charOrId : null;
+		const prologueOverride = App.getPrologueCharacterImageOverride(charOrId, 'face');
+		if (prologueOverride) return prologueOverride;
 		if (char && char.imageEdit && char.imageEdit.src) return char.imageEdit.src;
 		if (char && App.hasCustomCharacterImage(char)) return char.img;
 		return App.getDefaultFaceIconPath(charOrId) || App.getCharacterImageFallback(charOrId);
@@ -2226,7 +2252,7 @@ const App = {
 
 	// 全画像データの手動/初回ダウンロード用キャッシュ名。
 	// sw.js の RUNTIME_CACHE_NAME と揃えること。
-    fullDataCacheName: 'prisma-abyss-v39.20260804-runtime',
+	fullDataCacheName: 'prisma-abyss-v40.20260813-runtime',
 
 
 	// 初回起動時の「全データを今ダウンロードしますか？」で「いいえ」を選んだ記録。
@@ -9550,7 +9576,6 @@ const Field = {
     // requestAnimationFrameで常時描画すると負荷が増えるため、低頻度のsetIntervalでstepだけ切り替える。
     idleTimer: null,
     idleStepIntervalMs: 520,
-
     // ランダム生成ダンジョン内の特殊オブジェクト画像キャッシュ。
     // 冒険者NPC・全回復の泉・深淵の裂け目はタイル文字ではなく別データで管理し、
     // Field側で床の上に重ねる。既存の宝箱/階段/壁判定に影響させないため。

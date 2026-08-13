@@ -99,6 +99,17 @@ const PRISMA_MAP_CHIP_LIBRARY_GROUPS = {
 // monsters.js の preloadAtStartup フラグから、開幕前に必要な画像だけを自動抽出する。
 const PRISMA_STARTUP_MONSTER_IMAGE_FILES = [];
 const PRISMA_STARTUP_MONSTER_GRAPHIC_KEYS = [];
+const PRISMA_CHARACTER_IMAGE_IDS = [
+  101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
+  201, 202, 203, 204, 205, 206, 207, 208, 209, 210,
+  301, 302, 303, 304, 305, 306, 401, 402, 403, 501,
+];
+const PRISMA_CHARACTER_IMAGE_FILES = [
+  ...PRISMA_CHARACTER_IMAGE_IDS.map((id) => `assets/characters/face/${id}.png`),
+  "assets/characters/face/301_past5y.png",
+  ...PRISMA_CHARACTER_IMAGE_IDS.map((id) => `assets/characters/char_face_${id}.${id === 403 ? "png" : "gif"}`),
+  "assets/characters/char_icon_301_past5y.png",
+];
 
 const PRISMA_ASSETS = {
   // Field.render / Battle 背景 / 主人公歩行画像で使う GRAPHICS 用画像。
@@ -678,6 +689,10 @@ const PRISMA_ASSETS = {
     "phys-elemental": "assets/effect/fx_phys_elemental_arc.png",
   },
 
+  // characters.js の通常会話画像に加え、簡略顔と序章専用画像も
+  // Service Worker の全量キャッシュへ渡すための正本。
+  characterImages: PRISMA_CHARACTER_IMAGE_FILES,
+
 
   // Service Worker / 起動時先読みへ渡す画像キャッシュ用リスト。
   // initialGraphicKeys / criticalImages: 全量取得を待たない場合でも起動直後に必要なセット。
@@ -686,7 +701,7 @@ const PRISMA_ASSETS = {
   // installImages: Service Worker の初回install時にキャッシュする画像全体。
   // backgroundImages: install後の再試行/補助ウォームキャッシュ用。
   cacheWarmup: {
-    version: "2026-08-13-startup-loader-v17",
+    version: "2026-08-13-character-art-v18",
     initialGraphicKeys: [
       "floor", "sea", "forest", "mountain", "Low_mountain", "cave", "house-1", "house-2", "inn", "wall", "dungeon_floor",
       "item_icon_attack", "item_icon_buff", "item_icon_debuff", "item_icon_material", "item_icon_vehicle", "item_icon_travel",
@@ -782,6 +797,9 @@ const PRISMA_ASSETS = {
       "assets/generated/hero-up-1.gif", "assets/generated/hero-up-2.gif",
       "assets/generated/hero-left-1.gif", "assets/generated/hero-left-2.gif",
       "assets/generated/hero-right-1.gif", "assets/generated/hero-right-2.gif",
+      "assets/characters/face/301_past5y.png",
+      "assets/characters/char_icon_301_past5y.png",
+      "assets/characters/char_face_403.png",
     ],
     openingImages: [
       "assets/generated/opening-prism-collapse.png",
@@ -829,6 +847,7 @@ function refreshPrismaAssetWarmupLists() {
   const allImages = unique([
     ...Object.values(PRISMA_ASSETS.graphics || {}),
     ...Object.values(PRISMA_ASSETS.battleFx || {}),
+    ...(PRISMA_ASSETS.characterImages || []),
     "assets/gacha/back_card.png",
     "assets/gacha/front_card.png",
     "assets/background/PRISMA ABYSS.png",

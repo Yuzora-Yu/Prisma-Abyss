@@ -2914,6 +2914,9 @@ const StoryManager = {
                 const savedChar = hasExplicitCharId ? App.data.characters.find(c => c.charId === line.charId) : null;
                 let displayName = isSystemLine ? '' : (savedChar ? savedChar.name : (masterChar ? masterChar.name : line.name));
                 let displayImg = isSystemLine ? '' : (savedChar?.img || masterChar?.img);
+                if (!isSystemLine && typeof App.getPrologueCharacterImageOverride === 'function') {
+                    displayImg = App.getPrologueCharacterImageOverride(line.charId, 'portrait') || displayImg;
+                }
                 if (line.hidePortrait === true) displayImg = '';
 
                 if (textWindow) {

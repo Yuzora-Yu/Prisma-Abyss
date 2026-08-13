@@ -127,8 +127,11 @@
             || (Array.isArray(data?.characters) ? data.characters.find(character => character?.isHero) || data.characters[0] : null)
             || null,
 
-        getCharacterFaceSource: (character) => {
+        getCharacterFaceSource: (character, data = null) => {
             if (!character) return '';
+            const app = getApp();
+            const prologueOverride = app?.getPrologueCharacterImageOverride?.(character, 'face', data);
+            if (prologueOverride) return prologueOverride;
             if (character.imageEdit && typeof character.imageEdit.src === 'string' && character.imageEdit.src) return character.imageEdit.src;
             if (character.isMonsterAlly === true && typeof character.img === 'string' && character.img) return character.img;
             if (typeof character.img === 'string' && character.img) {
@@ -681,7 +684,7 @@
                 const face = document.createElement('span');
                 face.className = 'save-slot-face';
                 const character = party[index] || null;
-                const source = SaveSlots.getCharacterFaceSource(character);
+                const source = SaveSlots.getCharacterFaceSource(character, data);
                 if (source) {
                     const image = document.createElement('img');
                     image.alt = character?.name || `パーティ${index + 1}`;

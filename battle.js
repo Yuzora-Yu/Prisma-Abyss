@@ -8127,8 +8127,10 @@ findNextActor: () => {
             if(isActor) { div.style.border = "2px solid #ffd700"; div.style.background = "#333"; }
             let nameStyle = p.isDead ? 'color:red; text-decoration:line-through;' : 'color:white;';
 			
-            const imgUrl = App.getCharacterDisplayImage ? App.getCharacterDisplayImage(p) : p.img;
-            const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(p) : '';
+            // 戦闘用Playerは表示用の複製なので、ステータス画面と同じ保存キャラを画像解決へ渡す。
+            const imageCharacter = p.originData || p;
+            const imgUrl = App.getCharacterDisplayImage ? App.getCharacterDisplayImage(imageCharacter) : imageCharacter.img;
+            const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(imageCharacter) : '';
             const imgHtml = imgUrl ? `<img src="${imgUrl}"${imageFallbackAttr} style="width:32px; height:32px; object-fit:cover; border-radius:4px; border:1px solid #666; margin-bottom:1px;">` : `<div style="width:32px; height:32px; background:#222; border-radius:4px; border:1px solid #444; display:flex; align-items:center; justify-content:center; color:#555; font-size:8px; margin-bottom:1px;">IMG</div>`;
             
             // --- 消えていた部分を復活 ---
@@ -8201,8 +8203,9 @@ findNextActor: () => {
         const hpPer = Math.floor((char.hp / maxHp) * 100);
         const mpPer = Math.floor((char.mp / maxMp) * 100);
 		
-        const imgUrl = App.getCharacterDisplayImage ? App.getCharacterDisplayImage(char) : char.img;
-        const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(char) : '';
+        const imageCharacter = char.originData || char;
+        const imgUrl = App.getCharacterDisplayImage ? App.getCharacterDisplayImage(imageCharacter) : imageCharacter.img;
+        const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(imageCharacter) : '';
 
         // ★修正箇所: char.img ではなく imgUrl を使用
         let html = `

@@ -1680,7 +1680,7 @@ window.CHARACTERS_DATA = [
             "99": 246
         },
         "sp": 1,
-        "img": "assets/characters/char_face_403.gif",
+        "img": "assets/characters/char_face_403.png",
         "level": 1,
         "prologueOnly": true,
         "adultCharacterId": 401,
