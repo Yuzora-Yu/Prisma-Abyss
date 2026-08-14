@@ -23,8 +23,8 @@ try {
 
 // 表示用語・お知らせUI更新ではApp Shellだけ更新し、画像の全量キャッシュは再取得しない。
 // RUNTIME_CACHE_NAMEはmain.jsのfullDataCacheNameと同じ値を維持する。
-const CACHE_NAME = "prisma-abyss-v55.20260814";
-const RUNTIME_CACHE_NAME = "prisma-abyss-v41.20260814-runtime";
+const CACHE_NAME = "prisma-abyss-v58.20260814";
+const RUNTIME_CACHE_NAME = "prisma-abyss-v43.20260814-runtime";
 const WARM_CACHE_META_KEY = "__prisma_abyss_warm_cache_complete__";
 
 // 起動に必要な App Shell。
@@ -105,7 +105,7 @@ const ASSET_WARMUP = (self.PRISMA_ASSETS && self.PRISMA_ASSETS.cacheWarmup) || {
 const INITIAL_IMAGE_PRECACHE = ASSET_WARMUP.criticalImages || [
   "assets/generated/battle-field-ai.png",
   "assets/generated/battle-dungeon-ai.png",
-  "assets/map/terrain/terrain_grass_field.png",
+  "assets/map/terrain/runtime/terrain_grass_field.png",
   "assets/map/objects/object_field_forest.png",
   "assets/map/overlays/overlay_npc_villager.png",
 ];

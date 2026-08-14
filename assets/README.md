@@ -1,6 +1,6 @@
 # アセット管理
 
-更新日: 2026-07-23
+更新日: 2026-08-14
 
 ## 正本
 
@@ -13,7 +13,7 @@
 1. ゲームで使う画像名は固定名とし、`_v001` などの版番号を付けない。
 2. 同じ用途の画像を更新するときは、同じ固定名へ差し替える。
 3. 同時に使う差分は `variant_a` など用途の分かる別名で登録する。
-4. 旧版を `assets/` 内へ残さない。必要な退避物は `archive/` 以下へ移す。
+4. 旧版や編集用原画を `assets/` 内へ残さない。`../image-backups/YYYY-MM-DD/` 以下に元の相対パスを保って移す。
 5. 新規画像は `assets.js` へ登録し、初回全データキャッシュの対象に含める。
 6. ファイル移動や削除の前に、JS・HTML・CSS・マニフェスト・検証コードの参照を確認する。
 
@@ -24,15 +24,11 @@
 - `effect/`: 戦闘エフェクト
 - `map/`: 地形、壁面、オーバーレイ、オブジェクト、素材ライブラリ
 - `monsters/`: 実装済みモンスター画像
-- `managed/source/`: 再生成・再編集用の制作情報
 - `generated/`: 生成工程中の採用画像
 - `ui/`: UI画像
 
-## 検証
+## 制作元データと配布
 
-```powershell
-node tools/validation/validate-asset-fixed-names.js
-node tools/validation/validate-asset-libraries.js
-node tools/validation/validate-visual-assets.js
-node tools/validation/validate-field-render-lifecycle.js
-```
+- 再生成・再編集用の原画や旧版は `../image-backups/YYYY-MM-DD/` で管理する。
+- 本番配布には `image-backups/` と `backups/` を含めない。
+- `characters/walk/` は作業中の保護領域とし、明示指示なしに退避しない。

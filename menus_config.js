@@ -1,6 +1,6 @@
-/* menus_config.js - 設定メニュー */
+/* menus_config.js - セーブ・設定メニュー */
 const MenuConfig = {
-    activeTab: 'settings',
+    activeTab: 'save',
 
     speedOptions: [
         { value: 'normal', label: '普通', desc: 'じっくり戦闘を見る' },
@@ -49,10 +49,10 @@ const MenuConfig = {
         div.className = 'sub-screen';
         div.innerHTML = `
             <div class="header-bar">
-                <span>⚙️ 設定</span>
+                <span>⚙️ セーブ・設定</span>
                 <button class="btn" onclick="Menu.closeSubScreen('config')">もどる</button>
             </div>
-            <div class="config-tab-bar" role="tablist" aria-label="設定メニュー切替">
+            <div class="config-tab-bar" role="tablist" aria-label="セーブ・設定メニュー切替">
                 <button id="config-tab-save" class="config-tab-button" type="button" role="tab" onclick="MenuConfig.setTab('save')">セーブ</button>
                 <button id="config-tab-settings" class="config-tab-button" type="button" role="tab" onclick="MenuConfig.setTab('settings')">設定</button>
             </div>
@@ -66,6 +66,7 @@ const MenuConfig = {
 
     init: () => {
         MenuConfig.createDOM();
+        MenuConfig.activeTab = 'save';
         const screen = document.getElementById('sub-screen-config');
         if (screen) screen.style.display = 'flex';
         MenuConfig.render();

@@ -110,6 +110,20 @@ const PRISMA_CHARACTER_IMAGE_FILES = [
   ...PRISMA_CHARACTER_IMAGE_IDS.map((id) => `assets/characters/char_face_${id}.${id === 403 ? "png" : "gif"}`),
   "assets/characters/char_icon_301_past5y.png",
 ];
+const PRISMA_CHARACTER_WALK_IDS = ["301", "301_flying", "301_past5y"];
+const PRISMA_CHARACTER_WALK_FRAMES = [
+  "down_1", "down_2", "up_1", "up_2",
+  "left_1", "left_2", "right_1", "right_2",
+];
+const PRISMA_CHARACTER_WALK_GRAPHICS = Object.fromEntries(
+  PRISMA_CHARACTER_WALK_IDS.flatMap((id) => PRISMA_CHARACTER_WALK_FRAMES.map((frame) => [
+    `character_walk_${id}_${frame}`,
+    `assets/characters/walk/${id}_${frame}.png`,
+  ]))
+);
+const PRISMA_CHARACTER_MAP_STAND_GRAPHICS = {
+  character_map_stand_301_past5y_down: "assets/characters/map-stand/301_past5y_down.png",
+};
 
 const PRISMA_ASSETS = {
   // Field.render / Battle 背景 / 主人公歩行画像で使う GRAPHICS 用画像。
@@ -599,30 +613,8 @@ const PRISMA_ASSETS = {
     battle_bg_mountain_wind_ruins: "assets/generated/battle-mountain-wind-ruins.png",
     battle_bg_trial_shrine: "assets/generated/battle-trial-shrine.png",
     battle_bg_summit_temple: "assets/generated/battle-summit-temple.png",
-    hero_down_1: "assets/generated/hero-down-1.gif",
-    hero_down_2: "assets/generated/hero-down-2.gif",
-    hero_up_1: "assets/generated/hero-up-1.gif",
-    hero_up_2: "assets/generated/hero-up-2.gif",
-    hero_left_1: "assets/generated/hero-left-1.gif",
-    hero_left_2: "assets/generated/hero-left-2.gif",
-    hero_right_1: "assets/generated/hero-right-1.gif",
-    hero_right_2: "assets/generated/hero-right-2.gif",
-    hero_past5y_down_1: "assets/generated/char_walk_301_past5y_down_1.png",
-    hero_past5y_down_2: "assets/generated/char_walk_301_past5y_down_2.png",
-    hero_past5y_up_1: "assets/generated/char_walk_301_past5y_up_1.png",
-    hero_past5y_up_2: "assets/generated/char_walk_301_past5y_up_2.png",
-    hero_past5y_left_1: "assets/generated/char_walk_301_past5y_left_1.png",
-    hero_past5y_left_2: "assets/generated/char_walk_301_past5y_left_2.png",
-    hero_past5y_right_1: "assets/generated/char_walk_301_past5y_right_1.png",
-    hero_past5y_right_2: "assets/generated/char_walk_301_past5y_right_2.png",
-    hero_wing_down_1: "assets/generated/hero-wing-down-1.png",
-    hero_wing_down_2: "assets/generated/hero-wing-down-2.png",
-    hero_wing_up_1: "assets/generated/hero-wing-up-1.png",
-    hero_wing_up_2: "assets/generated/hero-wing-up-2.png",
-    hero_wing_left_1: "assets/generated/hero-wing-left-1.png",
-    hero_wing_left_2: "assets/generated/hero-wing-left-2.png",
-    hero_wing_right_1: "assets/generated/hero-wing-right-1.png",
-    hero_wing_right_2: "assets/generated/hero-wing-right-2.png",
+    ...PRISMA_CHARACTER_WALK_GRAPHICS,
+    ...PRISMA_CHARACTER_MAP_STAND_GRAPHICS,
     battle_bg_thunder_fort: "assets/generated/battle-thunder-fort.png",
     battle_bg_light_palace: "assets/generated/battle-light-palace.png",
     battle_bg_big_tower: "assets/generated/battle-big-tower.png",
@@ -702,6 +694,16 @@ const PRISMA_ASSETS = {
   // characters.js の通常会話画像に加え、簡略顔と序章専用画像も
   // Service Worker の全量キャッシュへ渡すための正本。
   characterImages: PRISMA_CHARACTER_IMAGE_FILES,
+  characterWalk: {
+    ids: PRISMA_CHARACTER_WALK_IDS,
+    frames: PRISMA_CHARACTER_WALK_FRAMES,
+    sourceSizeById: { "301": 144, "301_flying": 144, "301_past5y": 32 },
+    displaySize: 32,
+    maxVisiblePartyMembers: 4,
+    maxVisibleFlyingPartyMembers: 1,
+    hideMonsterAllies: true,
+    idleAnimation: "step_cycle",
+  },
 
 
   // Service Worker / 起動時先読みへ渡す画像キャッシュ用リスト。
@@ -711,7 +713,7 @@ const PRISMA_ASSETS = {
   // installImages: Service Worker の初回install時にキャッシュする画像全体。
   // backgroundImages: install後の再試行/補助ウォームキャッシュ用。
   cacheWarmup: {
-    version: "2026-08-14-map-tile-runtime-v20",
+    version: "2026-08-14-map-tile-runtime-character-walk-v22",
     initialGraphicKeys: [
       "floor", "sea", "forest", "mountain", "Low_mountain", "cave", "house-1", "house-2", "inn", "wall", "dungeon_floor",
       "item_icon_attack", "item_icon_buff", "item_icon_debuff", "item_icon_material", "item_icon_vehicle", "item_icon_travel",
@@ -755,12 +757,8 @@ const PRISMA_ASSETS = {
       "overlay_dungeon_adventurer_up_1", "overlay_dungeon_adventurer_up_2",
       "overlay_npc_elder", "overlay_npc_villager", "overlay_npc_child", "overlay_npc_bronze_knight",
       "battle_bg_field", "battle_bg_dungeon", "battle_bg_flooded", "battle_bg_first",
-      "hero_down_1", "hero_down_2", "hero_up_1", "hero_up_2",
-      "hero_left_1", "hero_left_2", "hero_right_1", "hero_right_2",
-      "hero_past5y_down_1", "hero_past5y_down_2", "hero_past5y_up_1", "hero_past5y_up_2",
-      "hero_past5y_left_1", "hero_past5y_left_2", "hero_past5y_right_1", "hero_past5y_right_2",
-      "hero_wing_down_1", "hero_wing_down_2", "hero_wing_up_1", "hero_wing_up_2",
-      "hero_wing_left_1", "hero_wing_left_2", "hero_wing_right_1", "hero_wing_right_2",
+      ...Object.keys(PRISMA_CHARACTER_WALK_GRAPHICS),
+      ...Object.keys(PRISMA_CHARACTER_MAP_STAND_GRAPHICS),
     ],
     criticalImages: [
       "assets/generated/battle-field-ai.png",
@@ -805,10 +803,7 @@ const PRISMA_ASSETS = {
       "assets/map/overlays/overlay_npc_villager.png",
       "assets/map/overlays/overlay_npc_child.png",
       "assets/map/overlays/overlay_npc_bronze_knight.png",
-      "assets/generated/hero-down-1.gif", "assets/generated/hero-down-2.gif",
-      "assets/generated/hero-up-1.gif", "assets/generated/hero-up-2.gif",
-      "assets/generated/hero-left-1.gif", "assets/generated/hero-left-2.gif",
-      "assets/generated/hero-right-1.gif", "assets/generated/hero-right-2.gif",
+      ...PRISMA_CHARACTER_WALK_FRAMES.map((frame) => `assets/characters/walk/301_${frame}.png`),
       "assets/characters/face/301_past5y.png",
       "assets/characters/char_icon_301_past5y.png",
       "assets/characters/char_face_403.png",

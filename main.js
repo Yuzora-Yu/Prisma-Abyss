@@ -450,17 +450,83 @@ const App = {
             : 'assets/characters/face/301_past5y.png';
     },
 
+    getFieldPartyWalkCharacters: (data = App.data) => {
+        if (!data || !Array.isArray(data.party) || !Array.isArray(data.characters)) return [];
+        const walkConfig = globalThis.PRISMA_ASSETS?.characterWalk || {};
+        const maxVisible = Math.max(1, Number(walkConfig.maxVisiblePartyMembers || 4));
+        const maxVisibleFlying = Math.max(1, Number(walkConfig.maxVisibleFlyingPartyMembers || 1));
+        const characters = data.party
+            .slice(0, maxVisible)
+            .map(uid => uid ? data.characters.find(character => character?.uid === uid) || null : null)
+            .filter(character => character && character.isMonsterAlly !== true);
+        // 飛行中は当面、追従する隊列を出さず先頭の主人公だけを表示する。
+        return data.transportMode === 'flying' ? characters.slice(0, maxVisibleFlying) : characters;
+    },
+
+    getCharacterWalkAssetId: (charOrId, data = App.data) => {
+        const character = charOrId && typeof charOrId === 'object' ? charOrId : null;
+        if (character?.isMonsterAlly === true) return null;
+        const rawId = character
+            ? (character.charId || character.id || character.originData?.charId || character.originData?.id)
+            : charOrId;
+        const directAssetId = String(rawId ?? '').trim();
+        const registeredIds = globalThis.PRISMA_ASSETS?.characterWalk?.ids || [];
+        if (/^\d+_[a-z0-9_]+$/i.test(directAssetId) && registeredIds.includes(directAssetId)) return directAssetId;
+        const id = Number(rawId);
+        if (!Number.isFinite(id) || id <= 0) return null;
+        if (id === 301 && App.isFiveYearsAgoPrologueActive(data)) return '301_past5y';
+        return String(Math.floor(id));
+    },
+
+    getCharacterWalkGraphicPresentation: (charOrId, direction, step, data = App.data) => {
+        const normalizedDirection = ['down', 'left', 'right', 'up'].includes(direction)
+            ? direction
+            : 'down';
+        const normalizedStep = Number(step) === 2 ? 2 : 1;
+        const assetId = App.getCharacterWalkAssetId(charOrId, data);
+        const registeredIds = globalThis.PRISMA_ASSETS?.characterWalk?.ids || [];
+        if (!assetId || !registeredIds.includes(assetId)) return null;
+        return {
+            assetId,
+            key: `character_walk_${assetId}_${normalizedDirection}_${normalizedStep}`,
+            width: 32,
+            height: 32
+        };
+    },
+
+    getCharacterMapStandGraphicKey: (charOrId, direction = 'down', data = App.data) => {
+        const normalizedDirection = ['down', 'left', 'right', 'up'].includes(direction)
+            ? direction
+            : 'down';
+        const assetId = App.getCharacterWalkAssetId(charOrId, data);
+        if (!assetId) return null;
+        const key = `character_map_stand_${assetId}_${normalizedDirection}`;
+        return globalThis.PRISMA_ASSETS?.graphics?.[key] ? key : null;
+    },
+
     getPlayerGraphicPresentation: (direction, step, data = App.data) => {
         const normalizedDirection = ['down', 'left', 'right', 'up'].includes(direction)
             ? direction
             : 'down';
         const normalizedStep = Number(step) === 2 ? 2 : 1;
-        const prefix = App.isFiveYearsAgoPrologueActive(data) ? 'hero_past5y' : 'hero';
-        return {
-            key: `${prefix}_${normalizedDirection}_${normalizedStep}`,
-            width: 32,
-            height: 32
-        };
+        if (data?.transportMode === 'flying') {
+            return App.getCharacterWalkGraphicPresentation(
+                '301_flying',
+                normalizedDirection,
+                normalizedStep,
+                data
+            );
+        }
+        const fieldParty = App.getFieldPartyWalkCharacters(data);
+        const leadCharacter = App.isFiveYearsAgoPrologueActive(data)
+            ? (fieldParty.find(character => Number(character?.charId || character?.id) === 301) || 301)
+            : (fieldParty[0] || App.getHeroCharacter?.());
+        return App.getCharacterWalkGraphicPresentation(
+            leadCharacter,
+            normalizedDirection,
+            normalizedStep,
+            data
+        ) || App.getCharacterWalkGraphicPresentation(301, normalizedDirection, normalizedStep, data);
     },
 
     getDefaultFaceIconPath: (charOrId) => {
@@ -2265,7 +2331,7 @@ const App = {
 
 	// 全画像データの手動/初回ダウンロード用キャッシュ名。
 	// sw.js の RUNTIME_CACHE_NAME と揃えること。
-	fullDataCacheName: 'prisma-abyss-v41.20260814-runtime',
+	fullDataCacheName: 'prisma-abyss-v43.20260814-runtime',
 
 
 	// 初回起動時の「全データを今ダウンロードしますか？」で「いいえ」を選んだ記録。
@@ -2675,7 +2741,7 @@ const App = {
 			const result = await App.downloadFullDataCache({ urls: missing, sizeInfo });
 			if (result.failed > 0) {
 				await App.showFullDataDialog(
-					`一部データのダウンロードに失敗しました。\n通信環境を確認して、設定メニューから再実行してください。\n\n失敗: ${result.failed}/${result.total}`,
+					`一部データのダウンロードに失敗しました。\n通信環境を確認して、セーブ・設定メニューから再実行してください。\n\n失敗: ${result.failed}/${result.total}`,
 					{ messageOnly: true }
 				);
 			}

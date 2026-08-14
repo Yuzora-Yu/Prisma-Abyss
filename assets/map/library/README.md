@@ -6,7 +6,7 @@ This directory contains runtime-ready reusable map chips. Version v001 is promot
 - Metadata source of truth: `manifest.json`.
 - Grouping: `<theme>/<decoration|blocking>/maplib_<theme>_<slug>_vNNN.png`.
 - Registered cache keys: `maplib_<theme>_<slug>` in `assets.js`.
-- Raw and 256x256 master sources: `assets/managed/source/map-chip-library/v001/`.
+- Raw and 256x256 master sources: `image-backups/2026-08-14/assets/managed/source/map-chip-library/v001/`.
 - Visual catalogs: theme sheets and `map-chip-library-v001.png` under `docs/generated/map-chip-library/`.
 - Rebuild command: `python tools/art/build-map-chip-library.py`.
 

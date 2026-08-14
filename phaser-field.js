@@ -1319,12 +1319,8 @@
         const isBoat = (onWorldMap && transport === 'boat') || floodedBoat;
         const isFlying = onWorldMap && transport === 'flying';
         const playerGraphic = getApp()?.getPlayerGraphicPresentation?.(direction, field.step)
-            || { key: `hero_${direction}_${field.step}`, width: TILE_SIZE, height: TILE_SIZE };
-        const heroKey = isBoat
-            ? `overlay_magic_boat_${direction}`
-            : isFlying
-                ? `hero_wing_${direction}_${field.step}`
-                : playerGraphic.key;
+            || { key: `character_walk_301_${direction}_${field.step}`, width: TILE_SIZE, height: TILE_SIZE };
+        const heroKey = isBoat ? `overlay_magic_boat_${direction}` : playerGraphic.key;
         if (!isBoat) {
             // 主人公の左右へはみ出さず、両足の接地だけが分かる幅にする。
             addShadow(scene, px, py - 2, 16, 0.34, Number(field.y) * 100 + 82, state.actorObjects);
@@ -1332,10 +1328,10 @@
         // Request the desired frame, but never replace the actor with a white circle while
         // a newly cached wing frame is being promoted into Phaser's texture manager.
         window.GRAPHICS?.get?.(heroKey);
-        const normalKey = `hero_${direction}_${field.step}`;
-        const fallbackKeys = [state.lastPlayerTextureKey, normalKey, 'hero_down_1'];
+        const normalKey = `character_walk_301_${direction}_${field.step}`;
+        const fallbackKeys = [state.lastPlayerTextureKey, normalKey, 'character_walk_301_down_1'];
         const drawKey = [heroKey, ...fallbackKeys].find(key => key && ensureTexture(scene, key));
-        const usesPlayerGraphic = drawKey === heroKey && !isBoat && !isFlying;
+        const usesPlayerGraphic = drawKey === heroKey && !isBoat;
         const playerImage = drawKey ? addImage(scene, drawKey, px, py, {
             depth: Number(field.y) * 100 + 88,
             width: usesPlayerGraphic ? playerGraphic.width : TILE_SIZE,

@@ -496,7 +496,7 @@ const Menu = {
                 ${Menu.featureButton('dungeon', 'ダンジョン', 'dungeonMenu', 'background:#400040;')}
 
                 <button class="menu-btn" onclick="Menu.openSubScreen('book')">魔物図鑑</button>
-                <button class="menu-btn" style="background:#004444;" onclick="Menu.openSubScreen('config')">設定</button>
+                <button class="menu-btn" style="background:#004444;" onclick="Menu.openSubScreen('config')">セーブ・設定</button>
                 
                 <button class="menu-btn" style="background:#500;" onclick="App.returnToTitle()">タイトルへ</button>
                 <button class="menu-btn" style="background:#333;" onclick="Menu.closeMainMenu()">閉じる</button>
