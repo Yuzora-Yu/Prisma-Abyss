@@ -2697,6 +2697,33 @@ body.game-page .party-bar {
   border-top: 1px solid var(--line) !important;
 }
 
+/* Battle HUD: enlarge portraits and raise the battlefield by expanding only the battle party bar. */
+body.game-page #battle-party-bar {
+  min-height: 124px !important;
+  box-sizing: border-box;
+}
+
+body.game-page .battle-party-portrait {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid #666;
+  margin-bottom: 2px;
+  box-sizing: border-box;
+}
+
+body.game-page .battle-party-portrait-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #222;
+  border-color: #444;
+  color: #666;
+  font-size: 9px;
+}
+
 body.game-page #menu-party-bar.menu-party-compact {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
@@ -3628,6 +3655,16 @@ body.game-page textarea {
 
   body.game-page .party-bar {
     min-height: 84px !important;
+  }
+
+  body.game-page #battle-party-bar {
+    min-height: 108px !important;
+  }
+
+  body.game-page .battle-party-portrait {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
   }
 
   body.game-page #battle-info {

@@ -37,8 +37,8 @@ if ('serviceWorker' in navigator) {
 			<img
 				id="initial-loading-monster-img"
 				class="initial-loading-monster"
-				src="assets/monsters/monster_000001.png"
 				alt="loading"
+				style="visibility:hidden"
 			>
             <div class="initial-loading-text">Now loading...</div>
         </div>
@@ -475,6 +475,9 @@ if ('serviceWorker' in navigator) {
 	if (!img) return;
 
 	const DEFAULT_MONSTER_ID = 1;
+	img.onload = function () {
+		img.style.visibility = 'visible';
+	};
 	const getMonsterImagePath = (id) => {
 		const monster = globalThis.MonsterData?.getMonsterById?.(id);
 		if (!monster) return null;

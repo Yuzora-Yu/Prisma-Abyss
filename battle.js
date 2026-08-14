@@ -7888,6 +7888,14 @@ findNextActor: () => {
 			maxPixelWidth = 200;
 			paddingBottomVal = "5px";
 			marginTopVal = "10px";
+		} else if (!isBoss && totalCount === 4) {
+			// 4体編成は狭い画面でも各スロットが100%内へ収まる幅に固定する。
+			// 撃破後の非表示スロットも同じ幅を保持し、残存敵の再センタリングを防ぐ。
+			widthPerEnemy = 23;
+			scaleFactor = 0.92;
+			maxPixelWidth = 118;
+			paddingBottomVal = "0px";
+			marginTopVal = "0px";
 		} else if (useFiveEnemyFormation) {
 			widthPerEnemy = 24;
 			scaleFactor = 0.86;
@@ -7973,6 +7981,13 @@ findNextActor: () => {
                     align-items: center;
                     padding-bottom: ${paddingBottomVal};
                 `;
+            }
+
+            if (!useFiveEnemyFormation && totalCount === 4) {
+                // 4体編成はflex-shrinkで再計算させない。visibility:hiddenの撃破枠も同じ場所を占有する。
+                div.style.flex = `0 0 ${perEnemyWidth}%`;
+                div.style.minWidth = '0';
+                div.style.boxSizing = 'border-box';
             }
 
             const keepDefeatedVisible = !e.isFled && window.PolishBattleFX &&
@@ -8131,7 +8146,7 @@ findNextActor: () => {
             const imageCharacter = p.originData || p;
             const imgUrl = App.getCharacterDisplayImage ? App.getCharacterDisplayImage(imageCharacter) : imageCharacter.img;
             const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(imageCharacter) : '';
-            const imgHtml = imgUrl ? `<img src="${imgUrl}"${imageFallbackAttr} style="width:32px; height:32px; object-fit:cover; border-radius:4px; border:1px solid #666; margin-bottom:1px;">` : `<div style="width:32px; height:32px; background:#222; border-radius:4px; border:1px solid #444; display:flex; align-items:center; justify-content:center; color:#555; font-size:8px; margin-bottom:1px;">IMG</div>`;
+            const imgHtml = imgUrl ? `<img class="battle-party-portrait" src="${imgUrl}"${imageFallbackAttr}>` : `<div class="battle-party-portrait battle-party-portrait-fallback">IMG</div>`;
             
             // --- 消えていた部分を復活 ---
             div.innerHTML = `
