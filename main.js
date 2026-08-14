@@ -6413,6 +6413,15 @@ const App = {
     },
 
     showMessage: (text, callback) => {
+        // セーブデータ入出力モーダル表示中は、そのモーダル自身のprompt layerへ重ねる。
+        // 共通Menuダイアログはsave-data-overlayより下のstacking contextにあるため使用しない。
+        if (typeof SaveDataUI !== 'undefined' && SaveDataUI.overlay?.isConnected &&
+            typeof SaveDataUI.showMessage === 'function') {
+            Promise.resolve(SaveDataUI.showMessage(text)).finally(() => {
+                if (callback) callback();
+            });
+            return;
+        }
         if (typeof Menu !== 'undefined' && typeof Menu.msg === 'function') {
             Menu.msg(text, callback);
             return;
@@ -6427,6 +6436,11 @@ const App = {
         if (callback) callback();
     },
     showConfirm: async (text) => {
+        // データ出力/読込モーダルから呼ばれた確認は、親overlay内の最前面に表示する。
+        if (typeof SaveDataUI !== 'undefined' && SaveDataUI.overlay?.isConnected &&
+            typeof SaveDataUI.confirm === 'function') {
+            return await SaveDataUI.confirm(text);
+        }
         if (typeof Menu !== 'undefined' && typeof Menu.confirm === 'function') {
             return await new Promise(resolve => {
                 Menu.confirm(text, () => resolve(true), () => resolve(false));

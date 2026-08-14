@@ -1090,6 +1090,50 @@ const StoryManager = {
         return active;
     },
 
+    isEventPhaseRunnable: function(eventId, phase = 'actions') {
+        const targetEventId = String(eventId || '');
+        if (!targetEventId) return false;
+        const event = this.events?.[targetEventId];
+        if (!event) return false;
+        const normalizedPhase = phase === 'win' ? 'win' : 'actions';
+        const actions = normalizedPhase === 'win' ? event.winActions : event.actions;
+        return Array.isArray(actions);
+    },
+
+    sanitizeEventJournal: function(journal = null) {
+        const progress = App?.data?.progress;
+        const target = journal || progress?.eventJournal;
+        if (!progress || !target || typeof target !== 'object') {
+            return { removedQueueEntries: 0, removedActive: false };
+        }
+
+        let removedQueueEntries = 0;
+        const sourceQueue = Array.isArray(target.queue) ? target.queue : [];
+        target.queue = sourceQueue.filter(entry => {
+            if (!entry || entry.status === 'completed') return true;
+            if (this.isEventPhaseRunnable(entry.eventId, entry.phase)) return true;
+            removedQueueEntries += 1;
+            console.warn('[StoryManager] 実行不能なイベント予約を破棄しました:', entry.eventId, entry.phase);
+            return false;
+        });
+
+        let removedActive = false;
+        if (target.active && target.active.status !== 'completed' &&
+            !this.isEventPhaseRunnable(target.active.eventId, target.active.phase)) {
+            console.warn('[StoryManager] 実行不能なactiveイベントを破棄しました:', target.active.eventId, target.active.phase);
+            target.active = null;
+            removedActive = true;
+        }
+
+        if (progress.activeEvent && progress.activeEvent.status !== 'completed' &&
+            !this.isEventPhaseRunnable(progress.activeEvent.eventId, progress.activeEvent.phase)) {
+            delete progress.activeEvent;
+            removedActive = true;
+        }
+
+        return { removedQueueEntries, removedActive };
+    },
+
     ensureEventJournal: function() {
         const progress = App?.data?.progress;
         if (!progress) return null;
@@ -1108,6 +1152,11 @@ const StoryManager = {
 
         const migrateLegacyQueue = (eventId, phase, legacyKey) => {
             if (!eventId) return;
+            if (!this.isEventPhaseRunnable(eventId, phase)) {
+                console.warn('[StoryManager] 実行不能な旧イベント予約を破棄しました:', eventId, phase, legacyKey);
+                delete progress[legacyKey];
+                return;
+            }
             const exists = journal.queue.some(entry => entry && entry.eventId === eventId && entry.phase === phase && entry.status !== 'completed');
             if (!exists) {
                 journal.queue.push({
@@ -1174,14 +1223,22 @@ const StoryManager = {
         } else if (progress.activeEvent) {
             delete progress.activeEvent;
         }
+
+        // StoryManagerに存在しないeventIdや、対象phaseを持たない予約は
+        // フィールド入力を永久ロックするため、ロード時点で安全に除去する。
+        this.sanitizeEventJournal(journal);
         return journal;
     },
 
     queueEvent: function(eventId, phase = 'actions', options = {}) {
         if (!eventId) return null;
+        const normalizedPhase = phase === 'win' ? 'win' : 'actions';
+        if (!this.isEventPhaseRunnable(eventId, normalizedPhase)) {
+            console.warn('[StoryManager] Storyイベントではないためキュー登録を拒否しました:', eventId, normalizedPhase);
+            return null;
+        }
         const journal = this.ensureEventJournal();
         if (!journal) return null;
-        const normalizedPhase = phase === 'win' ? 'win' : 'actions';
         const dedupeKey = options.dedupeKey || null;
         const existing = dedupeKey
             ? journal.queue.find(entry => entry && entry.status !== 'completed' && entry.dedupeKey === dedupeKey)

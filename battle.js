@@ -8500,19 +8500,31 @@ findNextActor: () => {
 		}
 
 		// 戦後イベントは削除先行の単一スロットではなく、token付きキューへ確定する。
+        // isBossBattle/eventIdだけでは深淵の裂け目などStory外の特殊戦闘も該当するため、
+        // StoryManagerの正式イベントマスターに対象phaseが存在する場合だけ予約する。
 		if (isBossBattle && eventId) {
             const phase = storyWinEventId ? 'actions' : 'win';
             const queuedEventId = storyWinEventId || eventId;
-            if (typeof StoryManager !== 'undefined' && typeof StoryManager.queueEvent === 'function') {
+            const storyEvent = (typeof StoryManager !== 'undefined' && StoryManager.events)
+                ? StoryManager.events[queuedEventId]
+                : ((typeof STORY_MANAGER_DATA !== 'undefined' && STORY_MANAGER_DATA.events)
+                    ? STORY_MANAGER_DATA.events[queuedEventId]
+                    : null);
+            const phaseActions = phase === 'win' ? storyEvent?.winActions : storyEvent?.actions;
+            const isRegisteredStoryEvent = Array.isArray(phaseActions);
+
+            if (isRegisteredStoryEvent && typeof StoryManager !== 'undefined' && typeof StoryManager.queueEvent === 'function') {
                 StoryManager.queueEvent(queuedEventId, phase, {
                     save: false,
                     dedupeKey: `battle:${App.data.battle?.battleId || App.data.battle?.battleChainId || 'unknown'}:${phase}:${queuedEventId}`,
                     meta: { battleChainId: App.data.battle?.battleChainId || null }
                 });
-            } else {
+            } else if (isRegisteredStoryEvent) {
                 if (!App.data.progress) App.data.progress = {};
                 if (storyWinEventId) App.data.progress.pendingEventId = storyWinEventId;
                 else App.data.progress.pendingBattleWinEventId = eventId;
+            } else {
+                console.warn('[Battle] Storyイベントではない戦闘eventIdを戦後キューへ登録しません:', queuedEventId, phase);
             }
 		}
 		
