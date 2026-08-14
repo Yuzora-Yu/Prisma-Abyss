@@ -1,0 +1,11 @@
+# GitHub Pages / Jekyll production exclusions
+# These directories are development/support resources and are not required by the game runtime.
+exclude:
+  - image-backups
+  - edit
+  - canon
+  - development_notes
+  - docs
+  - tools
+  - logs
+  - .agents
