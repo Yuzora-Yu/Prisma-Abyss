@@ -456,9 +456,9 @@ const App = {
         const maxVisible = Math.max(1, Number(walkConfig.maxVisiblePartyMembers || 4));
         const maxVisibleFlying = Math.max(1, Number(walkConfig.maxVisibleFlyingPartyMembers || 1));
         const characters = data.party
-            .slice(0, maxVisible)
             .map(uid => uid ? data.characters.find(character => character?.uid === uid) || null : null)
-            .filter(character => character && character.isMonsterAlly !== true);
+            .filter(character => character && character.isMonsterAlly !== true)
+            .slice(0, maxVisible);
         // 飛行中は当面、追従する隊列を出さず先頭の主人公だけを表示する。
         return data.transportMode === 'flying' ? characters.slice(0, maxVisibleFlying) : characters;
     },
@@ -2331,7 +2331,7 @@ const App = {
 
 	// 全画像データの手動/初回ダウンロード用キャッシュ名。
 	// sw.js の RUNTIME_CACHE_NAME と揃えること。
-	fullDataCacheName: 'prisma-abyss-v43.20260814-runtime',
+	fullDataCacheName: 'prisma-abyss-v44.20260814-runtime',
 
 
 	// 初回起動時の「全データを今ダウンロードしますか？」で「いいえ」を選んだ記録。
@@ -9664,6 +9664,11 @@ const Field = {
     autoWalkTimer: null,
     autoWalkToken: 0,
     autoWalkActive: false,
+    // 先頭キャラが通ったマスを古い順に後続へ渡す、DQ型隊列の移動履歴。
+    // セーブデータへは含めず、マップ遷移・座標ワープ・乗り物変更時は安全に初期化する。
+    partyTrail: [],
+    partyTrailContextKey: '',
+    partyTrailLeaderState: null,
 
     // 待機中の足踏みアニメ用タイマー。
     // 重要: これは演出専用。Field.move() は呼ばず、座標/歩数/エンカウント/セーブには一切触れない。
@@ -9674,6 +9679,130 @@ const Field = {
     // 冒険者NPC・全回復の泉・深淵の裂け目はタイル文字ではなく別データで管理し、
     // Field側で床の上に重ねる。既存の宝箱/階段/壁判定に影響させないため。
     directImageCache: {},
+
+    getPartyTrailContextKey: () => {
+        const areaKey = Field.getCurrentAreaKey?.()
+            || App.data?.location?.area
+            || App.data?.location?.worldKey
+            || 'WORLD';
+        const floor = Field.currentMapData?.isDungeon
+            ? Number((typeof Dungeon !== 'undefined' ? Dungeon.floor : null) || App.data?.progress?.floor || 0)
+            : 0;
+        const mapKind = Field.currentMapData
+            ? `${Field.currentMapData.isFixed ? 'fixed' : 'local'}:${Field.currentMapData.name || ''}`
+            : `world:${App.data?.location?.worldKey || areaKey}`;
+        return `${areaKey}:${floor}:${mapKind}:${App.data?.transportMode || 'walk'}`;
+    },
+
+    resetPartyTrail: () => {
+        Field.partyTrail = [];
+        Field.partyTrailContextKey = Field.getPartyTrailContextKey();
+        Field.partyTrailLeaderState = {
+            x: Number(Field.x),
+            y: Number(Field.y),
+            dir: Number(Field.dir)
+        };
+    },
+
+    syncPartyTrail: () => {
+        const contextKey = Field.getPartyTrailContextKey();
+        const leader = Field.partyTrailLeaderState;
+        const movedOutsideFieldMove = !leader
+            || Number(leader.x) !== Number(Field.x)
+            || Number(leader.y) !== Number(Field.y);
+        if (Field.partyTrailContextKey !== contextKey || movedOutsideFieldMove) {
+            Field.resetPartyTrail();
+            return;
+        }
+        leader.dir = Number(Field.dir);
+    },
+
+    capturePartyTrailOrigin: () => {
+        Field.syncPartyTrail();
+        return {
+            x: Number(Field.x),
+            y: Number(Field.y),
+            dir: Number(Field.dir)
+        };
+    },
+
+    commitPartyTrailStep: (origin) => {
+        if (!origin || !Number.isFinite(Number(origin.x)) || !Number.isFinite(Number(origin.y))) {
+            Field.resetPartyTrail();
+            return;
+        }
+        const contextKey = Field.getPartyTrailContextKey();
+        if (Field.partyTrailContextKey !== contextKey) Field.partyTrail = [];
+        Field.partyTrailContextKey = contextKey;
+        Field.partyTrail.unshift({
+            x: Number(origin.x),
+            y: Number(origin.y),
+            dir: Number(origin.dir)
+        });
+        const maxVisible = Math.max(1, Number(globalThis.PRISMA_ASSETS?.characterWalk?.maxVisiblePartyMembers || 4));
+        Field.partyTrail.length = Math.min(Field.partyTrail.length, Math.max(0, maxVisible - 1));
+        Field.partyTrailLeaderState = {
+            x: Number(Field.x),
+            y: Number(Field.y),
+            dir: Number(Field.dir)
+        };
+    },
+
+    getPartyTrailDisplayPoint: (state) => {
+        let x = Number(state?.x ?? Field.x);
+        let y = Number(state?.y ?? Field.y);
+        if (!Field.currentMapData) {
+            const worldMap = Field.getActiveWorldMap?.();
+            const mapW = Number(worldMap?.[0]?.length || 0);
+            const mapH = Number(worldMap?.length || 0);
+            if (mapW > 0) {
+                while (x - Number(Field.x) > mapW / 2) x -= mapW;
+                while (Number(Field.x) - x > mapW / 2) x += mapW;
+            }
+            if (mapH > 0) {
+                while (y - Number(Field.y) > mapH / 2) y -= mapH;
+                while (Number(Field.y) - y > mapH / 2) y += mapH;
+            }
+        }
+        return { x, y };
+    },
+
+    getPartyWalkRenderEntries: () => {
+        Field.syncPartyTrail();
+        let members = App.getFieldPartyWalkCharacters?.() || [];
+        const vehicleOnly = App.data?.transportMode === 'flying'
+            || App.data?.transportMode === 'boat'
+            || Field.isPlayerOnFloodedWater?.();
+        if (vehicleOnly) members = members.slice(0, 1);
+        if (!members.length) {
+            const hero = App.getHeroCharacter?.();
+            if (hero) members = [hero];
+        }
+
+        const directions = ['down', 'left', 'right', 'up'];
+        return members.map((character, partyIndex) => {
+            const trailState = partyIndex === 0
+                ? { x: Field.x, y: Field.y, dir: Field.dir }
+                : (Field.partyTrail[partyIndex - 1]
+                    || Field.partyTrail[Field.partyTrail.length - 1]
+                    || { x: Field.x, y: Field.y, dir: Field.dir });
+            const position = Field.getPartyTrailDisplayPoint(trailState);
+            const direction = directions[Number(trailState.dir)] || 'down';
+            const graphic = partyIndex === 0
+                ? App.getPlayerGraphicPresentation(direction, Field.step)
+                : App.getCharacterWalkGraphicPresentation(character, direction, Field.step);
+            if (!graphic) return null;
+            return {
+                character,
+                partyIndex,
+                isLeader: partyIndex === 0,
+                x: position.x,
+                y: position.y,
+                direction,
+                graphic
+            };
+        }).filter(Boolean);
+    },
 
     // Fixed and generated maps share one rectangular tile contract. Saved procedural
     // floors from older builds can contain sparse rows, so every renderer/movement
@@ -10060,6 +10189,7 @@ const Field = {
             }
         }
 
+        Field.resetPartyTrail();
         Field.ready = true;
         if (typeof Field.bindViewportResizeObserver === 'function') Field.bindViewportResizeObserver();
         if (typeof Field.syncCanvasToWrapperSize === 'function') Field.syncCanvasToWrapperSize();
@@ -10164,6 +10294,7 @@ const Field = {
         Field.y = Number.isFinite(Number(options.targetY)) ? Number(options.targetY) : Number(entryPoint.y);
         App.data.location.x = Field.x;
         App.data.location.y = Field.y;
+        Field.resetPartyTrail();
         if (typeof App.discoverFixedMap === 'function') App.discoverFixedMap(targetAreaKey, { save: false });
         if (App.data.location.worldKey === 'ABYSS_WORLD' && typeof App.discoverFixedMap === 'function') {
             App.discoverFixedMap('ABYSS_WORLD', { save: false, silent: true });
@@ -12759,6 +12890,7 @@ const Field = {
 
         if (dy > 0) Field.dir = 0; else if (dx < 0) Field.dir = 1; else if (dx > 0) Field.dir = 2; else if (dy < 0) Field.dir = 3;
         Field.step = (Field.step === 1) ? 2 : 1;
+        const partyTrailOrigin = Field.capturePartyTrailOrigin();
         let nx = Field.x + dx, ny = Field.y + dy;
         App.clearAction();
 
@@ -12941,6 +13073,7 @@ const Field = {
                     App.data.transportMode = null;
                     Field.x = Number(exit.x); Field.y = Number(exit.y);
                     App.data.location.x = Field.x; App.data.location.y = Field.y;
+                    Field.resetPartyTrail();
                     Field.currentMapData = null;
                     App.save(); Field.render();
                     if (typeof Field.startIdleStep === 'function') Field.startIdleStep();
@@ -12950,6 +13083,7 @@ const Field = {
 
             Field.x = nx; Field.y = ny;
             App.data.location.x = nx; App.data.location.y = ny;
+            Field.commitPartyTrailStep(partyTrailOrigin);
 
             // 同一MAP内の区画境界などは、床を踏んだ瞬間に遷移する。
             // 別MAPへの主要な出入口は従来どおりアクションボタンを使う。
@@ -13045,6 +13179,7 @@ const Field = {
                 App.log("小舟を降りた。");
             }
             Field.x = nx; Field.y = ny; App.data.location.x = nx; App.data.location.y = ny; 
+            Field.commitPartyTrailStep(partyTrailOrigin);
             const hasTileAction = isFlying ? false : Field.refreshCurrentAction({ silent: false });
             if (!isFlying && !hasTileAction) {
                 // --- エンカウント判定ロジック ---
@@ -13626,14 +13761,24 @@ const Field = {
         drawVisibleDungeonWallContactShadows();
 
         // 5. プレイヤーの描画 (hero_... の画像もスプライトシート化していれば対応可能)
-        const direction = ['down','left','right','up'][Field.dir];
         const isFloodedBoat = Field.isPlayerOnFloodedWater();
-        const playerGraphic = App.getPlayerGraphicPresentation(direction, Field.step);
-        const pKey = isFloodedBoat ? `overlay_magic_boat_${direction}` : playerGraphic.key;
-        if (!isFloodedBoat) drawFootShadow(cx - ts / 2, cy - ts / 2, 0, 0.34, ts * 0.25, ts * 0.09);
-        if (!drawGraphic(pKey, cx-ts/2, cy-ts/2, ts, ts)) {
-            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI*2); ctx.fill();
-        }
+        const isWorldBoat = !Field.currentMapData && App.data?.transportMode === 'boat';
+        const isBoat = isFloodedBoat || isWorldBoat;
+        const partyEntries = Field.getPartyWalkRenderEntries?.() || [];
+        partyEntries
+            .slice()
+            .sort((a, b) => Number(a.y) - Number(b.y) || Number(b.partyIndex) - Number(a.partyIndex))
+            .forEach((entry) => {
+                const px = cx + ((Number(entry.x) - Number(Field.x)) * ts);
+                const py = cy + ((Number(entry.y) - Number(Field.y)) * ts);
+                const pKey = isBoat && entry.isLeader
+                    ? `overlay_magic_boat_${entry.direction}`
+                    : entry.graphic.key;
+                if (!isBoat) drawFootShadow(px - ts / 2, py - ts / 2, 0, 0.34, ts * 0.25, ts * 0.09);
+                if (!drawGraphic(pKey, px - ts / 2, py - ts / 2, ts, ts) && entry.isLeader) {
+                    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI * 2); ctx.fill();
+                }
+            });
 
         // 特殊フロアの空気感をキャンバス上に重ねる。
         // ミニマップはこの後に描くため、もやでミニマップが読めなくなることはない。

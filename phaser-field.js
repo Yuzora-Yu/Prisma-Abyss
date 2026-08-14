@@ -49,6 +49,7 @@
         textureKeys: new Set(),
         fixedBoundaryTextureKey: null,
         lastPlayerTextureKey: null,
+        lastPartyTextureKeys: {},
         resizeObserver: null,
         lastStaticSignature: null,
         lastParentWidth: 0,
@@ -1450,36 +1451,61 @@
 
     const drawPlayer = (scene, field) => {
         destroyObjects(state.actorObjects);
-        const px = Number(field.x) * TILE_SIZE + TILE_SIZE / 2;
-        const py = Number(field.y) * TILE_SIZE + TILE_SIZE;
-        const direction = ['down', 'left', 'right', 'up'][field.dir];
         const transport = getApp()?.data?.transportMode;
         const onWorldMap = !field.currentMapData;
         const floodedBoat = typeof field.isPlayerOnFloodedWater === 'function' && field.isPlayerOnFloodedWater();
         // The world-map vehicle state must not leak into dungeon rendering.
         // On flooded floors, show the boat only while the current tile is water.
         const isBoat = (onWorldMap && transport === 'boat') || floodedBoat;
-        const isFlying = onWorldMap && transport === 'flying';
-        const playerGraphic = getApp()?.getPlayerGraphicPresentation?.(direction, field.step)
-            || { key: `character_walk_301_${direction}_${field.step}`, width: TILE_SIZE, height: TILE_SIZE };
-        const heroKey = isBoat ? `overlay_magic_boat_${direction}` : playerGraphic.key;
-        if (!isBoat) {
-            // 主人公の左右へはみ出さず、両足の接地だけが分かる幅にする。
-            addShadow(scene, px, py - 2, 16, 0.34, Number(field.y) * 100 + 82, state.actorObjects);
-        }
-        // Request the desired frame, but never replace the actor with a white circle while
-        // a newly cached wing frame is being promoted into Phaser's texture manager.
-        window.GRAPHICS?.get?.(heroKey);
-        const normalKey = `character_walk_301_${direction}_${field.step}`;
-        const fallbackKeys = [state.lastPlayerTextureKey, normalKey, 'character_walk_301_down_1'];
-        const drawKey = [heroKey, ...fallbackKeys].find(key => key && ensureTexture(scene, key));
-        const usesPlayerGraphic = drawKey === heroKey && !isBoat;
-        const playerImage = drawKey ? addImage(scene, drawKey, px, py, {
-            depth: Number(field.y) * 100 + 88,
-            width: usesPlayerGraphic ? playerGraphic.width : TILE_SIZE,
-            height: usesPlayerGraphic ? playerGraphic.height : TILE_SIZE
-        }, state.actorObjects) : null;
-        if (playerImage) state.lastPlayerTextureKey = drawKey;
+        const partyEntries = typeof field.getPartyWalkRenderEntries === 'function'
+            ? field.getPartyWalkRenderEntries()
+            : [];
+        const leaderDirection = ['down', 'left', 'right', 'up'][field.dir] || 'down';
+        const fallbackGraphic = getApp()?.getPlayerGraphicPresentation?.(leaderDirection, field.step)
+            || { key: `character_walk_301_${leaderDirection}_${field.step}`, width: TILE_SIZE, height: TILE_SIZE, assetId: '301' };
+        const renderEntries = partyEntries.length ? partyEntries : [{
+            partyIndex: 0,
+            isLeader: true,
+            x: Number(field.x),
+            y: Number(field.y),
+            direction: leaderDirection,
+            graphic: fallbackGraphic
+        }];
+
+        renderEntries
+            .slice()
+            .sort((a, b) => Number(a.y) - Number(b.y) || Number(b.partyIndex) - Number(a.partyIndex))
+            .forEach((entry) => {
+                const px = Number(entry.x) * TILE_SIZE + TILE_SIZE / 2;
+                const py = Number(entry.y) * TILE_SIZE + TILE_SIZE;
+                const graphic = entry.graphic || fallbackGraphic;
+                const desiredKey = isBoat && entry.isLeader
+                    ? `overlay_magic_boat_${entry.direction}`
+                    : graphic.key;
+                if (!isBoat) {
+                    addShadow(scene, px, py - 2, 16, 0.34, Number(entry.y) * 100 + 82, state.actorObjects);
+                }
+                window.GRAPHICS?.get?.(desiredKey);
+                const assetKey = String(graphic.assetId || `party_${entry.partyIndex}`);
+                const ownFallback = `character_walk_${assetKey}_down_1`;
+                const fallbackKeys = entry.isLeader
+                    ? [state.lastPlayerTextureKey, state.lastPartyTextureKeys[assetKey], ownFallback, 'character_walk_301_down_1']
+                    : [state.lastPartyTextureKeys[assetKey], ownFallback];
+                const drawKey = [desiredKey, ...fallbackKeys].find(key => key && ensureTexture(scene, key));
+                if (!drawKey) return;
+                const usesDesiredGraphic = drawKey === desiredKey && !isBoat;
+                const image = addImage(scene, drawKey, px, py, {
+                    depth: Number(entry.y) * 100 + 88 + (entry.isLeader ? 0.2 : 0),
+                    width: usesDesiredGraphic ? graphic.width : TILE_SIZE,
+                    height: usesDesiredGraphic ? graphic.height : TILE_SIZE
+                }, state.actorObjects);
+                if (!image) return;
+                state.lastPartyTextureKeys[assetKey] = drawKey;
+                if (entry.isLeader) state.lastPlayerTextureKey = drawKey;
+            });
+
+        const px = Number(field.x) * TILE_SIZE + TILE_SIZE / 2;
+        const py = Number(field.y) * TILE_SIZE + TILE_SIZE;
         applyFieldCamera(scene, field);
         scene.cameras.main.setRoundPixels(true);
         if (state.atmosphereLight?.active) {
