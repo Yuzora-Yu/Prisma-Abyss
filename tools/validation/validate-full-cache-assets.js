@@ -8,7 +8,12 @@ const context = { console };
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-vm.runInContext(`${source}\nglobalThis.__ASSETS = PRISMA_ASSETS;`, context, { filename: 'assets.js' });
+vm.runInContext(source, context, { filename: 'assets.js' });
+// 実際のページとService Workerはassets.jsの後にmonsters.jsを読み、
+// そこで全モンスター画像をinstallImagesへ追加する。assets.js単体だけを検査すると
+// 数百件を見落とすため、runtimeと同じ順序で登録を完了させる。
+vm.runInContext(fs.readFileSync(path.join(root, 'monsters.js'), 'utf8'), context, { filename: 'monsters.js' });
+vm.runInContext('globalThis.__ASSETS = PRISMA_ASSETS;', context);
 
 const warmup = context.__ASSETS.cacheWarmup;
 const characterContext = { window: {} };
@@ -29,6 +34,44 @@ const failures = [];
 const registeredUrls = warmup.installImages || [];
 const duplicates = registeredUrls.filter((url, index) => registeredUrls.indexOf(url) !== index);
 if (duplicates.length) failures.push(`duplicate cache entries: ${[...new Set(duplicates)].join(', ')}`);
+const walkRegistry = context.__ASSETS.characterWalk || {};
+const expectedWalkFrames = [
+    'down_1', 'down_2', 'up_1', 'up_2',
+    'left_1', 'left_2', 'right_1', 'right_2',
+];
+if (JSON.stringify(walkRegistry.frames || []) !== JSON.stringify(expectedWalkFrames)) {
+    failures.push(`character walk frame registry mismatch: ${JSON.stringify(walkRegistry.frames || [])}`);
+}
+if (walkRegistry.maxVisiblePartyMembers !== 4 || walkRegistry.maxVisibleFlyingPartyMembers !== 1
+    || walkRegistry.hideMonsterAllies !== true || walkRegistry.idleAnimation !== 'step_cycle') {
+    failures.push(`character walk policy mismatch: ${JSON.stringify(walkRegistry)}`);
+}
+for (const id of walkRegistry.ids || []) {
+    for (const frame of expectedWalkFrames) {
+        const key = `character_walk_${id}_${frame}`;
+        const expectedUrl = `assets/characters/walk/${id}_${frame}.png`;
+        if (context.__ASSETS.graphics?.[key] !== expectedUrl) {
+            failures.push(`character walk graphic registry mismatch: ${key} -> ${context.__ASSETS.graphics?.[key] || '(missing)'}`);
+        }
+    }
+}
+const requiredPrologueCharacterAssets = [
+    'assets/characters/face/301_past5y.png',
+    'assets/characters/char_icon_301_past5y.png',
+    'assets/characters/char_face_403.png',
+    'assets/characters/walk/301_past5y_down_1.png',
+    'assets/characters/walk/301_past5y_down_2.png',
+    'assets/characters/walk/301_past5y_up_1.png',
+    'assets/characters/walk/301_past5y_up_2.png',
+    'assets/characters/walk/301_past5y_left_1.png',
+    'assets/characters/walk/301_past5y_left_2.png',
+    'assets/characters/walk/301_past5y_right_1.png',
+    'assets/characters/walk/301_past5y_right_2.png',
+    'assets/characters/map-stand/301_past5y_down.png',
+];
+for (const url of requiredPrologueCharacterAssets) {
+    if (!registeredUrls.includes(url)) failures.push(`prologue character asset is not registered for full cache: ${url}`);
+}
 for (const url of urls) {
     if (/^(?:https?:|data:|blob:)/i.test(url)) continue;
     const clean = url.split(/[?#]/, 1)[0];
@@ -36,6 +79,19 @@ for (const url of urls) {
     if (!file.startsWith(root + path.sep)) failures.push(`path escapes project root: ${url}`);
     else if (!fs.existsSync(file)) failures.push(`missing file: ${url}`);
     else if (fs.statSync(file).size === 0) failures.push(`empty file: ${url}`);
+    else if (/^assets\/characters\/(?:walk|map-stand)\/[^/]+\.png$/i.test(clean)) {
+        const header = fs.readFileSync(file).subarray(0, 24);
+        const isPng = header.length === 24 && header.toString('ascii', 1, 4) === 'PNG';
+        const width = isPng ? header.readUInt32BE(16) : 0;
+        const height = isPng ? header.readUInt32BE(20) : 0;
+        const walkMatch = clean.match(/^assets\/characters\/walk\/(.+)_(?:down|up|left|right)_[12]\.png$/i);
+        const expectedSize = walkMatch
+            ? Number(walkRegistry.sourceSizeById?.[walkMatch[1]] || walkRegistry.displaySize || 32)
+            : 32;
+        if (!isPng || width !== expectedSize || height !== expectedSize) {
+            failures.push(`character map graphic must be ${expectedSize}x${expectedSize} PNG: ${url} (${width}x${height})`);
+        }
+    }
 }
 
 const cacheNames = {

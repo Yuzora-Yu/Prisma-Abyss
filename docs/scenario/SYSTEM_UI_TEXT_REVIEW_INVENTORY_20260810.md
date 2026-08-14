@@ -1697,3 +1697,30 @@ Status: **inventory / no automatic replacement**
 |1672|story_system|`story.js:2226`|REXNOTE_REGULUS_CLEAR|レグルスを形作っていた魔法陣がほどけ、書架の奥に隠されていた机が姿を現した。|（2026-08-13 Phase3新規・D3レビュー可）|new_copy_inventory|
 |1673|item_name|`items.js:7063`|Item 701013|レクスノートの魔道書|（2026-08-13 Phase3新規）|new_copy_inventory|
 |1674|map_interaction_label|`map.js:2846`|rexnote basement entrance|地下迷宮へ降りる|（2026-08-13 Phase3新規）|new_copy_inventory|
+
+|1675|ui_button|`save_backup.js:504`|data export modal|オートセーブ出力|（2026-08-14ユーザー指定）|new_copy_approved|
+|1676|ui_description|`save_backup.js:504`|data export modal|現在のオートセーブ1件をファイルへ保存|（2026-08-14新規）|new_copy_inventory|
+|1677|ui_button|`save_backup.js:505`|data export modal|全セーブデータ出力|（2026-08-14ユーザー指定）|new_copy_approved|
+|1678|ui_description|`save_backup.js:505`|data export modal|オートセーブと手動セーブNo.1～20を一括保存|（2026-08-14新規）|new_copy_inventory|
+|1679|ui_button|`save_backup.js:506`|data export modal|Googleドライブへ出力|（2026-08-14ユーザー指定）|new_copy_approved|
+|1680|ui_description|`save_backup.js:506`|data export modal|全セーブデータを専用フォルダへ保存|（2026-08-14新規）|new_copy_inventory|
+|1681|ui_disabled_note|`save_backup.js:506`|Google Drive not configured|＜有効化が必要です＞|（2026-08-14ユーザー指定）|new_copy_approved|
+|1682|ui_button|`save_backup.js:509`|data import modal|オートセーブ読込|（2026-08-14ユーザー指定）|new_copy_approved|
+|1683|ui_description|`save_backup.js:509`|data import modal|1件のバックアップをオートセーブへ復元|（2026-08-14新規）|new_copy_inventory|
+|1684|ui_button|`save_backup.js:510`|data import modal|全セーブデータ読込|（2026-08-14ユーザー指定）|new_copy_approved|
+|1685|ui_description|`save_backup.js:510`|data import modal|オートセーブと手動セーブNo.1～20を一括復元|（2026-08-14新規）|new_copy_inventory|
+|1686|ui_button|`save_backup.js:511`|data import modal|Googleドライブから読込|（2026-08-14ユーザー指定）|new_copy_approved|
+|1687|ui_description|`save_backup.js:511`|data import modal|Googleドライブ上の全セーブデータを復元|（2026-08-14新規）|new_copy_inventory|
+|1688|ui_confirm|`save_backup.js:543`|all-save import|全セーブデータを読み込むと、現在のオートセーブと手動セーブNo.1～20は置き換わります。 / 読み込んで再開しますか？|（2026-08-14新規）|new_copy_inventory|
+|1689|ui_confirm|`save_backup.js:582`|Google Drive export|Googleドライブ上の全セーブデータを現在の内容で更新しますか？|（2026-08-14新規）|new_copy_inventory|
+|1690|ui_status|`save_backup.js:570`|all-save export|全セーブデータを出力しています……|（2026-08-14新規）|new_copy_inventory|
+|1691|ui_status|`save_backup.js:584`|Google Drive export|Googleドライブへ保存しています……|（2026-08-14新規）|new_copy_inventory|
+|1692|ui_status|`save_backup.js:592`|Google Drive import|Googleドライブのバックアップを確認しています……|（2026-08-14新規）|new_copy_inventory|
+|1693|ui_error|`save_backup.js:273`|Google Drive unavailable|Google Driveバックアップはまだ有効化されていません。|（2026-08-14新規）|new_copy_inventory|
+|1694|ui_error|`save_slots.js:252`|manual save capacity|ブラウザの保存領域が不足しているため、手動セーブを保存できません。データ出力でバックアップした後、端末の空き容量を確認してください。|（2026-08-14新規）|new_copy_inventory|
+|1695|ui_error|`save_slots.js:264`|manual save verification|手動セーブを書き込みましたが、保存内容の確認に失敗しました。上書き前のデータへ戻しました。|（2026-08-14新規）|new_copy_inventory|
+|1696|ui_error|`save_slots.js:267`|manual save unavailable|この環境では手動セーブ領域を利用できません。オートセーブまたはデータ出力を利用してください。|（2026-08-14新規）|new_copy_inventory|
+|1697|ui_button|`menus_config.js:195`|save/settings menu|素材一括ダウンロード|（2026-08-14ユーザー指定）|new_copy_approved|
+|1698|ui_description|`menus_config.js:196`|save/settings menu|未取得のゲーム画像をブラウザへ保存|（2026-08-14役割明確化）|new_copy_inventory|
+|1699|ui_confirm|`main.html:286`|new game overwrite|はじめから開始すると、現在のオートセーブは即時上書きされます。 / 手動セーブNo.1～20は変更されません。 / 新しい冒険を始めますか？|（既存文言の枠数更新）|approved_rewrite|
+|1700|ui_confirm|`main.html:303`|auto-save delete|現在のオートセーブを削除しますか？ / 手動セーブNo.1～20は削除されません。|（既存文言の枠数更新）|approved_rewrite|

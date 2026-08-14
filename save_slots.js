@@ -1,4 +1,4 @@
-/* save_slots.js - オート1枠 + 手動9枠の保存管理と共通スロットUI */
+/* save_slots.js - オート1枠 + 手動20枠の保存管理と共通スロットUI */
 (function(global) {
     'use strict';
 
@@ -6,7 +6,7 @@
     const DB_VERSION = 1;
     const STORE_NAME = 'slots';
     const MANUAL_SLOT_MIN = 1;
-    const MANUAL_SLOT_MAX = 9;
+    const MANUAL_SLOT_MAX = 20;
     const RECORD_SCHEMA_VERSION = 1;
 
     const AREA_FALLBACK_NAMES = Object.freeze({
@@ -222,6 +222,53 @@
             return String(text || '').length;
         },
 
+        estimateStorage: async (pendingBytes = 0) => {
+            const storageManager = global.navigator?.storage;
+            if (!storageManager || typeof storageManager.estimate !== 'function') return null;
+            try {
+                const estimate = await storageManager.estimate();
+                const usage = Math.max(0, Number(estimate?.usage || 0));
+                const quota = Math.max(0, Number(estimate?.quota || 0));
+                const remaining = quota > 0 ? Math.max(0, quota - usage) : null;
+                const payloadBytes = Math.max(0, Number(pendingBytes || 0));
+                return {
+                    usage,
+                    quota,
+                    remaining,
+                    payloadBytes,
+                    minimumWriteMargin: Math.max(1024 * 1024, payloadBytes * 2),
+                    projectedManualBytes: payloadBytes * MANUAL_SLOT_MAX
+                };
+            } catch (error) {
+                console.warn('[SAVE SLOTS] 保存容量の推定値を取得できませんでした。', error);
+                return null;
+            }
+        },
+
+        assertEstimatedCapacity: async (pendingBytes) => {
+            const estimate = await SaveSlots.estimateStorage(pendingBytes);
+            if (!estimate || estimate.remaining === null) return estimate;
+            if (estimate.remaining < estimate.minimumWriteMargin) {
+                const error = new Error('ブラウザの保存領域が不足しているため、手動セーブを保存できません。データ出力でバックアップした後、端末の空き容量を確認してください。');
+                error.code = 'SAVE_QUOTA_LOW';
+                throw error;
+            }
+            return estimate;
+        },
+
+        getSaveErrorMessage: (error) => {
+            if (error?.code === 'SAVE_QUOTA_LOW' || error?.name === 'QuotaExceededError') {
+                return 'ブラウザの保存領域が不足しているため、手動セーブを保存できません。データ出力でバックアップした後、端末の空き容量を確認してください。';
+            }
+            if (/保存確認|完全性|checksum|チェックサム/i.test(String(error?.message || ''))) {
+                return '手動セーブを書き込みましたが、保存内容の確認に失敗しました。上書き前のデータへ戻しました。';
+            }
+            if (/IndexedDB|手動セーブ領域|transaction|database/i.test(String(error?.message || ''))) {
+                return 'この環境では手動セーブ領域を利用できません。オートセーブまたはデータ出力を利用してください。';
+            }
+            return String(error?.message || '手動セーブを保存できませんでした。');
+        },
+
         fnv1a: (text) => {
             let hash = 0x811c9dc5;
             const value = String(text || '');
@@ -296,6 +343,33 @@
             return slots;
         },
 
+        listManualSlotRecords: async () => {
+            const slots = await SaveSlots.listManualSlots();
+            return Array.from(slots.values())
+                .filter(record => record && Number(record.slotId) >= MANUAL_SLOT_MIN && Number(record.slotId) <= MANUAL_SLOT_MAX)
+                .sort((left, right) => Number(left.slotId) - Number(right.slotId));
+        },
+
+        replaceManualSlotRecords: async (records) => {
+            if (!Array.isArray(records)) throw new Error('手動セーブの復元内容が不正です。');
+            const normalized = records.map(record => {
+                const slotId = SaveSlots.normalizeManualSlotId(record?.slotId);
+                return { ...record, slotId };
+            });
+            if (new Set(normalized.map(record => record.slotId)).size !== normalized.length) {
+                throw new Error('手動セーブのスロット番号が重複しています。');
+            }
+
+            const db = await SaveSlots.openDatabase();
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const done = SaveSlots.transactionDone(tx);
+            const store = tx.objectStore(STORE_NAME);
+            store.clear();
+            normalized.forEach(record => store.put(record));
+            await done;
+            return true;
+        },
+
         saveManualSlot: async (slotId, data) => {
             const normalized = SaveSlots.normalizeManualSlotId(slotId);
             if (!data || typeof data !== 'object') throw new Error('保存するゲームデータがありません。');
@@ -304,6 +378,7 @@
             if (app?.commitPlayTime) app.commitPlayTime({ keepRunning: true });
             const payload = app?.serializeSaveData ? app.serializeSaveData(data) : JSON.stringify(data);
             SaveSlots.parsePayload(payload);
+            await SaveSlots.assertEstimatedCapacity(SaveSlots.bytesOf(payload));
             const updatedAt = new Date().toISOString();
             const checksum = await SaveSlots.computeChecksum(payload);
             const record = {
@@ -727,7 +802,7 @@
                     await SaveSlotUI.showMessage(`セーブNo.${slotId}へ保存しました。`);
                 } catch (error) {
                     console.error(error);
-                    await SaveSlotUI.showMessage('今は利用できないようだ。');
+                    await SaveSlotUI.showMessage(SaveSlots.getSaveErrorMessage(error));
                 } finally {
                     SaveSlotUI.busy = false;
                     await SaveSlotUI.render();

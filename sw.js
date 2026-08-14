@@ -8,7 +8,7 @@
 // - App Shell と重要画像はService Worker install時にキャッシュする。
 // - 全画像リストの正本は assets.js の PRISMA_ASSETS.cacheWarmup.installImages。
 // - sw.js 側にモンスター/エフェクト/背景の巨大配列を手書きで復活させないこと。
-// - 設定メニューの「全データダウンロード」も main.js の同じロジックを使う。
+// - 設定メニューの「素材一括ダウンロード」も main.js の同じロジックを使う。
 // - 起動後/設定実行後の補助再試行は main.js からの PRISMA_WARM_CACHE で行う。
 // ============================================================================
 
@@ -23,7 +23,7 @@ try {
 
 // 表示用語・お知らせUI更新ではApp Shellだけ更新し、画像の全量キャッシュは再取得しない。
 // RUNTIME_CACHE_NAMEはmain.jsのfullDataCacheNameと同じ値を維持する。
-const CACHE_NAME = "prisma-abyss-v58.20260814";
+const CACHE_NAME = "prisma-abyss-v59.20260814";
 const RUNTIME_CACHE_NAME = "prisma-abyss-v43.20260814-runtime";
 const WARM_CACHE_META_KEY = "__prisma_abyss_warm_cache_complete__";
 
@@ -47,6 +47,7 @@ const PRECACHE_FILES = [
   "audio.js",
   "save_crypto.js",
   "save_slots.js",
+  "save_backup.js",
   "menus.js",
   "menus_config.js",
   "menus_party.js",

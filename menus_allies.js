@@ -547,7 +547,9 @@ const MenuAllies = {
         };
         window.saveName = () => {
             const input = document.getElementById('char-name-input');
-            const newName = input.value.trim();
+            const newName = typeof App.sanitizeCharacterName === 'function'
+                ? App.sanitizeCharacterName(input?.value, c.name || '冒険者', 10)
+                : String(input?.value || '').replace(/[<>&"'`\\\u0000-\u001F\u007F-\u009F]/g, '').trim().slice(0, 10);
             if(newName.length > 0) {
                 c.name = newName;
                 App.save();
@@ -1011,13 +1013,13 @@ const MenuAllies = {
 
                     <div style="flex:1;">
                         <div id="char-name-display" style="display:flex; align-items:center; margin-bottom:2px;">
-                            <div style="font-size:16px; font-weight:bold; color:#fff; margin-right:5px;">${c.name}</div>
+                            <div style="font-size:16px; font-weight:bold; color:#fff; margin-right:5px;">${App.escapeHtml(c.name)}</div>
                             <div style="font-size:12px; color:#f0f; font-weight:bold;">+${lb}</div>
                             <button class="btn" style="margin-left:auto; padding:0 6px; font-size:10px;" onclick="window.toggleNameEdit()">✎</button>
                         </div>
 
                         <div id="char-name-edit" style="display:none; align-items:center; margin-bottom:2px;">
-                            <input type="text" id="char-name-input" value="${c.name}" maxlength="10" style="width:100px; background:#333; color:#fff; border:1px solid #888; padding:2px; font-size:12px;">
+                            <input type="text" id="char-name-input" value="${App.escapeHtml(c.name)}" maxlength="10" autocomplete="off" style="width:100px; background:#333; color:#fff; border:1px solid #888; padding:2px; font-size:12px;">
                             <button class="btn" style="margin-left:5px; padding:2px 6px; font-size:10px;" onclick="window.saveName()">OK</button>
                         </div>
 

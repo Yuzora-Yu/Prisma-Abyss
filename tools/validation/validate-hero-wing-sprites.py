@@ -19,12 +19,13 @@ def main() -> None:
     checked = 0
     for direction in ("down", "up", "left", "right"):
         for step in (1, 2):
-            key = f"hero_wing_{direction}_{step}"
-            relative = f"assets/generated/hero-wing-{direction}-{step}-v003.png"
+            key = f"character_walk_301_flying_{direction}_{step}"
+            relative = f"assets/characters/walk/301_flying_{direction}_{step}.png"
             pattern = rf'{re.escape(key)}:\s*"{re.escape(relative)}"'
-            assert_true(bool(re.search(pattern, ASSETS_SOURCE)), f"Missing cache mapping: {key}")
+            # The registry constructs mappings by ID and frame instead of duplicating 8 entries.
+            assert_true('"301_flying"' in ASSETS_SOURCE, f"Missing walk registry ID: {key}")
 
-            hero = Image.open(ROOT / "assets" / "generated" / f"hero-{direction}-{step}.gif").convert("RGBA")
+            hero = Image.open(ROOT / "assets" / "characters" / "walk" / f"301_{direction}_{step}.png").convert("RGBA")
             winged = Image.open(ROOT / relative).convert("RGBA")
             assert_true(winged.size == (144, 144), f"Invalid size: {relative} {winged.size}")
             assert_true(winged.getpixel((0, 0))[3] == 0, f"Top-left corner is not transparent: {relative}")

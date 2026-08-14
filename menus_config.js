@@ -85,6 +85,14 @@ const MenuConfig = {
         SaveSlotUI.open(mode === 'save' ? 'save' : 'load', { context: 'game' });
     },
 
+    openDataModal: (mode) => {
+        if (typeof SaveDataUI === 'undefined' || typeof SaveDataUI.open !== 'function') {
+            Menu.msg('データ管理機能を読み込めませんでした。');
+            return;
+        }
+        SaveDataUI.open(mode === 'import' ? 'import' : 'export');
+    },
+
     setBattleSpeed: (speed) => {
         const settings = MenuConfig.ensureSettings();
         settings.battleSpeed = ['normal', 'fast', 'fastest'].includes(speed) ? speed : 'normal';
@@ -175,17 +183,17 @@ const MenuConfig = {
                     <button class="btn config-save-action" type="button" onclick="MenuConfig.openSaveSlots('load')">
                         <span class="config-save-action-title">ロード</span>
                     </button>
-                    <button class="btn config-save-action" type="button" onclick="App.downloadSave()">
+                    <button class="btn config-save-action" type="button" onclick="MenuConfig.openDataModal('export')">
                         <span class="config-save-action-title">データ出力</span>
-                        <span class="config-save-action-desc">現在のオートセーブをバックアップ</span>
+                        <span class="config-save-action-desc">オート・全セーブ・Googleドライブ</span>
                     </button>
-                    <button class="btn config-save-action" type="button" onclick="App.importSave()">
+                    <button class="btn config-save-action" type="button" onclick="MenuConfig.openDataModal('import')">
                         <span class="config-save-action-title">データ読込</span>
-                        <span class="config-save-action-desc">バックアップをオートセーブへ復元</span>
+                        <span class="config-save-action-desc">オート・全セーブ・Googleドライブ</span>
                     </button>
                     <button class="btn config-save-action" type="button" onclick="MenuConfig.downloadAllData()">
-                        <span class="config-save-action-title">一括ダウンロード</span>
-                        <span class="config-save-action-desc">ゲーム画像などの全データを端末へ保存</span>
+                        <span class="config-save-action-title">素材一括ダウンロード</span>
+                        <span class="config-save-action-desc">未取得のゲーム画像をブラウザへ保存</span>
                     </button>
                 </div>
             `;

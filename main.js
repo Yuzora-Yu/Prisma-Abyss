@@ -5521,6 +5521,20 @@ const App = {
         "'": '&#39;'
     }[ch])),
 
+    sanitizeCharacterName: (value, fallback = '冒険者', maxLength = 10) => {
+        const normalize = input => {
+            let text = String(input ?? '');
+            if (typeof text.normalize === 'function') text = text.normalize('NFKC');
+            text = text
+                .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+                .replace(/[<>&"'`\\]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return Array.from(text).slice(0, Math.max(1, Number(maxLength) || 10)).join('');
+        };
+        return normalize(value) || normalize(fallback) || '冒険者';
+    },
+
     getQuestKindLabel: (kind) => ({
         hunt: '討伐依頼',
         boss: '強敵討伐',
@@ -6945,7 +6959,7 @@ load: () => {
     },
 
 	createGameData: (imgSrc) => {
-        const name = document.getElementById('player-name').value || 'アルス';
+        const name = App.sanitizeCharacterName(document.getElementById('player-name').value, 'アルス', 8);
         App.data = JSON.parse(JSON.stringify(INITIAL_DATA_TEMPLATE));
         App.ensureSettings();
         App.ensureWorldState(App.data);
@@ -8964,6 +8978,7 @@ load: () => {
         if (data.characters && Array.isArray(data.characters)) {
             data.characters.forEach(char => {
                 if (!char || typeof char !== 'object') return;
+                char.name = App.sanitizeCharacterName(char.name, char.isMonsterAlly === true ? (char.job || '仲間モンスター') : '冒険者');
                 if (char.mdef === undefined || char.mdef === null) {
                     char.mdef = Math.floor((char.mag || 0) * 0.8);
                 }
@@ -9131,7 +9146,7 @@ load: () => {
                     if (App.isImportableSaveData(loadedData)) {
                         const migratedData = App.migrateImportedSaveData(JSON.parse(JSON.stringify(loadedData)));
                         const suffix = isLegacy ? "\n\n旧形式のバックアップは、読み込み時に現在の形式へ補正されます。" : "";
-                        if (await App.showConfirm(`バックアップを読み込むと、現在のオートセーブは即時上書きされます。\n手動セーブNo.1～9は変更されません。\n\n読み込んで再開しますか？${suffix}`)) {
+                        if (await App.showConfirm(`バックアップを読み込むと、現在のオートセーブは即時上書きされます。\n手動セーブNo.1～20は変更されません。\n\n読み込んで再開しますか？${suffix}`)) {
                             if (typeof SaveSlots !== 'undefined' && typeof SaveSlots.writeDataToAutoSlot === 'function') {
                                 SaveSlots.writeDataToAutoSlot(migratedData);
                             } else {

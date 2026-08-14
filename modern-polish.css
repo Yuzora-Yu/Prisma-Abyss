@@ -7159,7 +7159,7 @@ body.game-page .menu-dialog-footer.is-list {
 }
 
 /* ========================================================================== */
-/* Phase2M: 設定2タブ / オート1枠＋手動9枠 / セーブ一覧                     */
+/* Phase2M: 設定2タブ / オート1枠＋手動20枠 / セーブ一覧                    */
 /* ========================================================================== */
 body.game-page .config-tab-bar {
   display: flex;
@@ -7553,6 +7553,81 @@ body.game-page .config-save-action-desc {
 
 .save-slot-footer .btn {
   width: min(100%, 220px);
+}
+
+.save-data-dialog {
+  width: min(100%, 440px);
+  height: auto;
+  max-height: min(100%, 620px);
+}
+
+.save-data-overlay.is-game .save-data-dialog {
+  width: min(100%, 400px);
+  height: auto;
+}
+
+.save-data-body {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+  background: #0c0c0c;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.save-data-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 12px;
+  text-align: left;
+  background: #043f46;
+}
+
+.save-data-action-title {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.save-data-action-desc {
+  margin-top: 4px;
+  color: #b8ced0;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.save-data-action:disabled {
+  border-color: #444;
+  color: #888;
+  background: #202020;
+  opacity: 0.72;
+}
+
+.save-data-action:disabled .save-data-action-title,
+.save-data-action:disabled .save-data-action-desc {
+  color: #888;
+}
+
+.save-data-status {
+  display: none;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-top: 1px solid #444;
+  color: #d8ca9d;
+  background: #171717;
+  font-size: 10px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.save-data-status:not(:empty) {
+  display: block;
 }
 
 @media (max-width: 390px) {

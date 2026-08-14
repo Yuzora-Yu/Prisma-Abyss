@@ -57,6 +57,15 @@ The game has become feature-rich, but the next direction is to reorganize it as 
 
 変更時は少なくとも、既存セーブ互換、入口と帰還先、通行可能性、画像の全量キャッシュ登録、描画欠けの同期フォールバック、データ検証を確認する。短期的に動くことより、再現可能で管理しやすい構成を優先する。
 
+### キャラクター歩行グラフィック
+
+- 歩行画像は `assets/characters/walk/<キャラクターID>_<方向>_<1|2>.png` を正本とし、上下左右の各2枚、合計8枚で管理する。
+- 待機中も現在の向きの `_1` と `_2` を交互に表示し、足踏みを続ける。`idle_down` を歩行フレームに採用しない。
+- 正面棒立ちは村人等と同様の固定配置用とし、`assets/characters/map-stand/` で歩行フレームと分離する。
+- 将来のマップ隊列は `data.party` の編成順にキャラクターIDを解決し、最大4人を移動履歴に沿って表示する。仲間モンスターは当面非表示とし、人型キャラクターの画像で代用しない。
+- 飛行中は当面、隊列の追従者を表示せず主人公1人だけを表示する。最大4人表示は徒歩移動時に限る。
+- ファイル命名、時代差分ID、固定配置、隊列、登録とキャッシュの詳細は `docs/design/character-walk-assets.md` を正本とする。
+
 The game should not begin with every major system available. Blacksmithing, the abyss, boat travel, wing flight, dungeon transfer, and other systems should become available as the player explores the field, clears regional fixed maps, gains allies, and expands the world. Gacha-related code and assets may remain as dormant legacy/internal implementation, but gacha is not planned as a player-facing feature and must not receive an unlock route.
 
 Existing code uses `progress.unlocked` for story-gated systems. Field blacksmith access is gated by `smith`, while the main-menu **Magic Communication** route to blacksmithing, alchemy, and guild quest reception is independently gated by `craftingMenu`. Dungeon menu access keeps its own unlock check; gacha is not shown in the main menu route.

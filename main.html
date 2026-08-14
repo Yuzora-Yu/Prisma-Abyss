@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Google Driveを有効化する場合のみ、Google CloudのWeb OAuthクライアントIDをcontentへ設定する。 -->
+    <meta name="google-drive-client-id" content="">
     <title>PRISMA ABYSS - Title</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✦</text></svg>">
     <link rel="manifest" href="manifest.json">
@@ -179,8 +181,8 @@
     <div id="modal-overlay" class="title-modal-overlay" onclick="if(event.target === this) toggleModal(false)">
         <div id="modal-content" class="title-modal-content">
             <div class="modal-title">データ管理</div>
-            <button class="btn btn-modal" onclick="App.downloadSave()">バックアップ出力</button>
-            <button class="btn btn-modal" onclick="App.importSave()">バックアップ読込</button>
+            <button class="btn btn-modal" onclick="SaveDataUI.open('export')">データ出力</button>
+            <button class="btn btn-modal" onclick="SaveDataUI.open('import')">データ読込</button>
             <hr>
             <button id="installBtn" class="btn btn-modal" style="display:none;">アプリをインストール</button>
             <button id="updateBtn" class="btn btn-modal" onclick="updateApp()">アプリを更新</button>
@@ -194,6 +196,7 @@
     <script src="database.js"></script>
     <script src="save_crypto.js"></script>
     <script src="save_slots.js"></script>
+    <script src="save_backup.js"></script>
     <script src="map_render_shared.js"></script>
     <script src="main.js"></script>
     <script>
@@ -280,7 +283,7 @@
             const start = () => App.startNewGame();
 
             if (App.data) {
-                showPageConfirm('はじめから開始すると、現在のオートセーブは即時上書きされます。\n手動セーブNo.1～9は変更されません。\n\n新しい冒険を始めますか？', start);
+                showPageConfirm('はじめから開始すると、現在のオートセーブは即時上書きされます。\n手動セーブNo.1～20は変更されません。\n\n新しい冒険を始めますか？', start);
                 return;
             }
 
@@ -297,7 +300,7 @@
                 showPageMessage('データベースエラー: CONSTが読み込まれていません');
                 return;
             }
-            showPageConfirm('現在のオートセーブを削除しますか？\n手動セーブNo.1～9は削除されません。', () => {
+            showPageConfirm('現在のオートセーブを削除しますか？\n手動セーブNo.1～20は削除されません。', () => {
                 localStorage.removeItem(CONST.SAVE_KEY);
                 location.reload();
             });

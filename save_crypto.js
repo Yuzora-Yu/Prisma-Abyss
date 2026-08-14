@@ -231,10 +231,10 @@
         return { data: parsed, encrypted: false, legacy: true };
     };
 
-    const buildFileName = () => {
+    const buildTimestamp = () => {
         const d = new Date();
         const pad = (n) => String(n).padStart(2, '0');
-        const stamp = [
+        return [
             d.getFullYear(),
             pad(d.getMonth() + 1),
             pad(d.getDate()),
@@ -243,14 +243,19 @@
             pad(d.getMinutes()),
             pad(d.getSeconds())
         ].join('');
-        return `rpg_save_${stamp}.rpgsave`;
     };
+
+    const buildFileName = () => `rpg_save_${buildTimestamp()}.rpgsave`;
+    const buildAllSaveFileName = () => `prisma_abyss_all_saves_${buildTimestamp()}.rpgsave`;
+    const getGoogleDriveFileName = () => 'prisma_abyss_all_saves.rpgsave';
 
     window.SaveCrypto = {
         FORMAT,
         VERSION,
         encodeSaveData,
         decodeSaveText,
-        buildFileName
+        buildFileName,
+        buildAllSaveFileName,
+        getGoogleDriveFileName
     };
 })();

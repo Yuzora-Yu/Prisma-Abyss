@@ -49,8 +49,9 @@
     if (deleteBtn) deleteBtn.textContent = "セーブデータを削除";
     const closeBtn = document.querySelector(".btn-close");
     if (closeBtn) closeBtn.textContent = "戻る";
-    const importBtn = document.querySelector("#modal-content .btn-modal:not(#installBtn):not(#updateBtn):not(#deleteBtn)");
-    if (importBtn) importBtn.textContent = "バックアップから復元";
+    const dataButtons = document.querySelectorAll("#modal-content .btn-modal:not(#installBtn):not(#updateBtn):not(#deleteBtn)");
+    if (dataButtons[0] && shouldReplace(dataButtons[0].textContent)) dataButtons[0].textContent = "データ出力";
+    if (dataButtons[1] && shouldReplace(dataButtons[1].textContent)) dataButtons[1].textContent = "データ読込";
   };
 
   const fixGameText = () => {

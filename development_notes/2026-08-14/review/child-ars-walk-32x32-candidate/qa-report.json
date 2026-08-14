@@ -1,0 +1,180 @@
+{
+  "source_canvas": [
+    48,
+    64
+  ],
+  "uniform_scale": 0.5,
+  "scaled_character_canvas": [
+    24,
+    32
+  ],
+  "map_cell": [
+    32,
+    32
+  ],
+  "cell_offset": [
+    4,
+    0
+  ],
+  "pivot": [
+    16,
+    31
+  ],
+  "resampling": "nearest",
+  "frames": {
+    "idle_down": {
+      "source_alpha_bounds": [
+        8,
+        3,
+        40,
+        63
+      ],
+      "output_alpha_bounds": [
+        8,
+        1,
+        24,
+        31
+      ],
+      "size": [
+        32,
+        32
+      ]
+    },
+    "down_1": {
+      "source_alpha_bounds": [
+        8,
+        3,
+        40,
+        63
+      ],
+      "output_alpha_bounds": [
+        8,
+        1,
+        24,
+        31
+      ],
+      "size": [
+        32,
+        32
+      ]
+    },
+    "down_2": {
+      "source_alpha_bounds": [
+        8,
+        3,
+        40,
+        63
+      ],
+      "output_alpha_bounds": [
+        8,
+        1,
+        24,
+        31
+      ],
+      "size": [
+        32,
+        32
+      ]
+    },
+    "left_1": {
+      "source_alpha_bounds": [
+        8,
+        3,
+        39,
+        63
+      ],
+      "output_alpha_bounds": [
+        8,
+        1,
+        23,
+        31
+      ],
+      "size": [
+        32,
+        32
+      ]
+    },
+    "left_2": {
+      "source_alpha_bounds": [
+        8,
+        3,
+        39,
+        63
+      ],
+      "output_alpha_bounds": [
+        8,
+        1,
+        23,
+        31
+      ],
+      "size": [
+        32,
+        32
+      ]
+    },
+    "right_1": {
+      "derived_from": "left_1",
+      "exact_horizontal_mirror": true,
+      "output_alpha_bounds": [
+        9,
+        1,
+        24,
+        31
+      ],
+      "size": [
+        32,
+        32
+      ]
+    },
+    "right_2": {
+      "derived_from": "left_2",
+      "exact_horizontal_mirror": true,
+      "output_alpha_bounds": [
+        9,
+        1,
+        24,
+        31
+      ],
+      "size": [
+        32,
+        32
+      ]
+    },
+    "up_1": {
+      "source_alpha_bounds": [
+        8,
+        3,
+        40,
+        63
+      ],
+      "output_alpha_bounds": [
+        8,
+        1,
+        24,
+        31
+      ],
+      "size": [
+        32,
+        32
+      ]
+    },
+    "up_2": {
+      "source_alpha_bounds": [
+        8,
+        3,
+        40,
+        63
+      ],
+      "output_alpha_bounds": [
+        8,
+        1,
+        24,
+        31
+      ],
+      "size": [
+        32,
+        32
+      ]
+    }
+  }
+}
