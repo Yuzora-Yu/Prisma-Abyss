@@ -7,6 +7,8 @@
     // その間にカメラが移動しても画面端が欠けないよう、同じ幅だけ余白を描く。
     const RENDER_BUCKET_SIZE = 4;
     const VIEW_PADDING = RENDER_BUCKET_SIZE;
+    const FIXED_BOUNDARY_TEXTURE_KEY = '__prisma_fixed_boundary_backdrop';
+    const FIXED_BOUNDARY_BLEED = TILE_SIZE * 2;
     const BUILDING_PREFIXES = [
         'overlay_building_',
         'overlay_field_castle',
@@ -45,6 +47,7 @@
         atmosphereLight: null,
         atmosphereSignature: null,
         textureKeys: new Set(),
+        fixedBoundaryTextureKey: null,
         lastPlayerTextureKey: null,
         resizeObserver: null,
         lastStaticSignature: null,
@@ -112,6 +115,7 @@
         state.failed = true;
         state.ready = false;
         state.lastStaticSignature = null;
+        state.fixedBoundaryTextureKey = null;
         document.getElementById('canvas-wrapper')?.classList.remove('phaser-field-active');
         const parent = document.getElementById('phaser-field-root');
         if (parent) parent.classList.remove('is-ready');
@@ -567,40 +571,178 @@
         return sprite;
     };
 
+    const removeFixedBoundaryTexture = (scene) => {
+        const key = state.fixedBoundaryTextureKey;
+        if (key && scene?.textures?.exists(key)) scene.textures.remove(key);
+        if (key) state.textureKeys.delete(key);
+        state.fixedBoundaryTextureKey = null;
+    };
+
+    const getCanvasTextureSource = (scene, key) => {
+        key = resolveTextureKey(key);
+        if (!key || !ensureTexture(scene, key)) return null;
+        const source = scene.textures.get(key)?.getSourceImage?.();
+        if (!source?.width || !source?.height) return null;
+        return source;
+    };
+
+    const drawCanvasTexture = (scene, context, key, x, y, width, height) => {
+        const source = getCanvasTextureSource(scene, key);
+        if (!source) return false;
+        try {
+            context.drawImage(source, x, y, width, height);
+            return true;
+        } catch (error) {
+            console.warn('[PhaserField] Failed to compose fixed-map boundary texture.', key, error);
+            return false;
+        }
+    };
+
+    const fillCanvasTile = (context, color, x, y, width = TILE_SIZE, height = TILE_SIZE) => {
+        context.fillStyle = `#${colorToInt(color, 0x171b1d).toString(16).padStart(6, '0')}`;
+        context.fillRect(x, y, width, height);
+    };
+
+    const drawCanvasShadow = (context, centerX, centerY, width, alpha) => {
+        context.save();
+        context.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+        context.beginPath();
+        context.ellipse(centerX, centerY, width / 2, Math.max(2.5, width * 0.12), 0, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+    };
+
+    const drawFixedBoundaryCell = (scene, context, field, mapSize, areaKey, sourceX, sourceY, canvasX, canvasY) => {
+        const plan = getGroundPlanForTile(field, mapSize, areaKey, sourceX, sourceY);
+        if (!plan) {
+            fillCanvasTile(context, '#171b1d', canvasX, canvasY);
+            return;
+        }
+
+        const { parts, upper, overlay, objectConfig, floorConfig } = plan;
+        const isAnimatedWaterTile = objectConfig.animatedWater === true;
+        const isLowerWaterTile = objectConfig.lowerLayer === true;
+        const isBaseTerrainTile = upper === 'T' || upper === 'G' || objectConfig.terrain === true;
+        const groundConfig = isAnimatedWaterTile ? objectConfig : floorConfig;
+        if (!drawCanvasTexture(scene, context, groundConfig?.img, canvasX, canvasY, TILE_SIZE, TILE_SIZE)) {
+            fillCanvasTile(context, groundConfig?.color || objectConfig.color, canvasX, canvasY);
+        }
+
+        const wallGraphic = field.getDungeonWallGraphicForDraw
+            ? field.getDungeonWallGraphicForDraw(sourceX, sourceY, upper, mapSize.width, mapSize.height, areaKey)
+            : null;
+
+        if (!isLowerWaterTile && !isBaseTerrainTile && !overlay) {
+            const wallFaceOverlay = !!(wallGraphic && field.getDungeonWallFaceModeForDraw?.() === 'overlay');
+            const key = wallFaceOverlay ? objectConfig.img : (wallGraphic || objectConfig.img);
+            const height = upper === 'W' ? TILE_SIZE * 1.5 : TILE_SIZE;
+            const imageY = canvasY + TILE_SIZE - height;
+            if (key) drawCanvasShadow(context, canvasX + TILE_SIZE / 2 + 3, canvasY + TILE_SIZE - 3, 24, 0.24);
+            if (!drawCanvasTexture(scene, context, key, canvasX, imageY, TILE_SIZE, height)
+                && objectConfig.color !== groundConfig?.color) {
+                fillCanvasTile(context, objectConfig.color, canvasX, imageY, TILE_SIZE, height);
+            }
+            if (wallFaceOverlay) {
+                drawCanvasTexture(scene, context, wallGraphic, canvasX, imageY, TILE_SIZE, height);
+            }
+        }
+
+        if (!overlay) return;
+
+        const key = overlay.img;
+        const building = isBuildingTexture(key);
+        const wallOverlay = overlay.wallOverlay === true;
+        const blockingObjectOverlay = overlay.blockingObject === true;
+        const eventMarkerOverlay = overlay.eventMarker === true;
+        const characterOverlay = /^(overlay_npc_|overlay_companion_)/.test(String(key || ''));
+        const bossOverlay = /^(overlay_boss_|monster_)/.test(String(key || ''));
+        const raisedBuilding = building;
+        const buildingScale = raisedBuilding ? Math.max(1, Number(overlay.buildingScale || 2.4)) : 1;
+        const overlayScale = bossOverlay ? 2 : 1;
+        const width = eventMarkerOverlay
+            ? Math.max(9, Number(overlay.drawWidth || 12))
+            : blockingObjectOverlay
+                ? Math.max(8, Number(overlay.drawWidth || TILE_SIZE))
+                : (raisedBuilding ? TILE_SIZE * buildingScale : TILE_SIZE * overlayScale);
+        const height = eventMarkerOverlay
+            ? Math.max(9, Number(overlay.drawHeight || 12))
+            : blockingObjectOverlay
+                ? Math.max(8, Number(overlay.drawHeight || TILE_SIZE))
+                : (wallOverlay ? TILE_SIZE * 1.5 : (raisedBuilding ? TILE_SIZE * buildingScale : TILE_SIZE * overlayScale));
+        const offsetX = Number(overlay.drawOffsetX || 0);
+        const offsetY = Number(overlay.drawOffsetY || 0);
+        const imageX = canvasX + TILE_SIZE / 2 + offsetX - width / 2;
+        const imageY = eventMarkerOverlay
+            ? canvasY + TILE_SIZE / 2 + offsetY - height / 2
+            : canvasY + TILE_SIZE + offsetY - height;
+
+        if (overlay.suppressShadow !== true && !parts.worldOverlay && !wallOverlay && !building
+            && (blockingObjectOverlay || characterOverlay || bossOverlay)) {
+            drawCanvasShadow(context, canvasX + TILE_SIZE / 2 + 4 + offsetX, canvasY + TILE_SIZE - 2 + offsetY, 24, 0.22);
+        }
+        if (!drawCanvasTexture(scene, context, key, imageX, imageY, width, height)) {
+            context.save();
+            context.fillStyle = `#${colorToInt(overlay.color, 0xffffff).toString(16).padStart(6, '0')}`;
+            if (eventMarkerOverlay) {
+                context.beginPath();
+                context.arc(canvasX + TILE_SIZE / 2, canvasY + TILE_SIZE / 2, 6, 0, Math.PI * 2);
+                context.fill();
+            } else {
+                context.fillRect(imageX, imageY, width, height);
+            }
+            context.restore();
+        }
+    };
+
     const drawFixedMapBoundaryBackdrop = (scene, field, mapSize, areaKey, range) => {
-        if (!field.currentMapData?.isFixed) return false;
+        if (!field.currentMapData?.isFixed) {
+            removeFixedBoundaryTexture(scene);
+            return false;
+        }
         const minX = Number(field.x) - range.x;
         const maxX = Number(field.x) + range.x;
         const minY = Number(field.y) - range.y;
         const maxY = Number(field.y) + range.y;
-        if (minX >= 0 && minY >= 0 && maxX < mapSize.width && maxY < mapSize.height) return false;
+        if (minX >= 0 && minY >= 0 && maxX < mapSize.width && maxY < mapSize.height) {
+            removeFixedBoundaryTexture(scene);
+            return false;
+        }
 
-        // fixed mapの外側を各座標でedge clampして何百枚も複製せず、境界見本1枚を背景として反復する。
-        const sampleX = 0;
-        const sampleY = 0;
-        const plan = getGroundPlanForTile(field, mapSize, areaKey, sampleX, sampleY);
-        if (!plan) return false;
-        const wallGraphic = field.getDungeonWallGraphicForDraw
-            ? field.getDungeonWallGraphicForDraw(sampleX, sampleY, plan.upper, mapSize.width, mapSize.height, areaKey)
-            : null;
-        const sampleKey = wallGraphic || ((plan.upper !== 'T' && plan.upper !== 'G') ? plan.objectConfig?.img : null) || plan.floorConfig?.img;
-        const bounds = {
-            x: minX * TILE_SIZE,
-            y: minY * TILE_SIZE,
-            width: (maxX - minX + 1) * TILE_SIZE,
-            height: (maxY - minY + 1) * TILE_SIZE
-        };
-        if (addCoveringTileSprite(scene, sampleKey, bounds, -1000000)) return true;
+        // Resolve every outside coordinate through the real clamped edge cell, compose
+        // its ground + fixed overlay once, and keep the live scene to one background image.
+        removeFixedBoundaryTexture(scene);
+        const columns = maxX - minX + 1;
+        const rows = maxY - minY + 1;
+        const textureWidth = columns * TILE_SIZE + FIXED_BOUNDARY_BLEED * 2;
+        const textureHeight = rows * TILE_SIZE + FIXED_BOUNDARY_BLEED * 2;
+        const canvasTexture = scene.textures.createCanvas(FIXED_BOUNDARY_TEXTURE_KEY, textureWidth, textureHeight);
+        const context = canvasTexture?.context;
+        if (!context) throw new Error('Fixed-map boundary canvas could not be created.');
+        context.clearRect(0, 0, textureWidth, textureHeight);
+        context.imageSmoothingEnabled = false;
 
-        const rect = scene.add.rectangle(
-            bounds.x + bounds.width / 2,
-            bounds.y + bounds.height / 2,
-            bounds.width,
-            bounds.height,
-            colorToInt(plan.objectConfig?.color || plan.floorConfig?.color, 0x171b1d)
+        for (let tileY = minY; tileY <= maxY; tileY++) {
+            for (let tileX = minX; tileX <= maxX; tileX++) {
+                if (tileX >= 0 && tileY >= 0 && tileX < mapSize.width && tileY < mapSize.height) continue;
+                const sourceX = Math.max(0, Math.min(mapSize.width - 1, tileX));
+                const sourceY = Math.max(0, Math.min(mapSize.height - 1, tileY));
+                const canvasX = FIXED_BOUNDARY_BLEED + (tileX - minX) * TILE_SIZE;
+                const canvasY = FIXED_BOUNDARY_BLEED + (tileY - minY) * TILE_SIZE;
+                drawFixedBoundaryCell(scene, context, field, mapSize, areaKey, sourceX, sourceY, canvasX, canvasY);
+            }
+        }
+
+        canvasTexture.refresh();
+        state.textureKeys.add(FIXED_BOUNDARY_TEXTURE_KEY);
+        state.fixedBoundaryTextureKey = FIXED_BOUNDARY_TEXTURE_KEY;
+        const backdrop = scene.add.image(
+            minX * TILE_SIZE - FIXED_BOUNDARY_BLEED,
+            minY * TILE_SIZE - FIXED_BOUNDARY_BLEED,
+            FIXED_BOUNDARY_TEXTURE_KEY
         );
-        rect.setDepth(-1000000);
-        state.worldObjects.push(rect);
+        backdrop.setOrigin(0, 0);
+        backdrop.setDepth(-1000000);
+        state.worldObjects.push(backdrop);
         return true;
     };
 
@@ -1401,7 +1543,8 @@
             for (let dx = -range.x; dx <= range.x; dx++) {
                 const tileX = Number(field.x) + dx;
                 const tileY = Number(field.y) + dy;
-                if (!isFixedMapCoordinateInBounds(field, mapSize, tileX, tileY)) continue;
+                const inBounds = isFixedMapCoordinateInBounds(field, mapSize, tileX, tileY);
+                if (!inBounds) continue;
                 drawTile(scene, field, mapSize, areaKey, tileX, tileY, { skipUniformGround: uniformGroundDrawn });
             }
         }
