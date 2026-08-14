@@ -446,7 +446,7 @@ const App = {
             : charOrId);
         if (id !== 301 || !App.isFiveYearsAgoPrologueActive(data)) return null;
         return kind === 'portrait'
-            ? 'assets/characters/char_icon_301_past5y.png'
+            ? 'assets/characters/char_face_301_past5y.png'
             : 'assets/characters/face/301_past5y.png';
     },
 
@@ -2331,7 +2331,7 @@ const App = {
 
 	// 全画像データの手動/初回ダウンロード用キャッシュ名。
 	// sw.js の RUNTIME_CACHE_NAME と揃えること。
-	fullDataCacheName: 'prisma-abyss-v44.20260814-runtime',
+	fullDataCacheName: 'prisma-abyss-v45.20260814-runtime',
 
 
 	// 初回起動時の「全データを今ダウンロードしますか？」で「いいえ」を選んだ記録。

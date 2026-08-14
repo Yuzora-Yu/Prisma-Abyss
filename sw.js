@@ -23,8 +23,8 @@ try {
 
 // 表示用語・お知らせUI更新ではApp Shellだけ更新し、画像の全量キャッシュは再取得しない。
 // RUNTIME_CACHE_NAMEはmain.jsのfullDataCacheNameと同じ値を維持する。
-const CACHE_NAME = "prisma-abyss-v62.20260814";
-const RUNTIME_CACHE_NAME = "prisma-abyss-v44.20260814-runtime";
+const CACHE_NAME = "prisma-abyss-v63.20260814";
+const RUNTIME_CACHE_NAME = "prisma-abyss-v45.20260814-runtime";
 const WARM_CACHE_META_KEY = "__prisma_abyss_warm_cache_complete__";
 
 // 起動に必要な App Shell。

@@ -108,7 +108,7 @@ const PRISMA_CHARACTER_IMAGE_FILES = [
   ...PRISMA_CHARACTER_IMAGE_IDS.map((id) => `assets/characters/face/${id}.png`),
   "assets/characters/face/301_past5y.png",
   ...PRISMA_CHARACTER_IMAGE_IDS.map((id) => `assets/characters/char_face_${id}.${id === 403 ? "png" : "gif"}`),
-  "assets/characters/char_icon_301_past5y.png",
+  "assets/characters/char_face_301_past5y.png",
 ];
 const PRISMA_CHARACTER_WALK_IDS = [
   ...PRISMA_CHARACTER_IMAGE_IDS.map(String),
@@ -719,7 +719,7 @@ const PRISMA_ASSETS = {
   // installImages: Service Worker の初回install時にキャッシュする画像全体。
   // backgroundImages: install後の再試行/補助ウォームキャッシュ用。
   cacheWarmup: {
-    version: "2026-08-14-map-tile-runtime-character-walk-v24",
+    version: "2026-08-14-map-tile-runtime-character-walk-v25",
     initialGraphicKeys: [
       "floor", "sea", "forest", "mountain", "Low_mountain", "cave", "house-1", "house-2", "inn", "wall", "dungeon_floor",
       "item_icon_attack", "item_icon_buff", "item_icon_debuff", "item_icon_material", "item_icon_vehicle", "item_icon_travel",
@@ -811,7 +811,7 @@ const PRISMA_ASSETS = {
       "assets/map/overlays/overlay_npc_bronze_knight.png",
       ...PRISMA_CHARACTER_WALK_FRAMES.map((frame) => `assets/characters/walk/301_${frame}.png`),
       "assets/characters/face/301_past5y.png",
-      "assets/characters/char_icon_301_past5y.png",
+      "assets/characters/char_face_301_past5y.png",
       "assets/characters/char_face_403.png",
     ],
     openingImages: [
