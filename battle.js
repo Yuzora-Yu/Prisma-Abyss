@@ -3734,7 +3734,7 @@ const Battle = {
         }
 
         // イベント用の明示編成。通常エンカウントは最大4体だが、イベント/亀裂では5体まで許可する。
-        // 使い方例: App.data.battle.fixedEnemyIds = [100001,100002,100003,100004,100005]
+        // 使い方例: App.data.battle.fixedEnemyIds = [1,2,3,4,55]
         // または App.data.battle.exactMonsters = true; App.data.battle.monsters = [...]
         const exactEventMonsterIds = Array.isArray(battleData.fixedEnemyIds)
             ? battleData.fixedEnemyIds

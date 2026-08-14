@@ -93,9 +93,9 @@ const ACHIEVEMENTS_DATA = [
     { id: 703, type: "GEM", goal: 10000, category: "収集", title: "輝石を集めし者", desc: "累計獲得GEM 10,000突破", rewards: [{ type: 'GOLD', val: 100000 }] },
 
     // --- 8. 特殊ボス討伐 ---
-    { id: 801, type: "BOSS", targetIds: [902000, 2000], goal: 1, category: "戦闘", secret: true, title: "災厄への挑戦", desc: "ギルガメッシュを1体討伐", rewards: [{ type: 'GEM', val: 3000 }] },
-    { id: 802, type: "BOSS", targetIds: [902000, 2000], goal: 10, category: "戦闘", secret: true, title: "災厄を撃ち払う者", desc: "ギルガメッシュを10体討伐", rewards: [{ type: 'GEM', val: 3000 }] },
-    { id: 803, type: "BOSS", targetIds: [902000, 2000], goal: 50, category: "戦闘", secret: true, title: "災厄の征服者", desc: "ギルガメッシュを50体討伐", rewards: [{ type: 'EQUIP', eid: 801, plus: 3 }] },
+    { id: 801, type: "BOSS", targetIds: [902000], goal: 1, category: "戦闘", secret: true, title: "災厄への挑戦", desc: "ギルガメッシュを1体討伐", rewards: [{ type: 'GEM', val: 3000 }] },
+    { id: 802, type: "BOSS", targetIds: [902000], goal: 10, category: "戦闘", secret: true, title: "災厄を撃ち払う者", desc: "ギルガメッシュを10体討伐", rewards: [{ type: 'GEM', val: 3000 }] },
+    { id: 803, type: "BOSS", targetIds: [902000], goal: 50, category: "戦闘", secret: true, title: "災厄の征服者", desc: "ギルガメッシュを50体討伐", rewards: [{ type: 'EQUIP', eid: 801, plus: 3 }] },
 
     // --- 9. 仲間・パーティ ---
     { id: 901, type: "ALLY", goal: 5, category: "仲間", title: "小さな仲間たち", desc: "仲間を5人集める", rewards: [{ type: 'GEM', val: 300 }] },
@@ -290,7 +290,7 @@ const AchievementManager = {
 
     countBossKills: (ach) => {
         const killCounts = (App.data.book && App.data.book.killCounts) || {};
-        const ids = (ach.targetIds && ach.targetIds.length) ? ach.targetIds : [902000, 2000];
+        const ids = (ach.targetIds && ach.targetIds.length) ? ach.targetIds : [902000];
         return ids.reduce((sum, id) => sum + (Number(killCounts[id]) || Number(killCounts[String(id)]) || 0), 0);
     },
 

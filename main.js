@@ -1962,7 +1962,6 @@ const App = {
             settings: { ...App.getDefaultSettings(), ...(template.settings || {}) },
             system: {
                 ...(template.system || {}),
-                monsterIdSchemaVersion: 4,
                 abyssFloorSchemaVersion: 2,
                 monsterAllySkillPointSchemaVersion: 1,
                 monsterAllyGrowthSchemaVersion: 1,
@@ -4369,52 +4368,6 @@ const App = {
         }
     ),
 
-    // 完全削除した旧深淵ボスが保存中の戦闘・図鑑・依頼へ残っている場合は参照ごと除去する。
-    purgeRemovedLegacyAbyssBossReferences: (data = App.data) => {
-        if (!data || typeof data !== 'object') return false;
-        const removed = id => Number.isFinite(Number(id)) && Number(id) >= 401010 && Number(id) <= 401100;
-        let changed = false;
-        if (Array.isArray(data.book?.monsters)) {
-            const next = data.book.monsters.filter(id => !removed(id));
-            if (next.length !== data.book.monsters.length) { data.book.monsters = next; changed = true; }
-        }
-        if (data.book?.killCounts && typeof data.book.killCounts === 'object') {
-            Object.keys(data.book.killCounts).forEach(key => { if (removed(key)) { delete data.book.killCounts[key]; changed = true; } });
-        }
-        const filterIds = value => (Array.isArray(value) ? value : [value]).filter(id => !removed(id));
-        if (data.battle && typeof data.battle === 'object') {
-            if (Array.isArray(data.battle.fixedBossId)) {
-                const next = filterIds(data.battle.fixedBossId);
-                if (next.length !== data.battle.fixedBossId.length) { data.battle.fixedBossId = next.length ? next : null; changed = true; }
-            } else if (removed(data.battle.fixedBossId)) { data.battle.fixedBossId = null; changed = true; }
-            ['fixedEnemyIds','monsters'].forEach(key => {
-                if (!Array.isArray(data.battle[key])) return;
-                const next = filterIds(data.battle[key]);
-                if (next.length !== data.battle[key].length) { data.battle[key] = next; changed = true; }
-            });
-            if (Array.isArray(data.battle.enemies)) {
-                const next = data.battle.enemies.filter(enemy => !removed(enemy?.id) && !removed(enemy?.baseId));
-                if (next.length !== data.battle.enemies.length) { data.battle.enemies = next; changed = true; }
-            }
-            if (data.battle.active && (!Array.isArray(data.battle.enemies) || data.battle.enemies.length === 0) && !data.battle.fixedBossId) {
-                data.battle.active = false; changed = true;
-            }
-        }
-        const encounter = data.dungeon?.abyssBossEncounter;
-        if (encounter && Array.isArray(encounter.monsterIds)) {
-            const next = filterIds(encounter.monsterIds);
-            if (next.length !== encounter.monsterIds.length) { encounter.monsterIds = next; changed = true; }
-            if (!next.length) { data.dungeon.abyssBossEncounter = null; changed = true; }
-        }
-        const guildLists = [data.guild?.availableQuests, data.guild?.acceptedQuests, data.guild?.completedQuests];
-        guildLists.filter(Array.isArray).forEach(list => list.forEach(quest => {
-            if (!Array.isArray(quest?.bossMonsterIds)) return;
-            const next = filterIds(quest.bossMonsterIds);
-            if (next.length !== quest.bossMonsterIds.length) { quest.bossMonsterIds = next; changed = true; }
-        }));
-        return changed;
-    },
-
     /**
      * ストーリー上の仲間を加入させる
      * ガチャ産キャラクターと同一のデータ構造で初期化する
@@ -6722,7 +6675,6 @@ const App = {
             App.data.system.abyssRegionSchemaVersion = 7;
         }
         if (typeof App.migrateAbyssBossKillCountsV1 === 'function') App.migrateAbyssBossKillCountsV1(App.data);
-        if (typeof App.purgeRemovedLegacyAbyssBossReferences === 'function') App.purgeRemovedLegacyAbyssBossReferences(App.data);
         if (typeof App.reconcileCarmenaGateProgress === 'function') App.reconcileCarmenaGateProgress(App.data);
         if (typeof App.ensureAbyssSpiritTrialEvents === 'function') App.ensureAbyssSpiritTrialEvents();
         if (typeof App.reconcileDerivedProgressFlags === 'function') App.reconcileDerivedProgressFlags();
@@ -6751,7 +6703,6 @@ load: () => {
             if(!App.data.book) App.data.book = { monsters: [] }; 
             if(!App.data.book.killCounts) App.data.book.killCounts = {}; 
             if(!App.data.battle) App.data.battle = { active: false }; 
-            if (typeof App.migrateMonsterIdReferences === 'function') App.migrateMonsterIdReferences();
             if (typeof App.ensureSettings === 'function') App.ensureSettings();
             
             if(!App.data.stats) {
@@ -9022,7 +8973,6 @@ load: () => {
         App.migrateSpiritFragmentResistanceSourceV1(data);
         App.migratePendantOctaprismV1(data);
         App.migrateSpecialBossEquipmentBalanceV1(data);
-        App.purgeRemovedLegacyAbyssBossReferences(data);
         App.reconcileCarmenaGateProgress(data);
 
         if (!data.battle || typeof data.battle !== 'object' || Array.isArray(data.battle)) data.battle = { active: false };
@@ -9303,79 +9253,6 @@ load: () => {
         return false;
     },
 
-
-    migrateMonsterIdReferences: () => {
-        if (!App.data || !globalThis.MonsterData?.migrateId) return false;
-        const currentVersion = Number(globalThis.MonsterData.idSchemaVersion || 4);
-        const fromVersion = Number(App.data.system?.monsterIdSchemaVersion || 2);
-        const migrate = (value) => {
-            const id = globalThis.MonsterData.migrateId(value, fromVersion);
-            return id === null ? value : id;
-        };
-        const singularKeys = new Set([
-            'monsterId', 'fixedBossId', 'chestTrapMonsterId', 'displayMonsterId',
-            'targetMonsterId', 'bossMonsterId', 'guardianMonsterId', 'trialMonsterId',
-            'trapMonsterId', 'mapSpriteMonsterId', 'sourceMonsterId', 'absorbedMonsterId'
-        ]);
-        const arrayKeys = new Set([
-            'monsters', 'monsterIds', 'fixedEnemyIds', 'normalMonsterIds', 'rareMonsterIds',
-            'bossMonsterIds', 'targetMonsterIds', 'candidateMonsterIds'
-        ]);
-        const keyedIdMaps = new Set(['killCounts', 'defeatedBosses']);
-        let changed = fromVersion !== currentVersion;
-        const walk = (value, parentKey = '') => {
-            if (Array.isArray(value)) {
-                if (arrayKeys.has(parentKey)) {
-                    const mapped = value.map((entry) => {
-                        if (Number.isFinite(Number(entry))) {
-                            const next = migrate(entry);
-                            if (Number(next) !== Number(entry)) changed = true;
-                            return next;
-                        }
-                        return walk(entry, parentKey);
-                    });
-                    return Array.from(new Set(mapped));
-                }
-                return value.map((entry) => walk(entry, parentKey));
-            }
-            if (!value || typeof value !== 'object') return value;
-            if (keyedIdMaps.has(parentKey)) {
-                const remapped = {};
-                Object.entries(value).forEach(([key, entryValue]) => {
-                    const numeric = Number(key);
-                    const nextKey = Number.isFinite(numeric) ? String(migrate(numeric)) : key;
-                    if (nextKey !== key) changed = true;
-                    if (parentKey === 'killCounts') {
-                        remapped[nextKey] = Number(remapped[nextKey] || 0) + Number(entryValue || 0);
-                    } else if (!(nextKey in remapped)) {
-                        remapped[nextKey] = entryValue;
-                    } else {
-                        remapped[nextKey] = remapped[nextKey] || entryValue;
-                    }
-                });
-                return remapped;
-            }
-            Object.keys(value).forEach((key) => {
-                const current = value[key];
-                if (singularKeys.has(key) && Number.isFinite(Number(current))) {
-                    const next = migrate(current);
-                    if (Number(next) !== Number(current)) changed = true;
-                    value[key] = next;
-                } else if (['enemies', 'monsters'].includes(parentKey) && ['id', 'baseId', 'imageId'].includes(key) && Number.isFinite(Number(current))) {
-                    const next = migrate(current);
-                    if (Number(next) !== Number(current)) changed = true;
-                    value[key] = next;
-                } else {
-                    value[key] = walk(current, key);
-                }
-            });
-            return value;
-        };
-        App.data = walk(App.data, 'root');
-        App.data.system = (App.data.system && typeof App.data.system === 'object') ? App.data.system : {};
-        App.data.system.monsterIdSchemaVersion = currentVersion;
-        return changed;
-    },
 
     getWorldEncounterProfile: () => {
         if (typeof Field === 'undefined' || Field.currentMapData) return null;

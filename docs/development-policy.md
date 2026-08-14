@@ -34,6 +34,17 @@ The game has become feature-rich, but the next direction is to reorganize it as 
 
 ## Maintainable Implementation Rule
 
+### 本番公開物・ホスティング方針
+
+- Gitリポジトリは、ゲーム本体のruntimeだけでなく、開発資料、編集用データ、検証ツール、ログ、バックアップ等も保管する開発上の正本として扱う。一方、本番ホスティングへ公開する成果物は、プレイヤーのゲーム実行に必要なファイルだけに限定する。
+- GitHub Pagesを利用する間は、リポジトリ直下の `_config.yml` をJekyll公開除外設定の正本とする。`image-backups/`、`edit/`、`canon/`、`development_notes/`、`docs/`、`tools/`、`logs/`、`.agents/` はGitには保持するが、本番Pages成果物へ含めない。
+- `_config.yml` の `exclude` はGit管理・Git履歴・リポジトリ容量からファイルを除外するものではない。あくまでGitHub Pagesの生成物から除外する設定である。この区別を崩さない。
+- 新しい開発専用ディレクトリ、大容量バックアップ、生成原画、監査資料等を追加する場合は、「Gitには必要だが本番runtimeには不要か」を判断し、不要であれば公開除外設定も同時に更新する。
+- `assets/`、`vendor/`、実行用HTML/CSS/JavaScript、`manifest.json`、`sw.js` 等のruntime依存ファイルを公開対象から外す場合は、参照元、Service Worker、全量キャッシュ、起動導線を先に監査する。容量削減のみを理由にruntimeファイルを除外してはならない。
+- ホスティング先をGitHub Pages以外へ移行しても、「Gitリポジトリ全体をそのまま公開しない」という原則を維持する。Cloudflare Pages / Workers等へ移行する場合は、`dist/`、`public/`、`_site/` 等の本番専用出力ディレクトリを定め、そのディレクトリだけをデプロイ対象とする。
+- Cloudflare等でJekyllを実行しない構成では、GitHub Pages用 `_config.yml` の `exclude` は自動では適用されない。その場合はビルドまたはコピー工程で同等の公開対象制御を実装し、本番出力に開発専用ディレクトリが混入しないことを検証する。
+- ホスティング先や独自ドメインを変更する場合は、相対URL、Service Workerのscope、manifestのstart URL、キャッシュ、セーブデータのorigin依存性を移行前に確認する。特にlocalStorage / IndexedDBのセーブはorigin変更で自動移行されないため、既存プレイヤーがいる段階でのドメイン移行ではセーブ移行手段を用意する。
+
 ### Map rendering authority
 
 - `phaser-field.js` is the production field/map renderer and must be implemented and verified first for every map visual, overlay, animation, depth, shadow, and atmosphere change.

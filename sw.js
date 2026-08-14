@@ -23,7 +23,7 @@ try {
 
 // 表示用語・お知らせUI更新ではApp Shellだけ更新し、画像の全量キャッシュは再取得しない。
 // RUNTIME_CACHE_NAMEはmain.jsのfullDataCacheNameと同じ値を維持する。
-const CACHE_NAME = "prisma-abyss-v63.20260814";
+const CACHE_NAME = "prisma-abyss-v64.20260814";
 const RUNTIME_CACHE_NAME = "prisma-abyss-v45.20260814-runtime";
 const WARM_CACHE_META_KEY = "__prisma_abyss_warm_cache_complete__";
 
@@ -125,7 +125,7 @@ const isSameOrigin = (request) => {
 
 const toSameOriginRequest = (url) => {
   try {
-    const absolute = new URL(url, self.location.origin);
+    const absolute = new URL(url, self.registration.scope);
     if (absolute.origin !== self.location.origin) return null;
     return new Request(absolute.href, { cache: "default" });
   } catch (e) {
@@ -205,7 +205,17 @@ const fetchAndCacheWithRetry = async (cache, request, maxAttempts = 3) => {
     try {
       const retryRequest = new Request(request, { cache: attempt === 1 ? "reload" : "no-cache" });
       const response = await fetch(retryRequest);
-      if (!response || !response.ok) throw new Error(`HTTP ${response ? response.status : "ERR"}`);
+      if (!response || !response.ok) {
+        const status = Number(response?.status || 0);
+        // 404など恒久的なクライアントエラーは再試行しても直らない。
+        // 1回で失敗扱いにし、同じURLへの3連続リクエストを防ぐ。
+        const nonRetryableClientError = status >= 400 && status < 500 && ![408, 425, 429].includes(status);
+        if (nonRetryableClientError) {
+          console.warn(`[SW] キャッシュ対象を取得できません: ${request.url} (HTTP ${status})`);
+          return false;
+        }
+        throw new Error(`HTTP ${response ? response.status : "ERR"}`);
+      }
       await cache.put(request, response.clone());
       return true;
     } catch (error) {
@@ -246,28 +256,41 @@ const warmCacheList = async (urls, options = {}) => {
   return failedUrls;
 };
 
-const warmCacheInBackground = async (payload = {}) => {
+const warmCacheTasks = new Map();
+
+const warmCacheInBackground = (payload = {}) => {
   const version = payload.version || "default";
 
-  // 同じバージョンのウォームキャッシュが完了済みなら繰り返さない。
-  // CACHE_NAME を変えた場合は runtime cache も切り替わるため、自然に再実行される。
-  if (await isWarmCacheComplete(version)) return;
+  // main.jsから同じウォーム要求が重なっても、同一バージョンは1タスクだけ実行する。
+  if (warmCacheTasks.has(version)) return warmCacheTasks.get(version);
 
-  const criticalImages = payload.criticalImages || [];
-  const backgroundImages = payload.backgroundImages || [];
+  const task = (async () => {
+    // 同じバージョンのウォームキャッシュが完了済みなら繰り返さない。
+    if (await isWarmCacheComplete(version)) return;
 
-  // 先にロード画面/初戦闘向けを少数キャッシュ。
-  const failedUrls = await warmCacheList(criticalImages, { batchSize: 8, delayMs: 40 });
+    const criticalImages = payload.criticalImages || [];
+    const backgroundImages = payload.backgroundImages || [];
 
-  // install時に取りこぼした画像の再試行。起動処理では待たないが、以前より速めに温める。
-  failedUrls.push(...await warmCacheList(backgroundImages, { batchSize: 6, delayMs: 80 }));
+    // 先にロード画面/初戦闘向けを少数キャッシュ。
+    const failedUrls = await warmCacheList(criticalImages, { batchSize: 8, delayMs: 40 });
 
-  // 1件でも不足した状態を「全件完了」と記録しない。次回の起動・設定操作で再試行する。
-  if (failedUrls.length) {
-    console.warn(`[SW] 全画像キャッシュ未完了: ${failedUrls.length}件を次回再試行します。`, failedUrls);
-    return;
-  }
-  await markWarmCacheComplete(version);
+    // install時に取りこぼした画像の再試行。起動処理では待たないが、以前より速めに温める。
+    failedUrls.push(...await warmCacheList(backgroundImages, { batchSize: 6, delayMs: 80 }));
+
+    // 1件でも不足した状態を「全件完了」と記録しない。次回の起動・設定操作で再試行する。
+    if (failedUrls.length) {
+      console.warn(`[SW] 全画像キャッシュ未完了: ${failedUrls.length}件を次回再試行します。`, failedUrls);
+      return;
+    }
+    await markWarmCacheComplete(version);
+  })();
+
+  warmCacheTasks.set(version, task);
+  task.then(
+    () => warmCacheTasks.delete(version),
+    () => warmCacheTasks.delete(version)
+  );
+  return task;
 };
 
 const precacheRequiredList = async (cache, files, batchSize = 8) => {

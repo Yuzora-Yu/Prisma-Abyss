@@ -44,66 +44,6 @@ if ('serviceWorker' in navigator) {
         </div>
     </div>
 
-	<script>
-	(function () {
-		const img = document.getElementById('initial-loading-monster-img');
-		if (!img) return;
-
-		const SAVE_KEY = 'QoE_SaveData_v38_BalanceFix';
-		// ロード画面は assets.js の初期候補と同じ、実在する新IDだけから選ぶ。
-		const fallbackIds = [1, 2, 3, 4, 51, 52, 53, 54, 55, 101, 102, 103, 104, 151, 152, 153, 154, 155, 201, 202, 203, 204, 251, 252];
-
-		const pickRandom = (ids) => {
-			return ids[Math.floor(Math.random() * ids.length)];
-		};
-
-		let candidateIds = [];
-
-		try {
-			const raw = localStorage.getItem(SAVE_KEY);
-			const data = raw ? JSON.parse(raw) : null;
-
-			if (data && data.book && Array.isArray(data.book.monsters)) {
-				candidateIds = data.book.monsters
-					.map(id => Number(id))
-					.filter(id =>
-						Number.isInteger(id) &&
-						id > 0
-					);
-			}
-		} catch (e) {
-			candidateIds = [];
-		}
-
-		if (candidateIds.length === 0) {
-			candidateIds = fallbackIds;
-		} else {
-			// 討伐済みモンスターが多い場合でも、ロード画面で未キャッシュ画像を引きすぎないよう
-			// 事前キャッシュ済み候補を混ぜる。裏側キャッシュ完了後は討伐済み画像も自然に速くなる。
-			candidateIds = candidateIds.concat(fallbackIds);
-		}
-
-		let retryCount = 0;
-
-		img.onerror = function () {
-			retryCount++;
-
-			// 討伐済みIDに画像がなければ、実在確認済みの初期候補へ切り替える
-			if (retryCount <= 5) {
-				const fallbackId = pickRandom(fallbackIds);
-				img.src = `assets/monsters/monster_${String(fallbackId).padStart(6, '0')}.png`;
-				return;
-			}
-
-			// 念のため最後は固定
-			img.onerror = null;
-			img.src = 'assets/monsters/monster_000001.png';
-		};
-
-		const id = pickRandom(candidateIds);
-		img.src = `assets/monsters/monster_${String(id).padStart(6, '0')}.png`;
-	})();
-	</script>
 
 	<div id="encounter-transition" aria-hidden="true">
 		<div class="encounter-backdrop"></div>
@@ -529,6 +469,51 @@ if ('serviceWorker' in navigator) {
 <script src="equips.js"></script>
 
 <script src="database.js"></script>
+<script>
+(function () {
+	const img = document.getElementById('initial-loading-monster-img');
+	if (!img) return;
+
+	const DEFAULT_MONSTER_ID = 1;
+	const getMonsterImagePath = (id) => {
+		const monster = globalThis.MonsterData?.getMonsterById?.(id);
+		if (!monster) return null;
+		return globalThis.MonsterData?.getImagePath?.(monster)
+			|| globalThis.PRISMA_ASSETS?.getMonsterImagePath?.(monster)
+			|| null;
+	};
+
+	let candidateIds = [];
+	try {
+		const saveKey = (typeof CONST !== 'undefined' && CONST?.SAVE_KEY) ? CONST.SAVE_KEY : null;
+		const raw = saveKey ? localStorage.getItem(saveKey) : null;
+		const data = raw ? JSON.parse(raw) : null;
+		const killCounts = data?.book?.killCounts;
+
+		if (killCounts && typeof killCounts === 'object' && !Array.isArray(killCounts)) {
+			candidateIds = Object.entries(killCounts)
+				.filter(([, count]) => Number(count) > 0)
+				.map(([id]) => Number(id))
+				.filter(id => Number.isInteger(id) && id > 0 && !!globalThis.MonsterData?.getMonsterById?.(id));
+		}
+	} catch (error) {
+		// 古い/破損セーブは起動画面を止めず、初回表示と同じジェリーへフォールバックする。
+		candidateIds = [];
+	}
+
+	const selectedId = candidateIds.length > 0
+		? candidateIds[Math.floor(Math.random() * candidateIds.length)]
+		: DEFAULT_MONSTER_ID;
+	const selectedPath = getMonsterImagePath(selectedId) || getMonsterImagePath(DEFAULT_MONSTER_ID);
+
+	img.onerror = function () {
+		// 現行マスターに画像欠落があっても、起動処理そのものは継続する。
+		img.onerror = null;
+		img.src = 'assets/monsters/monster_000001.png';
+	};
+	if (selectedPath) img.src = selectedPath;
+})();
+</script>
 <script src="item_runtime.js"></script>
 <script src="passiveSkill.js"></script>
 <script src="map.js"></script>
