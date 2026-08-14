@@ -107,7 +107,7 @@ const PRISMA_CHARACTER_IMAGE_IDS = [
 const PRISMA_CHARACTER_IMAGE_FILES = [
   ...PRISMA_CHARACTER_IMAGE_IDS.map((id) => `assets/characters/face/${id}.png`),
   "assets/characters/face/301_past5y.png",
-  ...PRISMA_CHARACTER_IMAGE_IDS.map((id) => `assets/characters/char_face_${id}.${id === 403 ? "png" : "gif"}`),
+  // 5年前アルスの会話用年代差分。通常portraitは使用時にruntime cacheへ入る。
   "assets/characters/char_face_301_past5y.png",
 ];
 const PRISMA_CHARACTER_WALK_IDS = [
@@ -812,7 +812,6 @@ const PRISMA_ASSETS = {
       ...PRISMA_CHARACTER_WALK_FRAMES.map((frame) => `assets/characters/walk/301_${frame}.png`),
       "assets/characters/face/301_past5y.png",
       "assets/characters/char_face_301_past5y.png",
-      "assets/characters/char_face_403.png",
     ],
     openingImages: [
       "assets/generated/opening-prism-collapse.png",

@@ -33,7 +33,6 @@ window.CHARACTERS_DATA = [
             "99": 140
         },
         "sp": 1,
-        "img": "assets/characters/char_face_101.gif",
         "level": 1,
         "archives": {
             "base": "「不倒の城壁」と呼ばれた男。だがその神髄は、静寂の裏に隠された閃光の如き剣先にある。言葉は剣よりも重く、その背中は盾よりも雄弁に、深淵を往く者の在るべき姿を語る。",
@@ -96,7 +95,6 @@ window.CHARACTERS_DATA = [
             "99": 220
         },
         "sp": 1,
-        "img": "assets/characters/char_face_102.gif",
         "level": 1,
         "archives": {
             "base": "光に縋（すが）ったのではない。光を“拒絶”するために祈るのだ。清廉な修道服はすでに深淵の泥に汚れ、手にした聖典はもはや重い鉄塊に過ぎない。彼女の灯す白光は、救いではなく、闇を灼き払うための断罪の炎である。",
@@ -159,7 +157,6 @@ window.CHARACTERS_DATA = [
             "99": 313
         },
         "sp": 1,
-        "img": "assets/characters/char_face_103.gif",
         "level": 1,
         "archives": {
             "base": "奪うことでしか己を満たせぬ空虚な影。裏切りを「賢さ」と呼び、慈悲を「毒」と断じる深淵のハイエナ。その濁った嘲笑の裏には、決して癒えることのない、剥き出しの渇きを隠している。",
@@ -223,7 +220,6 @@ window.CHARACTERS_DATA = [
             "99": 115
         },
         "sp": 1,
-        "img": "assets/characters/char_face_104.gif",
         "level": 1,
         "archives": {
             "base": "花のような面差しを持つ、可憐な魔道の徒。その声は風に消えるほど細いが、紡ぎ出される魔力は目に見えぬ針のように鋭い。彼が「少年」であること、そしてその内に眠る真の“色”を知る者は、まだ極めて少ない。",
@@ -286,7 +282,6 @@ window.CHARACTERS_DATA = [
             "99": 149
         },
         "sp": 1,
-        "img": "assets/characters/char_face_105.gif",
         "level": 1,
         "archives": {
             "base": "礼節の奥に猛火を秘めた、求道の拳。一撃一撃に刻まれるのは、ただ「強く在れ」という狂おしいまでの渇望。その少年めいた短髪は、かつての己を捨て去り、肉体という名の牢獄を突き破り、深淵を穿つための宣誓である。",
@@ -349,7 +344,6 @@ window.CHARACTERS_DATA = [
             "99": 311
         },
         "sp": 1,
-        "img": "assets/characters/char_face_106.gif",
         "level": 1,
         "archives": {
             "base": "戦場という名の舞台に咲く、狂乱の華。その舞は命の鼓動を共鳴させ、絶望に沈む魂を強引に祝祭の渦へと叩き上げる。彼女が鈴を鳴らし、ステップを踏む時、死の香りは明日への渇望へと塗り替えられる。",
@@ -412,7 +406,6 @@ window.CHARACTERS_DATA = [
             "99": 167
         },
         "sp": 1,
-        "img": "assets/characters/char_face_107.gif",
         "level": 1,
         "archives": {
             "base": "燃え盛る情熱を沈黙で律する、不屈の求道者。その拳に宿るのは、かつて身に着けた帝王学の真髄――「支配」ではなく「守護」のための剛力。無口な佇まいは、言葉を尽くすよりも重い、一撃必殺の宣誓である。",
@@ -475,7 +468,6 @@ window.CHARACTERS_DATA = [
             "99": 144
         },
         "sp": 1,
-        "img": "assets/characters/char_face_108.gif",
         "level": 1,
         "archives": {
             "base": "影すら踏ませぬ、不可視の旋風。彼女が駆け出せば、大気が道となり、敵の懐へと吸い込まれるように導く。風に愛されている自覚のないまま、彼女は嵐の如き踏み込みで、敵が誇る剛刃を根元から打ち砕く。",
@@ -538,7 +530,6 @@ window.CHARACTERS_DATA = [
             "99": 509
         },
         "sp": 1,
-        "img": "assets/characters/char_face_109.gif",
         "level": 1,
         "archives": {
             "base": "太陽の如き快活さを纏う、黄金の若獅子。その魂の奥底には、闇を焼き尽くす『終焉の業火』と、死すら拒絶する『不滅の障壁』が眠っている。未だ粗削りな刃は、主という砥石を得て、やがて深淵を灼き払う至高の輝きへと至る。",
@@ -601,7 +592,6 @@ window.CHARACTERS_DATA = [
             "99": 411
         },
         "sp": 1,
-        "img": "assets/characters/char_face_110.gif",
         "level": 1,
         "archives": {
             "base": "深淵の底で揺らめく、小さくも消えぬ「慈愛の灯」。その祈りは絶望の淵にある命を寸前で繋ぎ止め、神速の癒しをもって死の影を振り払う。少女が紡ぐ言葉は、荒れ狂う戦士の魂を鼓舞し、その刃に「勝利の理（ことわり）」を付加する福音となる。",
@@ -664,7 +654,6 @@ window.CHARACTERS_DATA = [
             "99": 162
         },
         "sp": 1,
-        "img": "assets/characters/char_face_201.gif",
         "level": 1,
         "archives": {
             "base": "輝きを失った王冠を戴く、亡国の徒。剣も魔法も未だ至らず、崇高な誇りだけが己を苛む枷となっていた。だが、絶望の果てに彼が掴み取るのは、あらゆる理を断ち割り、終焉さえも切り裂く「究極の一太刀」である。",
@@ -727,7 +716,6 @@ window.CHARACTERS_DATA = [
             "99": 419
         },
         "sp": 1,
-        "img": "assets/characters/char_face_202.gif",
         "level": 1,
         "archives": {
             "base": "禁忌を暴き、天理を嘲笑う「紫紺の賢者」。戦場に渦巻く万物の加護を瞬時に霧散させ、死者の魂さえも輪廻の鎖から強引に引き戻す、生と死の境界に立つ超越者。その艶やかな微笑みは、世界の終わりさえも極上の余興へと変える。",
@@ -790,7 +778,6 @@ window.CHARACTERS_DATA = [
             "99": 230
         },
         "sp": 1,
-        "img": "assets/characters/char_face_203.gif",
         "level": 1,
         "archives": {
             "base": "闇に溶け、音もなく標的を刈り取る死の番人。寡黙な口唇から零れるのは、深淵を皮肉る鋭い警句のみ。誰にも悟られず、誰よりも速く。その刃は主の歩みを阻む不吉を、無音のうちに断ち切るために研ぎ澄まされている。",
@@ -853,7 +840,6 @@ window.CHARACTERS_DATA = [
             "99": 155
         },
         "sp": 1,
-        "img": "assets/characters/char_face_204.gif",
         "level": 1,
         "archives": {
             "base": "揺るぎなき正義を鎧とし、不滅の慈愛を剣に宿す白銀の守護者。主を阻む悪は理由を問わず一刀に処し、傷ついた魂には速やかな福音をもたらす万能の騎士。その高潔さは深淵の闇においてさえ曇ることなく、迷える者たちを導く絶対不変の道標として戦場を照らし出す。",
@@ -916,7 +902,6 @@ window.CHARACTERS_DATA = [
             "99": 310
         },
         "sp": 1,
-        "img": "assets/characters/char_face_205.gif",
         "level": 1,
         "archives": {
             "base": "紅蓮に燃え盛る怒涛の連撃をもって戦場を蹂躙する、実戦の鬼。その剣筋は魔人の如く苛烈にして無慈悲、深淵の闇を力でねじ伏せる圧倒的な熱量を放つ。傭兵団という死地を統べてきた男の双眸は、勝利の先に待つ「生還」という名の代償を常に見据えている。",
@@ -979,7 +964,6 @@ window.CHARACTERS_DATA = [
             "99": 416
         },
         "sp": 1,
-        "img": "assets/characters/char_face_206.gif",
         "level": 1,
         "archives": {
             "base": "人の身でありながら、世界樹に寵愛された希代の叡智。時さえも凍結させる極寒の禁呪を操る一方で、その指先には世界樹の枝葉から零れ落ちる陽光を宿し、絶望の淵にある命を救い上げる。魔導、錬金、そして失われた古代の工学。万物の理を解き明かすためなら、彼女はどんな禁忌の門さえも笑顔で潜り抜ける。",
@@ -1042,7 +1026,6 @@ window.CHARACTERS_DATA = [
             "99": 161
         },
         "sp": 1,
-        "img": "assets/characters/char_face_207.gif",
         "level": 1,
         "archives": {
             "base": "静寂の淵で刃を研ぎ澄ます、孤高の剣豪。その一太刀は万物の守りを無に帰し、迅雷の如き神速をもって敵の命脈を断ち切る。義を重んじ、不必要な殺生を厭うその佇まいは、血生臭い深淵において一筋の清冽な風の如く、正道を指し示す。",
@@ -1105,7 +1088,6 @@ window.CHARACTERS_DATA = [
             "99": 150
         },
         "sp": 1,
-        "img": "assets/characters/char_face_208.gif",
         "level": 1,
         "archives": {
             "base": "戦場に咲く紅蓮の闘姫。天真爛漫な笑みとともに敵陣を蹂躙する彼女の真髄は、狂乱の果ての静寂にある。極限まで研ぎ澄まされた集中が理を塗り替えるとき、その刃は光さえも置き去りにする不可視の旋律を奏で、敵を断ち割る。",
@@ -1168,7 +1150,6 @@ window.CHARACTERS_DATA = [
             "99": 418
         },
         "sp": 1,
-        "img": "assets/characters/char_face_209.gif",
         "level": 1,
         "archives": {
             "base": "万雷の拍手を浴びて深淵を舞う、至高の表現者。華麗なステップで観衆を魅了する裏で、彼は万物を灰燼に帰す『混沌の火炎』と、死の淵を払い除ける『聖なる慈愛』を同時に操る。その微笑みは光り輝く舞台そのものだが、瞳の奥には決して誰にも踏み込ませない極寒の闇が沈んでいる。",
@@ -1231,7 +1212,6 @@ window.CHARACTERS_DATA = [
             "99": 162
         },
         "sp": 1,
-        "img": "assets/characters/char_face_210.gif",
         "level": 1,
         "archives": {
             "base": "届く範囲の全てを守護せんと誓う、孤高の女侍。その剣技の本懐は、敵を屠ることではなく、振るわれる凶刃を根元から打ち砕く「不殺の制圧」にこそある。だが、果てなき研鑽は、皮肉にも彼女を万象の理すら切り裂く究極の境地へと至らせてしまった。",
@@ -1295,7 +1275,6 @@ window.CHARACTERS_DATA = [
         },
         "sp": 1,
         "level": 1,
-        "img": "assets/characters/char_face_301.gif",
         "archives": {
             "base": "深淵に選ばれたのではない。深淵への“復讐”を選んだのだ。滅びた故郷の焦げ付いた土の匂いと、燃え残った鐘の音だけを胸に、少年は重い剣を握る。笑うことも、泣くことも、あの日どこかへ置いてきた。その冷え切った鋼の瞳が見据えるのは、深淵の最奥に座する元凶のみである。",
             "lv50": "故郷を、平穏を、愛する者たちを奪い去ったのは、形なき絶望の首魁“深淵の王”。名を呼ぶだけで喉が焼けるような憎悪が溢れ、彼はその名を一度も口にしない。探しているのは最強の武具ではない――王の心臓を貫き、呪われた因果を断ち切るための“たった一つの鍵”。それを掴むまで、彼の歩みが止まることはない。",
@@ -1357,7 +1336,6 @@ window.CHARACTERS_DATA = [
             "99": 152
         },
         "sp": 1,
-        "img": "assets/characters/char_face_302.gif",
         "level": 1,
         "archives": {
             "base": "蒼穹を切り裂き、深淵の重力を嘲笑う不敵な戦乙女。幼き頃より魂を分かち合った竜を駆り、戦場を縦横無尽に滑走するその姿は、見る者全ての魂を圧倒する。人竜一体となって放たれる絶技は、天の理を地に落とし、あらゆる絶望を粉砕する「神速の審判」に他ならない。",
@@ -1420,7 +1398,6 @@ window.CHARACTERS_DATA = [
             "99": 244
         },
         "sp": 1,
-        "img": "assets/characters/char_face_303.gif",
         "level": 1,
         "archives": {
             "base": "宙の理を紐解き、虚空より星霜を招く世界最高位の魔導師。極限まで研ぎ澄まされた魔力は、一撃で天の秩序を塗り替え、流星の雨をもって万象を灰燼に帰す。その瞳には感情の揺らぎすら映らず、ただ絶対的な「真理」のみが静かに支配している。",
@@ -1483,7 +1460,6 @@ window.CHARACTERS_DATA = [
             "99": 166
         },
         "sp": 1,
-        "img": "assets/characters/char_face_304.gif",
         "level": 1,
         "archives": {
             "base": "神の愛子にして、あらゆる武の理を統べる「頂点」の体現者。その左手に宿る黄金の波動はあらゆる穢れを浄化し、掲げられる右拳は万象を砕く。光の加護をその身に纏いながらも、深淵の闇すら自らの血肉として支配するその姿は、混沌の時代に降臨した「不敗の神拳」に他ならない。",
@@ -1546,7 +1522,6 @@ window.CHARACTERS_DATA = [
             "99": 715
         },
         "sp": 1,
-        "img": "assets/characters/char_face_305.gif",
         "level": 1,
         "archives": {
             "base": "あらゆる災厄を撥ね退ける、王国最高峰の白銀騎士。その盾には光の神のみならず、異形の「無慈悲な天使」の加護すら宿り、慈悲深き治癒と一瞬の死をもたらす裁定を同時に司る。正義の体現者として、彼は自らの命を楔とし、絶望に抗う人々の希望を護り続けている。",
@@ -1609,7 +1584,6 @@ window.CHARACTERS_DATA = [
             "99": 315
         },
         "sp": 1,
-        "img": "assets/characters/char_face_306.gif",
         "level": 1,
         "archives": {
             "base": "深淵の瘴気をその身に宿し、光速の絶技をもって命を刈り取る無慈悲な執行者。彼女が通った跡には、ただ沈黙と、深淵より漏れ出す毒の残り香だけが漂う。だが、その冷徹な刃が真に守ろうとしているのは、かつて自らが捨て去ったはずの、陽だまりのような平穏である。",
@@ -1680,7 +1654,6 @@ window.CHARACTERS_DATA = [
             "99": 246
         },
         "sp": 1,
-        "img": "assets/characters/char_face_403.png",
         "level": 1,
         "prologueOnly": true,
         "adultCharacterId": 401,
@@ -1745,7 +1718,6 @@ window.CHARACTERS_DATA = [
             "99": 230
         },
         "sp": 1,
-        "img": "assets/characters/char_face_401.gif",
         "level": 1,
         "archives": {
             "base": "生と死の境界を越え、現世に降り立った「白い奇跡」。若くして潰えるはずだったその命は、神リュシオンの慈悲によって永遠なる聖光を宿す依代へと変貌を遂げた。あらゆる傷を癒す慈愛の御手と、罪深き魂を塵に帰す神罰の雷――彼女の振るう絶大なる魔力は、深淵の闇さえも眩き黎明へと塗り替える。",
@@ -1808,7 +1780,6 @@ window.CHARACTERS_DATA = [
             "99": 166
         },
         "sp": 1,
-        "img": "assets/characters/char_face_402.gif",
         "level": 1,
         "archives": {
             "base": "かつて大陸の半分を支配し、恐怖をもって魔を統一した「闇の覇王」。その真の姿は、世界を蝕み始めた混沌と戦い続けてきた、孤独なる英雄である。影より世界を維持するその圧倒的な力は、王国最高の戦士たちを絶望の淵へ追い込むほどに苛烈で、無慈悲なまでに美しい。",
@@ -1871,7 +1842,6 @@ window.CHARACTERS_DATA = [
             "99": 247
         },
         "sp": 1,
-        "img": "assets/characters/char_face_501.gif",
         "level": 1,
         "archives": {
             "base": "全ての魔法を掌握し、闇と破壊の権能すら統べる、万物の理そのもの。かつては天上の王座に君臨していたが、今は地に堕ち、魔を滅するためだけにその絶大な力を行使する。神の位を失い、世界との断絶を余儀なくされながらも、その瞳にはかつて自分を信じた人々への不変の慈愛が宿っている。",
@@ -1933,7 +1903,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -1974,7 +1943,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2015,7 +1983,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2056,7 +2023,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2097,7 +2063,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2138,7 +2103,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2179,7 +2143,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2220,7 +2183,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2261,7 +2223,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2302,7 +2263,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2343,7 +2303,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2384,7 +2343,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",
@@ -2425,7 +2383,6 @@ window.CHARACTERS_DATA = [
         "lbSkills": {
             "30": null
         },
-        "img": null,
         "archives": {
             "base": "",
             "lv50": "",

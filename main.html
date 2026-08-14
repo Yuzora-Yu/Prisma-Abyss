@@ -166,7 +166,7 @@
 
                 <div class="setup-label">アイコン</div>
                 <div class="hero-icon-row">
-                    <div class="hero-icon-preview" id="hero-icon-preview"><img src="assets/characters/char_face_301.gif" alt=""></div>
+                    <div class="hero-icon-preview" id="hero-icon-preview"><img src="assets/characters/face/301.png" alt=""></div>
                     <label class="hero-file-picker" for="player-icon">画像を選ぶ</label>
                     <input type="file" id="player-icon" accept="image/*" onchange="handleHeroIconChange(event)">
                 </div>
@@ -200,7 +200,7 @@
     <script src="map_render_shared.js"></script>
     <script src="main.js"></script>
     <script>
-        const DEFAULT_HERO_ICON = 'assets/characters/char_face_301.gif';
+        const DEFAULT_HERO_ICON = 'assets/characters/face/301.png';
 
         window.onload = () => {
             if (typeof App !== 'undefined' && App.initTitleScreen) {

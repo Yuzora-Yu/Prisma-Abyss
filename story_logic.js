@@ -2849,6 +2849,36 @@ const StoryManager = {
     /**
      * 会話の表示
      */
+    setConversationPortrait: function(portraitImg, charId, expression = 'normal') {
+        if (!portraitImg) return;
+        portraitImg.onload = null;
+        portraitImg.onerror = null;
+        portraitImg.removeAttribute('src');
+        portraitImg.style.display = 'none';
+
+        if (charId === undefined || charId === null || typeof App.getCharacterPortraitPath !== 'function') return;
+        const primary = App.getCharacterPortraitPath(charId, expression);
+        const normal = App.getCharacterPortraitPath(charId, 'normal');
+        if (!primary) return;
+
+        let triedNormal = primary === normal;
+        portraitImg.onload = () => {
+            portraitImg.style.display = 'block';
+        };
+        portraitImg.onerror = () => {
+            if (!triedNormal && normal) {
+                triedNormal = true;
+                portraitImg.src = normal;
+                return;
+            }
+            portraitImg.onload = null;
+            portraitImg.onerror = null;
+            portraitImg.removeAttribute('src');
+            portraitImg.style.display = 'none';
+        };
+        portraitImg.src = primary;
+    },
+
     showConversation: async function(scriptKey, startFromIndex = 0) {
         const lines = this.scripts[scriptKey];
         if (!Array.isArray(lines)) {
@@ -2913,11 +2943,8 @@ const StoryManager = {
                 const masterChar = hasExplicitCharId ? DB.CHARACTERS.find(c => c.id === line.charId) : null;
                 const savedChar = hasExplicitCharId ? App.data.characters.find(c => c.charId === line.charId) : null;
                 let displayName = isSystemLine ? '' : (savedChar ? savedChar.name : (masterChar ? masterChar.name : line.name));
-                let displayImg = isSystemLine ? '' : (savedChar?.img || masterChar?.img);
-                if (!isSystemLine && typeof App.getPrologueCharacterImageOverride === 'function') {
-                    displayImg = App.getPrologueCharacterImageOverride(line.charId, 'portrait') || displayImg;
-                }
-                if (line.hidePortrait === true) displayImg = '';
+                const portraitExpression = App.normalizeCharacterExpression?.(line.expression) || 'normal';
+                const shouldShowPortrait = !isSystemLine && hasExplicitCharId && line.hidePortrait !== true;
 
                 if (textWindow) {
                     if (isSystemLine) {
@@ -2952,8 +2979,8 @@ const StoryManager = {
                 }).replace(/\\n/g, '\n');
 
                 this.backlog.push({ name: displayName, text: processedText.replace(/\n/g, ' ') });
-                portraitImg.src = displayImg || '';
-                portraitImg.style.display = displayImg ? 'block' : 'none';
+                if (shouldShowPortrait) this.setConversationPortrait(portraitImg, line.charId, portraitExpression);
+                else this.clearStoryPortrait();
                 nameBox.innerText = displayName;
                 nextIndicator.style.visibility = 'hidden';
 

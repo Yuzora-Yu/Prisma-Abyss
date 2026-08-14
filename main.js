@@ -128,10 +128,9 @@ class Entity {
 class Player extends Entity {
     constructor(data) {
         super(data);
-        // Playerだけがcharacters.jsを画像masterとして参照する。
-        // セーブ側の明示画像は常に優先し、旧セーブのcharIdだけでも従来表示を維持する。
-        const imageMaster = DB.CHARACTERS.find(c => c.id === (data.charId || data.id));
-        this.img = data.img || data.image || imageMaster?.img || null;
+        // 標準キャラクター画像はcharIdからパス規約で解決する。
+        // img/imageはユーザー指定画像など、セーブ側の明示オーバーライドだけを保持する。
+        this.img = data.img || data.image || null;
         this.image = data.image || this.img || null;
         this.originData = data; 
         this.uid = data.uid;
@@ -529,51 +528,70 @@ const App = {
         ) || App.getCharacterWalkGraphicPresentation(301, normalizedDirection, normalizedStep, data);
     },
 
-    getDefaultFaceIconPath: (charOrId) => {
-        const id = (charOrId && typeof charOrId === 'object')
+    getCharacterAssetId: (charOrId) => {
+        const rawId = (charOrId && typeof charOrId === 'object')
             ? (charOrId.charId || charOrId.id || charOrId.originData?.charId || charOrId.originData?.id)
             : charOrId;
+        const id = Math.floor(Number(rawId));
+        return Number.isFinite(id) && id > 0 ? id : null;
+    },
+
+    getDefaultFaceIconPath: (charOrId) => {
+        const id = App.getCharacterAssetId(charOrId);
         return App.getPrologueCharacterImageOverride(charOrId, 'face')
             || (id ? `assets/characters/face/${id}.png` : null);
     },
 
+    characterPortraitExpressions: Object.freeze(['normal', 'happy', 'sad', 'shout', 'angry', 'defeated']),
+
+    normalizeCharacterExpression: (expression = 'normal') => {
+        const key = String(expression || 'normal').trim().toLowerCase();
+        return App.characterPortraitExpressions.includes(key) ? key : 'normal';
+    },
+
+    getCharacterPortraitPath: (charOrId, expression = 'normal') => {
+        const id = App.getCharacterAssetId(charOrId);
+        if (!id) return null;
+        // 5年前のアルスだけは専用年代差分を優先する。
+        const prologueOverride = App.getPrologueCharacterImageOverride(charOrId, 'portrait');
+        if (prologueOverride) return prologueOverride;
+        const safeExpression = App.normalizeCharacterExpression(expression);
+        return `assets/characters/portraits-all-expressions/char_face_${id}_${safeExpression}.png`;
+    },
+
     isDefaultCharacterImagePath: (src) => {
         if (!src || typeof src !== 'string') return false;
-        return /(^|\/)assets\/characters\/(char_face_[^/]+\.gif|face\/[^/]+\.png)$/i.test(src);
+        return /(^|\/)assets\/characters\/(char_face_[^/]+\.(?:gif|png)|face\/[^/]+\.png|portraits-all-expressions\/char_face_[^/]+\.png)$/i.test(src);
     },
 
-	hasCustomCharacterImage: (char) => {
-		if (!char) return false;
-		if (char.imageEdit && char.imageEdit.src) return true;
-		if (!char.img) return false;
-		if (char.customImage === true || char.hasCustomImage === true) return true;
-		const master = App.getCharacterMaster(char);
-		if (master && char.img === master.img) return false;
-		if (App.isDefaultCharacterImagePath(char.img)) return false;
-		return /^data:image\//i.test(char.img) || !/^assets\/characters\//i.test(char.img);
-	},
+    hasCustomCharacterImage: (char) => {
+        if (!char) return false;
+        if (char.imageEdit && char.imageEdit.src) return true;
+        if (!char.img) return false;
+        if (char.customImage === true || char.hasCustomImage === true) return true;
+        if (App.isDefaultCharacterImagePath(char.img)) return false;
+        return /^data:image\//i.test(char.img) || !/^assets\/characters\//i.test(char.img);
+    },
 
-	getCharacterDisplayImage: (charOrId) => {
-		const char = (charOrId && typeof charOrId === 'object') ? charOrId : null;
-		const prologueOverride = App.getPrologueCharacterImageOverride(charOrId, 'face');
-		if (prologueOverride) return prologueOverride;
-		if (char && char.imageEdit && char.imageEdit.src) return char.imageEdit.src;
-		if (char && App.hasCustomCharacterImage(char)) return char.img;
-		return App.getDefaultFaceIconPath(charOrId) || App.getCharacterImageFallback(charOrId);
-	},
-
-    getCharacterImageFallback: (charOrId) => {
+    getCharacterDisplayImage: (charOrId) => {
         const char = (charOrId && typeof charOrId === 'object') ? charOrId : null;
-        const master = App.getCharacterMaster(charOrId);
-        return (master && master.img) || (char && char.img) || '';
+        const prologueOverride = App.getPrologueCharacterImageOverride(charOrId, 'face');
+        if (prologueOverride) return prologueOverride;
+        if (char && char.imageEdit && char.imageEdit.src) return char.imageEdit.src;
+        if (char && App.hasCustomCharacterImage(char)) return char.img;
+        return App.getDefaultFaceIconPath(charOrId) || '';
     },
+
+    getCharacterImageFallback: (charOrId) => App.getDefaultFaceIconPath(charOrId) || '',
 
     getCharacterImageOnErrorAttr: (charOrId) => {
         const fallback = App.getCharacterImageFallback(charOrId);
         const current = App.getCharacterDisplayImage(charOrId);
-        if (!fallback || fallback === current) return '';
+        if (!fallback || fallback === current) {
+            return ` onerror="this.onerror=null;this.style.display='none';"`;
+        }
         const safeFallback = String(fallback).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-        return ` onerror="this.onerror=null;this.src='${safeFallback}';"`;
+        return ` onerror="this.onerror=function(){this.onerror=null;this.style.display='none';};this.src='${safeFallback}';"`;
     },
 
     unlockDefaults: {
@@ -2495,19 +2513,6 @@ const App = {
 			addObjectValues(assets.graphics);
 			addObjectValues(assets.battleFx);
 		}
-
-		// キャラクター顔画像は assets.js ではなく characters.js 側の定義を正本にしているため、
-		// 起動後にDBが読める状態で追加する。
-		const characterLists = [];
-		if (typeof DB !== 'undefined' && Array.isArray(DB.CHARACTERS)) characterLists.push(DB.CHARACTERS);
-		if (typeof window !== 'undefined' && Array.isArray(window.CHARACTERS_DATA)) characterLists.push(window.CHARACTERS_DATA);
-		characterLists.forEach(list => {
-			list.forEach(c => {
-				if (!c) return;
-				add(c.img);
-				add(c.image);
-			});
-		});
 
 		add('assets/background/PRISMA ABYSS.png');
 		return Array.from(urls);
@@ -6927,7 +6932,8 @@ load: () => {
             App.data.characters[0].img = imgSrc;
             App.data.characters[0].customImage = true;
         } else {
-            App.data.characters[0].img = heroMaster?.img || null;
+            delete App.data.characters[0].img;
+            delete App.data.characters[0].image;
             delete App.data.characters[0].customImage;
         }
         if (heroMaster) {

@@ -103,11 +103,12 @@ const Gacha = {
     getDisplayInfo: (char) => {
         const master = DB.CHARACTERS.find(m => m.id === char.id || m.id === char.charId);
         const owned = App.data.characters.find(c => c.charId === (char.id || char.charId));
+        const displayTarget = owned || master || char;
         return {
             master,
             owned,
             displayName: (owned && owned.name) || (master ? master.name : char.name),
-            displayImg: (owned && owned.img) || (master ? master.img : char.img || null),
+            displayImg: App.getCharacterDisplayImage ? App.getCharacterDisplayImage(displayTarget) : '',
             status: master || char
         };
     },
@@ -457,8 +458,9 @@ const Gacha = {
         const lbSuffix = (!char.isNew && limitBreak > 0)
             ? `<span class="gacha-lb-plus"> +${Gacha.escapeHtml(limitBreak)}</span>`
             : '';
-        const img = info.displayImg
-            ? `<img class="gacha-card-character" src="${info.displayImg}" alt="">`
+        const displayImg = options.displayImg !== undefined ? options.displayImg : info.displayImg;
+        const img = displayImg
+            ? `<img class="gacha-card-character" src="${displayImg}" alt="">`
             : `<div class="gacha-card-silhouette">?</div>`;
         const newBadge = char.isNew ? `<div class="gacha-new-stamp">NEW</div>` : '';
 

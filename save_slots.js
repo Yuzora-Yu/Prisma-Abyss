@@ -144,9 +144,8 @@
 
         getCharacterFaceFallback: (character) => {
             if (!character) return '';
-            if (typeof character.img === 'string' && character.img && !/^data:image\//i.test(character.img)) return character.img;
             const charId = Number(character.charId || character.id || 0);
-            return charId > 0 ? `assets/characters/char_face_${String(charId).padStart(3, '0')}.gif` : '';
+            return charId > 0 ? `assets/characters/face/${charId}.png` : '';
         },
 
         deriveLocationLabel: (data) => {

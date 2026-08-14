@@ -1801,8 +1801,9 @@ const MenuAllies = {
         if (typeof App !== 'undefined' && typeof App.getCharacterImageFallback === 'function') {
             return App.getCharacterImageFallback(char);
         }
-        const master = (typeof App !== 'undefined' && typeof App.getCharacterMaster === 'function') ? App.getCharacterMaster(char) : null;
-        return master?.img || null;
+        return (typeof App !== 'undefined' && typeof App.getDefaultFaceIconPath === 'function')
+            ? App.getDefaultFaceIconPath(char)
+            : null;
     },
 
     hasResettableImage: (char) => {
@@ -1823,10 +1824,16 @@ const MenuAllies = {
                 delete char.imageEdit;
                 delete char.customImage;
                 delete char.hasCustomImage;
-                if (defaultImg) {
-                    char.img = defaultImg;
-                    char.image = defaultImg;
+                if (App.isMonsterAlly && App.isMonsterAlly(char)) {
+                    if (defaultImg) {
+                        char.img = defaultImg;
+                        char.image = defaultImg;
+                    } else {
+                        delete char.img;
+                        delete char.image;
+                    }
                 } else {
+                    // 通常キャラクターの標準画像はcharIdから導出するため、セーブへパスを保存しない。
                     delete char.img;
                     delete char.image;
                 }

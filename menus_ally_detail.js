@@ -6,6 +6,7 @@ const MenuAllyDetail = {
     selectedChar: null,
     currentMainTab: 'archive', 
     currentArchive: 'base',
+    currentPortraitExpression: 'normal',
 
 	init: (char) => {
 		if (!char) return;
@@ -16,6 +17,7 @@ const MenuAllyDetail = {
 
 		MenuAllyDetail.currentMainTab = 'archive';
 		MenuAllyDetail.currentArchive = 'base';
+		MenuAllyDetail.currentPortraitExpression = 'normal';
 
 		MenuAllies.showArchiveView();
 		MenuAllyDetail.render();
@@ -87,13 +89,60 @@ const MenuAllyDetail = {
         return MenuAllyDetail.renderLimitBreak();
     },
 
+    getPortraitImage: (char, expression = 'normal') => {
+        if (!char) return '';
+        if (App.isMonsterAlly?.(char)) {
+            return App.getCharacterDisplayImage ? App.getCharacterDisplayImage(char) : (char.img || '');
+        }
+        return App.getCharacterPortraitPath ? App.getCharacterPortraitPath(char, expression) : '';
+    },
+
+    randomizePortrait: (event) => {
+        event?.stopPropagation?.();
+        const char = MenuAllyDetail.selectedChar;
+        if (!char || App.isMonsterAlly?.(char)) return;
+
+        const expressions = Array.isArray(App.characterPortraitExpressions)
+            ? App.characterPortraitExpressions
+            : ['normal', 'happy', 'sad', 'shout', 'angry', 'defeated'];
+        const current = App.normalizeCharacterExpression
+            ? App.normalizeCharacterExpression(MenuAllyDetail.currentPortraitExpression)
+            : (MenuAllyDetail.currentPortraitExpression || 'normal');
+        const candidates = expressions.filter(expression => expression !== current);
+        if (!candidates.length) return;
+
+        const next = candidates[Math.floor(Math.random() * candidates.length)];
+        const src = MenuAllyDetail.getPortraitImage(char, next);
+        const img = document.querySelector('.ally-detail-card-character');
+        if (!img || !src) {
+            if (img) img.style.display = 'none';
+            return;
+        }
+
+        MenuAllyDetail.currentPortraitExpression = next;
+        img.style.display = 'none';
+        img.onload = () => {
+            img.style.display = '';
+            img.onload = null;
+            img.onerror = null;
+        };
+        img.onerror = () => {
+            img.onload = null;
+            img.onerror = null;
+            img.removeAttribute('src');
+            img.style.display = 'none';
+        };
+        img.src = src;
+    },
+
     renderArchive: () => {
         const c = MenuAllyDetail.selectedChar;
         const master = DB.CHARACTERS.find(m => m.id === c.charId) || {};
         const rarity = c.rarity || 'N';
         const stars = { 'N': 1, 'R': 2, 'SR': 3, 'SSR': 4, 'UR': 5, 'EX': 6 }[rarity] || 1;
-        const imgUrl = App.getCharacterDisplayImage ? App.getCharacterDisplayImage(c) : (c.img || master.img);
-        const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(c) : '';
+        const isMonsterAlly = App.isMonsterAlly?.(c) === true;
+        const imgUrl = MenuAllyDetail.getPortraitImage(c, isMonsterAlly ? 'normal' : MenuAllyDetail.currentPortraitExpression);
+        const imageErrorAttr = imgUrl ? ` onerror="this.onerror=null;this.removeAttribute('src');this.style.display='none';"` : '';
 
         let frontRareClass = "";
         if (rarity === "SSR") frontRareClass = "style-gold";
@@ -119,13 +168,13 @@ const MenuAllyDetail = {
         };
 
         let premiumFrontHtml = (typeof Gacha !== 'undefined' && typeof Gacha.buildPremiumFrontFace === 'function')
-            ? Gacha.buildPremiumFrontFace(cardData)
+            ? Gacha.buildPremiumFrontFace(cardData, { displayImg: imgUrl || '' })
             : `
                 <div class="card-face card-front premium-card-front ${rarityClass}" style="transform:none;">
                     <div class="gacha-card-backdrop"></div>
                     <div class="gacha-card-rarity-aura"></div>
                     <div class="gacha-character-window">
-                        ${imgUrl ? `<img class="gacha-card-character" src="${imgUrl}"${imageFallbackAttr} alt="">` : '<div class="gacha-card-silhouette">?</div>'}
+                        ${imgUrl ? `<img class="gacha-card-character" src="${imgUrl}"${imageErrorAttr} alt="">` : '<div class="gacha-card-silhouette">?</div>'}
                     </div>
                     <img class="gacha-card-template" src="assets/gacha/front_card.png" alt="">
                     <div class="gacha-card-rarity">${rarity}</div>
@@ -140,7 +189,7 @@ const MenuAllyDetail = {
 		premiumFrontHtml = premiumFrontHtml
 			.replace(
 				'class="gacha-card-character"',
-				'class="gacha-card-character ally-detail-card-character" style="animation:none !important; -webkit-animation:none !important; opacity:1 !important;"'
+				`class="gacha-card-character ally-detail-card-character" style="animation:none !important; -webkit-animation:none !important; opacity:1 !important;" onerror="this.onerror=null;this.removeAttribute('src');this.style.display='none';"`
 			)
 			.replace(
 				'class="card-face card-front premium-card-front',
@@ -152,7 +201,7 @@ const MenuAllyDetail = {
             <div class="ally-archive-card-stage">
                 <button type="button" class="ally-archive-nav prev" onclick="MenuAllyDetail.switchChar(-1)">◀</button>
 
-                <div class="gacha-card-scene premium-card premium-card-static ally-detail-premium-card ${rarityClass}" style="width:clamp(205px, min(66vw, 36svh), 265px) !important; height:auto !important; aspect-ratio:2/3 !important; flex-shrink:0; animation:none !important;">
+                <div class="gacha-card-scene premium-card premium-card-static ally-detail-premium-card ${rarityClass}" ${isMonsterAlly ? '' : 'onclick="MenuAllyDetail.randomizePortrait(event)"'} style="width:clamp(205px, min(66vw, 36svh), 265px) !important; height:auto !important; aspect-ratio:2/3 !important; flex-shrink:0; animation:none !important; ${isMonsterAlly ? '' : 'cursor:pointer;'}">
                     ${premiumFrontHtml}
                 </div>
 
@@ -311,6 +360,7 @@ const MenuAllyDetail = {
         
         const nextChar = chars[newIdx];
         MenuAllyDetail.selectedChar = nextChar;
+        MenuAllyDetail.currentPortraitExpression = 'normal';
         // ★重要: 基本画面のターゲットも同期させる
         MenuAllies.selectedChar = nextChar;
 		MenuAllies.selectedUid = nextChar.uid; // ★追加：UIDを同期
