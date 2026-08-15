@@ -1764,16 +1764,3 @@ Status: **inventory / no automatic replacement**
 |1732|map_interaction_label|`map.js`|WIND_VILLAGE / kazaria_rope_mender_01|（新規）|綱直しの女と話す|new_copy_approved_20260815|
 |1733|map_interaction_label|`map.js`|WATER_CITY / water_city_retired_deckhand_01|（新規）|老甲板員と話す|new_copy_approved_20260815|
 |1734|ui_story_log|`story_logic.js`|generic `EQUIP` story action|（新規）|${equip.name}を手に入れた！|new_copy_approved_20260815|
-
-|1735|ui_label|`menus_ally_detail.js`|job identity panel|（新規）|職特性|new_copy_inventory_20260815|
-|1736|ui_status|`menus_ally_detail.js`|job identity active|（新規）|発動中|new_copy_inventory_20260815|
-|1737|ui_status|`menus_ally_detail.js`|job identity weapon activation|（新規）|${required.join('・')}を装備すると有効|new_copy_inventory_20260815|
-|1738|ui_job_role|`job_data.js`|狩人 role|（新規）|弓・弱体・ブレス|new_copy_inventory_20260815|
-|1739|ui_job_description|`job_data.js`|狩人 description|（新規）|弓装備時、命中と会心が上がり、物理攻撃・ブレス・弱体の通しやすさが伸びる。|new_copy_inventory_20260815|
-|1740|ui_job_role|`job_data.js`|魔弓使い role|（新規）|弓・攻撃魔法・回復|new_copy_inventory_20260815|
-|1741|ui_job_description|`job_data.js`|魔弓使い description|（新規）|弓装備時、魔力と命中が上がり、攻撃魔法と回復の性能が伸びる。弓技にも小さな補正を得る。|new_copy_inventory_20260815|
-|1742|ui_job_role|`job_data.js`|光魔剣士 role|（新規）|魔法剣・光属性|new_copy_inventory_20260815|
-|1743|ui_job_description|`job_data.js`|光魔剣士 description|（新規）|攻撃・魔力・魔防が伸び、光属性攻撃を大きく強化する。物理と魔法のどちらでも戦える。|new_copy_inventory_20260815|
-|1744|news_copy|`news.js`|2026/08/15 update note|（新規）|転生後の必要経験値曲線を調整しました|new_copy_inventory_20260815|
-|1745|news_copy|`news.js`|2026/08/15 update note|（新規）|狩人、魔弓使い、光魔剣士に職業固有の戦闘特性を追加しました|new_copy_inventory_20260815|
-

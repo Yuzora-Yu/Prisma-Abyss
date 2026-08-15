@@ -1,74 +1,111 @@
-NONMAP_GAMEPLAY_LOGIC_CHECK: 73/73 PASS
-01. PASS JOB_IDENTITY_DATA exists
-02. PASS hunter identity exists
-03. PASS magic archer identity exists
-04. PASS light magic knight identity exists
-05. PASS hunter requires bow
-06. PASS hunter has debuff bonus
-07. PASS hunter has breath bonus
-08. PASS magic archer requires bow
-09. PASS magic archer has magic bonus
-10. PASS magic archer has heal bonus
-11. PASS light magic knight has light bonus
-12. PASS light magic knight has light element attack
-13. PASS bow progression includes rank 1
-14. PASS bow progression includes rank 10
-15. PASS bow progression includes rank 20
-16. PASS bow progression includes rank 30
-17. PASS bow progression includes rank 40
-18. PASS bow progression includes rank 50
-19. PASS bow progression includes rank 60
-20. PASS bow progression includes rank 70
-21. PASS bow progression includes rank 80
-22. PASS bow progression includes rank 90
-23. PASS bow progression includes rank 100
-24. PASS bow progression includes rank 110
-25. PASS bow progression includes rank 120
-26. PASS bow progression includes rank 130
-27. PASS bow progression includes rank 140
-28. PASS bow progression includes rank 150
-29. PASS bow progression includes rank 160
-30. PASS bow progression includes rank 170
-31. PASS bow progression includes rank 180
-32. PASS bow progression includes rank 190
-33. PASS bow progression includes rank 200
-34. PASS 剣 weapon progression has no rank-band gap
-35. PASS 斧 weapon progression has no rank-band gap
-36. PASS 短剣 weapon progression has no rank-band gap
-37. PASS 杖 weapon progression has no rank-band gap
-38. PASS 槍 weapon progression has no rank-band gap
-39. PASS 弓 weapon progression has no rank-band gap
-40. PASS all monster action skill IDs resolve
-41. PASS main resolves job identity
-42. PASS main evaluates job activation
-43. PASS main exposes job combat modifiers
-44. PASS calcStats stores job identity state
-45. PASS calcStats stores job combat state
-46. PASS old reincarnation placeholder exponent removed
-47. PASS old Lv101 placeholder label removed
-48. PASS reincarnation multiplier caps at 20
-49. PASS reincarnation first five multiplier exists
-50. PASS reincarnation later multiplier exists
-51. PASS base Lv49 wall remains 150000
-52. PASS base Lv99 wall remains 750000
-53. PASS reinc1 Lv49 wall is 210000
-54. PASS reinc1 Lv99 wall is 1050000
-55. PASS reinc5 multiplier is 3.0
-56. PASS reinc20 multiplier is 4.2
-57. PASS reinc20+ cap is stable
-58. PASS reincarnation keeps 49->50 wall
-59. PASS reincarnation keeps 99->100 wall
-60. PASS battle copies job combat state to player
-61. PASS battle has generic job damage helper
-62. PASS auto estimate applies job damage
-63. PASS actual damage applies job damage
-64. PASS healing applies job heal modifier
-65. PASS debuff applies job success modifier
-66. PASS madante/light magic path applies job damage
-67. PASS AUTO heal estimate applies job heal modifier
-68. PASS ally detail shows job identity panel
-69. PASS ally detail shows active status
-70. PASS ally detail shows weapon activation requirement
-71. PASS 2026/08/15 news remains single record
-72. PASS news mentions reincarnation curve
-73. PASS news mentions job identities
+NONMAP_GAMEPLAY_LOGIC_CHECK: 110/110 PASS
+01. PASS JOB_IDENTITY_DATA is not implemented
+02. PASS hunter job remains
+03. PASS magic archer job remains
+04. PASS light magic knight job remains
+05. PASS main job identity helper removed
+06. PASS main job combat helper removed
+07. PASS calcStats job identity layer removed
+08. PASS battle job combat helper removed
+09. PASS battle job heal modifier removed
+10. PASS battle job debuff modifier removed
+11. PASS ally detail job identity panel removed
+12. PASS news no longer claims job identities
+13. PASS effective level formula remains
+14. PASS reincarnation curve exponent remains
+15. PASS reincarnation step rate remains
+16. PASS replacement reincarnation multiplier removed
+17. PASS replacement reincarnation cap removed
+18. PASS display Lv49 wall is reapplied
+19. PASS display Lv99 wall is reapplied
+20. PASS Lv50/100 stat milestone uses display level
+21. PASS main getNextExp function can be extracted
+22. PASS reinc2 Lv1 matches legacy effective-level curve
+23. PASS reinc2 Lv10 matches legacy effective-level curve
+24. PASS reinc2 Lv25 matches legacy effective-level curve
+25. PASS reinc2 Lv48 matches legacy effective-level curve
+26. PASS reinc2 Lv50 matches legacy effective-level curve
+27. PASS reinc2 Lv75 matches legacy effective-level curve
+28. PASS reinc2 Lv98 matches legacy effective-level curve
+29. PASS reinc2 Lv49 wall is legacy raw base x5
+30. PASS reinc2 Lv99 wall is legacy raw base x5
+31. PASS reinc2 Lv49 wall exceeds next level
+32. PASS reinc2 Lv99 wall exceeds previous level
+33. PASS reinc3 Lv1 matches legacy effective-level curve
+34. PASS reinc3 Lv10 matches legacy effective-level curve
+35. PASS reinc3 Lv25 matches legacy effective-level curve
+36. PASS reinc3 Lv48 matches legacy effective-level curve
+37. PASS reinc3 Lv50 matches legacy effective-level curve
+38. PASS reinc3 Lv75 matches legacy effective-level curve
+39. PASS reinc3 Lv98 matches legacy effective-level curve
+40. PASS reinc3 Lv49 wall is legacy raw base x5
+41. PASS reinc3 Lv99 wall is legacy raw base x5
+42. PASS reinc3 Lv49 wall exceeds next level
+43. PASS reinc3 Lv99 wall exceeds previous level
+44. PASS reinc4 Lv1 matches legacy effective-level curve
+45. PASS reinc4 Lv10 matches legacy effective-level curve
+46. PASS reinc4 Lv25 matches legacy effective-level curve
+47. PASS reinc4 Lv48 matches legacy effective-level curve
+48. PASS reinc4 Lv50 matches legacy effective-level curve
+49. PASS reinc4 Lv75 matches legacy effective-level curve
+50. PASS reinc4 Lv98 matches legacy effective-level curve
+51. PASS reinc4 Lv49 wall is legacy raw base x5
+52. PASS reinc4 Lv99 wall is legacy raw base x5
+53. PASS reinc4 Lv49 wall exceeds next level
+54. PASS reinc4 Lv99 wall exceeds previous level
+55. PASS reinc5 Lv1 matches legacy effective-level curve
+56. PASS reinc5 Lv10 matches legacy effective-level curve
+57. PASS reinc5 Lv25 matches legacy effective-level curve
+58. PASS reinc5 Lv48 matches legacy effective-level curve
+59. PASS reinc5 Lv50 matches legacy effective-level curve
+60. PASS reinc5 Lv75 matches legacy effective-level curve
+61. PASS reinc5 Lv98 matches legacy effective-level curve
+62. PASS reinc5 Lv49 wall is legacy raw base x5
+63. PASS reinc5 Lv99 wall is legacy raw base x5
+64. PASS reinc5 Lv49 wall exceeds next level
+65. PASS reinc5 Lv99 wall exceeds previous level
+66. PASS base Lv49 wall remains 150000
+67. PASS base Lv99 wall remains 750000
+68. PASS reinc2 Lv1 retains old 269579
+69. PASS reinc3 Lv1 retains old 330709
+70. PASS reinc4 Lv1 retains old 380251
+71. PASS reinc5 Lv1 retains old 423495
+72. PASS actual main getNextExp reinc0 Lv1
+73. PASS actual main getNextExp reinc0 Lv48
+74. PASS actual main getNextExp reinc0 Lv49
+75. PASS actual main getNextExp reinc0 Lv50
+76. PASS actual main getNextExp reinc0 Lv98
+77. PASS actual main getNextExp reinc0 Lv99
+78. PASS actual main getNextExp reinc2 Lv1
+79. PASS actual main getNextExp reinc2 Lv48
+80. PASS actual main getNextExp reinc2 Lv49
+81. PASS actual main getNextExp reinc2 Lv50
+82. PASS actual main getNextExp reinc2 Lv98
+83. PASS actual main getNextExp reinc2 Lv99
+84. PASS actual main getNextExp reinc3 Lv1
+85. PASS actual main getNextExp reinc3 Lv48
+86. PASS actual main getNextExp reinc3 Lv49
+87. PASS actual main getNextExp reinc3 Lv50
+88. PASS actual main getNextExp reinc3 Lv98
+89. PASS actual main getNextExp reinc3 Lv99
+90. PASS actual main getNextExp reinc4 Lv1
+91. PASS actual main getNextExp reinc4 Lv48
+92. PASS actual main getNextExp reinc4 Lv49
+93. PASS actual main getNextExp reinc4 Lv50
+94. PASS actual main getNextExp reinc4 Lv98
+95. PASS actual main getNextExp reinc4 Lv99
+96. PASS actual main getNextExp reinc5 Lv1
+97. PASS actual main getNextExp reinc5 Lv48
+98. PASS actual main getNextExp reinc5 Lv49
+99. PASS actual main getNextExp reinc5 Lv50
+100. PASS actual main getNextExp reinc5 Lv98
+101. PASS actual main getNextExp reinc5 Lv99
+102. PASS 剣 weapon progression has no rank-band gap
+103. PASS 斧 weapon progression has no rank-band gap
+104. PASS 短剣 weapon progression has no rank-band gap
+105. PASS 杖 weapon progression has no rank-band gap
+106. PASS 槍 weapon progression has no rank-band gap
+107. PASS 弓 weapon progression has no rank-band gap
+108. PASS all monster action skill IDs resolve
+109. PASS 2026/08/15 news remains single record
+110. PASS news no longer claims reincarnation formula replacement

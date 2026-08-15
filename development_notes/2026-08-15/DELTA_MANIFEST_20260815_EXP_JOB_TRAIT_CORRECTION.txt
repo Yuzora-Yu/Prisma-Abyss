@@ -1,0 +1,25 @@
+2026-08-15 EXP / JOB TRAIT CORRECTION DELTA
+
+Changed / new files only (relative to prisma_abyss_delta_20260815_nonmap_gameplay_logic.zip applied state):
+
+1. battle.js
+2. canon/PRISMA_DEVELOPMENT_ROADMAP_v2.md
+3. development_notes/2026-08-15/DELTA_MANIFEST_20260815_EXP_JOB_TRAIT_CORRECTION.txt
+4. development_notes/2026-08-15/reports/NONMAP_GAMEPLAY_CORRECTION_20260815.md
+5. development_notes/2026-08-15/reports/NONMAP_GAMEPLAY_LOGIC_PHASE21_FOUNDATION_20260815.md
+6. development_notes/2026-08-15/validation/NONMAP_GAMEPLAY_LOGIC_CHECK_20260815.js
+7. development_notes/2026-08-15/validation/NONMAP_GAMEPLAY_LOGIC_CHECK_20260815.log
+8. development_notes/2026-08-15/validation/NONMAP_GAMEPLAY_REGRESSION_20260815.log
+9. docs/design/NONMAP_GAMEPLAY_FOUNDATION_20260815.md
+10. docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+11. job_data.js
+12. main.js
+13. menus_ally_detail.js
+14. news.js
+
+Notes:
+- Restores effectiveLevel = displayLevel + reincarnationCount * 100 as the unchanged EXP foundation.
+- Reapplies WALL_50 / WALL_100 at display Lv49 / Lv99 every reincarnation cycle.
+- Keeps the existing display Lv50 / Lv100 stat-growth milestone bonus every cycle.
+- Removes the provisional JOB_IDENTITY_DATA feature and its runtime/UI/news hooks.
+- Keeps the three new jobs and Alan's Light Magic Knight awakening/job override.

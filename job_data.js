@@ -648,30 +648,3 @@ window.JOB_SKILLS_DATA = {
     }
 };
 window.JOB_SKILLS = window.JOB_SKILLS_DATA;
-
-// 職業ごとの「習得技とは別の」戦闘個性。
-// 数値はバランス調整時にここだけを触れるよう、runtime側へ散らさない。
-// activation.weaponTypes がある職は、指定武器を装備している間だけ職特性が有効になる。
-window.JOB_IDENTITY_DATA = Object.freeze({
-    "狩人": Object.freeze({
-        role: "弓・弱体・ブレス",
-        activation: Object.freeze({ weaponTypes: Object.freeze(["弓"]) }),
-        stats: Object.freeze({ atkPct: 5, hit: 8, cri: 4 }),
-        combat: Object.freeze({ physicalDamagePct: 5, breathDamagePct: 12, debuffSuccessPct: 10 }),
-        description: "弓装備時、命中と会心が上がり、物理攻撃・ブレス・弱体の通しやすさが伸びる。"
-    }),
-    "魔弓使い": Object.freeze({
-        role: "弓・攻撃魔法・回復",
-        activation: Object.freeze({ weaponTypes: Object.freeze(["弓"]) }),
-        stats: Object.freeze({ magPct: 8, hit: 6 }),
-        combat: Object.freeze({ physicalDamagePct: 3, magicDamagePct: 8, healPct: 12 }),
-        description: "弓装備時、魔力と命中が上がり、攻撃魔法と回復の性能が伸びる。弓技にも小さな補正を得る。"
-    }),
-    "光魔剣士": Object.freeze({
-        role: "魔法剣・光属性",
-        stats: Object.freeze({ atkPct: 5, magPct: 5, mdefPct: 5 }),
-        elmAtk: Object.freeze({ "光": 15 }),
-        combat: Object.freeze({ physicalDamagePct: 4, magicDamagePct: 4, lightDamagePct: 10 }),
-        description: "攻撃・魔力・魔防が伸び、光属性攻撃を大きく強化する。物理と魔法のどちらでも戦える。"
-    })
-});

@@ -84,37 +84,6 @@ const Battle = {
     isMadanteSkillId: (id) => Battle.MADANTE_SKILL_IDS.has(Number(id)),
     isMadanteSkill: (data) => data && Battle.isMadanteSkillId(data.id),
 
-    // 職業固有の戦闘補正は、通常のパッシブとは別レイヤーで扱う。
-    // Battle用インスタンスには開始時にjobCombatをコピーするが、テストや特殊actorでは
-    // originDataから再解決できるようにして、専用処理の取りこぼしを防ぐ。
-    getJobCombatModifiers: (actor) => {
-        if (!actor) return {};
-        if (actor.jobCombat && typeof actor.jobCombat === 'object') return actor.jobCombat;
-        const source = actor.originData || actor;
-        if (typeof App !== 'undefined' && typeof App.getJobIdentityCombatModifiers === 'function') {
-            return App.getJobIdentityCombatModifiers(source) || {};
-        }
-        return {};
-    },
-
-    getJobCombatValue: (actor, key) => {
-        const value = Number(Battle.getJobCombatModifiers(actor)?.[key] || 0);
-        return Number.isFinite(value) ? value : 0;
-    },
-
-    getJobDamagePct: (actor, effectType, element, isPhysical = false) => {
-        let pct = 0;
-        if (isPhysical || effectType === '通常攻撃' || effectType === '物理') {
-            pct += Battle.getJobCombatValue(actor, 'physicalDamagePct');
-        } else if (effectType === '魔法') {
-            pct += Battle.getJobCombatValue(actor, 'magicDamagePct');
-        } else if (effectType === 'ブレス') {
-            pct += Battle.getJobCombatValue(actor, 'breathDamagePct');
-        }
-        if (element === '光') pct += Battle.getJobCombatValue(actor, 'lightDamagePct');
-        return pct;
-    },
-
     getUniqueEquips: (entity) => {
         if (typeof PassiveSkill !== 'undefined' && typeof PassiveSkill.getUniqueEquips === 'function') {
             return PassiveSkill.getUniqueEquips(entity);
@@ -2544,8 +2513,6 @@ const Battle = {
                 player.elmAtk = stats.elmAtk || {}; player.elmRes = stats.elmRes || {};
                 player.resists = stats.resists || {};
                 player.finDmg = stats.finDmg || 0; player.finRed = stats.finRed || 0;
-                player.jobIdentity = stats.jobIdentity || null;
-                player.jobCombat = stats.jobCombat || {};
                 player.passive = Battle.getPassives(player);
                 
                 // シナジー付与スキル習得
@@ -4723,9 +4690,7 @@ findNextActor: () => {
         if (skill.ratio !== undefined) amount = Number(target.baseMaxHp || 0) * Number(skill.ratio || 0);
         else if (skill.fix) amount = base;
         else amount = (Number(Battle.getBattleStat(actor, 'mag') || 0) * rate) + base;
-        const healPct = Number(PassiveSkill.getSumValue(actor, 'heal_pct') || 0)
-            + Battle.getJobCombatValue(actor, 'healPct');
-        amount *= 1 + (healPct / 100);
+        amount *= 1 + (Number(PassiveSkill.getSumValue(actor, 'heal_pct') || 0) / 100);
         return Math.max(0, Math.floor(amount));
     },
 
@@ -5068,10 +5033,6 @@ findNextActor: () => {
             const reduceKey = isPhysical ? 'physical_reduce_pct' : (effectType === '魔法' ? 'magic_reduce_pct' : (effectType === 'ブレス' ? 'breath_reduce_pct' : null));
             if (!isFixedDamage && damageKey) dmg *= 1 + PassiveSkill.getSumValue(actor, damageKey) / 100;
             if (reduceKey) dmg *= 1 - PassiveSkill.getSumValue(target, reduceKey) / 100;
-        }
-        if (!isFixedDamage) {
-            const jobDamagePct = Battle.getJobDamagePct(actor, effectType, data?.elm || null, isPhysical);
-            if (jobDamagePct) dmg *= 1 + jobDamagePct / 100;
         }
         if (target.status?.defend) dmg *= 0.5;
 
@@ -6692,7 +6653,6 @@ findNextActor: () => {
                         
                         const finDmgVal = Battle.getBattleStat(actor, 'finDmg') || 0; bonusRate += finDmgVal;
                         bonusRate += PassiveSkill.getSumValue(actor, 'dmg_pct');
-                        bonusRate += Battle.getJobDamagePct(actor, '魔法', element, false);
                         let finRed = Battle.getBattleStat(targetToHit, 'finRed') || 0;
                         if (finRed > 80) finRed = 80; cutRate += finRed;
                         
@@ -6776,8 +6736,7 @@ findNextActor: () => {
                 if (!t || t.isFled || !Battle.isBattleAlive(t)) return;
                 // 特性による成功率ボーナスの算出
 				const assaBonus = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_instantdeath_bonus') : 0;
-                const bodyBonus = ((typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_body_bonus') : 0)
-                    + Battle.getJobCombatValue(actor, 'debuffSuccessPct');
+                const bodyBonus = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_body_bonus') : 0;
                 const curseBonus = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_curse_bonus') : 0; // ★追加
 
                 // 状態異常・弱体は一度だけ抽選する。
@@ -6957,8 +6916,7 @@ findNextActor: () => {
                         }
                     }
 					if (effectType === '回復' && Battle.isBattleAlive(t)) {
-						const healBonusPct = PassiveSkill.getSumValue(actor, 'heal_pct') + Battle.getJobCombatValue(actor, 'healPct');
-						const healBonus = 1 + (healBonusPct / 100);
+						const healBonus = 1 + (PassiveSkill.getSumValue(actor, 'heal_pct') / 100);
 						let rec;
 						if (data.ratio) {
 							rec = Math.floor(t.baseMaxHp * data.ratio);
@@ -7215,7 +7173,6 @@ findNextActor: () => {
 							typeDmgPct = PassiveSkill.getSumValue(actor, 'breath_dmg_pct'); // ID 12
 							typeRedPct = PassiveSkill.getSumValue(targetToHit, 'breath_reduce_pct'); // ID 17
 						}
-                        typeDmgPct += Battle.getJobDamagePct(actor, effectType, element, isPhysical);
 
 						// 最終乗算 (1.0 + 補正/100)
 						if (!isFixedDamage) dmg = Math.floor(dmg * (1 + typeDmgPct / 100));
@@ -7296,8 +7253,7 @@ findNextActor: () => {
                     if (dmg > 0 && isPhysical && Battle.isBattleAlive(targetToHit)) {
 						const curseBonus = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_curse_bonus') : 0;
 						const assaBonus  = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_instantdeath_bonus') : 0;
-						const bodyBonus = ((typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_body_bonus') : 0)
-                            + Battle.getJobCombatValue(actor, 'debuffSuccessPct');
+						const bodyBonus = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.getSumValue(actor, 'proc_body_bonus') : 0;
 
 						const tryS = (key, name, ailmentKey, bonus = 0) => {
 							const baseChance = (actor.getStat(key) || 0);
