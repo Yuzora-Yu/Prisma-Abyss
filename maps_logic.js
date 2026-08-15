@@ -730,6 +730,14 @@ const MapRegistry = {
 
         const current = parseFloorLabel(currentLabel, currentNo);
         const target = parseFloorLabel(targetLabel, targetNo);
+        const directionMode = String(mapDef.floorDirectionMode || '').toLowerCase();
+
+        // 地下迷宮の最奥に「隠し書庫」など階数表記を持たない区画がある場合も、
+        // 同一ダンジョン内の進行番号を地下深度として扱う。
+        if (directionMode === 'basement') {
+            if (targetNo > currentNo) return 'down';
+            if (targetNo < currentNo) return 'up';
+        }
 
         // 地下表記を含むMAPは「地下へ進む」時を下り、「地上へ戻る」時を上りとして扱う。
         if (current.basement || target.basement) {

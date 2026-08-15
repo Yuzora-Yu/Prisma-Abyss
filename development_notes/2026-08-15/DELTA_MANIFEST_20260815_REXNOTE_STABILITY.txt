@@ -1,0 +1,14 @@
+PRISMA ABYSS delta manifest 2026-08-15 Rexnote stability
+
+変更・作成したファイルは下記の10件です。
+
+map.js
+maps_logic.js
+dungeon.js
+news.js
+development_notes/2026-08-15/handoff/PRISMA_ABYSS_HANDOFF_20260815.md
+development_notes/2026-08-15/reports/REXNOTE_BASEMENT_ROUTE_STABILITY_FIX_20260815.md
+development_notes/2026-08-15/validation/REXNOTE_BASEMENT_ROUTE_TARGETED_CHECK_20260815.js
+development_notes/2026-08-15/validation/REXNOTE_BASEMENT_ROUTE_TARGETED_CHECK_20260815.log
+development_notes/2026-08-15/validation/POST_REXNOTE_REGRESSION_CHECK_20260815.log
+development_notes/2026-08-15/DELTA_MANIFEST_20260815_REXNOTE_STABILITY.txt

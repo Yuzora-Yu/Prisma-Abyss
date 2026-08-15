@@ -64,3 +64,32 @@ runtimeは未変更。
 - scenario変更はMarkdown先行。
 - `octaprism*` 内部keyはsave互換のため当面維持。
 - player-facing変更を実装した日は `news.js` を同日1レコードへ統合。
+
+---
+
+## 2026-08-15 追加継続: レクスノート地下導線安定化
+
+ユーザー実機指摘を受け、レクスノート邸地下B4～B5（隠し書庫）を再監査した。
+
+### 修正済み
+- B4からB5へ進む階段が「上の階へ」と表示される問題を修正。
+  - 原因: B5ラベル「隠し書庫」が「地下」を含まないため、共通上下判定が地下→地上と誤認していた。
+  - `REXNOTE_BASEMENT` に地下深度モードを明示し、同一迷宮内の4→5を下りとして扱う。
+- B5上部の帰還マスを踏んだ瞬間に退出する挙動を、この地点だけ明示操作式へ変更。
+- B5上部からの帰還先を `REXNOTE_ESTATE (13,7)` に固定し、固定MAP定義を解決した上で安全判定へ渡すようにした。
+- 既存の他固定ダンジョンS出口は従来どおり踏み込み退出を維持。
+
+### ボス戦点検
+- 301033 魔導司書レグルス
+- `rexnote_regulus_battle` → `rexnote_regulus_clear`
+- `rexnoteRegulusDefeated`
+- Item 701013 `レクスノートの魔道書`
+
+上記の勝利後連鎖に静的な切断は確認されなかった。
+
+### 続きの非破壊監査
+- top-level JS `node --check`: 62/62 PASS
+- map section / Rees / procedural Undersea Volcano regression: PASS
+- party trail static contract: PASS
+
+輪廻の結晶proposalは引き続き承認待ち。承認前のruntime変更は行っていない。

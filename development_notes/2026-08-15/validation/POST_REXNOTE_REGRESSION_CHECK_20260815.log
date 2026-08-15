@@ -1,0 +1,14 @@
+# POST REXNOTE REGRESSION CHECK 2026-08-15
+
+top_level_js_node_check: 62/62 PASS
+
+targeted_map_section_volcano_check_20260813.js:
+{
+  "mapGrouping": "ok",
+  "reesExterior": "ok",
+  "underseaVolcano": "ok",
+  "proceduralTerrain": "ok",
+  "generatedFloorIntegration": "ok"
+}
+
+party_trail_static_contract: {'party_trail_context': True, 'party_trail_reset': True, 'party_trail_commit': True, 'party_trail_render': True, 'party_trail_move_commit': True, 'phaser_walk_entries': True}

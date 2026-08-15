@@ -1148,12 +1148,16 @@ const Dungeon = {
                 if (!App.data.progress.flags) App.data.progress.flags = {};
                 link.setFlags.forEach(flag => { if (flag) App.data.progress.flags[flag] = true; });
             }
+            const exitAreaKey = link.exitPoint?.areaKey || link.exitPoint?.area || 'WORLD';
+            const resolvedFixedExitMap = link.exitPoint && !link.exitPoint.mapData && typeof FIXED_MAPS !== 'undefined'
+                ? FIXED_MAPS[exitAreaKey] || null
+                : null;
             const forced = link.exitPoint ? {
                 x: Number(link.exitPoint.x),
                 y: Number(link.exitPoint.y),
-                areaKey: link.exitPoint.areaKey || link.exitPoint.area || 'WORLD',
-                worldKey: link.exitPoint.worldKey || link.exitPoint.areaKey || link.exitPoint.area || 'WORLD',
-                mapData: link.exitPoint.mapData || null
+                areaKey: exitAreaKey,
+                worldKey: link.exitPoint.worldKey || STORY_DATA?.areas?.[exitAreaKey]?.worldKey || link.exitPoint.areaKey || link.exitPoint.area || 'WORLD',
+                mapData: link.exitPoint.mapData || (resolvedFixedExitMap ? JSON.parse(JSON.stringify(resolvedFixedExitMap)) : null)
             } : null;
             Dungeon.exit(false, forced);
             return true;
@@ -1173,6 +1177,7 @@ const Dungeon = {
 
     isFixedExitStepTile: (tile, link = null) => {
         const upper = String(tile || '').toUpperCase();
+        if (link?.triggerOnStep === false) return false;
         return upper === 'S' && (!link || link.to === 'EXIT');
     },
 

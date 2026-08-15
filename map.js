@@ -9203,6 +9203,7 @@ const ABYSS_AUTHORED_DUNGEONS = Object.freeze((() => {
 const FIXED_DUNGEON_MAPS = {
     REXNOTE_BASEMENT: {
         name: "レクスノート邸 地下迷宮",
+        floorDirectionMode: "basement",
         themeKey: "DARK_CASTLE",
         useDungeonWallFace: true,
         rank: 45,
@@ -9274,7 +9275,12 @@ const FIXED_DUNGEON_MAPS = {
                 ],
                 floorLinks: [
                     { x: 12, y: 15, toFloor: 4, label: "地下4階へ戻る" },
-                    { x: 12, y: 1, to: "EXIT", label: "レクスノート邸へ戻る", requiredFlag: "rexnoteRegulusDefeated", lockedLog: "守護術式が帰還陣を封じている。" }
+                    {
+                        x: 12, y: 1, to: "EXIT", label: "レクスノート邸へ戻る",
+                        requiredFlag: "rexnoteRegulusDefeated", lockedLog: "守護術式が帰還陣を封じている。",
+                        triggerOnStep: false,
+                        exitPoint: { areaKey: "REXNOTE_ESTATE", worldKey: "WORLD", x: 13, y: 7 }
+                    }
                 ],
                 bosses: [
                     {
