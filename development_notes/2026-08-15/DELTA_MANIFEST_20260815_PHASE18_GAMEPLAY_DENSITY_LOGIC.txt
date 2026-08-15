@@ -1,0 +1,21 @@
+Prisma Abyss delta manifest — 2026-08-15 Phase18 Gameplay Density / Logic Batch2
+Base: previous delivered project state before this batch
+Policy: changed/new files only; no unchanged project files included
+
+1. canon/PRISMA_CODING_HANDOFF_v5.md
+2. canon/PRISMA_DEVELOPMENT_ROADMAP_v2.md
+3. development_notes/2026-08-15/DELTA_MANIFEST_20260815_PHASE18_GAMEPLAY_DENSITY_LOGIC.txt
+4. development_notes/2026-08-15/reports/PHASE18_GAMEPLAY_DENSITY_LOGIC_BATCH2_20260815.md
+5. development_notes/2026-08-15/review/GAMEPLAY_LOGIC_AUDIT_20260815.md
+6. development_notes/2026-08-15/validation/ALAN_PHASE17_MAINLINE_CHECK_20260815.js
+7. development_notes/2026-08-15/validation/PHASE18_GAMEPLAY_DENSITY_LOGIC_CHECK_20260815.js
+8. docs/development-policy.md
+9. docs/scenario/57_PHASE18_GAMEPLAY_DENSITY_AND_LOGIC_BATCH2_20260815.md
+10. docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+11. dungeon.js
+12. map.js
+13. news.js
+14. story.js
+15. story_logic.js
+
+Total: 15 files

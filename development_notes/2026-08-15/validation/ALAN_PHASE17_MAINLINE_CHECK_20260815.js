@@ -65,9 +65,9 @@ check('Roadmap fixes Alan awakening before +1m EXP', roadmap.includes('光魔剣
 check('Canon no longer marks Alan Light Magic Knight timing undecided', !/アラン.{0,40}(?:光魔剣士|職).{0,30}(?:未確定|未決定|要検討)/s.test(scenarioCanon + '\n' + handoff));
 
 check('Fixed dungeon links support requiredFlags', dungeon.includes('isFixedFloorLinkUnlocked:') && dungeon.includes('link.requiredFlags'));
-check('Final altar route requires Illuminacia and all six spirit trials', map.includes("requiredFlags: ['abyssIlluminaciaDefeated','abyssAllSpiritTrialsCleared']"));
+check('Final altar route requires Illuminacia, all six spirit trials, and the Cycle Crystal', map.includes("requiredFlags: ['abyssIlluminaciaDefeated','abyssAllSpiritTrialsCleared','abyssCycleCrystalCreated']"));
 const finalEvent = block(story, 'abyss_final_altar_encounter: {', 'abyss_vegnasis_battle:');
-check('Final altar event itself guards all spirit trials', finalEvent.includes("key:'abyssAllSpiritTrialsCleared'"));
+check('Final altar event itself guards all spirit trials and the Cycle Crystal', finalEvent.includes("key:'abyssAllSpiritTrialsCleared'") && finalEvent.includes("key:'abyssCycleCrystalCreated'"));
 check('Vegnasis remains five wedges', finalEvent.includes('value:[302080,302081,302082,302083,302084]') && !finalEvent.includes('302085'));
 check('Veld remains the dark fifth wedge', monsters.includes('\"id\":302084') && monsters.includes('\"name\":\"闇柱ヴェルド\"') && monsters.includes('\"vegnasisElement\":\"闇\"'));
 check('Jasper is not a Vegnasis wedge', !/\"id\":302060[^\n]*linkedBattleGroup\":\"vegnasis\"/.test(monsters));

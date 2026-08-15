@@ -1760,3 +1760,7 @@ Status: **inventory / no automatic replacement**
 |1729|map_interaction_label|`map.js`|START_VILLAGE / lumina_goat_boy_01|（新規）|少年と話す|new_copy_approved_20260815|
 |1730|map_interaction_label|`map.js`|FIRE_VILLAGE / ignisia_communal_kitchen_01|（新規）|炊事番と話す|new_copy_approved_20260815|
 |1731|map_interaction_label|`map.js`|FIRE_VILLAGE / ignisia_bath_elder_01|（新規）|湯屋の老人と話す|new_copy_approved_20260815|
+
+|1732|map_interaction_label|`map.js`|WIND_VILLAGE / kazaria_rope_mender_01|（新規）|綱直しの女と話す|new_copy_approved_20260815|
+|1733|map_interaction_label|`map.js`|WATER_CITY / water_city_retired_deckhand_01|（新規）|老甲板員と話す|new_copy_approved_20260815|
+|1734|ui_story_log|`story_logic.js`|generic `EQUIP` story action|（新規）|${equip.name}を手に入れた！|new_copy_approved_20260815|

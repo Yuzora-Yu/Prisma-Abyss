@@ -2452,6 +2452,22 @@ const StoryManager = {
             }
         }
 
+        if (action.type === 'EQUIP') {
+            const equipId = Number(action.eid ?? action.id ?? action.value);
+            const plus = Math.max(0, Math.min(3, Math.floor(Number(action.plus) || 0)));
+            if (!Number.isFinite(equipId) || typeof App.createEquipById !== 'function') {
+                throw new Error('EQUIPには有効なeidが必要です。');
+            }
+            const equip = App.createEquipById(equipId, plus, action.fixedOpts || null, action.fixedTraits || null);
+            if (!equip) throw new Error(`装備を生成できませんでした: eid=${equipId}`);
+            if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+            equip.source = String(action.source || 'storyGift');
+            App.data.inventory.push(equip);
+            if (action.silent !== true) App.log(`${equip.name}を手に入れた！`);
+            window.EquipAcquisitionCard?.enqueue?.(equip, { source:equip.source });
+            if (!deferSave) App.save();
+        }
+
         if (action.type === 'CONSUME_ITEM') {
             const itemId = Number(action.id ?? action.value);
             const count = Math.max(1, Math.floor(Number(action.count) || 1));

@@ -9124,6 +9124,61 @@ const STORY_MANAGER_DATA = {
         npc_ignisia_bath_elder_after_clear: {actions:[{type:'CONV',value:'NPC_IGNISIA_BATH_ELDER_AFTER_CLEAR'}],winActions:[]}
     });
 
+    Object.assign(data.scripts, {
+        NPC_KAZARIA_ROPE_MENDER_BEFORE: [
+            {name:'綱直しの女',text:'その靴底、森へ入るなら縁を縫い直した方がいい。'},
+            {name:'綱直しの女',text:'今は村の綱で手が塞がってる。帰ってきたら見てやるよ。……帰ってきたらね。'}
+        ],
+        NPC_KAZARIA_ROPE_MENDER_PLUS3_GIFT: [
+            {name:'綱直しの女',text:'戻ったね。約束を忘れるほど、こっちも忙しくはなかった。'},
+            {name:'綱直しの女',text:'古い山靴を一足、鋼板ごと打ち直した。私には重い。あんたらなら使える。'}
+        ],
+        NPC_KAZARIA_ROPE_MENDER_AFTER: [
+            {name:'綱直しの女',text:'紐は濡れたまま結びっぱなしにするな。旅人はだいたい、そこから靴を駄目にする。'},
+            {name:'綱直しの女',text:'英雄だろうが靴擦れはするよ。'}
+        ],
+        NPC_WATER_CITY_RETIRED_DECKHAND_BEFORE: [
+            {name:'老甲板員',text:'水路が静かな日は、船頭が余計な話をする。今日は静かすぎる。'},
+            {name:'老甲板員',text:'こういう日は、綱より人の顔を見とけ。'}
+        ],
+        NPC_WATER_CITY_RETIRED_DECKHAND_RIOT: [
+            {name:'老甲板員',text:'盾を持つ兵ほど、水際じゃ足元を忘れる。止めるなら橋の真ん中で受けるな。'},
+            {name:'老甲板員',text:'昔？　昔はもう少し膝が曲がった。'}
+        ],
+        NPC_WATER_CITY_RETIRED_DECKHAND_PLUS3_GIFT: [
+            {name:'老甲板員',text:'片づけてたら、昔の盾が出てきた。港で使うには重いし、孫は「魚臭い」って触らん。'},
+            {name:'老甲板員',text:'持ってけ。磨いた分だけ、捨てるのが惜しくなった。'}
+        ],
+        NPC_WATER_CITY_RETIRED_DECKHAND_AFTER: [
+            {name:'老甲板員',text:'盾は正面だけ守る道具じゃない。濡れた板に尻をつく時にも使える。'},
+            {name:'老甲板員',text:'……今のは教本に書くなよ。'}
+        ]
+    });
+
+    Object.assign(data.events, {
+        npc_kazaria_rope_mender_before: {actions:[{type:'CONV',value:'NPC_KAZARIA_ROPE_MENDER_BEFORE'}],winActions:[]},
+        npc_kazaria_rope_mender_plus3_gift: {
+            actions:[
+                {type:'CONV',value:'NPC_KAZARIA_ROPE_MENDER_PLUS3_GIFT'},
+                {type:'EQUIP',eid:53,plus:3,source:'townNpcGift'},
+                {type:'FLAG',key:'kazariaRopeMenderPlus3GiftClaimed'}
+            ],
+            winActions:[]
+        },
+        npc_kazaria_rope_mender_after: {actions:[{type:'CONV',value:'NPC_KAZARIA_ROPE_MENDER_AFTER'}],winActions:[]},
+        npc_water_city_retired_deckhand_before: {actions:[{type:'CONV',value:'NPC_WATER_CITY_RETIRED_DECKHAND_BEFORE'}],winActions:[]},
+        npc_water_city_retired_deckhand_riot: {actions:[{type:'CONV',value:'NPC_WATER_CITY_RETIRED_DECKHAND_RIOT'}],winActions:[]},
+        npc_water_city_retired_deckhand_plus3_gift: {
+            actions:[
+                {type:'CONV',value:'NPC_WATER_CITY_RETIRED_DECKHAND_PLUS3_GIFT'},
+                {type:'EQUIP',eid:67,plus:3,source:'townNpcGift'},
+                {type:'FLAG',key:'waterCityRetiredDeckhandPlus3GiftClaimed'}
+            ],
+            winActions:[]
+        },
+        npc_water_city_retired_deckhand_after: {actions:[{type:'CONV',value:'NPC_WATER_CITY_RETIRED_DECKHAND_AFTER'}],winActions:[]}
+    });
+
     const spiritTrialPartyDialoguePhase17 = Object.freeze({
         火:Object.freeze({charId:109,intro:'ABYSS_SPIRIT_TRIAL_FIRE_PARTY_INTRO_PHASE17',victory:'ABYSS_SPIRIT_TRIAL_FIRE_PARTY_VICTORY_PHASE17'}),
         水:Object.freeze({charId:206,intro:'ABYSS_SPIRIT_TRIAL_WATER_PARTY_INTRO_PHASE17',victory:'ABYSS_SPIRIT_TRIAL_WATER_PARTY_VICTORY_PHASE17'}),

@@ -1074,3 +1074,11 @@ alanState.phase = 'dead'
 - `CHRONO_ABYSS` 7層→`FINAL_ALTAR` は `abyssIlluminaciaDefeated` と `abyssAllSpiritTrialsCleared` の両方を要求する。最終戦eventにも六精霊完了guardを持たせる。
 - 輪廻の結晶へのplayer-facing再構成は別承認境界。`octaprism*` 内部keyはこの追補では変更しない。
 
+## 2026-08-15 Phase18 探索密度・再配置耐性追補
+
+- 固定マップの `chests[]` は宝箱だけでなくツボ・タルも扱う。今後追加・移設する探索物は、座標ではなく安定 `lootId` を取得状態の正本にする。
+- 既存座標で取得済みのセーブを持つ探索物へ `lootId` を後付けする場合は `legacyPositions` に旧座標を残す。
+- ツボ・タルは原則として壁際・外周・建物脇へ置き、主要歩行導線の中央へ散らさない。全MAPは後続Phaseで拡張・再レイアウトする前提。
+- ストーリーイベントから固定装備を渡す共通命令 `EQUIP` を追加。`eid` / `plus` / `fixedOpts` / `fixedTraits` / `source` を指定できる。+3装備をくれるNPC等へ流用する。
+- Phase18 Batch2としてカザリアの綱直しの女（鋼のブーツ+3）とリヴァリアの老甲板員（はがねのたて+3）を段階NPCとして追加。既存台詞の改稿はしていない。
+- 現時点でゲーム性ロジック上の明示的な暫定箇所として、Lv101以降の必要経験値曲線と2026-08-15追加の3職の習得技配分が残る。前者はPhase21バランス、後者は職専用技追加と合わせて再調整する。

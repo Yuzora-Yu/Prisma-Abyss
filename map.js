@@ -5094,7 +5094,7 @@ const FIXED_MAPS = {
             "WWWWWWWWWWWWWLLLWWWWWWWWWWWWW",
             "WWWWWWWWWWWWWSSSWWWWWWWWWWWWW"
         ],
-        "nextActorPlacementId": 6,
+        "nextActorPlacementId": 7,
         "mapActors": [
             {
                 "placementId": 1,
@@ -5265,6 +5265,49 @@ const FIXED_MAPS = {
                     }
                 ]
             }
+            ,{
+                "placementId": 6,
+                "actorId": "kazaria_rope_mender_01",
+                "name": "綱直しの女",
+                "x": 24,
+                "y": 14,
+                "imageKey": "overlay_npc_villager",
+                "states": [
+                    {
+                        "stateId": "kazaria_rope_mender_plus3_gift",
+                        "priority": 200,
+                        "when": {
+                            "requiredFlag": "windVillageCleared",
+                            "missingFlag": "kazariaRopeMenderPlus3GiftClaimed"
+                        },
+                        "action": {
+                            "label": "綱直しの女と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_kazaria_rope_mender_plus3_gift"
+                        }
+                    },
+                    {
+                        "stateId": "kazaria_rope_mender_after",
+                        "priority": 100,
+                        "when": { "requiredFlag": "windVillageCleared" },
+                        "action": {
+                            "label": "綱直しの女と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_kazaria_rope_mender_after"
+                        }
+                    },
+                    {
+                        "stateId": "kazaria_rope_mender_before",
+                        "priority": 0,
+                        "when": {},
+                        "action": {
+                            "label": "綱直しの女と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_kazaria_rope_mender_before"
+                        }
+                    }
+                ]
+            }
         ],
         "mapActions": [
             {
@@ -5378,7 +5421,39 @@ const FIXED_MAPS = {
                 "x": 4,
                 "y": 17,
                 "itemId": 101,
-                "type": "item"
+                "type": "item",
+                "lootId": "kazaria_chest_south_01",
+                "legacyPositions": [{ "x": 4, "y": 17 }]
+            },
+            {
+                "x": 6,
+                "y": 4,
+                "itemId": 8,
+                "type": "item",
+                "lootId": "kazaria_pot_northwest_01",
+                "containerKind": "pot",
+                "imageKey": "overlay_field_pot",
+                "baseTile": "T"
+            },
+            {
+                "x": 22,
+                "y": 4,
+                "itemId": 3,
+                "type": "item",
+                "lootId": "kazaria_barrel_northeast_01",
+                "containerKind": "barrel",
+                "imageKey": "overlay_field_barrel",
+                "baseTile": "T"
+            },
+            {
+                "x": 11,
+                "y": 15,
+                "itemId": 2,
+                "type": "item",
+                "lootId": "kazaria_pot_southwest_01",
+                "containerKind": "pot",
+                "imageKey": "overlay_field_pot",
+                "baseTile": "T"
             }
         ],
         "mapId": "MAP000009",
@@ -5424,7 +5499,7 @@ const FIXED_MAPS = {
             "WWWWWWWWWWWWWWWWWWWLWWWWWWWWWWWWWWWWWWW",
             "WWWWWWWWWWWWWWWWWWWSWWWWWWWWWWWWWWWWWWW"
         ],
-        "nextActorPlacementId": 100,
+        "nextActorPlacementId": 101,
         "mapActors": [
             {
                 "placementId": 1,
@@ -6172,6 +6247,62 @@ const FIXED_MAPS = {
                     "action": { "label": "依頼仲介人と話す", "type": "storyEvent", "eventId": "town_water_post_riot_broker" }
                 }]
             }
+            ,{
+                "placementId": 100,
+                "actorId": "water_city_retired_deckhand_01",
+                "name": "老甲板員",
+                "x": 35,
+                "y": 21,
+                "imageKey": "overlay_npc_elder",
+                "states": [
+                    {
+                        "stateId": "water_city_retired_deckhand_plus3_gift",
+                        "priority": 300,
+                        "when": {
+                            "requiredFlag": "waterCityRiotSuppressed",
+                            "missingFlag": "waterCityRetiredDeckhandPlus3GiftClaimed"
+                        },
+                        "action": {
+                            "label": "老甲板員と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_water_city_retired_deckhand_plus3_gift"
+                        }
+                    },
+                    {
+                        "stateId": "water_city_retired_deckhand_after",
+                        "priority": 200,
+                        "when": { "requiredFlag": "waterCityRiotSuppressed" },
+                        "action": {
+                            "label": "老甲板員と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_water_city_retired_deckhand_after"
+                        }
+                    },
+                    {
+                        "stateId": "water_city_retired_deckhand_riot",
+                        "priority": 100,
+                        "when": {
+                            "requiredFlag": "waterCityRiotStarted",
+                            "missingFlag": "waterCityRiotSuppressed"
+                        },
+                        "action": {
+                            "label": "老甲板員と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_water_city_retired_deckhand_riot"
+                        }
+                    },
+                    {
+                        "stateId": "water_city_retired_deckhand_before",
+                        "priority": 0,
+                        "when": {},
+                        "action": {
+                            "label": "老甲板員と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_water_city_retired_deckhand_before"
+                        }
+                    }
+                ]
+            }
         ],
         "mapActions": [
             {
@@ -6244,29 +6375,24 @@ const FIXED_MAPS = {
             "y": 22
         },
         "chests": [
+            { "x": 7, "y": 3, "itemId": 100, "type": "item", "lootId": "water_city_chest_northwest_01", "legacyPositions": [{ "x": 7, "y": 3 }] },
+            { "x": 8, "y": 3, "itemId": 7, "type": "item", "lootId": "water_city_chest_northwest_02", "legacyPositions": [{ "x": 8, "y": 3 }] },
+            { "x": 9, "y": 3, "itemId": 6, "type": "item", "lootId": "water_city_chest_northwest_03", "legacyPositions": [{ "x": 9, "y": 3 }] },
+            { "x": 10, "y": 3, "itemId": 99, "type": "item", "lootId": "water_city_chest_northwest_04", "legacyPositions": [{ "x": 10, "y": 3 }] },
             {
-                "x": 7,
-                "y": 3,
-                "itemId": 100,
-                "type": "item"
+                "x": 28, "y": 2, "itemId": 2, "type": "item",
+                "lootId": "water_city_pot_north_01", "containerKind": "pot",
+                "imageKey": "overlay_field_pot", "baseTile": "T"
             },
             {
-                "x": 8,
-                "y": 3,
-                "itemId": 7,
-                "type": "item"
+                "x": 6, "y": 5, "itemId": 9, "type": "item",
+                "lootId": "water_city_barrel_west_01", "containerKind": "barrel",
+                "imageKey": "overlay_field_barrel", "baseTile": "T"
             },
             {
-                "x": 9,
-                "y": 3,
-                "itemId": 6,
-                "type": "item"
-            },
-            {
-                "x": 10,
-                "y": 3,
-                "itemId": 99,
-                "type": "item"
+                "x": 35, "y": 9, "itemId": 4, "type": "item",
+                "lootId": "water_city_pot_east_01", "containerKind": "pot",
+                "imageKey": "overlay_field_pot", "baseTile": "T"
             }
         ],
         "mapId": "MAP000015",

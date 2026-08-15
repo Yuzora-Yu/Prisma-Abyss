@@ -911,10 +911,57 @@ const Dungeon = {
         return list.find(chest => chest && chest.active && Number(chest.floor) === Number(Dungeon.floor) && Number(chest.x) === Number(x) && Number(chest.y) === Number(y)) || null;
     },
 
-    isFixedChestOpenedAt: (x, y) => {
-        if (!Field.currentMapData?.isFixed) return false;
+    getFixedContainerDefinitionAt: (x, y, mapDef = Field.currentMapData) => {
+        if (!mapDef) return null;
+        if (typeof MapRegistry !== 'undefined' && typeof MapRegistry.findFixedChest === 'function') {
+            return MapRegistry.findFixedChest(mapDef, x, y);
+        }
+        return Array.isArray(mapDef.chests)
+            ? (mapDef.chests.find(c => Number(c?.x) === Number(x) && Number(c?.y) === Number(y)) || null)
+            : null;
+    },
+
+    // 固定探索物の取得状態は座標ではなく authored lootId を正本にできる。
+    // MAP拡張・再配置後も同じツボ／タル／宝箱として扱えるようにし、
+    // lootId 未付与の旧定義だけ従来の x,y キーへフォールバックする。
+    getFixedContainerOpenKey: (chestDef = null, x = null, y = null) => {
+        const stableId = String(chestDef?.lootId || chestDef?.containerId || '').trim();
+        if (stableId) return `loot:${stableId}`;
+        return `${Number(x)},${Number(y)}`;
+    },
+
+    getFixedContainerLegacyOpenKeys: (chestDef = null, x = null, y = null) => {
+        const keys = new Set();
+        if (Number.isFinite(Number(x)) && Number.isFinite(Number(y))) {
+            keys.add(`${Number(x)},${Number(y)}`);
+        }
+        const positions = Array.isArray(chestDef?.legacyPositions) ? chestDef.legacyPositions : [];
+        positions.forEach(entry => {
+            if (typeof entry === 'string' && /^-?\d+,-?\d+$/.test(entry.trim())) {
+                keys.add(entry.trim());
+                return;
+            }
+            if (entry && Number.isFinite(Number(entry.x)) && Number.isFinite(Number(entry.y))) {
+                keys.add(`${Number(entry.x)},${Number(entry.y)}`);
+            }
+        });
+        const explicit = Array.isArray(chestDef?.legacyOpenKeys) ? chestDef.legacyOpenKeys : [];
+        explicit.filter(Boolean).forEach(key => keys.add(String(key)));
+        return [...keys];
+    },
+
+    isFixedChestOpenedAt: (x, y, chestDef = null, mapDef = Field.currentMapData) => {
+        if (!mapDef?.isFixed) return false;
         const progressKey = Dungeon.getFixedProgressKey(Field.getCurrentAreaKey());
-        return !!App.data.progress.openedChests?.[progressKey]?.includes(`${Number(x)},${Number(y)}`);
+        const opened = App.data.progress.openedChests?.[progressKey];
+        if (!Array.isArray(opened)) return false;
+        const resolvedDef = chestDef || Dungeon.getFixedContainerDefinitionAt(x, y, mapDef);
+        const openKey = Dungeon.getFixedContainerOpenKey(resolvedDef, x, y);
+        if (opened.includes(openKey)) return true;
+        // lootId導入前の既存セーブを救済。legacyPositionsを残しておけば、
+        // 後日座標を変更した後でも旧座標での取得済み状態を認識できる。
+        return Dungeon.getFixedContainerLegacyOpenKeys(resolvedDef, x, y)
+            .some(key => opened.includes(key));
     },
 
     shouldRemoveOpenedFixedChest: (mapDef = Field.currentMapData) => !!(
@@ -931,16 +978,18 @@ const Dungeon = {
         return 'T';
     },
 
-    markFixedChestOpened: (progressKey, posKey, x, y, chestDef = null, mapDef = Field.currentMapData) => {
+    markFixedChestOpened: (progressKey, openKey, x, y, chestDef = null, mapDef = Field.currentMapData) => {
         if (!App.data.progress.openedChests) App.data.progress.openedChests = {};
         if (!Array.isArray(App.data.progress.openedChests[progressKey])) App.data.progress.openedChests[progressKey] = [];
-        if (!App.data.progress.openedChests[progressKey].includes(posKey)) {
-            App.data.progress.openedChests[progressKey].push(posKey);
+        if (!App.data.progress.openedChests[progressKey].includes(openKey)) {
+            App.data.progress.openedChests[progressKey].push(openKey);
         }
         if (Dungeon.shouldRemoveOpenedFixedChest(mapDef)) {
+            // mapChanges は現在の描画座標に対する差分なので、永続取得IDとは分離する。
+            const mapPosKey = `${Number(x)},${Number(y)}`;
             if (!App.data.progress.mapChanges) App.data.progress.mapChanges = {};
             if (!App.data.progress.mapChanges[progressKey]) App.data.progress.mapChanges[progressKey] = {};
-            App.data.progress.mapChanges[progressKey][posKey] = Dungeon.getOpenedFixedChestBaseTile(chestDef, mapDef);
+            App.data.progress.mapChanges[progressKey][mapPosKey] = Dungeon.getOpenedFixedChestBaseTile(chestDef, mapDef);
         }
     },
 
@@ -970,6 +1019,15 @@ const Dungeon = {
             ...base,
             ...(containerDef?.presentation || {})
         };
+    },
+
+    noteFixedContainerOpened: (containerDef = null) => {
+        const kind = Dungeon.getContainerPresentation(containerDef).kind;
+        // ツボ・タルは探索報酬だが「宝箱を開ける」実績の進捗には含めない。
+        if (kind === 'chest' && typeof App.incrementLifetimeStat === 'function') {
+            App.incrementLifetimeStat('totalChestsOpened', 1, { save: false });
+        }
+        return kind;
     },
 
     isKeyGuardianAt: (x, y) => {
@@ -1045,7 +1103,8 @@ const Dungeon = {
             encounterRank: currentFloor,
             fixedChestTrap: options.fixedChestTrap ? {
                 progressKey: String(options.fixedChestTrap.progressKey || ''),
-                posKey: String(options.fixedChestTrap.posKey || '')
+                openKey: String(options.fixedChestTrap.openKey || options.fixedChestTrap.posKey || ''),
+                mapPosKey: String(options.fixedChestTrap.mapPosKey || options.fixedChestTrap.posKey || '')
             } : null,
             fixedEnemyIds: [numericId],
             enemies: []
@@ -1066,15 +1125,16 @@ const Dungeon = {
     rollbackFixedChestTrap: (battleData = null) => {
         const marker = battleData?.fixedChestTrap;
         const progressKey = String(marker?.progressKey || '');
-        const posKey = String(marker?.posKey || '');
-        if (!progressKey || !posKey) return false;
+        const openKey = String(marker?.openKey || marker?.posKey || '');
+        const mapPosKey = String(marker?.mapPosKey || marker?.posKey || '');
+        if (!progressKey || !openKey) return false;
         const opened = App.data?.progress?.openedChests?.[progressKey];
         if (!Array.isArray(opened)) return false;
-        const next = opened.filter(entry => String(entry) !== posKey);
+        const next = opened.filter(entry => String(entry) !== openKey);
         if (next.length === opened.length) return false;
         App.data.progress.openedChests[progressKey] = next;
-        if (App.data?.progress?.mapChanges?.[progressKey]) {
-            delete App.data.progress.mapChanges[progressKey][posKey];
+        if (mapPosKey && App.data?.progress?.mapChanges?.[progressKey]) {
+            delete App.data.progress.mapChanges[progressKey][mapPosKey];
             if (Object.keys(App.data.progress.mapChanges[progressKey]).length === 0) delete App.data.progress.mapChanges[progressKey];
         }
         App.save();
@@ -2683,7 +2743,7 @@ const Dungeon = {
 
         // --- 1. 固定マップ（試練の洞窟など）の処理 ---
         if (isFixed) {
-            const posKey = `${x},${y}`;
+            const mapPosKey = `${x},${y}`;
             const progressKey = Dungeon.getFixedProgressKey(areaKey);
             if (!App.data.progress.openedChests) App.data.progress.openedChests = {};
             if (!App.data.progress.openedChests[progressKey]) App.data.progress.openedChests[progressKey] = [];
@@ -2696,9 +2756,10 @@ const Dungeon = {
                 ? MapRegistry.findFixedChest(mapDef, x, y)
                 : (mapDef?.chests ? mapDef.chests.find(c => Number(c.x) === Number(x) && Number(c.y) === Number(y)) : null);
             const container = Dungeon.getContainerPresentation(chestDef);
-            const markOpened = () => Dungeon.markFixedChestOpened(progressKey, posKey, x, y, chestDef, mapDef);
+            const openKey = Dungeon.getFixedContainerOpenKey(chestDef, x, y);
+            const markOpened = () => Dungeon.markFixedChestOpened(progressKey, openKey, x, y, chestDef, mapDef);
             
-            if (App.data.progress.openedChests[progressKey].includes(posKey)) {
+            if (Dungeon.isFixedChestOpenedAt(x, y, chestDef, mapDef)) {
                 App.log(container.empty);
                 return;
             }
@@ -2707,18 +2768,18 @@ const Dungeon = {
             if (chestDef) {
                 if (chestDef.trapMonsterId !== undefined && chestDef.trapMonsterId !== null) {
                     markOpened();
-                    if (typeof App.incrementLifetimeStat === 'function') App.incrementLifetimeStat('totalChestsOpened', 1, { save: false });
+                    Dungeon.noteFixedContainerOpened(chestDef);
                     App.save();
                     Field.render();
                     await Dungeon.startChestTrapBattle(chestDef.trapMonsterId, {
                         floor: chestDef.trapFloor || mapDef?.encounterRank || mapDef?.rank,
-                        fixedChestTrap: { progressKey, posKey }
+                        fixedChestTrap: { progressKey, openKey, mapPosKey }
                     });
                     return;
                 }
                 if (chestDef.keyColor) {
                     markOpened();
-                    if (typeof App.incrementLifetimeStat === 'function') App.incrementLifetimeStat('totalChestsOpened', 1, { save: false });
+                    Dungeon.noteFixedContainerOpened(chestDef);
                     Dungeon.grantDungeonKey(chestDef.keyColor, 'chest');
                     App.save();
                     Field.render();
@@ -2739,17 +2800,17 @@ const Dungeon = {
                         return;
                     }
                     markOpened();
-                    if (typeof App.incrementLifetimeStat === 'function') App.incrementLifetimeStat('totalChestsOpened', 1, { save: false });
+                    Dungeon.noteFixedContainerOpened(chestDef);
                     App.log(container.inspect);
                     App.log(`<span style="color:#ffd700;">${item.name}</span> を手に入れた！`);
                 } else {
                     markOpened();
-                    if (typeof App.incrementLifetimeStat === 'function') App.incrementLifetimeStat('totalChestsOpened', 1, { save: false });
+                    Dungeon.noteFixedContainerOpened(chestDef);
                     App.log(container.empty);
                 }
             } else {
                 markOpened();
-                if (typeof App.incrementLifetimeStat === 'function') App.incrementLifetimeStat('totalChestsOpened', 1, { save: false });
+                Dungeon.noteFixedContainerOpened(chestDef);
                 App.log(container.empty);
             }
             App.save();
