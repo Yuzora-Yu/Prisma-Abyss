@@ -1782,3 +1782,11 @@ Status: **inventory / no automatic replacement**
 |1744|item_name_template|`items.js`|転職の書23種|${job.name}の転職の書|（2026-08-15新規。職業IDから名称同期）|new_copy_inventory|
 |1745|item_description_template|`items.js`|転職の書23種|Lv100到達時に使用すると「${job.name}」へ転職し、そのまま転生してLv1に戻る。別職で習得したスキルは失わない。|（2026-08-15新規）|new_copy_inventory|
 |1746|battle_reward_log_template|`dungeon.js`|天使の試練ステータス上昇|${char.name}の${statLabels[key]}が${amount}上がった！|ATK/DEF/MDEF/SPD等の英略称ではなくステータス画面表記へ統一|approved_applied_20260815|
+
+### 2026-08-15 特性書ロック追加
+
+|ID|種別|参照|用途/条件|現行/新規文言|レビュー案|状態|
+|---:|---|---|---|---|---|---|
+|1747|ui_error|`menus_trait_detail.js`|特性書由来の特性を再抽選しようとした場合|特性書で習得した特性は、別の特性書を使う場合だけ変更できます。|（2026-08-15ユーザー指定仕様の案内）|new_copy_inventory|
+|1748|ui_error|`menus_trait_detail.js`|再抽選確定時に特性書ロックを再検出した場合|特性書で習得した特性は再抽選では変更できません。|（2026-08-15安全確認用）|new_copy_inventory|
+|1749|ui_error|`main.js`|仲間モンスター合成で特性書ロックが6枠を超える場合|特性書で固定された特性が6個を超えているため合成できません。先に特性書で整理してください。|（2026-08-15安全確認用）|new_copy_inventory|

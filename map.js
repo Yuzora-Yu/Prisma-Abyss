@@ -3152,7 +3152,7 @@ const FIXED_MAPS = {
         "entryEventFlag": "abyssCarmenaArrivalWarningSeen",
         "tiles": [
             "WWWWWWWWWWWWWWWWWWWSWWWWWWWWWWWWWWWWWWW",
-            "WWWWWWWWWWWWWWWWWGGGGGGGWWWWWWWWWWWWWWW",
+            "WWWWWWWWWWWWWWWWWWWGWWWWWWWWWWWWWWWWWWW",
             "WWWWWWWWWWWWWWGGGGBTBGGGGGGGWWWWWWWWWWW",
             "WWWWWWWWWWWWGGGGGGGTGGGGGGGGGGGWWWWWWWW",
             "WWWWWWWWWWGGGGGGGGTGGGGGGGGGGGGGGWWWWWW",
@@ -3326,7 +3326,7 @@ const FIXED_MAPS = {
         "blockingObjects": [
             {
                 "x": 19,
-                "y": 2,
+                "y": 1,
                 "missingFlag": "abyssCarmenaGateCleared",
                 "imageKey": "overlay_light_prison_gate_horizontal",
                 "drawWidth": 32,

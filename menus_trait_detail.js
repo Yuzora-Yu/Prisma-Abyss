@@ -59,6 +59,12 @@ const MenuTraitDetail = {
             if (area) area.style.zIndex = '50000';
             return;
         }
+        if (typeof PassiveSkill !== 'undefined' && PassiveSkill.isTraitBookLockedSlot?.(char, t.slotIndex)) {
+            Menu.msg('特性書で習得した特性は、別の特性書を使う場合だけ変更できます。');
+            const area = document.getElementById('menu-dialog-area');
+            if (area) area.style.zIndex = '50000';
+            return;
+        }
 
         Menu.confirm('2000 GEM を使用して特性を再抽選しますか？', () => {
             const dialogArea = document.getElementById('menu-dialog-area');
@@ -102,6 +108,14 @@ const MenuTraitDetail = {
         const scrollPos = container ? container.scrollTop : 0;
 
         if (applyNew && char) {
+            if (typeof PassiveSkill !== 'undefined' && PassiveSkill.isTraitBookLockedSlot?.(char, state.slotIndex)) {
+                delete App.data.progress.rerollState;
+                App.save();
+                Menu.msg('特性書で習得した特性は再抽選では変更できません。');
+                MenuTraitDetail.close();
+                MenuAllies.renderDetail();
+                return;
+            }
             char.traits[state.slotIndex] = { id: state.newTraitId, level: 1, battleCount: 0 };
             App.save();
             Menu.msg('新しい特性を習得しました！');
@@ -129,6 +143,12 @@ const MenuTraitDetail = {
 
         const char = App.data.characters.find(c => c.uid === state.charUid);
         if (!char) return;
+        if (typeof PassiveSkill !== 'undefined' && PassiveSkill.isTraitBookLockedSlot?.(char, state.slotIndex)) {
+            delete App.data.progress.rerollState;
+            App.save();
+            Menu.msg('特性書で習得した特性は再抽選では変更できません。');
+            return;
+        }
 
         const currentIds = char.traits.map(x => x.id);
         const pool = Object.values(PassiveSkill.MASTER).filter(m => !m.bossOnly && !currentIds.includes(m.id));

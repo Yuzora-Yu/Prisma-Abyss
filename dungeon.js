@@ -278,6 +278,22 @@ const Dungeon = {
     keyItemSymbols: { red: 'Q', blue: 'N', gold: 'O' },
     keyColorLabels: { red: '赤', blue: '青', gold: '金' },
     keyGuardianImagePath: 'assets/monsters/monster_000103.png',
+
+    // ランダム宝箱の超レア枠。通常抽選とは完全に分離し、赤黒フラッシュ対象はこの4種だけ。
+    ultraRareChestItemIds: Object.freeze([107, 599998, 599999, 98]),
+    getUltraRareChestItemPool: () => Dungeon.ultraRareChestItemIds
+        .map(id => Dungeon.findItemDefinition(id))
+        .filter(Boolean),
+    pickUltraRareChestItem: (random = Math.random) => {
+        const pool = Dungeon.getUltraRareChestItemPool();
+        if (!pool.length) return null;
+        const roll = Math.max(0, Math.min(0.999999999, Number(random()) || 0));
+        return pool[Math.floor(roll * pool.length)] || pool[0] || null;
+    },
+    grantUltraRareChestItem: (random = Math.random) => {
+        const item = Dungeon.pickUltraRareChestItem(random);
+        return item ? Dungeon.grantContainerItem(item.id, 1) : null;
+    },
     isRandomChestRewardEligible: (item) => {
         if (!item || Number(item.id) <= 0) return false;
         const type = String(item.type || '');
@@ -2889,12 +2905,17 @@ const Dungeon = {
             // レア宝箱（赤）
             const ultraChance = 0.5 + (bonusRare / 10); // 0.5% + 特性
             if (Math.random() * 100 < ultraChance) {
-                const eq = Dungeon.createEquipWithMinRarity(floor, 3, ['SSR', 'UR', 'EX'], '武器');
-                // ... (改＋3の強化処理)
-                App.data.inventory.push(eq);
-                window.EquipAcquisitionCard?.enqueue(eq, { source:'rareChest' });
-                msg = `なんと <span style="color:#ff00ff; font-weight:bold;">${eq.name}</span>`;
-                hasUltraRareDrop = true;
+                const item = Dungeon.grantUltraRareChestItem();
+                if (item) {
+                    msg = `なんと <span style="color:#ff5b7f; font-weight:bold;">${item.name}</span>`;
+                    hasUltraRareDrop = true;
+                } else {
+                    const eq = Dungeon.createEquipWithMinRarity(floor, 3, ['SSR', 'UR', 'EX'], '武器');
+                    App.data.inventory.push(eq);
+                    window.EquipAcquisitionCard?.enqueue(eq, { source:'rareChest' });
+                    msg = `なんと <span class="log-rare-drop">${eq.name}</span>`;
+                    hasRareDrop = true;
+                }
             } else {
                 const eq = Dungeon.createEquipWithMinRarity(floor, 3, ['SR', 'SSR', 'UR', 'EX']);
                 App.data.inventory.push(eq);
@@ -2911,12 +2932,21 @@ const Dungeon = {
                 if (Math.random() * 100 < (10 + bonusRare)) {
                     let sid = 100 + Math.floor(Math.random() * 6); // 基本は種
                     const rr = Math.random() * 100;
-                    if (rr < 5) sid = 107; 
-                    else if (rr < 20) sid = 106; 
-                    
-                    const it = DB.ITEMS.find(i => i.id === sid);
-                    App.log(`宝箱を開けた！<br>なんと <span style="color:#ffff00;"> ${it.name} </span>を手に入れた！`);
-                    if (sid === 107) {
+                    let it = null;
+                    let isUltraItem = false;
+                    if (rr < 5) {
+                        it = Dungeon.grantUltraRareChestItem();
+                        isUltraItem = !!it;
+                    } else {
+                        if (rr < 20) sid = 106;
+                        it = Dungeon.grantContainerItem(sid, 1);
+                    }
+                    if (!it) {
+                        App.log('宝箱を開けた！<br>中身は空だった…。');
+                        App.save(); return;
+                    }
+                    App.log(`宝箱を開けた！<br>なんと <span style="color:${isUltraItem ? '#ff5b7f' : '#ffff00'}; font-weight:${isUltraItem ? 'bold' : 'normal'};"> ${it.name} </span>を手に入れた！`);
+                    if (isUltraItem) {
                         if (typeof App.lockFieldInput === 'function') App.lockFieldInput(950);
                         const uFlash = document.getElementById('drop-flash-ultra') || document.getElementById('drop-flash');
                         if(uFlash) {

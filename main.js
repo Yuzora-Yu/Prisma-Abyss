@@ -9000,22 +9000,48 @@ load: () => {
             : Array.from(new Set((Array.isArray(selectedSkillIds) ? selectedSkillIds : [])
                 .map(Number).filter(id => allSkills.includes(id)))).slice(0, 8);
 
+        if (typeof PassiveSkill !== 'undefined') {
+            PassiveSkill.normalizeTraitBookLocks?.(primary);
+            PassiveSkill.normalizeTraitBookLocks?.(material);
+        }
         const traitById = new Map();
         [...(primary.traits || []), ...(material.traits || [])].forEach(trait => {
             const id = Number(trait?.id);
             if (!Number.isFinite(id) || id <= 0) return;
-            const current = traitById.get(id);
             const level = Math.max(1, Math.floor(Number(trait?.level ?? trait?.lv) || 1));
             const battleCount = Math.max(0, Math.floor(Number(trait?.battleCount) || 0));
-            if (!current || level > current.level || (level === current.level && battleCount > current.battleCount)) {
-                traitById.set(id, { id, level, battleCount });
+            const lockedByBook = typeof PassiveSkill !== 'undefined' && PassiveSkill.isTraitBookLockedTrait?.(trait);
+            const current = traitById.get(id);
+            if (!current) {
+                traitById.set(id, {
+                    id,
+                    level,
+                    battleCount,
+                    ...(lockedByBook ? { source: PassiveSkill.TRAIT_BOOK_SOURCE || 'traitBook' } : {})
+                });
+                return;
             }
+            if (level > current.level || (level === current.level && battleCount > current.battleCount)) {
+                current.level = level;
+                current.battleCount = battleCount;
+            }
+            if (lockedByBook) current.source = PassiveSkill.TRAIT_BOOK_SOURCE || 'traitBook';
         });
         const allTraits = Array.from(traitById.values());
-        const selectedTraitSet = new Set((Array.isArray(selectedTraitIds) ? selectedTraitIds : []).map(Number));
+        const lockedTraitIds = allTraits
+            .filter(trait => typeof PassiveSkill !== 'undefined' && PassiveSkill.isTraitBookLockedTrait?.(trait))
+            .map(trait => Number(trait.id));
+        if (lockedTraitIds.length > 6) {
+            return { ok:false, reason:'traitBookLocksOverflow', message:'特性書で固定された特性が6個を超えているため合成できません。先に特性書で整理してください。' };
+        }
+        const requestedTraitIds = (Array.isArray(selectedTraitIds) ? selectedTraitIds : []).map(Number);
+        const selectedTraitSet = new Set([...lockedTraitIds, ...requestedTraitIds]);
         const traits = allTraits.length <= 6
             ? allTraits.map(trait => ({ ...trait }))
-            : allTraits.filter(trait => selectedTraitSet.has(trait.id)).slice(0, 6).map(trait => ({ ...trait }));
+            : [
+                ...allTraits.filter(trait => lockedTraitIds.includes(Number(trait.id))),
+                ...allTraits.filter(trait => !lockedTraitIds.includes(Number(trait.id)) && selectedTraitSet.has(Number(trait.id)))
+            ].slice(0, 6).map(trait => ({ ...trait }));
 
         const stats = {};
         ['hp', 'mp', 'atk', 'def', 'mag', 'mdef', 'spd'].forEach(key => {
@@ -9033,6 +9059,7 @@ load: () => {
             skills:selectedSkills,
             allTraits,
             traits,
+            lockedTraitIds,
             stats,
             requiresSkillSelection:allSkills.length > 8,
             requiresTraitSelection:allTraits.length > 6,

@@ -1,0 +1,15 @@
+development_notes/2026-08-15/DELTA_MANIFEST_20260815_ULTRA_CHEST_TRAIT_EDITORS.txt
+development_notes/2026-08-15/reports/SYSTEM_FIX_JOB_CHANGE_BOOK_IMPLEMENTATION_20260815.md
+development_notes/2026-08-15/reports/ULTRA_CHEST_TRAIT_LOCK_DATA_EDITORS_20260815.md
+development_notes/2026-08-15/validation/EDITOR_TRAIT_ULTRA_CHEST_CHECK_20260815.js
+development_notes/2026-08-15/validation/EDITOR_TRAIT_ULTRA_CHEST_CHECK_20260815.log
+development_notes/2026-08-15/validation/EDITOR_TRAIT_ULTRA_REGRESSION_20260815.log
+development_notes/2026-08-15/validation/TOP_LEVEL_JS_NODE_CHECK_20260815_EDITORS_TRAIT_ULTRA.log
+docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+dungeon.js
+editor_characters.html
+editor_job_data.html
+main.js
+menus_trait_detail.js
+news.js
+passiveSkill.js

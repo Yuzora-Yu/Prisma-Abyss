@@ -135,6 +135,29 @@ PassiveSkill.getTraitBookCharacterTypeLabel = function(char) {
 };
 
 PassiveSkill.TRAIT_BOOK_MAX_TRAITS = 7;
+PassiveSkill.TRAIT_BOOK_SOURCE = 'traitBook';
+
+// 特性書で習得・上書きした特性は、特性再抽選や合成選別など別経路では変更不可。
+// 特性書で別の特性へ上書きした場合だけロックされたまま内容を更新できる。
+PassiveSkill.isTraitBookLockedTrait = function(trait) {
+    return !!trait && (String(trait.source || '') === PassiveSkill.TRAIT_BOOK_SOURCE || trait.traitBookLocked === true);
+};
+
+PassiveSkill.normalizeTraitBookLocks = function(char) {
+    if (!char || !Array.isArray(char.traits)) return char;
+    // 現行仕様では7枠目は特性書でしか追加できないため、旧セーブも安全に由来を復元できる。
+    if (char.traits.length >= PassiveSkill.TRAIT_BOOK_MAX_TRAITS && char.traits[PassiveSkill.TRAIT_BOOK_MAX_TRAITS - 1]) {
+        const seventh = char.traits[PassiveSkill.TRAIT_BOOK_MAX_TRAITS - 1];
+        if (!PassiveSkill.isTraitBookLockedTrait(seventh)) seventh.source = PassiveSkill.TRAIT_BOOK_SOURCE;
+    }
+    return char;
+};
+
+PassiveSkill.isTraitBookLockedSlot = function(char, slotIndex) {
+    PassiveSkill.normalizeTraitBookLocks(char);
+    const index = Number(slotIndex);
+    return Number.isInteger(index) && index >= 0 && PassiveSkill.isTraitBookLockedTrait(char?.traits?.[index]);
+};
 
 PassiveSkill.canAddTraitWithBook = function(char, traitId) {
     const normalizedTraitId = Number(traitId);
@@ -161,7 +184,7 @@ PassiveSkill.addTraitWithBook = function(char, traitId) {
     if (!check.ok) return { success:false, message:check.reason };
     const normalizedTraitId = Number(traitId);
     const newMaster = PassiveSkill.MASTER[normalizedTraitId];
-    char.traits.push({ id:normalizedTraitId, level:1, battleCount:0 });
+    char.traits.push({ id:normalizedTraitId, level:1, battleCount:0, source:PassiveSkill.TRAIT_BOOK_SOURCE });
     PassiveSkill.normalizeDisabledTraits(char);
     return {
         success:true,
@@ -216,7 +239,8 @@ PassiveSkill.replaceTraitWithBook = function(char, slotIndex, traitId) {
     char.traits[index] = {
         id: normalizedTraitId,
         level: inheritedLevel,
-        battleCount: 0
+        battleCount: 0,
+        source: PassiveSkill.TRAIT_BOOK_SOURCE
     };
     const disabled = Array.isArray(char.disabledTraits) ? char.disabledTraits.map(Number) : [];
     char.disabledTraits = disabled.filter(id => id !== Number(oldTrait.id) && id !== normalizedTraitId);
