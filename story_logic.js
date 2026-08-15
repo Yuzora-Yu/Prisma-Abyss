@@ -1516,6 +1516,29 @@ const StoryManager = {
         App.save();
     },
 
+    evaluateAllyCondition: function(action = {}) {
+        const rawIds = Array.isArray(action.charIds)
+            ? action.charIds
+            : [action.charId ?? action.id ?? action.value];
+        const ids = rawIds.map(Number).filter(id => Number.isFinite(id) && id > 0);
+        if (ids.length === 0) return false;
+
+        const mode = String(action.mode || action.scope || 'recruited').toLowerCase();
+        const testOne = charId => {
+            if (mode === 'party' || mode === 'in_party' || mode === 'inparty') {
+                return typeof App.isStoryAllyInParty === 'function' && App.isStoryAllyInParty(charId);
+            }
+            if (mode === 'available') {
+                return typeof App.isStoryAllyAvailable === 'function' && App.isStoryAllyAvailable(charId);
+            }
+            return typeof App.hasStoryAlly === 'function' && App.hasStoryAlly(charId);
+        };
+        const matchMode = String(action.match || 'all').toLowerCase();
+        const matched = matchMode === 'any' ? ids.some(testOne) : ids.every(testOne);
+        const expected = action.state !== undefined ? !!action.state : true;
+        return matched === expected;
+    },
+
     runEventActionList: async function(actions, rootEventId, phase, active, options = {}) {
         if (!Array.isArray(actions)) return null;
         const prefix = Array.isArray(options.prefix) ? options.prefix : [];
@@ -1530,7 +1553,7 @@ const StoryManager = {
             this.persistEventCursor(active, path);
             let result = null;
 
-            if (action.type === 'IF_FLAG' || action.type === 'IF' || action.type === 'IF_ITEM' || action.type === 'IF_KILL_COUNTS' || action.type === 'IF_QUEST_STAGE' || action.type === 'CHOICE') {
+            if (action.type === 'IF_FLAG' || action.type === 'IF' || action.type === 'IF_ALLY' || action.type === 'IF_ITEM' || action.type === 'IF_KILL_COUNTS' || action.type === 'IF_QUEST_STAGE' || action.type === 'CHOICE') {
                 let branchName = active.selectedBranches[pathKey];
                 if (!branchName) {
                     if (action.type === 'IF_FLAG' || action.type === 'IF') {
@@ -1538,6 +1561,10 @@ const StoryManager = {
                         const expected = action.state !== undefined ? !!action.state : true;
                         const actual = key ? !!(App.data.progress.flags && App.data.progress.flags[key]) : false;
                         branchName = (actual === expected) ? 'then' : (Array.isArray(action.else) ? 'else' : 'otherwise');
+                    } else if (action.type === 'IF_ALLY') {
+                        branchName = this.evaluateAllyCondition(action)
+                            ? 'then'
+                            : (Array.isArray(action.else) ? 'else' : 'otherwise');
                     } else if (action.type === 'IF_ITEM') {
                         const itemId = Number(action.id ?? action.itemId ?? action.value);
                         const requiredCount = Math.max(1, Math.floor(Number(action.count) || 1));
@@ -2456,6 +2483,17 @@ const StoryManager = {
             const expected = action.state !== undefined ? !!action.state : true;
             const actual = key ? !!(data.flags && data.flags[key]) : false;
             const branch = (actual === expected) ? action.then : (action.else || action.otherwise);
+            if (Array.isArray(branch)) {
+                for (const sub of branch) {
+                    const res = await this.processAction(sub, eventId);
+                    if (res === 'BREAK' || res === 'BREAK_TRANSFER') return res;
+                }
+            }
+        }
+
+
+        if (!context.managed && action.type === 'IF_ALLY') {
+            const branch = this.evaluateAllyCondition(action) ? action.then : (action.else || action.otherwise);
             if (Array.isArray(branch)) {
                 for (const sub of branch) {
                     const res = await this.processAction(sub, eventId);

@@ -1,0 +1,8 @@
+PASS Legacion proposal, optional ally branches, six spirit conversations, and pre-battle confirmations
+PASS IF_ALLY reusable condition semantics
+PASS Six spirit map gates use abyssSpiritPilgrimageStarted
+PASS Renamed jobs, three provisional jobs, skill IDs, and character job labels
+PASS Save compatibility hooks for job rename and pilgrimage progression
+PASS Canon and roadmap corrected to five-wedge Vegnasis / no final Jasper
+ALL TARGETED CHECKS PASSED
+TOP_LEVEL_JS_NODE_CHECK_PASS=62

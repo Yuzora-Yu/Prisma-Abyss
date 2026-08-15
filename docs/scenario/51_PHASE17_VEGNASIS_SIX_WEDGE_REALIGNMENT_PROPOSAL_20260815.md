@@ -1,7 +1,10 @@
 # PRISMA ABYSS — Phase17 ヴェグナシス六楔整合 proposal
 
 Date: 2026-08-15  
-Status: main-roadmap audit / proposal / legacy runtime revision requires user decision
+Status: superseded — user confirmed five-wedge runtime as canon on 2026-08-15
+
+
+> **User correction (2026-08-15):** 本proposalの六楔化案は不採用。ヴェグナシスは現行どおり五楔、ヴェルドは闇扱いを維持する。ジャスパーは災禍の根ジャゴレアで敗北した時点で深淵王から見限られ消滅しており、終焉の祭壇へ再登場させない。正本は `52_PHASE17_PRIEST_OPTIONAL_ALLY_SPIRIT_TRIAL_CANON_UPDATE_20260815.md` を優先する。
 
 ## 1. Finding
 

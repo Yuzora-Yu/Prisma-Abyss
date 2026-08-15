@@ -1134,7 +1134,7 @@ Created: 2026-08-15
 
 ## DR-20260815-vegnasis-six-wedge-realignment
 
-Status: pending  
+Status: resolved / current five-wedge runtime retained  
 Created: 2026-08-15
 
 ### Target
@@ -1155,13 +1155,12 @@ Created: 2026-08-15
 ```
 
 ### Concern
-canon v8 §45.2–46 は終焉の祭壇を六楔で固定している。
-火グラド／水シーリス／風エリシア／雷レナード／光ヴェルド／闇ジャスパー。
-現行runtimeは5柱で、ヴェルドが闇役、ジャスパーが不在。
+旧canon v8 §45.2–46 が六楔としていたため差分候補化したが、2026-08-15のユーザー補正で旧canon側が誤りと確定。
+正本は現行runtimeどおり5柱、ヴェルドが闇役、ジャスパーは災禍の根ジャゴレアで消滅済み。
 
 ### Option A: 現行維持
 - 現行5柱戦を維持する。
-- canon v8との不一致が残る。
+- canonを現行runtimeへ合わせて補正する。
 
 ### Option B: 台詞のみ六楔化
 - 表示だけ五→六へ直す。
@@ -1174,18 +1173,18 @@ canon v8 §45.2–46 は終焉の祭壇を六楔で固定している。
 - 6人分のfall/last-standと六芒星臨界を接続。
 - 輪廻の結晶が臨界を相殺してアゼルガラグ戦へ入る。
 
-### Codex recommendation
-- recommended option: Option C
-- reason: 最終章の「統合 vs 循環」を戦闘構造そのものへ反映できるため。
-- confidence: high
+### Final disposition
+- selected option: Option A / current five-wedge battle retained
+- reason: Jasper is already discarded and eliminated before the final battle; Veld remains the dark wedge.
+- six-wedge proposal is superseded, not implemented.
 
 ### User decision
-- decision: undecided
-- selected option:
-- user notes:
-- approved date:
+- decision: approved current five-wedge canon
+- selected option: Option A
+- user notes: ヴェグナシスは五楔で問題なし。ヴェルドは闇扱い。ジャスパーは前段で消滅済み。
+- approved date: 2026-08-15
 
 ### Implementation tracking
-- implemented file:
-- implemented date:
-- validation:
+- runtime: no battle-code change required
+- canon updated: 2026-08-15
+- source: `docs/scenario/52_PHASE17_PRIEST_OPTIONAL_ALLY_SPIRIT_TRIAL_CANON_UPDATE_20260815.md`

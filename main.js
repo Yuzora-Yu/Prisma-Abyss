@@ -4063,6 +4063,38 @@ const App = {
         return { applied:true, changed:result.changed === true || count > 0, count };
     },
 
+    jobNameAliases: Object.freeze({
+        '盗賊':'斥候',
+        'バトルマスター':'剣闘士',
+        'スーパースター':'エンターテイナー',
+        '天地雷鳴士':'星詠師',
+        '天地雷鳴師':'星詠師',
+        'ゴッドハンド':'聖拳士',
+        'パラディン':'聖騎士'
+    }),
+
+    normalizeJobName: jobName => {
+        const name = String(jobName || '');
+        return App.jobNameAliases[name] || name;
+    },
+
+    migrateJobNamesV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260815_jobNamesV1',
+        () => {
+            if (!Array.isArray(data?.characters)) return { changed:false, count:0 };
+            let count = 0;
+            data.characters.forEach(char => {
+                if (!char || typeof char !== 'object' || !char.job) return;
+                const normalized = App.normalizeJobName(char.job);
+                if (normalized === char.job) return;
+                char.job = normalized;
+                count++;
+            });
+            return { changed:count > 0, count };
+        }
+    ),
+
     // 2026-08-12以前の「海底神殿クリア直後に水上都市解放」セーブを、新しい暴動導線へ安全に接続する。
     // 既に暴動後より先へ進んだセーブは巻き戻さず、暴動鎮圧済みとして補完する。
     migrateWaterCityRiotRouteV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
@@ -4309,6 +4341,38 @@ const App = {
                 data.items[itemId] = 1;
                 count++;
             });
+            return { changed:count > 0, count };
+        }
+    ),
+
+    // 六精霊巡礼の提案フラグ導入前に既に試練へ進んだセーブは、巻き戻さず開始済みとして扱う。
+    // 神官と話しただけのセーブは自動開始せず、新しいミネルバ／ソフィア会話を一度見られるようにする。
+    migrateAbyssSpiritPilgrimageV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260815_abyssSpiritPilgrimageV1',
+        () => {
+            if (!data || typeof data !== 'object') return { changed:false, count:0 };
+            data.progress = (data.progress && typeof data.progress === 'object' && !Array.isArray(data.progress)) ? data.progress : {};
+            data.progress.flags = (data.progress.flags && typeof data.progress.flags === 'object' && !Array.isArray(data.progress.flags)) ? data.progress.flags : {};
+            const flags = data.progress.flags;
+            const blessings = (data.progress.abyssSpiritBlessings && typeof data.progress.abyssSpiritBlessings === 'object')
+                ? data.progress.abyssSpiritBlessings
+                : {};
+            const trials = (data.progress.abyssSpiritTrialEvents && typeof data.progress.abyssSpiritTrialEvents === 'object')
+                ? data.progress.abyssSpiritTrialEvents
+                : {};
+            const touchedTrial = Object.values(trials).some(record => {
+                const state = String(record?.state || 'untouched');
+                return state !== 'untouched';
+            });
+            const ownsBlessing = Object.values(blessings).some(value => value === true);
+            const octaprismId = Number(globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008);
+            const ownsOctaprism = Number(data.items?.[octaprismId] ?? data.items?.[String(octaprismId)] ?? 0) > 0;
+            const alreadyAdvanced = touchedTrial || ownsBlessing || flags.abyssAllSpiritTrialsCleared === true || ownsOctaprism;
+            if (!alreadyAdvanced) return { changed:false, count:0 };
+            let count = 0;
+            if (flags.abyssSpiritPrismKnown !== true) { flags.abyssSpiritPrismKnown = true; count++; }
+            if (flags.abyssSpiritPilgrimageStarted !== true) { flags.abyssSpiritPilgrimageStarted = true; count++; }
             return { changed:count > 0, count };
         }
     ),
@@ -8936,6 +9000,7 @@ load: () => {
         App.reconcileLightPalaceWorldState(data);
         App.reconcileCrystalTreeWorldState(data);
         App.ensureStoryCharacterStates(data);
+        App.migrateJobNamesV1(data);
 
         // 旧開発版では焼け焦げたペンダントがNEW GAME初期所持に混入していた。
         // 崩落前のプロローグ途中データだけを対象に除去し、5年後へ進行済みのセーブは保持する。
@@ -8950,6 +9015,7 @@ load: () => {
             data.characters.forEach(char => {
                 if (!char || typeof char !== 'object') return;
                 char.name = App.sanitizeCharacterName(char.name, char.isMonsterAlly === true ? (char.job || '仲間モンスター') : '冒険者');
+                if (char.job) char.job = App.normalizeJobName(char.job);
                 if (char.mdef === undefined || char.mdef === null) {
                     char.mdef = Math.floor((char.mag || 0) * 0.8);
                 }
@@ -8992,6 +9058,7 @@ load: () => {
         App.migrateLunaZenonBossVisualCleanupV1(data);
         App.migrateSpiritFragmentResistanceSourceV1(data);
         App.migratePendantOctaprismV1(data);
+        App.migrateAbyssSpiritPilgrimageV1(data);
         App.migrateSpecialBossEquipmentBalanceV1(data);
         App.reconcileCarmenaGateProgress(data);
 

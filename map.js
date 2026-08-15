@@ -9605,7 +9605,7 @@ const FIXED_DUNGEON_MAPS = {
                     {
                         x: 10, y: 4, type: "elementalTrialPrism", element: "火",
                         interactFromAdjacent: true, blocksMovement: true,
-                        requiredFlags: ["abyssSpiritPrismKnown", "firePrismRestored"],
+                        requiredFlags: ["abyssSpiritPilgrimageStarted", "firePrismRestored"],
                         lockedText: "火のプリズムは、まだこちらの声に応えない。",
                         elements: ["火"], requiredElements: ["火", "水", "風", "雷", "光", "闇"],
                         bossByElement: { "火": 502001 }, rewardItemByElement: { "火": 701001 },
@@ -10988,7 +10988,7 @@ const FIXED_DUNGEON_MAPS = {
                     {
                         x: 12, y: 8, type: "elementalTrialPrism", element: "風",
                         interactFromAdjacent: true, blocksMovement: true,
-                        requiredFlags: ["abyssSpiritPrismKnown", "windVillageCleared"],
+                        requiredFlags: ["abyssSpiritPilgrimageStarted", "windVillageCleared"],
                         lockedText: "風のプリズムは、まだこちらの声に応えない。",
                         elements: ["風"], requiredElements: ["火", "水", "風", "雷", "光", "闇"],
                         bossByElement: { "風": 502003 }, rewardItemByElement: { "風": 701003 },
@@ -11271,7 +11271,7 @@ const FIXED_DUNGEON_MAPS = {
                     {
                         x: 11, y: 7, type: "elementalTrialPrism", element: "水",
                         interactFromAdjacent: true, blocksMovement: true,
-                        requiredFlags: ["abyssSpiritPrismKnown", "waterCityCleared"],
+                        requiredFlags: ["abyssSpiritPilgrimageStarted", "waterCityCleared"],
                         lockedText: "水のプリズムは、まだこちらの声に応えない。",
                         elements: ["水"], requiredElements: ["火", "水", "風", "雷", "光", "闇"],
                         bossByElement: { "水": 502002 }, rewardItemByElement: { "水": 701002 },
@@ -13493,7 +13493,7 @@ const FIXED_DUNGEON_MAPS = {
                     {
                         x: 16, y: 4, type: "elementalTrialPrism", element: "雷",
                         interactFromAdjacent: true, blocksMovement: true,
-                        requiredFlags: ["abyssSpiritPrismKnown", "thunderFortCleared"],
+                        requiredFlags: ["abyssSpiritPilgrimageStarted", "thunderFortCleared"],
                         lockedText: "雷のプリズムは、まだこちらの声に応えない。",
                         elements: ["雷"], requiredElements: ["火", "水", "風", "雷", "光", "闇"],
                         bossByElement: { "雷": 502004 }, rewardItemByElement: { "雷": 701004 },
@@ -14370,7 +14370,7 @@ const FIXED_DUNGEON_MAPS = {
                     {
                         x: 17, y: 8, type: "elementalTrialPrism", element: "光",
                         interactFromAdjacent: true, blocksMovement: true,
-                        requiredFlags: ["abyssSpiritPrismKnown", "lightPalaceCleared"],
+                        requiredFlags: ["abyssSpiritPilgrimageStarted", "lightPalaceCleared"],
                         lockedText: "光のプリズムは、まだこちらの声に応えない。",
                         elements: ["光"], requiredElements: ["火", "水", "風", "雷", "光", "闇"],
                         bossByElement: { "光": 502005 }, rewardItemByElement: { "光": 701005 },
@@ -16893,7 +16893,7 @@ const FIXED_DUNGEON_MAPS = {
                     {
                         x: 16, y: 5, type: "elementalTrialPrism", element: "闇",
                         interactFromAdjacent: true, blocksMovement: true,
-                        requiredFlags: ["abyssSpiritPrismKnown", "darkCastleCleared"],
+                        requiredFlags: ["abyssSpiritPilgrimageStarted", "darkCastleCleared"],
                         lockedText: "闇のプリズムは、まだこちらの声に応えない。",
                         elements: ["闇"], requiredElements: ["火", "水", "風", "雷", "光", "闇"],
                         bossByElement: { "闇": 502006 }, rewardItemByElement: { "闇": 701006 },

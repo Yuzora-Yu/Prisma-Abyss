@@ -8550,6 +8550,75 @@ const STORY_MANAGER_DATA = {
             { name:'レガシオンの神官', text:'あなたたちには、強い属性の加護が幾重にも重なっているようですね。' },
             { name:'レガシオンの神官', text:'もしや、プリズムに宿る声も聞こえるのではありませんか。\n地上で救った六属性のプリズムを訪ねれば、それぞれの大精霊が応えるかもしれません。' }
         ],
+        ABYSS_SPIRIT_PILGRIMAGE_PROPOSAL_PHASE17: [
+            { name:'ミネルバ', text:'……待って。今の話、もう一度頭の中で並べる。' },
+            { name:'ソフィア', text:'その顔。何か思いついたのね。' },
+            { name:'ミネルバ', text:'ここじゃ火も水も風も、深淵の圧に押されて境目が曖昧になる。\n混ざった場所で、無理にほどこうとしてた。' },
+            { name:'ソフィア', text:'地上へ戻して観測する？' },
+            { name:'ミネルバ', text:'ううん。戻すんじゃない。私たちが会いに行く。' },
+            { name:'ミネルバ', text:'六つのプリズム、それぞれの土地で。\n精霊がまだ私たちを覚えてるなら、別々のまま力を借りられるかもしれない。' },
+            { name:'ソフィア', text:'なるほど。ひとつにする方法じゃなくて、ひとつにしないまま運ぶ方法を探すのね。' },
+            { name:'ミネルバ', text:'そう。答えはまだないけど、たぶんそっち。' }
+        ],
+        ABYSS_SPIRIT_PILGRIMAGE_ZENON_PHASE17: [
+            { name:'ゼノン', text:'深淵では境界が腐る。地上の精霊に会うという判断は悪くない。\nだが、奴らが人間の都合に頷くと思うな。' },
+            { name:'ミネルバ', text:'思ってない。だから会いに行く。' }
+        ],
+        ABYSS_SPIRIT_PILGRIMAGE_LEESCIA_PHASE17: [
+            { name:'リーシア', text:'精霊は術式の正しさより、使う者の在り方を見る。\n……少なくとも、私が知る頃から変わっていなければ。' },
+            { name:'ソフィア', text:'相変わらず、肝心なところだけ古老みたいに言うのね。' },
+            { name:'リーシア', text:'古いので。' }
+        ],
+        ABYSS_SPIRIT_PILGRIMAGE_CLOSE_PHASE17: [
+            { name:'ミネルバ', text:'決まり。火、水、風、雷、光、闇。順番は任せる。\n地上の六つを、一つずつ確かめよう。' },
+            { name:'ソフィア', text:'「決まり」って、まだ仮説でしょう。' },
+            { name:'ミネルバ', text:'仮説だから、歩いて確かめるんだよ。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_FIRE_PARTY_INTRO_PHASE17: [
+            { name:'ガイル', text:'守るために燃える、か。……前の俺なら「強けりゃいい」って言ってたかもな。' },
+            { name:'ガイル', text:'でも火って、飯も炊くし、寒い夜には命そのものだ。\n俺は、そっちの火も知ってる。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_FIRE_PARTY_VICTORY_PHASE17: [
+            { name:'ガイル', text:'熱い。でも、嫌な熱じゃねえ。……ちゃんと持って帰ろうぜ。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_WATER_PARTY_INTRO_PHASE17: [
+            { name:'ミネルバ', text:'形を変えても、自分を失わない……。水はずるいな。\n理屈で言うと簡単なのに、やると難しい。' },
+            { name:'ミネルバ', text:'だから見たい。混ざることと、流れながら隣にいることが、同じじゃないって。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_WATER_PARTY_VICTORY_PHASE17: [
+            { name:'ミネルバ', text:'片方に染まらず、流れだけ渡す。……うん。これ、あとでちゃんと測りたい。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_WIND_PARTY_INTRO_PHASE17: [
+            { name:'アリサ', text:'……この風、知ってる。' },
+            { name:'アリサ', text:'どこでって聞かれても困るけど。昔、眠る前に聞いてた音と同じ。' },
+            { name:'アリサ', text:'試すなら勝手にしなよ。\nあたしも、逃げてばっかじゃないって見せるから。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_WIND_PARTY_VICTORY_PHASE17: [
+            { name:'アリサ', text:'……やっぱり知ってた。忘れてたの、あたしの方だったんだ。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_THUNDER_PARTY_INTRO_PHASE17: [
+            { name:'ジョセフ', text:'決めろ、ってか。戦場じゃ、迷わない奴から死ぬこともあるんだがな。' },
+            { name:'ジョセフ', text:'それでも、迷ったまま人を盾にするよりはましか。行くぞ、アルス。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_THUNDER_PARTY_VICTORY_PHASE17: [
+            { name:'ジョセフ', text:'決めた先で間違うこともある。そん時ゃ、また次を決めりゃいい。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_LIGHT_PARTY_INTRO_PHASE17: [
+            { name:'ルーナ', text:'「光は善を名乗るだけでは足りない」……うん。' },
+            { name:'ルーナ', text:'私、それを知るのにずいぶん遠回りした。\n正しいつもりで、傷つけた人もいる。' },
+            { name:'ルーナ', text:'だから今度は、光って名前じゃなく、私が誰に手を伸ばすかで答える。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_LIGHT_PARTY_VICTORY_PHASE17: [
+            { name:'ルーナ', text:'ありがとう。この光を「正しさ」の証明にはしない。誰かを照らすために使うね。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_DARK_PARTY_INTRO_PHASE17: [
+            { name:'シャニー', text:'闇を怖がるな、なんて簡単には言わない。怖いものは怖い。' },
+            { name:'シャニー', text:'でも、闇を理由に誰かを化け物って決めつけるのは、もう嫌。' },
+            { name:'シャニー', text:'私は、私の影を連れていく。' }
+        ],
+        ABYSS_SPIRIT_TRIAL_DARK_PARTY_VICTORY_PHASE17: [
+            { name:'シャニー', text:'暗いままでいい。闇の中じゃないと見えないものも、ちゃんとあるから。' }
+        ],
         ABYSS_LEGACION_PRISON: [{name:'システム',text:'地下牢には壊れた鎖と空の檻だけが残っている。\n奥の壁から、地下神殿へ続く重い魔力が伝わってくる。'}],
         ABYSS_LEGACION_PRISON_MOTHER: [
             { name:'牢前に座る母', text:'息子は罪人じゃない。\n城壁の外に朝があると言っただけ。' },
@@ -8862,7 +8931,27 @@ const STORY_MANAGER_DATA = {
         abyss_legacion_castle_servant: {actions:[{type:'CONV',value:'ABYSS_LEGACION_CASTLE_SERVANT'}],winActions:[]},
         abyss_legacion_wall_vendor: {actions:[{type:'CONV',value:'ABYSS_LEGACION_WALL_VENDOR'}],winActions:[]},
         abyss_legacion_audience: {actions:[{type:'CONV',value:'ABYSS_LEGACION_AUDIENCE'},{type:'FLAG',key:'abyssLegacionNorthGateOpen'}],winActions:[]},
-        abyss_legacion_priest: {actions:[{type:'CONV',value:'ABYSS_LEGACION_PRIEST'},{type:'FLAG',key:'abyssSpiritPrismKnown'}],winActions:[]},
+        abyss_legacion_priest: {
+            actions:[
+                {type:'CONV',value:'ABYSS_LEGACION_PRIEST'},
+                {type:'FLAG',key:'abyssSpiritPrismKnown'},
+                {
+                    type:'IF_FLAG',key:'abyssSpiritPilgrimageStarted',state:false,
+                    then:[{type:'EVENT',value:'abyss_spirit_pilgrimage_proposal_phase17'}],else:[]
+                }
+            ],
+            winActions:[]
+        },
+        abyss_spirit_pilgrimage_proposal_phase17: {
+            actions:[
+                {type:'CONV',value:'ABYSS_SPIRIT_PILGRIMAGE_PROPOSAL_PHASE17'},
+                {type:'IF_ALLY',charId:402,mode:'recruited',then:[{type:'CONV',value:'ABYSS_SPIRIT_PILGRIMAGE_ZENON_PHASE17'}],else:[]},
+                {type:'IF_ALLY',charId:303,mode:'recruited',then:[{type:'CONV',value:'ABYSS_SPIRIT_PILGRIMAGE_LEESCIA_PHASE17'}],else:[]},
+                {type:'CONV',value:'ABYSS_SPIRIT_PILGRIMAGE_CLOSE_PHASE17'},
+                {type:'FLAG',key:'abyssSpiritPilgrimageStarted'}
+            ],
+            winActions:[]
+        },
         abyss_legacion_prison: {actions:[{type:'CONV',value:'ABYSS_LEGACION_PRISON'}],winActions:[]},
         abyss_legacion_prison_mother: {actions:[{type:'CONV',value:'ABYSS_LEGACION_PRISON_MOTHER'}],winActions:[]},
         abyss_legacion_prison_guard: {actions:[{type:'CONV',value:'ABYSS_LEGACION_PRISON_GUARD'}],winActions:[]},
@@ -8891,11 +8980,28 @@ const STORY_MANAGER_DATA = {
         }
     });
 
+    const spiritTrialPartyDialoguePhase17 = Object.freeze({
+        火:Object.freeze({charId:109,intro:'ABYSS_SPIRIT_TRIAL_FIRE_PARTY_INTRO_PHASE17',victory:'ABYSS_SPIRIT_TRIAL_FIRE_PARTY_VICTORY_PHASE17'}),
+        水:Object.freeze({charId:206,intro:'ABYSS_SPIRIT_TRIAL_WATER_PARTY_INTRO_PHASE17',victory:'ABYSS_SPIRIT_TRIAL_WATER_PARTY_VICTORY_PHASE17'}),
+        風:Object.freeze({charId:108,intro:'ABYSS_SPIRIT_TRIAL_WIND_PARTY_INTRO_PHASE17',victory:'ABYSS_SPIRIT_TRIAL_WIND_PARTY_VICTORY_PHASE17'}),
+        雷:Object.freeze({charId:101,intro:'ABYSS_SPIRIT_TRIAL_THUNDER_PARTY_INTRO_PHASE17',victory:'ABYSS_SPIRIT_TRIAL_THUNDER_PARTY_VICTORY_PHASE17'}),
+        光:Object.freeze({charId:401,intro:'ABYSS_SPIRIT_TRIAL_LIGHT_PARTY_INTRO_PHASE17',victory:'ABYSS_SPIRIT_TRIAL_LIGHT_PARTY_VICTORY_PHASE17'}),
+        闇:Object.freeze({charId:306,intro:'ABYSS_SPIRIT_TRIAL_DARK_PARTY_INTRO_PHASE17',victory:'ABYSS_SPIRIT_TRIAL_DARK_PARTY_VICTORY_PHASE17'})
+    });
+
     Object.entries(data.abyssSpiritTrials).forEach(([element, definition]) => {
         const battleAction = { type:'ABYSS_SPIRIT_TRIAL_BATTLE', element };
+        const partyDialogue = spiritTrialPartyDialoguePhase17[element];
+        const partyIntroAction = partyDialogue
+            ? {type:'IF_ALLY',charId:partyDialogue.charId,mode:'recruited',then:[{type:'CONV',value:partyDialogue.intro}],else:[]}
+            : null;
+        const partyVictoryAction = partyDialogue
+            ? {type:'IF_ALLY',charId:partyDialogue.charId,mode:'recruited',then:[{type:'CONV',value:partyDialogue.victory}],else:[]}
+            : null;
         data.events[definition.introEventId] = {
             actions:[
                 {type:'CONV',value:definition.introScriptId},
+                ...(partyIntroAction ? [partyIntroAction] : []),
                 {type:'CHOICE',text:`${definition.spiritName}の試練を受けますか？`,yes:[battleAction],no:[{type:'LOG',value:'今は試練を受けないことにした。'}]}
             ],
             winActions:[]
@@ -8910,6 +9016,7 @@ const STORY_MANAGER_DATA = {
         data.events[definition.victoryEventId] = {
             actions:[
                 {type:'CONV',value:definition.victoryScriptId},
+                ...(partyVictoryAction ? [partyVictoryAction] : []),
                 {type:'ABYSS_SPIRIT_TRIAL_COMPLETE',element},
                 {type:'EVENT',value:'abyss_spirit_trials_octaprism_grant'}
             ],

@@ -1,7 +1,7 @@
 # PRISMA ABYSS — Phase17 六精霊巡礼導入 / レクスノート邸外ハヤテ演出
 
 Date: 2026-08-15  
-Status: Hayate runtime approved / Phase17 new dialogue drafted / legacy revisions on hold  
+Status: Hayate runtime approved / pilgrimage section superseded by user correction in `52_PHASE17_PRIEST_OPTIONAL_ALLY_SPIRIT_TRIAL_CANON_UPDATE_20260815.md`  
 References:
 - `canon/PRISMA_SCENARIO_CANON_MASTER_v8.md`
 - `canon/PRISMA_CHARACTER_BOSS_ENCYCLOPEDIA_v5.md`
@@ -10,6 +10,8 @@ References:
 - `development_notes/2026-08-15/handoff/PRISMA_ABYSS_HANDOFF_20260815.md`
 
 ## 1. Scope
+
+> 2026-08-15 user correction: §3の「地下神殿にミネルバを別配置して提案」は廃止。レガシオン神官の既存会話直後に、ミネルバが閃きソフィアと話し合って提案する流れを正本とする。詳細とruntimeは `52_PHASE17_PRIEST_OPTIONAL_ALLY_SPIRIT_TRIAL_CANON_UPDATE_20260815.md` を優先する。
 
 ロードマップ本筋を優先し、今回は以下を扱う。
 

@@ -1,0 +1,24 @@
+PRISMA ABYSS delta manifest
+Date: 2026-08-15
+Scope: Phase17 priest / optional ally branching / six spirit dialogue / job update / canon correction
+Changed or new files only: 19
+
+01. canon/PRISMA_CHARACTER_BOSS_ENCYCLOPEDIA_v5.md
+02. canon/PRISMA_CODING_HANDOFF_v5.md
+03. canon/PRISMA_DEVELOPMENT_ROADMAP_v2.md
+04. canon/PRISMA_SCENARIO_CANON_MASTER_v8.md
+05. characters.js
+06. development_notes/2026-08-15/DELTA_MANIFEST_20260815_PHASE17_SPIRITS_JOBS.txt
+07. development_notes/2026-08-15/reports/PHASE17_PRIEST_OPTIONAL_ALLY_SPIRIT_JOB_UPDATE_20260815.md
+08. development_notes/2026-08-15/validation/PHASE17_OPTIONAL_ALLY_SPIRIT_JOB_CHECK_20260815.js
+09. development_notes/2026-08-15/validation/PHASE17_OPTIONAL_ALLY_SPIRIT_JOB_CHECK_20260815.log
+10. docs/scenario/07_DIALOGUE_REVIEW_QUEUE.md
+11. docs/scenario/49_PHASE17_PILGRIMAGE_AND_REXNOTE_HAYATE_CONTINUATION_20260815.md
+12. docs/scenario/51_PHASE17_VEGNASIS_SIX_WEDGE_REALIGNMENT_PROPOSAL_20260815.md
+13. docs/scenario/52_PHASE17_PRIEST_OPTIONAL_ALLY_SPIRIT_TRIAL_CANON_UPDATE_20260815.md
+14. job_data.js
+15. main.js
+16. map.js
+17. news.js
+18. story.js
+19. story_logic.js
