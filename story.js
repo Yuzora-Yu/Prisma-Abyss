@@ -2138,6 +2138,55 @@ const STORY_MANAGER_DATA = {
                         "charId": 207
                 }
         ],
+        "HAYATE_REXNOTE_SIGHTING": [
+                {
+                        "name": "ハヤテ",
+                        "text": "・・・・・・",
+                        "charId": 203
+                },
+                {
+                        "type": "FIELD_CUTSCENE",
+                        "name": "レクスノート邸外・ハヤテ消失",
+                        "commands": [
+                                {
+                                        "op": "SHOW_SPRITE",
+                                        "id": "hayate-rexnote-abyss-vortex",
+                                        "src": "assets/effect/fx-abyss-vortex-ai.png",
+                                        "x": 5,
+                                        "y": 7,
+                                        "size": 1.7,
+                                        "z": 12,
+                                        "opacity": 0.95,
+                                        "css": "filter:drop-shadow(0 0 10px rgba(35,0,70,.9));"
+                                },
+                                {
+                                        "op": "WAIT",
+                                        "ms": 260
+                                }
+                        ]
+                }
+        ],
+        "HAYATE_REXNOTE_AFTER_SIGHTING": [
+                {
+                        "type": "FIELD_CUTSCENE",
+                        "name": "レクスノート邸外・ハヤテ消失後",
+                        "commands": [
+                                {
+                                        "op": "WAIT",
+                                        "ms": 160
+                                },
+                                {
+                                        "op": "REMOVE_SPRITE",
+                                        "id": "hayate-rexnote-abyss-vortex"
+                                }
+                        ]
+                },
+                {
+                        "name": "ガイル",
+                        "text": "ん、誰かいたのか？",
+                        "charId": 109
+                }
+        ],
         "REXNOTE_ESTATE_ARRIVAL": [
                 {
                         "name": "システム",
@@ -7178,7 +7227,9 @@ const STORY_MANAGER_DATA = {
         },
         "hayate_rexnote_sighting": {
                 "actions": [
-                        { "type": "FLAG", "key": "hayateRexnoteSighted", "refreshField": true }
+                        { "type": "CONV", "value": "HAYATE_REXNOTE_SIGHTING" },
+                        { "type": "FLAG", "key": "hayateRexnoteSighted", "refreshField": true },
+                        { "type": "CONV", "value": "HAYATE_REXNOTE_AFTER_SIGHTING" }
                 ],
                 "winActions": []
         },

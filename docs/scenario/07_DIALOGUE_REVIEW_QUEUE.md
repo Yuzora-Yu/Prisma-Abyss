@@ -1131,3 +1131,61 @@ Created: 2026-08-15
 - implemented date:
 - validation:
 
+
+## DR-20260815-vegnasis-six-wedge-realignment
+
+Status: pending  
+Created: 2026-08-15
+
+### Target
+- file: `story.js` / `monsters.js` / `battle.js`
+- legacy script key: `ABYSS_VEGNASIS`, `ABYSS_VEGNASIS_FALL_*`, `ABYSS_VEGNASIS_LAST_STAND_*`
+- battle: 終焉の祭壇・ヴェグナシス
+- source proposal: `docs/scenario/51_PHASE17_VEGNASIS_SIX_WEDGE_REALIGNMENT_PROPOSAL_20260815.md`
+
+### Current text
+```text
+システム：
+五つの声が、一本の異形の柱から重なって響く。
+雷、風、水、火、闇の魂が、深淵の肉へ縫い合わされていた。
+
+死幻の魔柱ヴェグナシス：
+個は弱い。絆は脆い。
+ゆえに王は、五つを一つへ混ぜ、死なぬ柱とした。
+```
+
+### Concern
+canon v8 §45.2–46 は終焉の祭壇を六楔で固定している。
+火グラド／水シーリス／風エリシア／雷レナード／光ヴェルド／闇ジャスパー。
+現行runtimeは5柱で、ヴェルドが闇役、ジャスパーが不在。
+
+### Option A: 現行維持
+- 現行5柱戦を維持する。
+- canon v8との不一致が残る。
+
+### Option B: 台詞のみ六楔化
+- 表示だけ五→六へ直す。
+- 実戦が5体のままなので不可。推奨しない。
+
+### Option C: 六楔戦へ全面整合
+- ヴェルドを光楔へ変更。
+- ジャスパーの残滓を闇楔として追加。
+- linked battleを6体へ拡張。
+- 6人分のfall/last-standと六芒星臨界を接続。
+- 輪廻の結晶が臨界を相殺してアゼルガラグ戦へ入る。
+
+### Codex recommendation
+- recommended option: Option C
+- reason: 最終章の「統合 vs 循環」を戦闘構造そのものへ反映できるため。
+- confidence: high
+
+### User decision
+- decision: undecided
+- selected option:
+- user notes:
+- approved date:
+
+### Implementation tracking
+- implemented file:
+- implemented date:
+- validation:

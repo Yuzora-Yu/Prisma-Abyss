@@ -1729,3 +1729,5 @@ Status: **inventory / no automatic replacement**
 |1702|item_description|`items.js:6981`|Item 701008|六つの大精霊と光の神の加護を宿す結晶。所持していると、深淵王アゼルガラグとの戦いで真価を発揮する。|六つの属性が互いへ役割を渡し続ける循環を封じた結晶。深淵の「統合」に抗う力を秘める。|proposal_pending_20260815|
 |1703|ui_battle_log|`item_runtime.js:214`|Item 701008 special message|オクタプリズマは使用せず、所持しているだけでアゼルガラグ戦を支援する。|輪廻の結晶は道具として使うものではない。六つの光は、深淵王との戦いで巡り続ける。|proposal_pending_20260815|
 |1704|story_system|`story.js:8645`|ABYSS_SPIRIT_TRIAL_ALL_COMPLETE|焼け焦げたペンダントは、澄んだ光を宿す結晶へと姿を変えた。 / 光結晶のペンダントと、オクタプリズマを手に入れた！|結晶樹の循環の儀へ移設し、「輪廻の結晶」を手に入れた。へ再構成。詳細は `44_CYCLE_CRYSTAL_RITUAL_REALIGNMENT_PROPOSAL_20260815.md`。|proposal_pending_20260815|
+|1705|battle_log|`battle.js:760`|Vegnasis final pillar awaken|${enemy.name}は四柱の力を取り込み、完全に傷を癒した！|六楔化時は「五柱の力を取り込み」へ整合。人数可変化する場合もplayer-facing出力は自然文にする。|proposal_pending_20260815|
+|1706|enemy_name|`monsters.js:788`|Monster 302084|闇柱ヴェルド|光柱ヴェルド|proposal_pending_20260815|
