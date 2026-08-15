@@ -7839,6 +7839,41 @@ load: () => {
 			});
 		}
 
+    // 6. 職特性補正。習得スキルとは別の職業固有ロールをここで一元管理する。
+    // 武器条件を持つ職は、calcStats冒頭で確定した weaponTypes を使って有効/無効を判定する。
+    const jobIdentity = App.getJobIdentityDefinition(char.job);
+    const jobIdentityActive = !!(jobIdentity && App.isJobIdentityActive(char, jobIdentity));
+    if (jobIdentityActive) {
+        const js = jobIdentity.stats || {};
+        pctMods.maxHp += Number(js.hpPct || 0);
+        pctMods.maxMp += Number(js.mpPct || 0);
+        pctMods.atk += Number(js.atkPct || 0);
+        pctMods.def += Number(js.defPct || 0);
+        pctMods.mdef += Number(js.mdefPct || 0);
+        pctMods.spd += Number(js.spdPct || 0);
+        pctMods.mag += Number(js.magPct || 0);
+        pctMods.hit += Number(js.hit || 0);
+        pctMods.eva += Number(js.eva || 0);
+        pctMods.cri += Number(js.cri || 0);
+        s.finDmg += Number(js.finDmg || 0);
+        s.finRed += Number(js.finRed || 0);
+        Object.entries(jobIdentity.elmAtk || {}).forEach(([element, value]) => {
+            s.elmAtk[element] = Number(s.elmAtk[element] || 0) + Number(value || 0);
+        });
+        Object.entries(jobIdentity.elmRes || {}).forEach(([element, value]) => {
+            s.elmRes[element] = Number(s.elmRes[element] || 0) + Number(value || 0);
+        });
+    }
+    s.jobIdentity = jobIdentity ? {
+        role: String(jobIdentity.role || ''),
+        description: String(jobIdentity.description || ''),
+        active: jobIdentityActive,
+        requiredWeaponTypes: Array.isArray(jobIdentity.activation?.weaponTypes)
+            ? jobIdentity.activation.weaponTypes.slice()
+            : []
+    } : null;
+    s.jobCombat = jobIdentityActive ? { ...(jobIdentity.combat || {}) } : {};
+
     // 最終計算（主要7ステは%乗算）
     s.maxHp = Math.floor(s.maxHp * (1 + pctMods.maxHp / 100));
     s.maxMp = Math.floor(s.maxMp * (1 + pctMods.maxMp / 100));
@@ -8116,6 +8151,32 @@ load: () => {
         if (charData.level >= 100) charData.exp = Math.max(0, Number(charData.exp || 0));
         if (options.save !== false) App.save();
         return logs;
+    },
+
+    getJobIdentityDefinition: (jobName) => {
+        const key = String(jobName || '').trim();
+        if (!key) return null;
+        return globalThis.JOB_IDENTITY_DATA?.[key] || null;
+    },
+
+    isJobIdentityActive: (charData, definition = null) => {
+        if (!charData) return false;
+        const def = definition || App.getJobIdentityDefinition(charData.job);
+        if (!def) return false;
+        const requiredWeaponTypes = Array.isArray(def.activation?.weaponTypes)
+            ? def.activation.weaponTypes.map(String).filter(Boolean)
+            : [];
+        if (requiredWeaponTypes.length === 0) return true;
+        const equipped = Array.isArray(charData.weaponTypes)
+            ? charData.weaponTypes.map(String)
+            : [String(charData.weaponType || '')].filter(Boolean);
+        return requiredWeaponTypes.some(type => equipped.includes(type));
+    },
+
+    getJobIdentityCombatModifiers: (charData) => {
+        const def = App.getJobIdentityDefinition(charData?.job);
+        if (!def || !App.isJobIdentityActive(charData, def)) return {};
+        return { ...(def.combat || {}) };
     },
 
     getCurrentAbyssEquipOptionElements: () => {
@@ -8539,159 +8600,61 @@ load: () => {
     },
 
 	/**
-	 * 次のレベルまでに必要な経験値を返す
+	 * 次のレベルまでに必要な経験値を返す。
 	 *
-	 * 設計方針：
-	 * - Lv1〜10   ：超軽い（チュートリアル帯）
-	 * - Lv11〜48  ：ゆるやかに重くなる（50スキル前の育成）
-	 * - Lv49→50  ：壁（強スキル解放）
-	 * - Lv50〜98  ：じわじわ重い（転生前のやり込み）
-	 * - Lv99→100 ：大きな壁（転生条件）
-	 * - Lv101〜   ：転生帯（後で調整前提）
-	 *
-	 * ※ 転生時は「表示Lv1に戻る」が、
-	 *    内部的には effectiveLevel = level + 転生回数*100 で扱う
+	 * 表示Lv1〜100の曲線は転生前後で共通とし、49→50 / 99→100の壁も毎周回維持する。
+	 * 転生回数は「周回全体の必要EXP倍率」として加算し、旧仮実装のように
+	 * Lv101以降だけほぼ平坦な曲線へ崩れないようにする。
 	 */
 	getNextExp: (charData) => {
-
-		/* =====================================================
-		 * 基本情報
-		 * ===================================================== */
-
-		// 基本となる経験値（Lv1→2 が 100 になる）
 		const BASE_EXP = CONST.EXP_BASE || 100;
-
-		// 現在レベル（表示レベル）
-		const level = charData.level || 1;
-
-		// 転生回数
+		const level = Math.max(1, Math.min(99, Math.floor(Number(charData?.level) || 1)));
 		const reincCount = App.getReincarnationEquivalentCount(charData);
+		const rarityMult = (CONST.RARITY_EXP_MULT && CONST.RARITY_EXP_MULT[charData?.rarity]) || 1.0;
 
-		// 実質レベル（転生を考慮した内部レベル）
-		// 例：転生1回・表示Lv1 => eL=101
-		const eL = level + reincCount * 100;
-
-		// レアリティ倍率（N/R=1.0, SR=1.4, SSR=1.6, UR=2.0, EX=2.5）
-		// ※ CONST 側にマップが無い場合は 1.0 扱い
-		const rarityMult =
-			(CONST.RARITY_EXP_MULT && CONST.RARITY_EXP_MULT[charData.rarity]) || 1.0;
-
-
-		/* =====================================================
-		 * 調整用パラメータ（ここを触れば体感が変わる）
-		 * ===================================================== */
-
-
-		// --- 序盤（1〜10）：超軽い ---
-		// 小さいほど序盤がさらに軽くなる（1.00〜1.15くらいが調整しやすい）
+		// --- Lv1〜100 基本曲線 ---
 		const P_EARLY = 0.8;
-
-		// --- 11〜48：49直前をどう重くするか（ターゲット） ---
-		// eL=49 の必要経験値（49→50の直前）
 		const TARGET_49 = 30000;
-
-		// --- 壁の強さ（段差はキツくてOK方針） ---
-		// 49→50 の壁倍率（例：1.8なら 49の1.8倍）
 		const WALL_50 = 5;
-
-		// 99→100 の壁倍率（転生条件の壁）
 		const WALL_100 = 5;
-
-		// --- 50〜98：転生前の成長（ターゲット） ---
-		// eL=99 の必要経験値（99→100の直前）
 		const TARGET_99 = 150000;
-
-		// 50以降の成長指数（大きいほど99付近が重くなる）
 		const P_AFTER_50 = 1.3;
 
-		// --- 101+（転生帯）：仮置き（後で調整前提） ---
-		const P_REINC = 0.6;
-
-		// 101の増加分（100の何％を足し幅の基準にするか）
-		const REINC_STEP_RATE = 0.05; // 5.0%
-
-		// ------------------------------------------------------------
-		// 注意：このツールは「壁スパイク方式」です。
-		// 49→50 と 99→100 だけ ×WALL を適用し、次レベルで壁を剥がした基準に戻ります。
-		// （50→51 / 100→101 は一度下がってまた上昇）
-		// ------------------------------------------------------------
-
-
-		/* =====================================================
-		 * 事前計算（境界の値を作る）
-		 * ===================================================== */
-
-		// --- eL=10 ---
 		const xp10 = BASE_EXP * Math.pow(10, P_EARLY);
-
-		// --- eL=11〜48（二次） ---
 		const B = (TARGET_49 - xp10) / Math.pow(49 - 10, 2);
-		const xp49 = xp10 + B * Math.pow(49 - 10, 2); // ≒ TARGET_49
-
-		// ★壁は「そのレベルだけ」適用した表示用
-		const xp49_wall = xp49 * WALL_50; // 49→50だけスパイク
-
-		// ★50以降の基準（壁を剥がした起点）は xp49 のまま
+		const xp49 = xp10 + B * Math.pow(49 - 10, 2);
 		const base50 = xp49;
-
-		// --- eL=50〜98（べき乗：基準base50からTARGET_99へ） ---
 		const S = (TARGET_99 - base50) / Math.pow(99 - 50, P_AFTER_50);
-		const xp99 = base50 + S * Math.pow(99 - 50, P_AFTER_50); // ≒ TARGET_99
-
-		// ★99→100も「そのレベルだけ」壁
-		const xp99_wall = xp99 * WALL_100;
-
-		// ★100以降の基準（壁剥がし）は xp99
-		const base100 = xp99;
-
-		/* =====================================================
-		 * 実際の必要経験値の計算
-		 * ===================================================== */
+		const xp99 = base50 + S * Math.pow(99 - 50, P_AFTER_50);
 
 		let needExp;
-
-		if (eL <= 10) {
-		  needExp = BASE_EXP * Math.pow(eL, P_EARLY);
-
-		} else if (eL <= 48) {
-		  needExp = xp10 + B * Math.pow(eL - 10, 2);
-
-		} else if (eL === 49) {
-		  // ★49→50はスパイクだけ
-		  needExp = xp49_wall;
-
-		} else if (eL <= 98) {
-		  // ★50〜98は壁なし基準（base50）から上がっていく
-		  needExp = base50 + S * Math.pow(eL - 50, P_AFTER_50);
-
-		} else if (eL === 99) {
-		  // ★99→100もスパイクだけ
-		  needExp = xp99_wall;
-
+		if (level <= 10) {
+			needExp = BASE_EXP * Math.pow(level, P_EARLY);
+		} else if (level <= 48) {
+			needExp = xp10 + B * Math.pow(level - 10, 2);
+		} else if (level === 49) {
+			needExp = xp49 * WALL_50;
+		} else if (level <= 98) {
+			needExp = base50 + S * Math.pow(level - 50, P_AFTER_50);
 		} else {
-		  // ★101+ は壁を剥がした基準（base100）から成長
-		  const step101 = base100 * REINC_STEP_RATE;
-		  needExp = base100 + step101 * Math.pow(eL - 100, P_REINC);
+			needExp = xp99 * WALL_100;
 		}
 
-		/* =====================================================
-		 * 特性補正：「58 大器晩成」の反映
-		 * ===================================================== */
-		// 特性による必要経験値の増加率を取得（スキルLv * 5%）
-		if (typeof PassiveSkill !== 'undefined' && typeof PassiveSkill.getSumValue === 'function') {
-			// 固定付与を含む装備の大器晩成も必要経験値へ反映する。
-			const expAddPct = PassiveSkill.getSumValue(charData, 'exp_need_mult');
-			if (expAddPct > 0) {
-				// 例: スキルLv1(5%)なら、必要経験値を1.05倍にする
-				needExp = needExp * (1 + expAddPct / 100); 
-			}
-}
+		// --- 転生周回倍率 ---
+		// 1〜5回は育成の重みを明確に増やし、成長補正が上限へ達する5回以降は緩やかにする。
+		// 20回実績までを主な想定帯とし、それ以降は倍率を固定して青天井化を避ける。
+		const cappedReinc = Math.min(20, Math.max(0, reincCount));
+		const firstFive = Math.min(5, cappedReinc);
+		const laterCycles = Math.max(0, cappedReinc - 5);
+		const reincExpMult = 1 + firstFive * 0.40 + laterCycles * 0.08;
+		needExp *= reincExpMult;
 
-		/* =====================================================
-		 * 最終出力
-		 * ===================================================== */
-		// レアリティ倍率とキャラクター個別の必要EXP倍率を反映して切り上げ。
-		// expMultiplierPct は100が通常、ルーナ加入直後は2000など percentage points の整数で管理する。
+		// 特性「大器晩成」: 必要EXP増加。
+		if (typeof PassiveSkill !== 'undefined' && typeof PassiveSkill.getSumValue === 'function') {
+			const expAddPct = PassiveSkill.getSumValue(charData, 'exp_need_mult');
+			if (expAddPct > 0) needExp *= 1 + expAddPct / 100;
+		}
+
 		const individualExpMult = App.getCharacterExpRequirementMultiplierPct(charData) / 100;
 		return Math.ceil(needExp * rarityMult * individualExpMult);
 	},

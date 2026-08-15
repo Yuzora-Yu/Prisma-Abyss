@@ -1,0 +1,74 @@
+NONMAP_GAMEPLAY_LOGIC_CHECK: 73/73 PASS
+01. PASS JOB_IDENTITY_DATA exists
+02. PASS hunter identity exists
+03. PASS magic archer identity exists
+04. PASS light magic knight identity exists
+05. PASS hunter requires bow
+06. PASS hunter has debuff bonus
+07. PASS hunter has breath bonus
+08. PASS magic archer requires bow
+09. PASS magic archer has magic bonus
+10. PASS magic archer has heal bonus
+11. PASS light magic knight has light bonus
+12. PASS light magic knight has light element attack
+13. PASS bow progression includes rank 1
+14. PASS bow progression includes rank 10
+15. PASS bow progression includes rank 20
+16. PASS bow progression includes rank 30
+17. PASS bow progression includes rank 40
+18. PASS bow progression includes rank 50
+19. PASS bow progression includes rank 60
+20. PASS bow progression includes rank 70
+21. PASS bow progression includes rank 80
+22. PASS bow progression includes rank 90
+23. PASS bow progression includes rank 100
+24. PASS bow progression includes rank 110
+25. PASS bow progression includes rank 120
+26. PASS bow progression includes rank 130
+27. PASS bow progression includes rank 140
+28. PASS bow progression includes rank 150
+29. PASS bow progression includes rank 160
+30. PASS bow progression includes rank 170
+31. PASS bow progression includes rank 180
+32. PASS bow progression includes rank 190
+33. PASS bow progression includes rank 200
+34. PASS 剣 weapon progression has no rank-band gap
+35. PASS 斧 weapon progression has no rank-band gap
+36. PASS 短剣 weapon progression has no rank-band gap
+37. PASS 杖 weapon progression has no rank-band gap
+38. PASS 槍 weapon progression has no rank-band gap
+39. PASS 弓 weapon progression has no rank-band gap
+40. PASS all monster action skill IDs resolve
+41. PASS main resolves job identity
+42. PASS main evaluates job activation
+43. PASS main exposes job combat modifiers
+44. PASS calcStats stores job identity state
+45. PASS calcStats stores job combat state
+46. PASS old reincarnation placeholder exponent removed
+47. PASS old Lv101 placeholder label removed
+48. PASS reincarnation multiplier caps at 20
+49. PASS reincarnation first five multiplier exists
+50. PASS reincarnation later multiplier exists
+51. PASS base Lv49 wall remains 150000
+52. PASS base Lv99 wall remains 750000
+53. PASS reinc1 Lv49 wall is 210000
+54. PASS reinc1 Lv99 wall is 1050000
+55. PASS reinc5 multiplier is 3.0
+56. PASS reinc20 multiplier is 4.2
+57. PASS reinc20+ cap is stable
+58. PASS reincarnation keeps 49->50 wall
+59. PASS reincarnation keeps 99->100 wall
+60. PASS battle copies job combat state to player
+61. PASS battle has generic job damage helper
+62. PASS auto estimate applies job damage
+63. PASS actual damage applies job damage
+64. PASS healing applies job heal modifier
+65. PASS debuff applies job success modifier
+66. PASS madante/light magic path applies job damage
+67. PASS AUTO heal estimate applies job heal modifier
+68. PASS ally detail shows job identity panel
+69. PASS ally detail shows active status
+70. PASS ally detail shows weapon activation requirement
+71. PASS 2026/08/15 news remains single record
+72. PASS news mentions reincarnation curve
+73. PASS news mentions job identities

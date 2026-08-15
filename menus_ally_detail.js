@@ -247,7 +247,23 @@ const MenuAllyDetail = {
         const jobData = window.JOB_SKILLS_DATA ? window.JOB_SKILLS_DATA[c.job] : null;
         if(!jobData) return `<div style="color:#666; text-align:center; padding:40px;">データが存在しません</div>`;
 
-        let html = `<div style="font-size:11px; color:#aaa; margin-bottom:15px; text-align:center;">解放される可能性の断片</div>`;
+        const calculated = (typeof App !== 'undefined' && typeof App.calcStats === 'function') ? App.calcStats(c) : null;
+        const jobIdentity = calculated?.jobIdentity || null;
+        let html = '';
+        if (jobIdentity) {
+            const required = Array.isArray(jobIdentity.requiredWeaponTypes) ? jobIdentity.requiredWeaponTypes : [];
+            const activationText = required.length === 0
+                ? '発動中'
+                : (jobIdentity.active ? '発動中' : `${required.join('・')}を装備すると有効`);
+            html += `<div style="border:1px solid ${jobIdentity.active ? '#665500' : '#333'}; background:${jobIdentity.active ? 'rgba(255,215,0,0.055)' : 'rgba(255,255,255,0.02)'}; padding:12px; margin-bottom:14px; border-radius:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:5px;">
+                    <div style="font-size:12px; color:#ffd700; font-weight:bold;">職特性：${jobIdentity.role || c.job}</div>
+                    <div style="font-size:10px; color:${jobIdentity.active ? '#7cff88' : '#888'}; white-space:nowrap;">${activationText}</div>
+                </div>
+                <div style="font-size:11px; line-height:1.6; color:${jobIdentity.active ? '#bbb' : '#777'};">${jobIdentity.description || ''}</div>
+            </div>`;
+        }
+        html += `<div style="font-size:11px; color:#aaa; margin-bottom:15px; text-align:center;">解放される可能性の断片</div>`;
         
         const allPossible = [];
         // 通常スキル (LV 1-100)

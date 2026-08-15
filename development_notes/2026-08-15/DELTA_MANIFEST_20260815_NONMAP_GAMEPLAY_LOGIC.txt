@@ -1,0 +1,19 @@
+PRISMA ABYSS delta manifest - 2026-08-15 non-MAP gameplay logic
+FILES=14
+BASE=/mnt/data/prisma_next
+NOTE=Only files modified or newly created in this work unit are included. MAP layout/data files are not modified.
+
+MODIFIED	battle.js
+MODIFIED	canon/PRISMA_DEVELOPMENT_ROADMAP_v2.md
+NEW	development_notes/2026-08-15/DELTA_MANIFEST_20260815_NONMAP_GAMEPLAY_LOGIC.txt
+NEW	development_notes/2026-08-15/reports/NONMAP_GAMEPLAY_LOGIC_PHASE21_FOUNDATION_20260815.md
+MODIFIED	development_notes/2026-08-15/review/GAMEPLAY_LOGIC_AUDIT_20260815.md
+NEW	development_notes/2026-08-15/validation/NONMAP_GAMEPLAY_LOGIC_CHECK_20260815.js
+NEW	development_notes/2026-08-15/validation/NONMAP_GAMEPLAY_LOGIC_CHECK_20260815.log
+NEW	development_notes/2026-08-15/validation/NONMAP_GAMEPLAY_REGRESSION_20260815.log
+NEW	docs/design/NONMAP_GAMEPLAY_FOUNDATION_20260815.md
+MODIFIED	docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+MODIFIED	job_data.js
+MODIFIED	main.js
+MODIFIED	menus_ally_detail.js
+MODIFIED	news.js
