@@ -1,6 +1,6 @@
 # 44_CYCLE_CRYSTAL_RITUAL_REALIGNMENT_PROPOSAL_20260815
 
-Status: **proposal / user approval required**  
+Status: **approved / implemented 2026-08-15; superseded as implementation source by `55_CYCLE_CRYSTAL_RITUAL_APPROVED_IMPLEMENTATION_20260815.md`**  
 Date: 2026-08-15  
 Target: 六精霊試練完了 → 結晶樹の秘跡 → 輪廻の結晶生成  
 Legacy source: `30_PENDANT_OCTAPRISM_RESONANCE_APPROVED_20260804.md`  
@@ -11,7 +11,7 @@ Current canon override: `canon/PRISMA_SCENARIO_CANON_MASTER_v8.md` §47
 
 `PRISMA_SCENARIO_CANON_MASTER_v8.md` は §5 / §22.15 で「焼け焦げたペンダント」を正本化している一方、§47.4だけ「焼け焦げたネックレス」と表記が揺れている。また、正式Character ID501は「リュシオン」だが、輪廻の結晶追補の一部に「ルシオン」が混在する。
 
-今回のproposalでは、既存専用章・runtimeとの整合を優先して **焼け焦げたペンダント / リュシオン** を使用する。canon本文の機械修正はユーザー判断まで行わない。
+今回のproposalでは、既存専用章・runtimeとの整合を優先して **焼け焦げたペンダント / リュシオン** を使用する。2026-08-15のユーザー承認により、正本は **焼け焦げたペンダント / リュシオン** へ統一した。
 
 ---
 
@@ -356,4 +356,4 @@ Date: 2026-08-15
 
 ### Recommendation
 
-**revise/approve first; do not implement runtime yet.**
+**approved and implemented. Runtime authority is `55_CYCLE_CRYSTAL_RITUAL_APPROVED_IMPLEMENTATION_20260815.md`.**

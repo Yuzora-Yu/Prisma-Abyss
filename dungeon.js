@@ -1181,6 +1181,19 @@ const Dungeon = {
         return upper === 'S' && (!link || link.to === 'EXIT');
     },
 
+    isFixedFloorLinkUnlocked: (link, flags = App.data?.progress?.flags || {}) => {
+        if (!link) return true;
+        const requiredFlags = [
+            ...(Array.isArray(link.requiredFlags) ? link.requiredFlags : []),
+            ...(link.requiredFlag ? [link.requiredFlag] : [])
+        ].filter(Boolean);
+        const missingFlags = [
+            ...(Array.isArray(link.missingFlags) ? link.missingFlags : []),
+            ...(link.missingFlag ? [link.missingFlag] : [])
+        ].filter(Boolean);
+        return requiredFlags.every(flag => !!flags[flag]) && missingFlags.every(flag => !flags[flag]);
+    },
+
     tryFixedAutoFloorLink: (tile, x, y) => {
         if (!Field.currentMapData?.isFixed || !Field.currentMapData?.isDungeon) return false;
         const upper = String(tile || '').toUpperCase();
@@ -1202,7 +1215,7 @@ const Dungeon = {
                 return true;
             }
             const flags = App.data?.progress?.flags || {};
-            if (link?.requiredFlag && !flags[link.requiredFlag]) {
+            if (link && !Dungeon.isFixedFloorLinkUnlocked(link, flags)) {
                 App.clearAction();
                 if (link.lockedEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
                     StoryManager.executeEvent(link.lockedEventId);
@@ -1224,7 +1237,7 @@ const Dungeon = {
         }
         if (!link || !link.auto) return false;
         const flags = App.data?.progress?.flags || {};
-        if (link.requiredFlag && !flags[link.requiredFlag]) {
+        if (!Dungeon.isFixedFloorLinkUnlocked(link, flags)) {
             return false;
         }
         return Dungeon.followFixedFloorLink(link, Field.currentMapData);
@@ -1250,10 +1263,11 @@ const Dungeon = {
 
             if (link) {
                 const flags = App.data?.progress?.flags || {};
-                if (link.auto && !(link.requiredFlag && !flags[link.requiredFlag])) {
+                const linkUnlocked = Dungeon.isFixedFloorLinkUnlocked(link, flags);
+                if (link.auto && linkUnlocked) {
                     return false;
                 }
-                if (link.requiredFlag && !flags[link.requiredFlag]) {
+                if (!linkUnlocked) {
                     logIfNeeded(link.lockedLog || '封印されていて、今は通れない。');
                     App.setAction(link.lockedLabel || '調べる', () => {
                         if (link.lockedEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {

@@ -168,5 +168,49 @@ Source:
 - cycle: アステリア(146) → 霊脈断ち(115) → 戦神の律動(508) → ルクシオン・ノナ(232)。
 - ジャスパー撃破後: `仲間に迎える / 今は断る`。実加入時にStory EXP +1,000,000 once-only。
 - 保留時: `alanWaitingAtLegacionAfterJasper` で混沌魔城レガシオンActorへ移動。後から加入可能。
-- 光魔剣士への職変更構想は既存正本として残るが、職定義未確定のためPhase8Fでは変更しない。
+- 2026-08-15補正により、ジャスパー撃破後の実加入時は覚醒システム文→`光魔剣士`へ恒久職変更→Story EXP +1,000,000 once-only。加入保留後のレガシオン再加入も同順序。
 - Validation: `tools/validation/validate-phase8f-jasper-alan-support.js`。
+
+## 2026-08-15 Phase17 — 六精霊完了後／輪廻の結晶生成
+
+- Approved source: `docs/scenario/55_CYCLE_CRYSTAL_RITUAL_APPROVED_IMPLEMENTATION_20260815.md`。
+- 六精霊完了直後の旧「オクタプリズマ」即時授与を廃止。六片が呼び合う描写の後、結晶樹の秘跡へ戻す。
+- `CRYSTAL_TREE` のミネルバへ `cycle_crystal_ritual_phase17` stateを追加。六精霊完了＋未生成時だけ循環の儀を起動する。
+- ミネルバ主導で `水→風→光→火→雷→闇→水` を循環。ルーナ／焼け焦げたペンダント／リュシオンの残した神性が共鳴し、Item `701008`「輪廻の結晶」を生成する。
+- `ABYSS_CYCLE_CRYSTAL_CREATE` と `App.createCycleCrystalFromRitual()` を正規生成入口とする。
+- 旧 `abyss_spirit_trials_octaprism_grant` / `octaprism*` は進行中save・戦闘再開互換のため内部名だけ維持し、完成品の即時grantには使わない。
+- 旧Item 701008所持saveは生成済みとして補完し、儀式を強制再演しない。六精霊完了・未所持saveは結晶樹へ誘導。終焉の祭壇以降へ進行済みの古いsaveだけは進行不能防止のbackfillを行う。
+- 終焉の祭壇の正規進入条件は `abyssIlluminaciaDefeated` + `abyssAllSpiritTrialsCleared` + `abyssCycleCrystalCreated`。
+- ヴェグナシスは5柱のまま。撃破後に輪廻の結晶が終局統合陣へ対抗するsceneを挟んでからアゼルガラグ戦へ移行する。
+- Validation: `development_notes/2026-08-15/validation/CYCLE_CRYSTAL_PHASE17_CHECK_20260815.js` 26/26 PASS、top-level JS 62/62 `node --check` PASS。
+
+## 2026-08-15 Phase 18 Batch 1 — staged town NPCs
+
+Phase 17本編接続完了後、ロードマップどおりPhase 18へ着手した。
+
+### Runtime architecture
+
+- `mapActors[].states[].when` で `stepMin / stepMax / subMin / subMax` を正式評価するよう `MapRegistry.isProgressEntryActive()` を拡張。
+- 同一人物は固定 `actorId` を維持し、進行差分を `stateId` で切り替える。
+- 任意同行者差分は既存の共通 `IF_ALLY` を再利用する。
+
+### Batch 1
+
+リュミナ村:
+- `lumina_baker_01`: `before_cave / after_cave / later_revisit`
+- `lumina_goat_boy_01`: `before_cave / after_cave`
+- 少年の攻略後会話では、サラが現在パーティにいる時だけ任意反応を追加。
+
+炎の里イグニシア:
+- `ignisia_communal_kitchen_01`: `fire_unstable / fire_restored / later_revisit`
+- `ignisia_bath_elder_01`: `during_crisis / after_clear`
+
+既存NPC会話は改稿していない。新規会話だけを接続している。
+
+### Validation
+
+- `PHASE18_NPC_STAGE_BATCH1_CHECK_20260815.js`: 35/35 PASS
+- Phase 17 Cycle Crystal regression: 26/26 PASS
+- top-level JavaScript `node --check`: 62/62 PASS
+
+次のPhase 18実装はカザリア／水上都市を優先し、MAP密度と本筋再訪タイミングを見ながら小分けに接続する。

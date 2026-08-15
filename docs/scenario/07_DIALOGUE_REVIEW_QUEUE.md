@@ -1041,7 +1041,7 @@ Updated: 2026-08-13
 
 ## DR-20260815-cycle-crystal-octaprism-realignment
 
-Status: pending  
+Status: approved / implemented  
 Created: 2026-08-15
 
 ### Target
@@ -1120,9 +1120,9 @@ Created: 2026-08-15
 - 内部 `octaprism*` function/state/migration IDは当面renameしない。
 
 ### User decision
-- decision: undecided
-- selected option:
-- user notes:
+- decision: approved 2026-08-15
+- selected option: Option C
+- user notes: 「一度進めてしまってOK」と明示承認。六精霊完了後は完成品を即時授与せず、結晶樹でミネルバ主導の循環の儀を行い「輪廻の結晶」を生成する。
 - approved date:
 
 ### Implementation tracking
@@ -1131,6 +1131,12 @@ Created: 2026-08-15
 - implemented date:
 - validation:
 
+
+### Implementation result
+- source: `docs/scenario/55_CYCLE_CRYSTAL_RITUAL_APPROVED_IMPLEMENTATION_20260815.md`
+- Item 701008はID維持のままplayer-facing名を「輪廻の結晶」へ更新。
+- `octaprism*` 内部キーは旧セーブ・戦闘再開互換のため維持。
+- 終焉の祭壇進入条件へ `abyssCycleCrystalCreated` を追加。
 
 ## DR-20260815-vegnasis-six-wedge-realignment
 

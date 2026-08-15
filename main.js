@@ -1441,7 +1441,8 @@ const App = {
         recruited: false,
         available: false,
         temporary: false,
-        permanentlyUnavailable: false
+        permanentlyUnavailable: false,
+        jobOverride: null
     }),
 
     ensureStoryCharacterStates: (data = App.data) => {
@@ -1500,6 +1501,63 @@ const App = {
         const id = Number(charId);
         if (!Number.isFinite(id) || !Array.isArray(data?.characters)) return null;
         return data.characters.find(char => Number(char?.charId) === id) || null;
+    },
+
+    getStoryCharacterJobOverride: (charId, data = App.data) => {
+        const id = Number(charId);
+        if (!Number.isFinite(id)) return null;
+        const state = App.ensureStoryCharacterState(id, data);
+        const override = String(state?.jobOverride || '').trim();
+        return override ? App.normalizeJobName(override) : null;
+    },
+
+    getExpectedStoryCharacterJob: (character, data = App.data) => {
+        if (!character || typeof character !== 'object') return null;
+        if (App.isMonsterAlly?.(character)) return character.job || character.name || null;
+        const id = Number(character.charId);
+        const override = Number.isFinite(id) ? App.getStoryCharacterJobOverride(id, data) : null;
+        if (override) return override;
+        const embeddedOverride = String(character.storyJobOverride || '').trim();
+        if (embeddedOverride) return App.normalizeJobName(embeddedOverride);
+        const master = Number.isFinite(id) ? DB.CHARACTERS.find(entry => Number(entry.id) === id) : null;
+        return master?.job ? App.normalizeJobName(master.job) : (character.job ? App.normalizeJobName(character.job) : null);
+    },
+
+    setStoryCharacterJob: (characterOrCharId, jobName, options = {}) => {
+        const character = (characterOrCharId && typeof characterOrCharId === 'object')
+            ? characterOrCharId
+            : App.getStoryAllyCharacter(characterOrCharId);
+        const id = Number(character?.charId ?? characterOrCharId);
+        const job = App.normalizeJobName(String(jobName || '').trim());
+        if (!character || !Number.isFinite(id)) return { ok:false, reason:'character_missing' };
+        if (!job || !JOB_SKILLS[job]) return { ok:false, reason:'job_missing' };
+        const state = App.ensureStoryCharacterState(id);
+        if (!state) return { ok:false, reason:'state_missing' };
+        const beforeJob = String(character.job || '');
+        state.jobOverride = job;
+        character.storyJobOverride = job;
+        character.job = job;
+
+        const learnedSkillIds = [];
+        if (options.syncSkillsThroughCurrentLevel !== false && !App.isMonsterAlly?.(character)) {
+            if (!Array.isArray(character.skills)) character.skills = [];
+            const known = new Set(character.skills.map(Number).filter(Number.isFinite));
+            const currentLevel = Math.max(1, Math.floor(Number(character.level || 1)));
+            const table = JOB_SKILLS[job] || {};
+            Object.entries(table).forEach(([levelKey, skillIdRaw]) => {
+                const learnLevel = Math.floor(Number(levelKey));
+                const skillId = Number(skillIdRaw);
+                if (!Number.isFinite(learnLevel) || learnLevel > currentLevel || !Number.isFinite(skillId) || known.has(skillId)) return;
+                if (Array.isArray(DB.SKILLS) && !DB.SKILLS.some(skill => Number(skill?.id) === skillId)) return;
+                character.skills.push(skillId);
+                known.add(skillId);
+                learnedSkillIds.push(skillId);
+            });
+        }
+
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        if (typeof Menu !== 'undefined' && typeof Menu.renderPartyBar === 'function') Menu.renderPartyBar();
+        return { ok:true, charId:id, beforeJob, job, learnedSkillIds };
     },
 
     hasStoryAlly: (charId) => {
@@ -2989,9 +3047,9 @@ const App = {
 
 				// charId修正ロジック（既存）
 				if (c.charId) {
-					const master = DB.CHARACTERS.find(m => m.id === c.charId);
-					if (master && master.job && c.job !== master.job) {
-						c.job = master.job;
+					const expectedJob = App.getExpectedStoryCharacterJob(c);
+					if (expectedJob && c.job !== expectedJob) {
+						c.job = expectedJob;
 					}
 				}
 
@@ -3010,16 +3068,10 @@ const App = {
             App.data.characters.forEach(c => {
                 // charId（マスタID）を持っているキャラのみ対象
                 if (c.charId) {
-                    const master = DB.CHARACTERS.find(m => m.id === c.charId);
-                    if (master && master.job) {
-                        // 職業が変更されていれば上書き更新
-                        if (c.job !== master.job) {
-                            console.log(`[DataFix] ${c.name}の職業を修正: ${c.job} -> ${master.job}`);
-                            c.job = master.job;
-                            
-                            // ※必要であればレアリティもここで同期可能
-                            // c.rarity = master.rarity; 
-                        }
+                    const expectedJob = App.getExpectedStoryCharacterJob(c);
+                    if (expectedJob && c.job !== expectedJob) {
+                        console.log(`[DataFix] ${c.name}の職業を修正: ${c.job} -> ${expectedJob}`);
+                        c.job = expectedJob;
                     }
                 }
             });
@@ -4095,6 +4147,42 @@ const App = {
         }
     ),
 
+    // 光魔剣士覚醒実装前にジャスパー撃破後の再加入を済ませたセーブは、
+    // 覚醒演出を捏造せず職業状態だけを現行正本へ同期する。
+    migrateAlanLightMagicKnightAwakeningV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260815_alanLightMagicKnightAwakeningV1',
+        () => {
+            if (!data || typeof data !== 'object') return { changed:false, count:0 };
+            const flags = data.progress?.flags || {};
+            const rewards = data.progress?.storyRewards || {};
+            const alreadyRejoined = flags.alanRejoinedAfterJasper === true || rewards.alan_jagorea_join_1000k === true;
+            if (!alreadyRejoined) return { changed:false, count:0 };
+            const states = App.ensureStoryCharacterStates(data);
+            const state = states['201'] || (states['201'] = { ...App.getDefaultStoryCharacterState() });
+            let count = 0;
+            if (state.jobOverride !== '光魔剣士') { state.jobOverride = '光魔剣士'; count++; }
+            const alan = Array.isArray(data.characters) ? data.characters.find(char => Number(char?.charId) === 201) : null;
+            if (alan) {
+                if (alan.job !== '光魔剣士') { alan.job = '光魔剣士'; count++; }
+                if (alan.storyJobOverride !== '光魔剣士') { alan.storyJobOverride = '光魔剣士'; count++; }
+                if (!Array.isArray(alan.skills)) alan.skills = [];
+                const known = new Set(alan.skills.map(Number).filter(Number.isFinite));
+                const table = window.JOB_SKILLS_DATA?.['光魔剣士'] || {};
+                const currentLevel = Math.max(1, Math.floor(Number(alan.level || 1)));
+                Object.entries(table).forEach(([levelKey, skillIdRaw]) => {
+                    const learnLevel = Math.floor(Number(levelKey));
+                    const skillId = Number(skillIdRaw);
+                    if (!Number.isFinite(learnLevel) || learnLevel > currentLevel || !Number.isFinite(skillId) || known.has(skillId)) return;
+                    alan.skills.push(skillId);
+                    known.add(skillId);
+                    count++;
+                });
+            }
+            return { changed:count > 0, count };
+        }
+    ),
+
     // 2026-08-12以前の「海底神殿クリア直後に水上都市解放」セーブを、新しい暴動導線へ安全に接続する。
     // 既に暴動後より先へ進んだセーブは巻き戻さず、暴動鎮圧済みとして補完する。
     migrateWaterCityRiotRouteV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
@@ -4377,8 +4465,55 @@ const App = {
         }
     ),
 
+    // 旧オクタプリズマ即時授与から、結晶樹での輪廻の結晶生成へ移行する。
+    // 旧701008所持済み／終焉の祭壇到達済みのセーブは巻き戻さず、生成済みとして補完する。
+    migrateCycleCrystalRitualV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260815_cycleCrystalRitualV1',
+        () => {
+            if (!data || typeof data !== 'object') return { changed:false, count:0 };
+            if (!data.items || typeof data.items !== 'object' || Array.isArray(data.items)) data.items = {};
+            data.progress = (data.progress && typeof data.progress === 'object' && !Array.isArray(data.progress)) ? data.progress : {};
+            data.progress.flags = (data.progress.flags && typeof data.progress.flags === 'object' && !Array.isArray(data.progress.flags)) ? data.progress.flags : {};
+            const flags = data.progress.flags;
+            const content = globalThis.ABYSS_REGION_CONTENT || {};
+            const cycleCrystalId = Number(content.cycleCrystalItemId || content.octaprismItemId || 701008);
+            const charredId = Number(content.charredPendantItemId || 701009);
+            const crystalId = Number(content.lightCrystalPendantItemId || 701010);
+            const countOf = id => Math.max(0, Math.floor(Number(data.items[id] ?? data.items[String(id)] ?? 0) || 0));
+            const blessings = data.progress.abyssSpiritBlessings || {};
+            const master = App.getAbyssSpiritTrialMaster?.() || {};
+            const elements = Object.keys(master).length ? Object.keys(master) : ['火','水','風','雷','光','闇'];
+            const allCleared = flags.abyssAllSpiritTrialsCleared === true || elements.every(element => blessings[element] === true);
+            const alreadyPastGate = flags.abyssVegnasisDefeated === true || flags.abyssAzelgaragDefeated === true || flags.abyssEpilogueSeen === true;
+            let ownsCycleCrystal = countOf(cycleCrystalId) > 0;
+            let count = 0;
+
+            if (!ownsCycleCrystal && allCleared && alreadyPastGate) {
+                data.items[cycleCrystalId] = 1;
+                ownsCycleCrystal = true;
+                count++;
+                if (countOf(crystalId) < 1) { data.items[crystalId] = 1; count++; }
+                if (countOf(charredId) > 0) { delete data.items[charredId]; delete data.items[String(charredId)]; count++; }
+                data.progress.cycleCrystalLegacyGateBackfill = true;
+            }
+
+            if (ownsCycleCrystal) {
+                if (flags.abyssCycleCrystalCreated !== true) { flags.abyssCycleCrystalCreated = true; count++; }
+                if (flags.abyssCycleCrystalRitualSeen !== true) { flags.abyssCycleCrystalRitualSeen = true; count++; }
+                if (flags.abyssCycleCrystalRitualPending === true) { flags.abyssCycleCrystalRitualPending = false; count++; }
+                if (flags.abyssOctaprismGrantPending === true) { flags.abyssOctaprismGrantPending = false; count++; }
+                if (flags.abyssOctaprismGrantEventSeen !== true) { flags.abyssOctaprismGrantEventSeen = true; count++; }
+            } else if (allCleared) {
+                if (flags.abyssCycleCrystalRitualPending !== true) { flags.abyssCycleCrystalRitualPending = true; count++; }
+                if (flags.abyssOctaprismGrantPending === true) { flags.abyssOctaprismGrantPending = false; count++; }
+            }
+            return { changed:count > 0, count };
+        }
+    ),
+
     // ペンダント導入前のセーブへ、一度だけ現在の物語状態に合う貴重品を補填する。
-    // オクタプリズマ所持済みなら変化後、未所持なら変化前を正本とし、二種の同時所持を防ぐ。
+    // Item 701008（旧オクタプリズマ／現・輪廻の結晶）所持済みなら変化後、未所持なら変化前を正本とし、二種の同時所持を防ぐ。
     migratePendantOctaprismV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
         data,
         '20260804_pendantOctaprismV1',
@@ -4454,6 +4589,11 @@ const App = {
         const inheritedLevel = Math.max(1, Math.floor(Number(carryover?.level || 1)));
         const initialLevel = Math.max(1, Math.min(100, Math.max(Number.isFinite(requestedInitialLevel) ? requestedInitialLevel : 1, inheritedLevel)));
         const existing = App.data.characters.find(c => c.charId === charId);
+        const storyJobOverride = App.getStoryCharacterJobOverride(charId);
+        if (existing && storyJobOverride) {
+            existing.storyJobOverride = storyJobOverride;
+            existing.job = storyJobOverride;
+        }
         const applyCarryover = (ally) => {
             if (!ally || !carryover) return ally;
             ally.exp = Math.max(Number(ally.exp || 0), Number(carryover.exp || 0));
@@ -4507,7 +4647,8 @@ const App = {
             uid: 'u' + Date.now() + Math.floor(Math.random() * 1000),
             charId: charId,
             name: master.name,
-            job: master.job,
+            job: storyJobOverride || master.job,
+            storyJobOverride: storyJobOverride || null,
             rarity: master.rarity,
             level: 1,
             exp: 0,
@@ -7128,27 +7269,29 @@ load: () => {
         });
 
         const allCleared = elements.length > 0 && elements.every(element => progress.abyssSpiritBlessings[element]);
-        const octaprismItemId = Number(globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008);
-        const ownsOctaprism = Number(App.data?.items?.[octaprismItemId] || 0) > 0;
+        const cycleCrystalItemId = Number(globalThis.ABYSS_REGION_CONTENT?.cycleCrystalItemId || globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008);
+        const ownsCycleCrystal = Number(App.data?.items?.[cycleCrystalItemId] || 0) > 0;
         if (allCleared) {
             progress.flags.abyssAllSpiritTrialsCleared = true;
-            if (ownsOctaprism) {
-                progress.flags.abyssOctaprismGrantPending = false;
+            progress.flags.abyssOctaprismGrantPending = false;
+            if (ownsCycleCrystal) {
+                progress.flags.abyssCycleCrystalCreated = true;
+                progress.flags.abyssCycleCrystalRitualSeen = true;
+                progress.flags.abyssCycleCrystalRitualPending = false;
                 progress.flags.abyssOctaprismGrantEventSeen = true;
                 elements.forEach(element => {
                     const record = progress.abyssSpiritTrialEvents[element];
                     if (record.state !== 'victory') record.state = 'completed';
                 });
-            } else {
-                // 演出済みフラグだけが残ってアイテムを欠く旧セーブも、授与イベントへ戻して救済する。
-                progress.flags.abyssOctaprismGrantPending = true;
+            } else if (progress.flags.abyssCycleCrystalCreated !== true) {
+                progress.flags.abyssCycleCrystalRitualPending = true;
             }
         }
         if (options.save === true && typeof App.save === 'function') App.save();
         return progress;
     },
 
-    grantOctaprismFromPendant: () => {
+    createCycleCrystalFromRitual: () => {
         if (!App.data || typeof App.runAtomicSaveMutation !== 'function') return { ok:false, reason:'invalid' };
         return App.runAtomicSaveMutation(() => {
             if (!App.data.items || typeof App.data.items !== 'object' || Array.isArray(App.data.items)) App.data.items = {};
@@ -7158,29 +7301,40 @@ load: () => {
             const master = App.getAbyssSpiritTrialMaster?.() || {};
             const elements = Object.keys(master).length ? Object.keys(master) : ['火','水','風','雷','光','闇'];
             if (!elements.every(element => progress.abyssSpiritBlessings?.[element] === true)) {
-                return { ok:false, reason:'requirements' };
+                return { ok:false, reason:'spirit-trials' };
+            }
+            if (progress.flags.crystalTreeCleared !== true) {
+                return { ok:false, reason:'crystal-tree' };
             }
 
             const content = globalThis.ABYSS_REGION_CONTENT || {};
-            const octaprismId = Number(content.octaprismItemId || 701008);
+            const cycleCrystalId = Number(content.cycleCrystalItemId || content.octaprismItemId || 701008);
             const charredId = Number(content.charredPendantItemId || 701009);
             const crystalId = Number(content.lightCrystalPendantItemId || 701010);
             delete App.data.items[charredId];
             delete App.data.items[String(charredId)];
             App.data.items[crystalId] = Math.max(1, Math.floor(Number(App.data.items[crystalId] ?? App.data.items[String(crystalId)] ?? 0) || 0));
-            App.data.items[octaprismId] = Math.max(1, Math.floor(Number(App.data.items[octaprismId] ?? App.data.items[String(octaprismId)] ?? 0) || 0));
+            App.data.items[cycleCrystalId] = Math.max(1, Math.floor(Number(App.data.items[cycleCrystalId] ?? App.data.items[String(cycleCrystalId)] ?? 0) || 0));
 
+            progress.flags.abyssCycleCrystalRitualPending = false;
+            progress.flags.abyssCycleCrystalCreated = true;
+            progress.flags.abyssCycleCrystalRitualSeen = true;
+            progress.flags.abyssAllSpiritTrialsCleared = true;
+            // legacy compatibility flags: old saves and battle state may still inspect these names.
             progress.flags.abyssOctaprismGrantPending = false;
             progress.flags.abyssOctaprismGrantEventSeen = true;
-            progress.flags.abyssAllSpiritTrialsCleared = true;
-            progress.abyssOctaprismGrantedAt = progress.abyssOctaprismGrantedAt || Date.now();
+            progress.abyssCycleCrystalCreatedAt = progress.abyssCycleCrystalCreatedAt || Date.now();
+            progress.abyssOctaprismGrantedAt = progress.abyssOctaprismGrantedAt || progress.abyssCycleCrystalCreatedAt;
             elements.forEach(element => {
                 const record = progress.abyssSpiritTrialEvents?.[element];
                 if (record && record.state !== 'completed') record.state = 'completed';
             });
-            return { ok:true, octaprismId, crystalId };
+            return { ok:true, cycleCrystalId, crystalId };
         });
     },
+
+    // Legacy API alias. New runtime must call createCycleCrystalFromRitual() only.
+    grantOctaprismFromPendant: () => App.createCycleCrystalFromRitual(),
 
     resolveAbyssSpiritTrialEventId: (element) => {
         const key = String(element || '');
@@ -7188,15 +7342,14 @@ load: () => {
         const definition = master[key];
         if (!definition) return null;
         const progress = App.ensureAbyssSpiritTrialEvents();
-        const octaprismItemId = Number(globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008);
         const elements = Object.keys(master);
         const allCleared = elements.length > 0 && elements.every(name => progress.abyssSpiritBlessings[name]);
         const record = progress.abyssSpiritTrialEvents[key];
-        // 六個目の勝利後会話待ちは、共通授与イベントより先に再開する。
+        // 六個目の勝利後会話待ちは、共通の帰還案内より先に再開する。
         if (progress.abyssSpiritBlessings[key] && record?.state === 'victory') {
             return definition.victoryEventId;
         }
-        if (allCleared && (progress.flags?.abyssOctaprismGrantPending || Number(App.data?.items?.[octaprismItemId] || 0) <= 0)) {
+        if (allCleared && progress.flags?.abyssCycleCrystalRitualPending && !progress.flags?.abyssCycleCrystalReturnPromptSeen) {
             return 'abyss_spirit_trials_octaprism_grant';
         }
         if (progress.abyssSpiritBlessings[key]) {
@@ -9001,6 +9154,7 @@ load: () => {
         App.reconcileCrystalTreeWorldState(data);
         App.ensureStoryCharacterStates(data);
         App.migrateJobNamesV1(data);
+        App.migrateAlanLightMagicKnightAwakeningV1(data);
 
         // 旧開発版では焼け焦げたペンダントがNEW GAME初期所持に混入していた。
         // 崩落前のプロローグ途中データだけを対象に除去し、5年後へ進行済みのセーブは保持する。
@@ -9059,6 +9213,7 @@ load: () => {
         App.migrateSpiritFragmentResistanceSourceV1(data);
         App.migratePendantOctaprismV1(data);
         App.migrateAbyssSpiritPilgrimageV1(data);
+        App.migrateCycleCrystalRitualV1(data);
         App.migrateSpecialBossEquipmentBalanceV1(data);
         App.reconcileCarmenaGateProgress(data);
 

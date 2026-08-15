@@ -129,7 +129,7 @@
         Object.freeze({ id:'floor301', label:'極限', strengthFloor:301, description:'深淵301階相当' })
     ]);
 
-    // 六属性プリズムの進行と、オクタプリズマによるアゼルガラグ戦支援の正式マスター。
+    // 六属性プリズムの進行と、輪廻の結晶によるアゼルガラグ戦支援の正式マスター。
     // 戦闘ごとの場当たり計算を避け、会話・報酬・支援効果が同じ正本を参照する。
     const SPIRIT_TRIAL_ELEMENTS = Object.freeze(['火', '水', '風', '雷', '光', '闇']);
     const SPIRIT_TRIALS = Object.freeze({
@@ -213,7 +213,7 @@
         })
     });
 
-    const OCTAPRISM_SUPPORT_MASTER = Object.freeze({
+    const CYCLE_CRYSTAL_SUPPORT_MASTER = Object.freeze({
         itemId: 701008,
         azelgaragMonsterIds: Object.freeze([302100, 302101]),
         heroCharacterId: 301,
@@ -237,7 +237,8 @@
         itemIds: Object.freeze([701001,701002,701003,701004,701005,701006,701007,701008,701009,701010]),
         spiritItemByElement: Object.freeze({ 火:701001, 水:701002, 風:701003, 雷:701004, 光:701005, 闇:701006 }),
         spiritBossByElement: Object.freeze({ 火:502001, 水:502002, 風:502003, 雷:502004, 光:502005, 闇:502006 }),
-        octaprismItemId: 701008,
+        cycleCrystalItemId: 701008,
+        octaprismItemId: 701008, // legacy save/runtime alias
         charredPendantItemId: 701009,
         lightCrystalPendantItemId: 701010,
         chaosFragmentItemId: 701007,
@@ -249,7 +250,8 @@
         storyBossTrainingDifficulties: STORY_BOSS_TRAINING_DIFFICULTIES,
         spiritTrialElements: SPIRIT_TRIAL_ELEMENTS,
         spiritTrials: SPIRIT_TRIALS,
-        octaprismSupportMaster: OCTAPRISM_SUPPORT_MASTER,
+        cycleCrystalSupportMaster: CYCLE_CRYSTAL_SUPPORT_MASTER,
+        octaprismSupportMaster: CYCLE_CRYSTAL_SUPPORT_MASTER, // legacy save/runtime alias
         randomDungeonPhase2IMaster: RANDOM_DUNGEON_PHASE2I_MASTER
     });
 })();

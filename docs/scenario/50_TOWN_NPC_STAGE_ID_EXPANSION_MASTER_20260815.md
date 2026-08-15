@@ -1,7 +1,7 @@
 # PRISMA ABYSS — 町NPC ID／段階会話 拡張マスター
 
 Date: 2026-08-15  
-Status: authoring/runtime mapping plan  
+Status: active runtime architecture / Phase 18 Batch 1 implementation  
 Priority: subtask; main-roadmap work takes precedence
 
 ## 1. Purpose
@@ -37,6 +37,10 @@ Priority: subtask; main-roadmap work takes precedence
 4. 再訪差分のためだけに世界共通flagを乱造しない。世界状態として意味がある事実だけ `progress.flags` に置く。
 5. 将来クエスト専用段階が増える場合は `progress.quests[questId]` を使い、NPC個人の状態とメイン進行を分離する。
 6. NPCの誤解・噂・嘘はプロフィール側へ理由を記録し、stateが変わっても都合よく知識を更新させない。
+
+## 2.1 Runtime activation — Phase 18 Batch 1
+
+2026-08-15: `stepMin / stepMax / subMin / subMax` を `mapActors[].states[].when` でも正式に評価できるよう共通判定を拡張し、リュミナ村2名・イグニシア2名を最初の実装batchとして接続する。詳細は `56_PHASE18_LUMINA_IGNISIA_NPC_STAGE_BATCH1_20260815.md`。
 
 ## 3. First implementation batch
 

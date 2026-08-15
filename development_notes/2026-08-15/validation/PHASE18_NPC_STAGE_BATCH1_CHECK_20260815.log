@@ -1,0 +1,36 @@
+PASS START_VILLAGE nextActorPlacementId
+PASS FIRE_VILLAGE nextActorPlacementId
+PASS lumina_baker_01 exists with stable profile/placement IDs
+PASS lumina_baker_01 coordinate remains on intended walkable base tile — 4,9
+PASS lumina_baker_01 does not share its placement cell with another actor
+PASS lumina_baker_01 does not cover an existing mapAction cell
+PASS lumina_goat_boy_01 exists with stable profile/placement IDs
+PASS lumina_goat_boy_01 coordinate remains on intended walkable base tile — 12,7
+PASS lumina_goat_boy_01 does not share its placement cell with another actor
+PASS lumina_goat_boy_01 does not cover an existing mapAction cell
+PASS ignisia_communal_kitchen_01 exists with stable profile/placement IDs
+PASS ignisia_communal_kitchen_01 coordinate remains on intended walkable base tile — 17,16
+PASS ignisia_communal_kitchen_01 does not share its placement cell with another actor
+PASS ignisia_communal_kitchen_01 does not cover an existing mapAction cell
+PASS ignisia_bath_elder_01 exists with stable profile/placement IDs
+PASS ignisia_bath_elder_01 coordinate remains on intended walkable base tile — 9,10
+PASS ignisia_bath_elder_01 does not share its placement cell with another actor
+PASS ignisia_bath_elder_01 does not cover an existing mapAction cell
+PASS lumina baker before cave resolves correct state — before_cave / before_cave
+PASS lumina baker after cave resolves correct state — after_cave / after_cave
+PASS lumina baker later revisit resolves correct state — later_revisit / later_revisit
+PASS lumina goat boy before cave resolves correct state — before_cave / before_cave
+PASS lumina goat boy after cave resolves correct state — after_cave / after_cave
+PASS ignisia kitchen crisis resolves correct state — fire_unstable / fire_unstable
+PASS ignisia kitchen restored resolves correct state — fire_restored / fire_restored
+PASS ignisia kitchen late resolves correct state — later_revisit / later_revisit
+PASS ignisia bath crisis resolves correct state — during_crisis / during_crisis
+PASS ignisia bath after resolves correct state — after_clear / after_clear
+PASS all Phase18 Batch1 conversation scripts exist
+PASS goat-boy revisit reuses common optional-party branch logic
+PASS Sara branch remains optional rather than blocking dialogue
+PASS map actor state runtime supports step/sub min/max gates
+PASS Phase18 Batch1 implementation source exists and preserves legacy dialogue boundary
+PASS NEWS_DATA still has exactly one 2026/08/15 record — 1
+PASS NEWS_DATA mentions first staged-town-dialogue batch
+RESULT 35/35 PASS

@@ -115,6 +115,12 @@ const StoryManager = {
             if (!flags.abyssLegacionNorthGateOpen) return 'レガシオンの謁見の間へ向かおう';
             if (!flags.abyssVeldDefeated) return '夢幻回廊リドパルムの最深部へ進もう';
             if (!flags.abyssJasperDefeated) return '災禍の根ジャゴレアでジャスパーを追おう';
+            if (flags.abyssAllSpiritTrialsCleared && !flags.abyssCycleCrystalCreated) {
+                return '六つの結晶片を持ち、結晶樹の秘跡へ戻ろう';
+            }
+            if (flags.abyssIlluminaciaDefeated && !flags.abyssAllSpiritTrialsCleared) {
+                return '地上の六つのプリズムを巡り、大精霊の試練を終えよう';
+            }
             if (!flags.abyssIlluminaciaDefeated) {
                 const insideChronoRoute = flags.abyssChronoGateOpened || ['CHRONO_ABYSS', 'FINAL_ALTAR'].includes(String(currentArea || ''));
                 return insideChronoRoute
@@ -2104,6 +2110,22 @@ const StoryManager = {
             this.refreshFieldAfterStoryStateChange();
         }
 
+        if (action.type === 'SET_JOB') {
+            const charId = Number(action.charId ?? action.value);
+            const job = String(action.job ?? action.jobName ?? '').trim();
+            if (!Number.isFinite(charId) || !job || typeof App.setStoryCharacterJob !== 'function') {
+                throw new Error('SET_JOBにはcharId / jobが必要です。');
+            }
+            const result = App.setStoryCharacterJob(charId, job, {
+                save: !deferSave,
+                syncSkillsThroughCurrentLevel: action.syncSkills !== false
+            });
+            if (!result?.ok) {
+                throw new Error(`職業を変更できませんでした: charId=${charId}, job=${job} (${result?.reason || 'unknown'})`);
+            }
+            if (action.refreshField !== false) this.refreshFieldAfterStoryStateChange();
+        }
+
         if (action.type === 'DEPART_ALLY') {
             const charId = Number(action.charId ?? action.value);
             if (Number.isFinite(charId) && typeof App.departStoryAlly === 'function') {
@@ -2593,7 +2615,7 @@ const StoryManager = {
                     version:1,
                     element,
                     rewardItemId:Number(definition.rewardItemId || 0),
-                    completionItemId:Number(globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008),
+                    completionItemId:Number(globalThis.ABYSS_REGION_CONTENT?.cycleCrystalItemId || globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008),
                     requiredElements,
                     attemptNumber:record.attempts,
                     victoryEventId:definition.victoryEventId
@@ -2615,20 +2637,38 @@ const StoryManager = {
             const elements = Object.keys(master).length ? Object.keys(master) : ['火','水','風','雷','光','闇'];
             if (elements.every(key => progress.abyssSpiritBlessings[key])) {
                 progress.flags.abyssAllSpiritTrialsCleared = true;
-                const itemId = Number(globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008);
-                if (Number(App.data?.items?.[itemId] || 0) <= 0) {
-                    progress.flags.abyssOctaprismGrantPending = true;
+                const itemId = Number(globalThis.ABYSS_REGION_CONTENT?.cycleCrystalItemId || globalThis.ABYSS_REGION_CONTENT?.octaprismItemId || 701008);
+                const ownsCycleCrystal = Number(App.data?.items?.[itemId] || 0) > 0;
+                progress.flags.abyssOctaprismGrantPending = false;
+                if (ownsCycleCrystal) {
+                    progress.flags.abyssCycleCrystalCreated = true;
+                    progress.flags.abyssCycleCrystalRitualSeen = true;
+                    progress.flags.abyssCycleCrystalRitualPending = false;
+                } else if (progress.flags.abyssCycleCrystalCreated !== true) {
+                    progress.flags.abyssCycleCrystalRitualPending = true;
                 }
             }
         }
 
-        if (action.type === 'ABYSS_SPIRIT_TRIAL_GRANT_OCTAPRISM') {
-            const committed = (typeof App.grantOctaprismFromPendant === 'function')
-                ? App.grantOctaprismFromPendant()
+        if (action.type === 'ABYSS_CYCLE_CRYSTAL_CREATE') {
+            const committed = (typeof App.createCycleCrystalFromRitual === 'function')
+                ? App.createCycleCrystalFromRitual()
                 : { ok:false, reason:'missing-api' };
             if (!committed?.ok) {
-                throw new Error('ペンダントの変化とオクタプリズマ授与を保存できませんでした。');
+                throw new Error('輪廻の結晶とペンダントの変化を保存できませんでした。');
             }
+        }
+
+        // 旧event journalがこのaction直前で保存されていた場合の互換。
+        // 旧名の完成品はその場で授与せず、結晶樹の循環の儀へ誘導する。
+        if (action.type === 'ABYSS_SPIRIT_TRIAL_GRANT_OCTAPRISM') {
+            const progress = App.ensureAbyssSpiritTrialEvents?.() || App.ensureAbyssRegionProgress?.() || data;
+            progress.flags = progress.flags || {};
+            progress.flags.abyssOctaprismGrantPending = false;
+            if (progress.flags.abyssCycleCrystalCreated !== true) {
+                progress.flags.abyssCycleCrystalRitualPending = true;
+            }
+            if (!deferSave && typeof App.save === 'function') App.save();
         }
 
         if (action.type === 'BOSS') {

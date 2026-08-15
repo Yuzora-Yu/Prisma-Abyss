@@ -1,0 +1,28 @@
+PASS Six-spirit completion no longer grants completed item immediately
+PASS Legacy grant event is retained only as return-to-Crystal-Tree compatibility route
+PASS Crystal Tree ritual script exists with Minerva-led circulation and Lycion witness
+PASS Crystal Tree ritual event commits Cycle Crystal creation exactly through dedicated action
+PASS Story runtime has dedicated Cycle Crystal create action and keeps legacy action as non-grant compatibility path
+PASS Create API requires six blessings and prior Crystal Tree clear
+PASS Create API transforms pendant, grants Item 701008, and commits created flag
+PASS Legacy API alias is retained for code compatibility
+PASS One-time Cycle Crystal migration exists
+PASS Migration preserves old Item 701008 owners without ritual replay
+PASS Migration backfills only already-past-final-gate legacy saves when Item 701008 is missing
+PASS Crystal Tree Minerva actor exposes ritual state before repeat state
+PASS Final Altar map gate requires Illuminacia + six spirits + Cycle Crystal
+PASS Final Altar event itself guards Illuminacia + six spirits + Cycle Crystal
+PASS Vegnasis remains five wedges
+PASS Vegnasis clear now shows Cycle Crystal counter-scene before Azelgarag
+PASS Item 701008 player-facing identity is Cycle Crystal
+PASS Abyss content exposes canonical Cycle Crystal names plus legacy aliases
+PASS Battle logs are Cycle Crystal-facing while octaprism battle state remains compatible
+PASS Item runtime message uses Cycle Crystal terminology
+PASS Abyss objective routes completed trials back to Crystal Tree
+PASS Active runtime has no player-facing old Octaprism Japanese name
+PASS Canon §47 is definitive and uses established pendant/Lycion terminology
+PASS Roadmap Phase17 gate includes Cycle Crystal generation
+PASS news.js keeps exactly one 2026/08/15 record
+PASS 2026/08/15 news mentions Cycle Crystal mainline event
+
+RESULT 26/26 PASS

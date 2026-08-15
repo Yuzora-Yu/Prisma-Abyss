@@ -4464,7 +4464,7 @@ const FIXED_MAPS = {
             "WWWWWWGGWWWWWWW",
             "WWWWWWSSWWWWWWW"
         ],
-        "nextActorPlacementId": 5,
+        "nextActorPlacementId": 7,
         "mapActors": [
             {
                 "placementId": 1,
@@ -4577,6 +4577,80 @@ const FIXED_MAPS = {
                         }
                     }
                 ]
+            },
+            {
+                "placementId": 5,
+                "profileId": "NPC-LUMINA-NEW-01",
+                "actorId": "lumina_baker_01",
+                "name": "パン焼きの女",
+                "x": 4,
+                "y": 9,
+                "imageKey": "overlay_npc_villager",
+                "baseTile": "G",
+                "states": [
+                    {
+                        "stateId": "later_revisit",
+                        "priority": 30,
+                        "when": { "stepMin": 3 },
+                        "action": {
+                            "label": "パン焼きの女と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_lumina_baker_later_revisit"
+                        }
+                    },
+                    {
+                        "stateId": "after_cave",
+                        "priority": 20,
+                        "when": { "stepMin": 2, "stepMax": 2 },
+                        "action": {
+                            "label": "パン焼きの女と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_lumina_baker_after_cave"
+                        }
+                    },
+                    {
+                        "stateId": "before_cave",
+                        "priority": 10,
+                        "when": { "stepMax": 1 },
+                        "action": {
+                            "label": "パン焼きの女と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_lumina_baker_before_cave"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 6,
+                "profileId": "NPC-LUMINA-NEW-02",
+                "actorId": "lumina_goat_boy_01",
+                "name": "少年",
+                "x": 12,
+                "y": 7,
+                "imageKey": "overlay_npc_child",
+                "baseTile": "G",
+                "states": [
+                    {
+                        "stateId": "after_cave",
+                        "priority": 20,
+                        "when": { "stepMin": 2 },
+                        "action": {
+                            "label": "少年と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_lumina_goat_boy_after_cave"
+                        }
+                    },
+                    {
+                        "stateId": "before_cave",
+                        "priority": 10,
+                        "when": { "stepMax": 1 },
+                        "action": {
+                            "label": "少年と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_lumina_goat_boy_before_cave"
+                        }
+                    }
+                ]
             }
         ],
         "mapActions": [
@@ -4661,7 +4735,7 @@ const FIXED_MAPS = {
             "WWMMMMTTTTTTTTTTTTTTTTTMMMMWW",
             "WWWWWWWWWWWWWSSSWWWWWWWWWWWWW"
         ],
-        "nextActorPlacementId": 5,
+        "nextActorPlacementId": 7,
         "mapActors": [
             {
                 "placementId": 1,
@@ -4803,6 +4877,80 @@ const FIXED_MAPS = {
                                     "eventId": "fire_village_elder_idle"
                                 }
                             ]
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 5,
+                "profileId": "NPC-IGNISIA-NEW-01",
+                "actorId": "ignisia_communal_kitchen_01",
+                "name": "炊事番",
+                "x": 17,
+                "y": 16,
+                "imageKey": "overlay_town_fire_resident",
+                "baseTile": "G",
+                "states": [
+                    {
+                        "stateId": "later_revisit",
+                        "priority": 30,
+                        "when": { "requiredFlag": "fireVillageCleared", "stepMin": 4 },
+                        "action": {
+                            "label": "炊事番と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_ignisia_communal_kitchen_later_revisit"
+                        }
+                    },
+                    {
+                        "stateId": "fire_restored",
+                        "priority": 20,
+                        "when": { "requiredFlag": "fireVillageCleared", "stepMax": 3 },
+                        "action": {
+                            "label": "炊事番と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_ignisia_communal_kitchen_fire_restored"
+                        }
+                    },
+                    {
+                        "stateId": "fire_unstable",
+                        "priority": 10,
+                        "when": { "missingFlag": "fireVillageCleared" },
+                        "action": {
+                            "label": "炊事番と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_ignisia_communal_kitchen_fire_unstable"
+                        }
+                    }
+                ]
+            },
+            {
+                "placementId": 6,
+                "profileId": "NPC-IGNISIA-NEW-02",
+                "actorId": "ignisia_bath_elder_01",
+                "name": "湯屋の老人",
+                "x": 9,
+                "y": 10,
+                "imageKey": "overlay_npc_elder",
+                "baseTile": "G",
+                "states": [
+                    {
+                        "stateId": "after_clear",
+                        "priority": 20,
+                        "when": { "requiredFlag": "fireVillageCleared" },
+                        "action": {
+                            "label": "湯屋の老人と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_ignisia_bath_elder_after_clear"
+                        }
+                    },
+                    {
+                        "stateId": "during_crisis",
+                        "priority": 10,
+                        "when": { "missingFlag": "fireVillageCleared" },
+                        "action": {
+                            "label": "湯屋の老人と話す",
+                            "type": "storyEvent",
+                            "eventId": "npc_ignisia_bath_elder_during_crisis"
                         }
                     }
                 ]
@@ -8380,6 +8528,33 @@ const FIXED_MAPS = {
                 "imageKey": "overlay_companion_minerva",
                 "states": [
                     {
+                        "stateId": "cycle_crystal_ritual_phase17",
+                        "priority": 120,
+                        "when": {
+                            "requiredFlags": ["crystalTreeCleared", "abyssAllSpiritTrialsCleared"],
+                            "missingFlag": "abyssCycleCrystalCreated"
+                        },
+                        "placement": { "x": 14, "y": 6 },
+                        "action": {
+                            "label": "ミネルバに六つの結晶片を見せる",
+                            "type": "storyEvent",
+                            "eventId": "crystal_tree_cycle_crystal_ritual_phase17"
+                        }
+                    },
+                    {
+                        "stateId": "cycle_crystal_after_phase17",
+                        "priority": 110,
+                        "when": {
+                            "requiredFlag": "abyssCycleCrystalCreated"
+                        },
+                        "placement": { "x": 14, "y": 6 },
+                        "action": {
+                            "label": "ミネルバと話す",
+                            "type": "storyEvent",
+                            "eventId": "crystal_tree_cycle_crystal_repeat_phase17"
+                        }
+                    },
+                    {
                         "stateId": "first_meeting",
                         "priority": 100,
                         "when": {
@@ -9182,7 +9357,7 @@ const ABYSS_AUTHORED_DUNGEONS = Object.freeze((() => {
     result.CHRONO_ABYSS = makeAuthoredAbyssDungeon({ ...common.CHRONO_ABYSS, floors: [
         fixed('CHRONO_ABYSS', G.CHRONO_ENTRY, { label: '1層', floor: 1, entryMarker: 'S', floorLinks: [authoredAbyssLink(G.CHRONO_ENTRY, 'S', { to: 'EXIT', label: 'レガシオン地下神殿へ戻る' }), authoredAbyssLink(G.CHRONO_ENTRY, 'D', { toFloor: 2, label: '2層へ進む' })], chests: [authoredAbyssChest(3, 2, 14), authoredAbyssChest(27, 18, 7, true)] }),
         procedural('CHRONO_ABYSS', 2), procedural('CHRONO_ABYSS', 3), procedural('CHRONO_ABYSS', 4), procedural('CHRONO_ABYSS', 5), procedural('CHRONO_ABYSS', 6),
-        fixed('CHRONO_ABYSS', G.CHRONO_BOSS, { label: '7層', floor: 7, rank: 120, entryMarker: 'U', floorLinks: [authoredAbyssLink(G.CHRONO_BOSS, 'U', { toFloor: 6, label: '6層へ戻る' }), authoredAbyssLink(G.CHRONO_BOSS, 'D', { toDungeon: 'FINAL_ALTAR', label: '終焉の祭壇へ進む', requiredFlag: 'abyssIlluminaciaDefeated', lockedLog: '混沌姫の力が亀裂を閉ざしている。' })], bosses: [authoredAbyssBoss(G.CHRONO_BOSS, 302070, 'abyssIlluminaciaDefeated', 'abyss_illuminacia_battle', 'abyss_illuminacia_clear', '混沌姫イルミナシアに挑みますか？')], chests: [authoredAbyssChest(3, 2, 6), authoredAbyssChest(27, 18, 7, true)] })
+        fixed('CHRONO_ABYSS', G.CHRONO_BOSS, { label: '7層', floor: 7, rank: 120, entryMarker: 'U', floorLinks: [authoredAbyssLink(G.CHRONO_BOSS, 'U', { toFloor: 6, label: '6層へ戻る' }), authoredAbyssLink(G.CHRONO_BOSS, 'D', { toDungeon: 'FINAL_ALTAR', label: '終焉の祭壇へ進む', requiredFlags: ['abyssIlluminaciaDefeated','abyssAllSpiritTrialsCleared','abyssCycleCrystalCreated'], lockedLog: '亀裂の縁で六色の光が散り、道はまだ形を保てない。' })], bosses: [authoredAbyssBoss(G.CHRONO_BOSS, 302070, 'abyssIlluminaciaDefeated', 'abyss_illuminacia_battle', 'abyss_illuminacia_clear', '混沌姫イルミナシアに挑みますか？')], chests: [authoredAbyssChest(3, 2, 6), authoredAbyssChest(27, 18, 7, true)] })
     ] });
     result.FINAL_ALTAR = { name: '終焉の祭壇', ...makeAuthoredAbyssFloor({
         grid: G.FINAL_ALTAR, label: '終焉の祭壇', floor: 1, rank: 120, themeKey: 'FINAL_ALTAR', mapId: 'MAP000057', entryMarker: 'S', disableRandomEncounters: true,

@@ -997,7 +997,7 @@ alanState.phase = 'dead'
 - ジャスパー撃破後: アランが正式再加入を願い、`仲間に迎える / 今は断る`。
 - 許可時: ALLY201 + Story EXP 1,000,000、reward key `alan_jagorea_join_1000k`、`alanRejoinedAfterJasper`。
 - 保留時: `alanWaitingAtLegacionAfterJasper`。LEGACIONの人物Actorへ配置し、後から同じonce-only rewardで加入可能。
-- Phase8Eの将来予定「再加入時+500k」はPhase8Fで**+1,000,000**へ上書き。光魔剣士の職構想は維持するが、職定義未確定のためPhase8F runtimeでは職変更しない。
+- Phase8Eの将来予定「再加入時+500k」はPhase8Fで**+1,000,000**へ上書き。2026-08-15補正により、実加入時は覚醒システム文→`光魔剣士`へ恒久職変更→+1,000,000EXPの順で確定。レガシオンでの後日加入も同順序。
 - source: `docs/scenario/43_JAGOREA_JASPER_ALAN_SUPPORT_PHASE8F_20260810.md`。
 - validation: `tools/validation/validate-phase8f-jasper-alan-support.js`。
 

@@ -6180,6 +6180,29 @@ const STORY_MANAGER_DATA = {
                 ],
                 "winActions": []
         },
+        "crystal_tree_cycle_crystal_ritual_phase17": {
+                "actions": [
+                        { "type": "IF_FLAG", "key": "abyssCycleCrystalCreated", "then": [
+                                { "type": "CONV", "value": "CRYSTAL_TREE_CYCLE_CRYSTAL_REPEAT_PHASE17" }
+                        ], "else": [
+                                { "type": "IF_FLAG", "key": "abyssAllSpiritTrialsCleared", "then": [
+                                        { "type": "CONV", "value": "CRYSTAL_TREE_CYCLE_CRYSTAL_RITUAL_PHASE17" },
+                                        { "type": "ABYSS_CYCLE_CRYSTAL_CREATE" },
+                                        { "type": "FLAG", "key": "abyssCycleCrystalRitualSeen", "refreshField": true },
+                                        { "type": "LOG", "value": "輪廻の結晶を携え、深淵の奥へ戻ろう。" }
+                                ], "else": [
+                                        { "type": "LOG", "value": "六つの結晶片が揃っていない。" }
+                                ] }
+                        ] }
+                ],
+                "winActions": []
+        },
+        "crystal_tree_cycle_crystal_repeat_phase17": {
+                "actions": [
+                        { "type": "CONV", "value": "CRYSTAL_TREE_CYCLE_CRYSTAL_REPEAT_PHASE17" }
+                ],
+                "winActions": []
+        },
         "light_palace_overpower_clear": {
                 "actions": [
                         {
@@ -8352,6 +8375,9 @@ const STORY_MANAGER_DATA = {
             { name:'アラン', text:'……ありがとう。借りを返せるなんて言わない。そんな簡単なものじゃない。', charId:201 },
             { name:'アラン', text:'それでも、もう逃げない。最後まで一緒に行く。', charId:201 }
         ],
+        ABYSS_JASPER_ALAN_AWAKENING_PHASE8F: [
+            { name:'システム', text:'光の加護が真にアランの心身と重なり合い、アランは光魔剣士として覚醒した！' }
+        ],
         ABYSS_JASPER_ALAN_WAIT_PHASE8F: [
             { name:'アラン', text:'……分かった。無理にとは言わない。', charId:201 },
             { name:'アラン', text:'レガシオンに戻る。もし気が変わったら、その時もう一度声をかけてくれ。', charId:201 }
@@ -8436,6 +8462,13 @@ const STORY_MANAGER_DATA = {
         ABYSS_VEGNASIS_CLEAR: [
             { name:'システム', text:'最後の魂が解け、死幻の魔柱は音もなく崩れ落ちた。\n祭壇の最奥で、深淵王がゆっくりと立ち上がる。' },
             { name:'シャニー', text:'休ませてはくれない。\nでも、ここで止まれば、五人をまた深淵へ渡すことになる。', charId:306 }
+        ],
+        ABYSS_CYCLE_CRYSTAL_FINAL_ARRAY_PHASE17: [
+            { name:'システム', text:'五柱が崩れた場所から、解けた光が祭壇の溝へ逆流した。\n黒い紋様が一斉に閉じ、異なる力を同じ中心へ引きずり込もうとする。' },
+            { name:'深淵王アゼルガラグ', text:'私を倒そうとする。止めようとする。\n愚かなお前たちこそが、最後のピースなのだ。' },
+            { name:'システム', text:'アルスの荷の中で、輪廻の結晶が鋭く鳴った。\n六色の光は中心へ沈まず、輪を描いて次の色へ走る。' },
+            { name:'ルーナ', charId:401, text:'止まってない……。\n六つとも、まだ自分の色のまま動いてる。' },
+            { name:'システム', text:'祭壇を覆っていた黒い紋様に、細い亀裂が走った。' }
         ],
         ABYSS_AZELGARAG: [
             { name:'深淵王アゼルガラグ', text:'よくぞ我が世界を歩いた。\n町を繋ぎ、楔を解き、捨てた魂へ名を返したか。' },
@@ -8757,12 +8790,37 @@ const STORY_MANAGER_DATA = {
         data.scripts[`${prefix}_VICTORY`] = spiritTrialDialogueDrafts[element].victory;
     });
     data.scripts.ABYSS_SPIRIT_TRIAL_ALL_COMPLETE = [
-        {name:'システム',text:'六つの結晶片が一斉に震え、胸元の焼け焦げたペンダントが熱を帯びた。'},
-        {name:'システム',text:'黒く焼けた表面から、細かな煤がほどけていく。\nその奥で、懐かしい温もりに似た光が脈打った。'},
-        {name:'リュシオン',text:'……ようやく、届きました。'},
-        {name:'リュシオン',text:'六つの加護が、その小さな光を呼び覚ましたのです。\nあなたが失わずにいたものへ、私の声もまた届く。'},
-        {name:'リュシオン',text:'深淵の混沌へ抗う時、その光は六精霊の道を結びます。\n受け取りなさい――オクタプリズマを。'},
-        {name:'システム',text:'焼け焦げたペンダントは、澄んだ光を宿す結晶へと姿を変えた。\n光結晶のペンダントと、オクタプリズマを手に入れた！'}
+        {name:'システム',text:'六つ目の結晶片が、小さく澄んだ音を立てた。\n荷の中で、離れているはずの五つも順番に応える。'},
+        {name:'ルーナ',charId:401,text:'……重なろうとしてるんじゃない。\nひとつが鳴ると、次が返してる。呼び合ってるみたい。'},
+        {name:'システム',text:'六つの結晶片を持ち、結晶樹の秘跡へ戻ることにした。'}
+    ];
+    data.scripts.CRYSTAL_TREE_CYCLE_CRYSTAL_RITUAL_PHASE17 = [
+        {name:'ミネルバ',charId:206,text:'持ってきた？　六つとも。\n……うん。欠けてない。じゃあ、そこへ置いて。'},
+        {name:'アルス',charId:301,text:'一つにするのか？'},
+        {name:'ミネルバ',charId:206,text:'しない。前にここでやった治療より、むしろ逆。\nくっつけたら駄目。'},
+        {name:'ミネルバ',charId:206,text:'水の次に風。風の次に光。\nそれから火、雷、闇――最後は水へ戻す。'},
+        {name:'ミネルバ',charId:206,text:'一つが退いた場所を、次が受け取る。\n止めない。奪わない。順番だけ渡していく。'},
+        {name:'システム',text:'六つの結晶片が、根の上でゆっくりと光り始めた。\n水から風へ。風から光へ。\n光は火へ渡り、火は雷へ、雷は闇へ――そして闇から、また水へ。'},
+        {name:'ルーナ',charId:401,text:'……きれい。\n六つとも違う色なのに、誰も消えてない。'},
+        {name:'ミネルバ',charId:206,text:'そう。そこ。\n同じにしなくても、流れは作れる。'},
+        {name:'システム',text:'その時、アルスの胸元で乾いた音がした。\n焼け焦げたペンダントから、黒い煤がひとひら落ちる。'},
+        {name:'ルーナ',charId:401,text:'アルス、それ……。'},
+        {name:'システム',text:'ルーナが手を伸ばしかけ、触れる前に指を止めた。'},
+        {name:'ルーナ',charId:401,text:'……あたたかい。\n前にも、この光を――'},
+        {name:'リュシオン',charId:501,text:'……そこまで辿り着いたのですね。'},
+        {name:'ミネルバ',charId:206,text:'答え合わせをしに来たなら、遅いよ。\nもう回し始めた。'},
+        {name:'リュシオン',charId:501,text:'ええ。\nですから、私は止めに来たのではありません。'},
+        {name:'リュシオン',charId:501,text:'五年前、あの子たちへ残した光が、まだそこにあります。\n今度は奇跡としてではなく――あなたたちが繋いだ輪へ返しましょう。'},
+        {name:'システム',text:'ペンダントからほどけた淡い光が、六つの結晶片の輪へ触れた。\n黒く焼けた殻が静かに剥がれ、内側から澄んだ光が戻ってくる。'},
+        {name:'システム',text:'六色は混ざらない。\n互いへ色を渡しながら、ひとつの結晶の内側を絶えず巡り続けている。'},
+        {name:'ミネルバ',charId:206,text:'……できた。\n融合じゃない。中で、ちゃんと次へ譲ってる。'},
+        {name:'アルス',charId:301,text:'名前は？'},
+        {name:'ミネルバ',charId:206,text:'ノートでは「輪廻」って書いてた。\n仮のつもりだったけど……今なら、名前負けはしてないかな。'},
+        {name:'ルーナ',charId:401,text:'輪廻の結晶……。'},
+        {name:'システム',text:'焼け焦げたペンダントは、光結晶のペンダントへ変化した。\n「輪廻の結晶」を手に入れた。'}
+    ];
+    data.scripts.CRYSTAL_TREE_CYCLE_CRYSTAL_REPEAT_PHASE17 = [
+        {name:'ミネルバ',charId:206,text:'まだ回ってる。六つとも、ちゃんと別の色のまま。\n持っていって。深淵の底で何が起きても、止めないで。'}
     ];
 
     data.abyssSpiritTrials = Object.freeze(Object.fromEntries(
@@ -8859,6 +8917,8 @@ const STORY_MANAGER_DATA = {
                             yes:[
                                 {type:'CONV',value:'ABYSS_JASPER_ALAN_JOIN_PHASE8F'},
                                 {type:'ALLY',charId:201,joinParty:true,available:true},
+                                {type:'CONV',value:'ABYSS_JASPER_ALAN_AWAKENING_PHASE8F'},
+                                {type:'SET_JOB',charId:201,job:'光魔剣士',syncSkills:true},
                                 {type:'STORY_EXP',charId:201,amount:1000000,rewardKey:'alan_jagorea_join_1000k'},
                                 {type:'FLAG',key:'alanRejoinedAfterJasper',refreshField:true},
                                 {type:'LOG',value:'アランが再び仲間に加わった。'}
@@ -8880,15 +8940,27 @@ const STORY_MANAGER_DATA = {
         abyss_final_altar_encounter: {
             actions:[
                 {
-                    type:'IF_FLAG', key:'abyssVegnasisDefeated',
-                    then:[
-                        {type:'CONV',value:'ABYSS_AZELGARAG'},
-                        {type:'BOSS',value:302100,winEventId:'abyss_azelgarag_clear',battleBg:'battle_bg_lastboss'}
-                    ],
-                    else:[
-                        {type:'CONV',value:'ABYSS_VEGNASIS'},
-                        {type:'BOSS',value:[302080,302081,302082,302083,302084],winEventId:'abyss_vegnasis_clear',battleBg:'battle_bg_lastboss',deferFixedBossDefeat:true}
-                    ]
+                    type:'IF_FLAG', key:'abyssIlluminaciaDefeated',
+                    then:[{
+                        type:'IF_FLAG', key:'abyssAllSpiritTrialsCleared',
+                        then:[{
+                            type:'IF_FLAG', key:'abyssCycleCrystalCreated',
+                            then:[{
+                                type:'IF_FLAG', key:'abyssVegnasisDefeated',
+                                then:[
+                                    {type:'CONV',value:'ABYSS_AZELGARAG'},
+                                    {type:'BOSS',value:302100,winEventId:'abyss_azelgarag_clear',battleBg:'battle_bg_lastboss'}
+                                ],
+                                else:[
+                                    {type:'CONV',value:'ABYSS_VEGNASIS'},
+                                    {type:'BOSS',value:[302080,302081,302082,302083,302084],winEventId:'abyss_vegnasis_clear',battleBg:'battle_bg_lastboss',deferFixedBossDefeat:true}
+                                ]
+                            }],
+                            else:[{type:'LOG',value:'六つの結晶片が震えるだけで、祭壇の圧に押し戻される。結晶樹へ戻ろう。'}]
+                        }],
+                        else:[{type:'LOG',value:'六精霊すべての加護を得るまでは、終焉の祭壇の力に抗えそうにない。'}]
+                    }],
+                    else:[]
                 }
             ],
             winActions:[]
@@ -8901,6 +8973,8 @@ const STORY_MANAGER_DATA = {
             winActions:[]
         },
         abyss_vegnasis_clear: clearEvent('ABYSS_VEGNASIS_CLEAR',['abyssVegnasisDefeated'],[
+            {type:'CONV',value:'ABYSS_CYCLE_CRYSTAL_FINAL_ARRAY_PHASE17'},
+            {type:'FLAG',key:'abyssCycleCrystalFinalArrayCountered'},
             {type:'CONV',value:'ABYSS_AZELGARAG'},
             {type:'BOSS',value:302100,winEventId:'abyss_azelgarag_clear',battleBg:'battle_bg_lastboss'}
         ]),
@@ -8969,6 +9043,8 @@ const STORY_MANAGER_DATA = {
                     yes:[
                         {type:'CONV',value:'ABYSS_LEGACION_ALAN_REJOIN_PHASE8F'},
                         {type:'ALLY',charId:201,joinParty:true,available:true},
+                        {type:'CONV',value:'ABYSS_JASPER_ALAN_AWAKENING_PHASE8F'},
+                        {type:'SET_JOB',charId:201,job:'光魔剣士',syncSkills:true},
                         {type:'STORY_EXP',charId:201,amount:1000000,rewardKey:'alan_jagorea_join_1000k'},
                         {type:'FLAG',key:'alanRejoinedAfterJasper',refreshField:true},
                         {type:'LOG',value:'アランが再び仲間に加わった。'}
@@ -8978,6 +9054,74 @@ const STORY_MANAGER_DATA = {
             ],
             winActions:[]
         }
+    });
+
+    // Phase 18 Batch 1: new staged town NPCs. Existing dialogue keys are not replaced.
+    Object.assign(data.scripts, {
+        NPC_LUMINA_BAKER_BEFORE_CAVE: [
+            {name:'パン焼きの女',text:'朝の分はもうないよ。昼なら、端っこを残せる'},
+            {name:'パン焼きの女',text:'旅に出るなら食べておきな。\n腹が空いた勇者なんて、ただの機嫌の悪い若者だよ'}
+        ],
+        NPC_LUMINA_BAKER_AFTER_CAVE: [
+            {name:'パン焼きの女',text:'穴の騒ぎが収まったって？'},
+            {name:'パン焼きの女',text:'じゃあ明日は、粉を多めに練る。\n祝いじゃないよ。修理の連中が食うんだ'}
+        ],
+        NPC_LUMINA_BAKER_LATER_REVISIT: [
+            {name:'パン焼きの女',text:'おや。顔つきが旅人になったね'},
+            {name:'パン焼きの女',text:'……村の味が恋しい、とか言うなよ。\nこっちは塩を減らしたの、まだ誤魔化してるんだから'}
+        ],
+        NPC_LUMINA_GOAT_BOY_BEFORE_CAVE: [
+            {name:'少年',text:'山へ行くなら、鈴は外した方がいいよ'},
+            {name:'少年',text:'ミルの鈴だけ、切れて落ちてたんだ。\n穴のやつ、鈴の音が嫌いなんだと思う'}
+        ],
+        NPC_LUMINA_GOAT_BOY_AFTER_CAVE: [
+            {name:'少年',text:'ミル、帰ってきた'},
+            {name:'少年',text:'鈴はなくしたけど、本人は平気そう。\n……穴が返してくれたのかな'}
+        ],
+        NPC_LUMINA_GOAT_BOY_SARA_REACTION: [
+            {name:'サラ',text:'迷って、戻ってきたのかもしれませんね'},
+            {name:'少年',text:'そっか。じゃあミル、道を覚えたんだ'}
+        ],
+        NPC_IGNISIA_COMMUNAL_KITCHEN_FIRE_UNSTABLE: [
+            {name:'炊事番',text:'鍋に近づくな。さっきまで弱火だったのに、急に蓋が跳ねた'},
+            {name:'炊事番',text:'今日の豆は半煮えだ。\n文句は火山に言っとくれ。順番は変えないよ'}
+        ],
+        NPC_IGNISIA_COMMUNAL_KITCHEN_FIRE_RESTORED: [
+            {name:'炊事番',text:'火が戻った？　見りゃ分かるよ。\n鍋底を二つ焦がした'},
+            {name:'炊事番',text:'嬉しいさ。嬉しいけどね、\n加減を忘れた手まで一晩で戻るわけじゃない'}
+        ],
+        NPC_IGNISIA_COMMUNAL_KITCHEN_LATER_REVISIT: [
+            {name:'炊事番',text:'今日は煮込み。明日は焼き物'},
+            {name:'炊事番',text:'普通の献立を考えるの、こんなに面倒だったかね。\n……まあ、悪くない面倒だ'}
+        ],
+        NPC_IGNISIA_BATH_ELDER_DURING_CRISIS: [
+            {name:'湯屋の老人',text:'若いのは、すぐ火を急かす'},
+            {name:'湯屋の老人',text:'昔は湯を通す前に、石へ水をひと匙やった。\n笑うからこうなる。山にも機嫌ってもんがある'}
+        ],
+        NPC_IGNISIA_BATH_ELDER_AFTER_CLEAR: [
+            {name:'湯屋の老人',text:'ほら見ろ。水をやったら静かになった'},
+            {name:'里の若者',text:'プリズムが戻った日と同じ日だろ'},
+            {name:'湯屋の老人',text:'二つ効いたんだよ。年寄りの顔を立てろ'}
+        ]
+    });
+
+    Object.assign(data.events, {
+        npc_lumina_baker_before_cave: {actions:[{type:'CONV',value:'NPC_LUMINA_BAKER_BEFORE_CAVE'}],winActions:[]},
+        npc_lumina_baker_after_cave: {actions:[{type:'CONV',value:'NPC_LUMINA_BAKER_AFTER_CAVE'}],winActions:[]},
+        npc_lumina_baker_later_revisit: {actions:[{type:'CONV',value:'NPC_LUMINA_BAKER_LATER_REVISIT'}],winActions:[]},
+        npc_lumina_goat_boy_before_cave: {actions:[{type:'CONV',value:'NPC_LUMINA_GOAT_BOY_BEFORE_CAVE'}],winActions:[]},
+        npc_lumina_goat_boy_after_cave: {
+            actions:[
+                {type:'CONV',value:'NPC_LUMINA_GOAT_BOY_AFTER_CAVE'},
+                {type:'IF_ALLY',charId:110,mode:'party',then:[{type:'CONV',value:'NPC_LUMINA_GOAT_BOY_SARA_REACTION'}],else:[]}
+            ],
+            winActions:[]
+        },
+        npc_ignisia_communal_kitchen_fire_unstable: {actions:[{type:'CONV',value:'NPC_IGNISIA_COMMUNAL_KITCHEN_FIRE_UNSTABLE'}],winActions:[]},
+        npc_ignisia_communal_kitchen_fire_restored: {actions:[{type:'CONV',value:'NPC_IGNISIA_COMMUNAL_KITCHEN_FIRE_RESTORED'}],winActions:[]},
+        npc_ignisia_communal_kitchen_later_revisit: {actions:[{type:'CONV',value:'NPC_IGNISIA_COMMUNAL_KITCHEN_LATER_REVISIT'}],winActions:[]},
+        npc_ignisia_bath_elder_during_crisis: {actions:[{type:'CONV',value:'NPC_IGNISIA_BATH_ELDER_DURING_CRISIS'}],winActions:[]},
+        npc_ignisia_bath_elder_after_clear: {actions:[{type:'CONV',value:'NPC_IGNISIA_BATH_ELDER_AFTER_CLEAR'}],winActions:[]}
     });
 
     const spiritTrialPartyDialoguePhase17 = Object.freeze({
@@ -9023,12 +9167,16 @@ const STORY_MANAGER_DATA = {
             winActions:[]
         };
     });
+    // 旧event IDは進行中セーブ互換のため維持するが、完成品の即時授与は行わない。
     data.events.abyss_spirit_trials_octaprism_grant = {
         actions:[{
-            type:'IF_FLAG',key:'abyssOctaprismGrantPending',
+            type:'IF_FLAG',key:'abyssCycleCrystalRitualPending',
             then:[
-                {type:'CONV',value:'ABYSS_SPIRIT_TRIAL_ALL_COMPLETE'},
-                {type:'ABYSS_SPIRIT_TRIAL_GRANT_OCTAPRISM'}
+                {type:'IF_FLAG',key:'abyssCycleCrystalReturnPromptSeen',state:false,then:[
+                    {type:'CONV',value:'ABYSS_SPIRIT_TRIAL_ALL_COMPLETE'},
+                    {type:'FLAG',key:'abyssCycleCrystalReturnPromptSeen'},
+                    {type:'LOG',value:'六つの結晶片を持ち、結晶樹の秘跡へ戻ろう。'}
+                ],else:[]}
             ],
             else:[]
         }],

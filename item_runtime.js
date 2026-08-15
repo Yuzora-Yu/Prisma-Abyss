@@ -211,7 +211,7 @@
     };
     const applyBattleItem = ({ Battle, App, item, command }) => {
         if (Number(item?.id) === 701008) {
-            Battle.log('オクタプリズマは使用せず、所持しているだけでアゼルガラグ戦を支援する。');
+            Battle.log('輪廻の結晶は道具として使うものではない。六つの光は、深淵王との戦いで巡り続ける。');
             return { handled: true, consumed: false, effected: 0 };
         }
         if (!isBattleUsable(item)) return { handled: false, consumed: false, effected: 0 };

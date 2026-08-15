@@ -1751,7 +1751,10 @@ const Battle = {
         return true;
     },
 
-    getOctaprismSupportMaster: () => globalThis.ABYSS_REGION_CONTENT?.octaprismSupportMaster || null,
+    getCycleCrystalSupportMaster: () => globalThis.ABYSS_REGION_CONTENT?.cycleCrystalSupportMaster || globalThis.ABYSS_REGION_CONTENT?.octaprismSupportMaster || null,
+
+    // Legacy internal name kept because old battle saves persist octaprismState.
+    getOctaprismSupportMaster: () => Battle.getCycleCrystalSupportMaster(),
 
     isAzelgaragBattle: () => {
         if (Battle.isStoryBossTrainingBattle?.()) return false;
@@ -2636,8 +2639,8 @@ const Battle = {
         if (octaprismState?.active && !octaprismState.activationLogged) {
             const resistanceApplied = octaprismState.heroChaosResistance?.applied === true;
             Battle.log(resistanceApplied
-                ? '<span style="color:#ffe78f;">オクタプリズマが六精霊の道を開き、主人公の混沌属性耐性を90%まで高めた！</span>'
-                : '<span style="color:#ffe78f;">オクタプリズマが輝き、六精霊が戦いを見守っている。</span>');
+                ? '<span style="color:#ffe78f;">輪廻の結晶が巡り、六精霊の加護がアルスを混沌から守る！</span>'
+                : '<span style="color:#ffe78f;">輪廻の結晶の六色が巡り、精霊たちの気配が戦場を満たした。</span>');
             octaprismState.activationLogged = true;
             App.save();
         }

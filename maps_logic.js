@@ -505,10 +505,18 @@ const MapRegistry = {
 
     isProgressEntryActive(entry) {
         if (!entry || entry.active === false) return false;
+        const progress = (typeof App !== 'undefined' && App.data?.progress) || {};
+        const step = Number(progress.storyStep || 0);
+        const sub = Number(progress.subStep || 0);
+        const stepMin = entry.stepMin !== undefined ? Number(entry.stepMin) : -Infinity;
+        const stepMax = entry.stepMax !== undefined ? Number(entry.stepMax) : Infinity;
+        const subMin = entry.subMin !== undefined ? Number(entry.subMin) : -Infinity;
+        const subMax = entry.subMax !== undefined ? Number(entry.subMax) : Infinity;
+        if (step < stepMin || step > stepMax || sub < subMin || sub > subMax) return false;
         if (typeof App !== 'undefined' && typeof App.evaluateGameConditions === 'function') {
             return App.evaluateGameConditions(entry);
         }
-        const flags = (typeof App !== 'undefined' && App.data?.progress?.flags) || {};
+        const flags = progress.flags || {};
         const items = (typeof App !== 'undefined' && App.data?.items) || {};
         const requiredFlags = Array.isArray(entry.requiredFlags)
             ? entry.requiredFlags

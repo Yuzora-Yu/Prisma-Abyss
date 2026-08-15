@@ -358,8 +358,8 @@ Status: **inventory / no automatic replacement**
 |335|ui_html_text|`battle.js:1841`|html/template text|闇の大精霊の支援！ 深淵王の全能力が低下した！|（未提案・レビュー待ち）|inventory_only|
 |336|ui_html_text|`battle.js:1859`|html/template text|雷の大精霊の支援！ 深淵王へ${total}ダメージを与え、守備力を低下させた！|（未提案・レビュー待ち）|inventory_only|
 |337|ui_html_text|`battle.js:1861`|html/template text|炎の大精霊の支援！ 深淵王へ${total}ダメージ！|（未提案・レビュー待ち）|inventory_only|
-|338|ui_html_text|`battle.js:2639`|html/template text|オクタプリズマが六精霊の道を開き、主人公の混沌属性耐性を90%まで高めた！|輪廻の結晶が巡り、六精霊の加護がアルスを混沌から守る！|proposal_pending_20260815|
-|339|ui_html_text|`battle.js:2640`|html/template text|オクタプリズマが輝き、六精霊が戦いを見守っている。|輪廻の結晶の六色が巡り、精霊たちの気配が戦場を満たした。|proposal_pending_20260815|
+|338|ui_html_text|`battle.js:2639`|html/template text|オクタプリズマが六精霊の道を開き、主人公の混沌属性耐性を90%まで高めた！|輪廻の結晶が巡り、六精霊の加護がアルスを混沌から守る！|approved_applied_20260815|
+|339|ui_html_text|`battle.js:2640`|html/template text|オクタプリズマが輝き、六精霊が戦いを見守っている。|輪廻の結晶の六色が巡り、精霊たちの気配が戦場を満たした。|approved_applied_20260815|
 |340|ui_html_text|`battle.js:2398`|html/template text|まものの むれに ふいうちを うけた！|（未提案・レビュー待ち）|inventory_only|
 |341|ui_html_text|`battle.js:2400`|html/template text|まものの むれを さきに みつけた！|（未提案・レビュー待ち）|inventory_only|
 |342|ui_html_text|`battle.js:3198`|html/template text|天使の試練を担う強敵が現れた！|（未提案・レビュー待ち）|inventory_only|
@@ -1725,9 +1725,38 @@ Status: **inventory / no automatic replacement**
 |1699|ui_confirm|`main.html:286`|new game overwrite|はじめから開始すると、現在のオートセーブは即時上書きされます。 / 手動セーブNo.1～20は変更されません。 / 新しい冒険を始めますか？|（既存文言の枠数更新）|approved_rewrite|
 |1700|ui_confirm|`main.html:303`|auto-save delete|現在のオートセーブを削除しますか？ / 手動セーブNo.1～20は削除されません。|（既存文言の枠数更新）|approved_rewrite|
 
-|1701|item_name|`items.js:6978`|Item 701008|オクタプリズマ|輪廻の結晶|proposal_pending_20260815|
-|1702|item_description|`items.js:6981`|Item 701008|六つの大精霊と光の神の加護を宿す結晶。所持していると、深淵王アゼルガラグとの戦いで真価を発揮する。|六つの属性が互いへ役割を渡し続ける循環を封じた結晶。深淵の「統合」に抗う力を秘める。|proposal_pending_20260815|
-|1703|ui_battle_log|`item_runtime.js:214`|Item 701008 special message|オクタプリズマは使用せず、所持しているだけでアゼルガラグ戦を支援する。|輪廻の結晶は道具として使うものではない。六つの光は、深淵王との戦いで巡り続ける。|proposal_pending_20260815|
-|1704|story_system|`story.js:8645`|ABYSS_SPIRIT_TRIAL_ALL_COMPLETE|焼け焦げたペンダントは、澄んだ光を宿す結晶へと姿を変えた。 / 光結晶のペンダントと、オクタプリズマを手に入れた！|結晶樹の循環の儀へ移設し、「輪廻の結晶」を手に入れた。へ再構成。詳細は `44_CYCLE_CRYSTAL_RITUAL_REALIGNMENT_PROPOSAL_20260815.md`。|proposal_pending_20260815|
-|1705|battle_log|`battle.js:760`|Vegnasis final pillar awaken|${enemy.name}は四柱の力を取り込み、完全に傷を癒した！|六楔化時は「五柱の力を取り込み」へ整合。人数可変化する場合もplayer-facing出力は自然文にする。|proposal_pending_20260815|
-|1706|enemy_name|`monsters.js:788`|Monster 302084|闇柱ヴェルド|光柱ヴェルド|proposal_pending_20260815|
+|1701|item_name|`items.js:6978`|Item 701008|オクタプリズマ|輪廻の結晶|approved_applied_20260815|
+|1702|item_description|`items.js:6981`|Item 701008|六つの大精霊と光の神の加護を宿す結晶。所持していると、深淵王アゼルガラグとの戦いで真価を発揮する。|六つの属性が互いへ役割を渡し続ける循環を封じた結晶。深淵の「統合」に抗う力を秘める。|approved_applied_20260815|
+|1703|ui_battle_log|`item_runtime.js:214`|Item 701008 special message|オクタプリズマは使用せず、所持しているだけでアゼルガラグ戦を支援する。|輪廻の結晶は道具として使うものではない。六つの光は、深淵王との戦いで巡り続ける。|approved_applied_20260815|
+|1704|story_system|`story.js`|ABYSS_SPIRIT_TRIAL_ALL_COMPLETE|焼け焦げたペンダントは、澄んだ光を宿す結晶へと姿を変えた。 / 光結晶のペンダントと、オクタプリズマを手に入れた！|六片が呼び合う描写と結晶樹への帰還案内へ変更し、完成品の即時授与を廃止。生成は `CRYSTAL_TREE_CYCLE_CRYSTAL_RITUAL_PHASE17` へ移設。|approved_applied_20260815|
+|1705|battle_log|`battle.js:753`|Vegnasis final pillar awaken|${enemy.name}は四柱の力を取り込み、完全に傷を癒した！|現行維持。五楔正本では最後の一柱が残る四柱を取り込むため整合。|superseded_keep_current_20260815|
+|1706|enemy_name|`monsters.js:788`|Monster 302084|闇柱ヴェルド|現行維持。ヴェルドは終局でも闇楔。|superseded_keep_current_20260815|
+
+|1707|story_system|`story.js:8356`|ABYSS_JASPER_ALAN_AWAKENING_PHASE8F|光の加護が真にアランの心身と重なり合い、アランは光魔剣士として覚醒した！|（2026-08-15ユーザー指定・承認済み）|new_copy_approved|
+
+|1708|map_locked_log|`map.js`|CHRONO_ABYSS 7層→FINAL_ALTAR|終焉の祭壇へ続く亀裂は、六精霊の加護が揃うまで形を結ばない。|亀裂の縁で六色の光が散り、道はまだ形を保てない。|approved_rewrite_20260815|
+|1709|ui_story_log|`story.js`|abyss_final_altar_encounter guard|六精霊すべての加護を得るまでは、終焉の祭壇の力に抗えそうにない。|（2026-08-15 Phase17本筋ゲート・今回の三条件ゲート承認に含む）|new_copy_approved_20260815|
+
+|1710|story_system|`story.js`|ABYSS_SPIRIT_TRIAL_ALL_COMPLETE|（新規）|六つ目の結晶片が、小さく澄んだ音を立てた。 / 荷の中で、離れているはずの五つも順番に応える。|new_copy_approved_20260815|
+|1711|story_system|`story.js`|ABYSS_SPIRIT_TRIAL_ALL_COMPLETE|（新規）|六つの結晶片を持ち、結晶樹の秘跡へ戻ることにした。|new_copy_approved_20260815|
+|1712|ui_story_log|`story.js`|abyss_spirit_trials_octaprism_grant|（新規）|六つの結晶片を持ち、結晶樹の秘跡へ戻ろう。|new_copy_approved_20260815|
+|1713|map_action_label|`map.js`|CRYSTAL_TREE / Minerva cycle ritual|（新規）|ミネルバに六つの結晶片を見せる|new_copy_approved_20260815|
+|1714|story_system|`story.js`|CRYSTAL_TREE_CYCLE_CRYSTAL_RITUAL_PHASE17|（新規）|六つの結晶片が、根の上でゆっくりと光り始めた。 / 水から風へ。風から光へ。 / 光は火へ渡り、火は雷へ、雷は闇へ――そして闇から、また水へ。|new_copy_approved_20260815|
+|1715|story_system|`story.js`|CRYSTAL_TREE_CYCLE_CRYSTAL_RITUAL_PHASE17|（新規）|その時、アルスの胸元で乾いた音がした。 / 焼け焦げたペンダントから、黒い煤がひとひら落ちる。|new_copy_approved_20260815|
+|1716|story_system|`story.js`|CRYSTAL_TREE_CYCLE_CRYSTAL_RITUAL_PHASE17|（新規）|ルーナが手を伸ばしかけ、触れる前に指を止めた。|new_copy_approved_20260815|
+|1717|story_system|`story.js`|CRYSTAL_TREE_CYCLE_CRYSTAL_RITUAL_PHASE17|（新規）|ペンダントからほどけた淡い光が、六つの結晶片の輪へ触れた。 / 黒く焼けた殻が静かに剥がれ、内側から澄んだ光が戻ってくる。|new_copy_approved_20260815|
+|1718|story_system|`story.js`|CRYSTAL_TREE_CYCLE_CRYSTAL_RITUAL_PHASE17|（新規）|六色は混ざらない。 / 互いへ色を渡しながら、ひとつの結晶の内側を絶えず巡り続けている。|new_copy_approved_20260815|
+|1719|story_system|`story.js`|CRYSTAL_TREE_CYCLE_CRYSTAL_RITUAL_PHASE17|（新規）|焼け焦げたペンダントは、光結晶のペンダントへ変化した。 / 「輪廻の結晶」を手に入れた。|new_copy_approved_20260815|
+|1720|ui_story_log|`story.js`|crystal_tree_cycle_crystal_ritual_phase17|（新規）|輪廻の結晶を携え、深淵の奥へ戻ろう。|new_copy_approved_20260815|
+|1721|ui_story_log|`story.js`|crystal_tree_cycle_crystal_ritual_phase17 missing fragments|（新規）|六つの結晶片が揃っていない。|new_copy_approved_20260815|
+|1722|ui_story_log|`story.js`|abyss_final_altar_encounter cycle-crystal guard|（新規）|六つの結晶片が震えるだけで、祭壇の圧に押し戻される。結晶樹へ戻ろう。|new_copy_approved_20260815|
+|1723|story_system|`story.js`|ABYSS_CYCLE_CRYSTAL_FINAL_ARRAY_PHASE17|（新規）|五柱が崩れた場所から、解けた光が祭壇の溝へ逆流した。 / 黒い紋様が一斉に閉じ、異なる力を同じ中心へ引きずり込もうとする。|new_copy_approved_20260815|
+|1724|story_system|`story.js`|ABYSS_CYCLE_CRYSTAL_FINAL_ARRAY_PHASE17|（新規）|アルスの荷の中で、輪廻の結晶が鋭く鳴った。 / 六色の光は中心へ沈まず、輪を描いて次の色へ走る。|new_copy_approved_20260815|
+|1725|story_system|`story.js`|ABYSS_CYCLE_CRYSTAL_FINAL_ARRAY_PHASE17|（新規）|祭壇を覆っていた黒い紋様に、細い亀裂が走った。|new_copy_approved_20260815|
+|1726|story_objective|`story_logic.js`|Abyss main objective / cycle ritual pending|（新規）|六つの結晶片を持ち、結晶樹の秘跡へ戻ろう|new_copy_approved_20260815|
+|1727|story_objective|`story_logic.js`|Abyss main objective / spirit trials pending after Illuminacia|（新規）|地上の六つのプリズムを巡り、大精霊の試練を終えよう|new_copy_approved_20260815|
+
+|1728|map_interaction_label|`map.js`|START_VILLAGE / lumina_baker_01|（新規）|パン焼きの女と話す|new_copy_approved_20260815|
+|1729|map_interaction_label|`map.js`|START_VILLAGE / lumina_goat_boy_01|（新規）|少年と話す|new_copy_approved_20260815|
+|1730|map_interaction_label|`map.js`|FIRE_VILLAGE / ignisia_communal_kitchen_01|（新規）|炊事番と話す|new_copy_approved_20260815|
+|1731|map_interaction_label|`map.js`|FIRE_VILLAGE / ignisia_bath_elder_01|（新規）|湯屋の老人と話す|new_copy_approved_20260815|

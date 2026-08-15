@@ -1,0 +1,21 @@
+PASS: Alan awakening exact system text exists
+PASS: Immediate Jasper rejoin order = ALLY -> awakening -> SET_JOB -> EXP
+PASS: Deferred Legacion rejoin order = ALLY -> awakening -> SET_JOB -> EXP
+PASS: Generic SET_JOB story action exists
+PASS: Persistent story job override exists
+PASS: Startup job repair respects story override
+PASS: Old-save Alan awakening migration exists and is invoked
+PASS: Old-save migration does not reference awakening conversation
+PASS: Light Magic Knight job table exists
+PASS: Light Magic Knight provisional skill table has skills
+PASS: Every Light Magic Knight skill ID exists
+PASS: Roadmap fixes Alan awakening before +1m EXP
+PASS: Canon no longer marks Alan Light Magic Knight timing undecided
+PASS: Fixed dungeon links support requiredFlags
+PASS: Final altar route requires Illuminacia and all six spirit trials
+PASS: Final altar event itself guards all spirit trials
+PASS: Vegnasis remains five wedges
+PASS: Veld remains the dark fifth wedge
+PASS: Jasper is not a Vegnasis wedge
+PASS: 2026/08/15 NEWS_DATA remains one record
+TOTAL=20 FAIL=0

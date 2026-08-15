@@ -1,0 +1,27 @@
+# PRISMA ABYSS Delta Manifest — 2026-08-15 Alan Light Magic Knight / Mainline
+
+TOTAL_FILES=21
+BASELINE=/mnt/data/prisma_alan_before
+PACKAGE_RULE=changed_or_new_only
+
+M	canon/PRISMA_CHARACTER_BOSS_ENCYCLOPEDIA_v5.md
+M	canon/PRISMA_CODING_HANDOFF_v5.md
+M	canon/PRISMA_DEVELOPMENT_ROADMAP_v2.md
+M	canon/PRISMA_SCENARIO_CANON_MASTER_v8.md
+M	development_notes/2026-08-15/handoff/PRISMA_ABYSS_HANDOFF_20260815.md
+A	development_notes/2026-08-15/reports/ALAN_LIGHT_MAGIC_KNIGHT_MAINLINE_CONTINUATION_20260815.md
+A	development_notes/2026-08-15/validation/ALAN_PHASE17_MAINLINE_CHECK_20260815.js
+A	development_notes/2026-08-15/validation/ALAN_PHASE17_MAINLINE_CHECK_20260815.log
+M	docs/project-status/PHASE8F_JAGOREA_JASPER_ALAN_SUPPORT_STATUS_v1.md
+M	docs/project-status/PRISMA_CODING_HANDOFF_v5.md
+M	docs/scenario/08_IMPLEMENTATION_HANDOFF.md
+A	docs/scenario/53_ALAN_LIGHT_MAGIC_KNIGHT_AWAKENING_20260815.md
+A	docs/scenario/54_PHASE17_FINAL_ALTAR_ROUTE_GUARD_20260815.md
+M	docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+M	dungeon.js
+M	main.js
+M	map.js
+M	news.js
+M	story.js
+M	story_logic.js
+A	development_notes/2026-08-15/DELTA_MANIFEST_20260815_ALAN_LIGHT_MAGIC_MAINLINE.txt
