@@ -2022,6 +2022,7 @@ const FIELD_ENCOUNTER_ZONES = [
     { id: "WIND_HIGHLANDS", mapId: MAP_IDS.KAZARIA_OUTSKIRTS, name: "風の集落カザリア周辺", rank: 20, centerX: 98, centerY: 37, radius: 20 },
     { id: "WATER_COAST", mapId: MAP_IDS.SEABED_TEMPLE_OUTSKIRTS, name: "海底神殿周辺", rank: 36, centerX: 68, centerY: 21, radius: 28 },
     { id: "CRENA_CAVE_FIELD", mapId: MAP_IDS.CRENA_OUTSKIRTS, name: "クレナ鍾乳洞周辺", rank: 26, centerX: 74, centerY: 16, radius: 11, priority: 2 },
+    { id: "SLIME_ISLET_SOUTHWEST", mapId: MAP_IDS.BIG_TOWER_OUTSKIRTS, name: "大灯台南西の小島", rank: 70, centerX: 9, centerY: 83, rect: { x1: 8, y1: 83, x2: 10, y2: 83 }, priority: 20, encounterRankMin: 1, encounterRankMax: 140, encounterRaces: ["粘体"], rareEncounterMonsterIds: [200201, 200202, 200203] },
     { id: "BIG_TOWER_SHORE", mapId: MAP_IDS.BIG_TOWER_OUTSKIRTS, name: "大灯台周辺", rank: 56, centerX: 21, centerY: 79, radius: 30 },
     { id: "THUNDER_FRONTIER", mapId: MAP_IDS.THUNDER_FORT_OUTSKIRTS, name: "ライザーク要塞周辺", rank: 51, centerX: 45, centerY: 36, radius: 24 },
     { id: "LIGHT_PALACE_GROVE", mapId: MAP_IDS.LIGHT_PALACE_OUTSKIRTS, name: "光の宮殿グランプリズマ周辺", rank: 61, centerX: 67, centerY: 48, radius: 18 },
@@ -9518,6 +9519,7 @@ const FIXED_DUNGEON_MAPS = {
                 procedural: true,
                 proceduralEntryReturnsOutside: true,
                 proceduralExitLabel: "レクスノート邸へ戻る",
+                proceduralExitPoint: { areaKey: "REXNOTE_ESTATE", worldKey: "WORLD", x: 13, y: 7 },
                 encounterRank: 40,
                 monsters: [357, 358, 401, 402, 403],
                 rareEncounterMonsterIds: [200201]

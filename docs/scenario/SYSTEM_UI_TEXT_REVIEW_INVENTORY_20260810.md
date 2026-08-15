@@ -389,8 +389,8 @@ Status: **inventory / no automatic replacement**
 |366|ui_html_text|`battle.js:8002`|html/template text|なし|（未提案・レビュー待ち）|inventory_only|
 |367|ui_html_text|`battle.js:8672`|html/template text|戦闘に勝利した！|（未提案・レビュー待ち）|inventory_only|
 |368|ui_html_text|`battle.js:8680`|html/template text|訓練戦のため報酬・討伐記録は発生しない。HP・MPは開始前の状態へ戻った。|（未提案・レビュー待ち）|inventory_only|
-|369|ui_html_text|`battle.js:8686`|html/template text|戦闘不能の仲間は経験値を50%取得した。|（未提案・レビュー待ち）|inventory_only|
-|370|ui_html_text|`battle.js:8689`|html/template text|控えの仲間は経験値を25%取得した。|（未提案・レビュー待ち）|inventory_only|
+|369|ui_html_text|`battle.js`|battle result exp note|戦闘不能の仲間は経験値を50%取得した。|削除|approved_removed_20260815|
+|370|ui_html_text|`battle.js`|battle result exp note|控えの仲間は経験値を25%取得した。|削除|approved_removed_20260815|
 |371|ui_html_text|`battle.js:8755`|html/template text|特性：応急手当でパーティのHPが回復した！|（未提案・レビュー待ち）|inventory_only|
 |372|ui_html_text|`battle.js:8758`|html/template text|特性：魔力充填でパーティのMPが回復した！|（未提案・レビュー待ち）|inventory_only|
 |373|ui_html_text|`battle.js:8878`|html/template text|勝利演出の一部を省略しました。結果は保存済みです。|（未提案・レビュー待ち）|inventory_only|
@@ -1764,3 +1764,21 @@ Status: **inventory / no automatic replacement**
 |1732|map_interaction_label|`map.js`|WIND_VILLAGE / kazaria_rope_mender_01|（新規）|綱直しの女と話す|new_copy_approved_20260815|
 |1733|map_interaction_label|`map.js`|WATER_CITY / water_city_retired_deckhand_01|（新規）|老甲板員と話す|new_copy_approved_20260815|
 |1734|ui_story_log|`story_logic.js`|generic `EQUIP` story action|（新規）|${equip.name}を手に入れた！|new_copy_approved_20260815|
+
+
+### 2026-08-15 転職の書・試練表示追加
+
+|ID|種別|参照|用途/条件|現行/新規文言|レビュー案|状態|
+|---:|---|---|---|---|---|---|
+|1735|ui_confirm|`menus_items.js`|転職の書使用確認|${target.name}を「${jobBookDef.name}」へ転職させますか？ / 転職と同時に転生し、Lv1に戻ります。|（2026-08-15新規）|new_copy_inventory|
+|1736|ui_error|`menus_items.js`|転職の書 / 仲間モンスター|仲間モンスターには転職の書を使用できません。|（2026-08-15新規）|new_copy_inventory|
+|1737|ui_error|`menus_items.js`|転職の書 / Lv条件不足|転職の書はLv100到達時にのみ使用できます。|（2026-08-15新規）|new_copy_inventory|
+|1738|ui_error|`menus_items.js`|転職の書 / 同職|現在と同じ職業の転職の書は使用できません。|（2026-08-15新規）|new_copy_inventory|
+|1739|ui_error|`menus_items.js`|転職の書 / 職業データ不明|転職先の職業データを確認できません。|（2026-08-15新規）|new_copy_inventory|
+|1740|ui_error|`menus_items.js`|転職の書 / 現職データ不明|現在の職業データを確認できません。|（2026-08-15新規）|new_copy_inventory|
+|1741|ui_error|`menus_items.js`|転職の書 / システム不明|転職処理を利用できません。|（2026-08-15新規）|new_copy_inventory|
+|1742|ui_error|`menus_items.js`|転職の書 / その他|この転職の書は使用できません。|（2026-08-15新規）|new_copy_inventory|
+|1743|ui_success|`menus_items.js`|転職成功|${target.name}は ${result.job}へ転職した！ / そのまま転生し、レベル1に戻った！ / (転生回数: ${result.reincarnationCount}回目)|（2026-08-15新規）|new_copy_inventory|
+|1744|item_name_template|`items.js`|転職の書23種|${job.name}の転職の書|（2026-08-15新規。職業IDから名称同期）|new_copy_inventory|
+|1745|item_description_template|`items.js`|転職の書23種|Lv100到達時に使用すると「${job.name}」へ転職し、そのまま転生してLv1に戻る。別職で習得したスキルは失わない。|（2026-08-15新規）|new_copy_inventory|
+|1746|battle_reward_log_template|`dungeon.js`|天使の試練ステータス上昇|${char.name}の${statLabels[key]}が${amount}上がった！|ATK/DEF/MDEF/SPD等の英略称ではなくステータス画面表記へ統一|approved_applied_20260815|

@@ -133,6 +133,7 @@ const CONST = {
 };
 
 window.refreshSkillBookItemMetadata?.();
+window.refreshJobChangeBookItemMetadata?.();
 
 const DB = {
     SKILLS: window.SKILLS_DATA || [],

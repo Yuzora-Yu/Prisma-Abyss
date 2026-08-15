@@ -280,7 +280,8 @@ window.ITEMS_DATA = [
         "type": "育成",
         "desc": "能力を維持したままLv1に戻る禁断の果実",
         "target": "単体",
-        "price": 0
+        "price": 0,
+        "randomChestDrop": false
     },
     {
         "id": 112,
@@ -7076,6 +7077,426 @@ window.ITEMS_DATA.push(
 }
 );
 
+
+/* 各職業の転職の書。職業名はjob_data.jsの固定jobIdから表示時に同期する。取得方法は後日設定する。 */
+window.PRISMA_JOB_CHANGE_BOOK_ITEM_BASE = 710000;
+window.ITEMS_DATA.push(
+{
+    "consumable": true,
+    "id": 710001,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 1,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710002,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 2,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710003,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 3,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710004,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 4,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710005,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 5,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710006,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 6,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710007,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 7,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710008,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 8,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710009,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 9,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710010,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 10,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710011,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 11,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710012,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 12,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710013,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 13,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710014,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 14,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710015,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 15,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710016,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 16,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710017,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 17,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710018,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 18,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710019,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 19,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710020,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 20,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710021,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 21,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710022,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 22,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+},
+{
+    "consumable": true,
+    "id": 710023,
+    "rank": 100,
+    "name": "転職の書",
+    "type": "転職の書",
+    "jobId": 23,
+    "target": "単体",
+    "battleUsable": false,
+    "fieldUsable": true,
+    "shopAvailable": false,
+    "abyssDrop": false,
+    "randomChestDrop": false,
+    "price": 0,
+    "sellPrice": 0,
+    "icon": "assets/ui/menu-icons/item-skill-book.png",
+    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+}
+);
+
 /*
  * Expanded battle consumables and ranked materials are authored explicitly
  * above. Keep item records in this file; runtime item generation is forbidden.
@@ -7119,6 +7540,7 @@ window.ITEMS_DATA.push(
         '状態異常回復',
         '蘇生',
         '育成',
+        '転職の書',
         'スキル書',
         '特性書',
         '鍛冶道具',
@@ -7149,8 +7571,10 @@ window.ITEMS_DATA.push(
             item.type !== '移動' &&
             item.type !== 'スキル書' &&
             item.type !== '特性書' &&
+            item.type !== '転職の書' &&
             item.medalOnly !== true &&
             item.abyssDrop !== false &&
+            item.randomChestDrop !== false &&
             Number(item.rank || 1) <= maxRank
         );
         const materials = eligible.filter(item => item.type === '素材');
@@ -7207,3 +7631,24 @@ window.ITEMS_DATA.push(
     window.refreshSkillBookItemMetadata = refresh;
     refresh();
 })();
+
+// 転職の書の表示名・説明はjobIdを正本とし、職業名称変更へ自動追従させる。
+(() => {
+    'use strict';
+    const refresh = () => {
+        const items = Array.isArray(window.ITEMS_DATA) ? window.ITEMS_DATA : [];
+        const jobs = Array.isArray(window.JOB_MASTER_DATA) ? window.JOB_MASTER_DATA : [];
+        const byId = new Map(jobs.map(job => [Number(job?.id), job]));
+        items.forEach(item => {
+            if (item?.type !== '転職の書' || !Number.isFinite(Number(item.jobId))) return;
+            const job = byId.get(Number(item.jobId));
+            if (!job) return;
+            item.name = `${job.name}の転職の書`;
+            item.desc = `Lv100到達時に使用すると「${job.name}」へ転職し、そのまま転生してLv1に戻る。別職で習得したスキルは失わない。`;
+        });
+        return items;
+    };
+    window.refreshJobChangeBookItemMetadata = refresh;
+    refresh();
+})();
+

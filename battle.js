@@ -3456,9 +3456,11 @@ const Battle = {
             const trial = battleData.angelTrial;
             const total = Math.max(1, Number(trial.enemyCount || 3));
             const targetFloor = Math.max(1, Number(trial.targetFloor || abyssBalanceFloor + 15));
+            const centerRankBonus = Math.max(5, Math.min(9, Math.floor(Number(trial.centerRankBonus) || (5 + Math.floor(Math.random() * 5)))));
             Battle.log('<span style="color:#fff3a6;font-weight:bold;">天使の試練を担う強敵が現れた！</span>');
             for (let i = 0; i < total; i++) {
-                const enemy = Battle.createDeepNormalEnemy(targetFloor, {
+                const enemyFloor = i === 1 ? targetFloor + centerRankBonus : targetFloor;
+                const enemy = Battle.createDeepNormalEnemy(enemyFloor, {
                     statMultiplier:Math.max(1, Number(trial.statMultiplier || 1.35)),
                     marker:'angelTrialStatMultiplier'
                 });
@@ -3573,9 +3575,11 @@ const Battle = {
             const riftFloor = Math.max(1, Number(battleData.riftFloor) || (floor + 10));
             const total = Math.max(1, Number(battleData.riftEnemyCount || 3));
             const multiplier = Math.max(1, Number(battleData.riftStatMultiplier || 1.25));
+            const centerRankBonus = Math.max(5, Math.min(9, Math.floor(Number(battleData.riftCenterRankBonus) || (5 + Math.floor(Math.random() * 5)))));
             Battle.log('<span style="color:#c78cff; font-weight:bold;">亀裂の根源から強敵が現れた！</span>');
             for (let i = 0; i < total; i++) {
-                const enemy = Battle.createDeepNormalEnemy(riftFloor);
+                const enemyFloor = i === 1 ? riftFloor + centerRankBonus : riftFloor;
+                const enemy = Battle.createDeepNormalEnemy(enemyFloor);
                 if (!enemy) continue;
                 Battle.applyRiftEnemyBoost(enemy, multiplier);
                 enemy.name += total > 1 ? String.fromCharCode(65 + i) : '';
@@ -3870,6 +3874,7 @@ const Battle = {
                     rank: battleData.abyssBalanceFloor || battleData.encounterRank || floor,
                     rankMin: battleData.encounterRankMin,
                     rankMax: battleData.encounterRankMax,
+                    races: battleData.encounterRaces,
                     allowRare: false
                 });
             }
@@ -9026,12 +9031,6 @@ findNextActor: () => {
         } else {
 		    Battle.log(`${totalGold} Goldを獲得！`);
 		    Battle.log(`${totalExp} ポイントの経験値を 獲得した！`);
-        }
-        if (!isTrainingBattle && expRecipients.some(recipient => recipient.active && !recipient.alive)) {
-            Battle.log('<span style="color:#bbb;">戦闘不能の仲間は経験値を50%取得した。</span>');
-        }
-        if (!isTrainingBattle && expRecipients.some(recipient => !recipient.active)) {
-            Battle.log('<span style="color:#bbb;">控えの仲間は経験値を25%取得した。</span>');
         }
         if (guildPromotionMessage) {
             Battle.log(`<span style="color:#ffd56b; font-weight:bold;">${Battle.escapeHtml(guildPromotionMessage).replace(/\n/g, '<br>')}</span>`);

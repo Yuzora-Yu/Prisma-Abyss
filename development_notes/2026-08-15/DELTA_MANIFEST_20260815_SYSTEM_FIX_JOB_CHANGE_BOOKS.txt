@@ -1,0 +1,22 @@
+PRISMA ABYSS delta manifest — 2026-08-15 system fixes / job change books
+変更・作成したファイルは下記の19件です。
+
+battle.js
+canon/PRISMA_DEVELOPMENT_ROADMAP_v2.md
+database.js
+development_notes/2026-08-15/DELTA_MANIFEST_20260815_SYSTEM_FIX_JOB_CHANGE_BOOKS.txt
+development_notes/2026-08-15/reports/SYSTEM_FIX_JOB_CHANGE_BOOK_IMPLEMENTATION_20260815.md
+development_notes/2026-08-15/validation/SYSTEM_FIX_JOB_CHANGE_BOOK_CHECK_20260815.js
+development_notes/2026-08-15/validation/SYSTEM_FIX_JOB_CHANGE_BOOK_CHECK_20260815.log
+development_notes/2026-08-15/validation/SYSTEM_FIX_JOB_CHANGE_BOOK_REGRESSION_20260815.log
+development_notes/2026-08-15/validation/TOP_LEVEL_JS_NODE_CHECK_20260815_JOB_CHANGE_BOOKS.log
+docs/design/JOB_CHANGE_BOOK_CAREER_SYSTEM_20260815.md
+docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+dungeon.js
+items.js
+job_data.js
+main.js
+map.js
+menus_items.js
+monsters.js
+news.js

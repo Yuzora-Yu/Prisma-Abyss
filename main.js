@@ -159,12 +159,19 @@ class Player extends Entity {
             });
         }
 
-        // ★修正: 転生回数を考慮した「実効レベル」を計算してスキル習得判定に使用
+        // 職業スキルは「その職で実際に到達した表示Lv」まで復元する。
+        // 転職機能導入前データはjobProgressがないため、従来どおり実効Lvを互換フォールバックに使う。
+        // 別職で習得済みのスキルはdata.skillsから先に読み込んでいるため、転職後も失われない。
         const equivalentCycles = data.isMonsterAlly === true ? (data.monsterFusionCount || 0) : (data.reincarnationCount || 0);
         const effectiveLevel = data.level + (100 * equivalentCycles);
+        const jobDef = window.JobData?.getById?.(data.jobId) || window.JobData?.getByName?.(data.job) || null;
+        const trackedJobLevel = jobDef && data.jobProgress && Number.isFinite(Number(data.jobProgress[jobDef.id]))
+            ? Math.max(1, Math.min(100, Math.floor(Number(data.jobProgress[jobDef.id]))))
+            : null;
+        const jobSkillLevel = trackedJobLevel ?? effectiveLevel;
         const table = JOB_SKILLS[data.job];
         if (table) {
-            for (let lv = 1; lv <= effectiveLevel; lv++) {
+            for (let lv = 1; lv <= jobSkillLevel; lv++) {
                 if (table[lv]) this.learnSkill(table[lv]);
             }
         }
@@ -1514,6 +1521,8 @@ const App = {
     getExpectedStoryCharacterJob: (character, data = App.data) => {
         if (!character || typeof character !== 'object') return null;
         if (App.isMonsterAlly?.(character)) return character.job || character.name || null;
+        const transferJob = window.JobData?.getById?.(character.jobTransferJobId) || null;
+        if (transferJob) return transferJob.name;
         const id = Number(character.charId);
         const override = Number.isFinite(id) ? App.getStoryCharacterJobOverride(id, data) : null;
         if (override) return override;
@@ -1533,10 +1542,22 @@ const App = {
         if (!job || !JOB_SKILLS[job]) return { ok:false, reason:'job_missing' };
         const state = App.ensureStoryCharacterState(id);
         if (!state) return { ok:false, reason:'state_missing' };
+        App.ensureCharacterJobCareer?.(character);
         const beforeJob = String(character.job || '');
+        const beforeJobDef = App.getJobDefinitionByName?.(beforeJob);
+        const nextJobDef = App.getJobDefinitionByName?.(job);
         state.jobOverride = job;
         character.storyJobOverride = job;
         character.job = job;
+        character.jobId = nextJobDef?.id || character.jobId || null;
+        delete character.jobTransferJobId;
+        if (nextJobDef) {
+            if (!character.jobProgress || typeof character.jobProgress !== 'object' || Array.isArray(character.jobProgress)) character.jobProgress = {};
+            character.jobProgress[nextJobDef.id] = Math.max(Number(character.jobProgress[nextJobDef.id] || 0), Math.max(1, Math.floor(Number(character.level || 1))));
+            if (beforeJobDef?.id !== nextJobDef.id) {
+                App.recordCharacterJobHistory?.(character, nextJobDef.id, { source:'story', fromJobId:beforeJobDef?.id || null });
+            }
+        }
 
         const learnedSkillIds = [];
         if (options.syncSkillsThroughCurrentLevel !== false && !App.isMonsterAlly?.(character)) {
@@ -1813,7 +1834,7 @@ const App = {
             equips:hero.equips, config:hero.config, img:hero.img, customImage:hero.customImage
         };
         const resetKeys = [
-            'job','rarity','level','exp','sp','hp','mp','atk','def','spd','mag','mdef','hit','eva','cri',
+            'job','jobId','jobTransferJobId','jobHistory','jobProgress','rarity','level','exp','sp','hp','mp','atk','def','spd','mag','mdef','hit','eva','cri',
             'limitBreak','lbProgress','tree','alloc','skills','traits','disabledTraits','reincarnationCount','expMultiplierPct'
         ];
         resetKeys.forEach(key => {
@@ -3044,6 +3065,7 @@ const App = {
 		if (App.data.characters) {
 			App.data.characters.forEach(c => {
 				App.ensureCharacterBattleConfig(c);
+                App.ensureCharacterJobCareer?.(c);
 
 				// charId修正ロジック（既存）
 				if (c.charId) {
@@ -4130,6 +4152,157 @@ const App = {
         return App.jobNameAliases[name] || name;
     },
 
+    getJobDefinitionById: jobId => window.JobData?.getById?.(jobId) || null,
+
+    getJobDefinitionByName: jobName => {
+        const normalized = App.normalizeJobName(jobName);
+        return window.JobData?.getByName?.(normalized) || null;
+    },
+
+    isCurrentJob: (character, jobIdOrName) => {
+        if (!character || App.isMonsterAlly?.(character)) return false;
+        const expected = Number.isFinite(Number(jobIdOrName))
+            ? App.getJobDefinitionById(jobIdOrName)
+            : App.getJobDefinitionByName(jobIdOrName);
+        if (!expected) return false;
+        const current = App.getJobDefinitionById(character.jobId) || App.getJobDefinitionByName(character.job);
+        return Number(current?.id) === Number(expected.id);
+    },
+
+    ensureCharacterJobCareer: (character) => {
+        if (!character || typeof character !== 'object' || App.isMonsterAlly?.(character)) return null;
+        character.job = App.normalizeJobName(character.job || '');
+        const current = App.getJobDefinitionByName(character.job) || App.getJobDefinitionById(character.jobId);
+        if (!current) return null;
+        character.job = current.name;
+        character.jobId = current.id;
+        if (!character.jobProgress || typeof character.jobProgress !== 'object' || Array.isArray(character.jobProgress)) character.jobProgress = {};
+        if (!Number.isFinite(Number(character.jobProgress[current.id]))) {
+            const master = Number.isFinite(Number(character.charId)) ? DB.CHARACTERS.find(entry => Number(entry?.id) === Number(character.charId)) : null;
+            const masterJob = App.normalizeJobName(master?.job || '');
+            const hasDifferentStoryJob = !!character.storyJobOverride && App.normalizeJobName(character.storyJobOverride) !== masterJob;
+            const inferredLevel = !hasDifferentStoryJob && Math.max(0, Math.floor(Number(character.reincarnationCount) || 0)) > 0
+                ? 100
+                : Math.max(1, Math.min(100, Math.floor(Number(character.level || 1))));
+            character.jobProgress[current.id] = inferredLevel;
+        }
+        if (!Array.isArray(character.jobHistory)) character.jobHistory = [];
+        character.jobHistory = character.jobHistory.filter(entry => entry && Number.isFinite(Number(entry.jobId))).map(entry => {
+            const job = App.getJobDefinitionById(entry.jobId);
+            return { ...entry, jobName: job?.name || entry.jobName || '' };
+        });
+        if (character.jobHistory.length === 0) {
+            character.jobHistory.push({
+                jobId: current.id,
+                jobName: current.name,
+                source: 'baseline',
+                reincarnationCount: Math.max(0, Math.floor(Number(character.reincarnationCount) || 0))
+            });
+        }
+        const transferJob = App.getJobDefinitionById(character.jobTransferJobId);
+        if (!transferJob) delete character.jobTransferJobId;
+        return { currentJob:current, history:character.jobHistory, progress:character.jobProgress };
+    },
+
+    recordCharacterJobHistory: (character, jobId, options = {}) => {
+        const state = App.ensureCharacterJobCareer(character);
+        const job = App.getJobDefinitionById(jobId);
+        if (!state || !job) return null;
+        const entry = {
+            jobId: job.id,
+            jobName: job.name,
+            source: String(options.source || 'unknown'),
+            reincarnationCount: Math.max(0, Math.floor(Number(character.reincarnationCount) || 0))
+        };
+        if (Number.isFinite(Number(options.fromJobId))) entry.fromJobId = Number(options.fromJobId);
+        character.jobHistory.push(entry);
+        return entry;
+    },
+
+    noteCurrentJobProgress: (character) => {
+        const state = App.ensureCharacterJobCareer(character);
+        if (!state) return 0;
+        const level = Math.max(1, Math.min(100, Math.floor(Number(character.level || 1))));
+        const id = state.currentJob.id;
+        character.jobProgress[id] = Math.max(Number(character.jobProgress[id] || 0), level);
+        return character.jobProgress[id];
+    },
+
+    learnCurrentJobSkillsThroughLevel: (character, level = null) => {
+        const state = App.ensureCharacterJobCareer(character);
+        if (!state) return [];
+        const targetLevel = Math.max(1, Math.min(100, Math.floor(Number(level ?? character.level ?? 1))));
+        if (!Array.isArray(character.skills)) character.skills = [];
+        const known = new Set(character.skills.map(Number).filter(Number.isFinite));
+        const learned = [];
+        const table = JOB_SKILLS[state.currentJob.name] || {};
+        Object.entries(table).forEach(([levelKey, skillIdRaw]) => {
+            const learnLevel = Math.floor(Number(levelKey));
+            const skillId = Number(skillIdRaw);
+            if (!Number.isFinite(learnLevel) || learnLevel > targetLevel || !Number.isFinite(skillId) || known.has(skillId)) return;
+            if (Array.isArray(DB.SKILLS) && !DB.SKILLS.some(skill => Number(skill?.id) === skillId)) return;
+            character.skills.push(skillId);
+            known.add(skillId);
+            learned.push(skillId);
+        });
+        character.jobProgress[state.currentJob.id] = Math.max(Number(character.jobProgress[state.currentJob.id] || 0), targetLevel);
+        return learned;
+    },
+
+    changeJobByBook: (character, targetJobId, options = {}) => {
+        if (!character || typeof character !== 'object') return { ok:false, reason:'character_missing' };
+        if (App.isMonsterAlly?.(character)) return { ok:false, reason:'monster_ally' };
+        const targetJob = App.getJobDefinitionById(targetJobId);
+        if (!targetJob || !JOB_SKILLS[targetJob.name]) return { ok:false, reason:'job_missing' };
+        const state = App.ensureCharacterJobCareer(character);
+        if (!state) return { ok:false, reason:'current_job_missing' };
+        const displayedLevel = Math.max(1, Math.floor(Number(character.level || 1)));
+        const reincarnationCount = Math.max(0, Math.floor(Number(character.reincarnationCount) || 0));
+        const effectiveLevel = displayedLevel + reincarnationCount * 100;
+        if (displayedLevel !== 100 || effectiveLevel % 100 !== 0) return { ok:false, reason:'level_requirement', effectiveLevel };
+        if (Number(state.currentJob.id) === Number(targetJob.id)) return { ok:false, reason:'same_job' };
+
+        const beforeJob = state.currentJob;
+        character.job = targetJob.name;
+        character.jobId = targetJob.id;
+        character.jobTransferJobId = targetJob.id;
+        character.reincarnationCount = reincarnationCount + 1;
+        character.level = 1;
+        character.exp = 0;
+        if (!character.jobProgress || typeof character.jobProgress !== 'object' || Array.isArray(character.jobProgress)) character.jobProgress = {};
+        character.jobProgress[targetJob.id] = Math.max(Number(character.jobProgress[targetJob.id] || 0), 1);
+        App.recordCharacterJobHistory(character, targetJob.id, { source:'book', fromJobId:beforeJob.id });
+        const learnedSkillIds = App.learnCurrentJobSkillsThroughLevel(character, 1);
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        if (typeof Menu !== 'undefined' && typeof Menu.renderPartyBar === 'function') Menu.renderPartyBar();
+        return {
+            ok:true,
+            beforeJobId:beforeJob.id,
+            beforeJob:beforeJob.name,
+            jobId:targetJob.id,
+            job:targetJob.name,
+            reincarnationCount:character.reincarnationCount,
+            learnedSkillIds
+        };
+    },
+
+    migrateJobCareerV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260815_jobCareerV1',
+        () => {
+            if (!Array.isArray(data?.characters)) return { changed:false, count:0 };
+            let count = 0;
+            data.characters.forEach(character => {
+                if (!character || App.isMonsterAlly?.(character)) return;
+                const before = JSON.stringify({ jobId:character.jobId, history:character.jobHistory, progress:character.jobProgress, transfer:character.jobTransferJobId });
+                App.ensureCharacterJobCareer(character);
+                const after = JSON.stringify({ jobId:character.jobId, history:character.jobHistory, progress:character.jobProgress, transfer:character.jobTransferJobId });
+                if (before !== after) count++;
+            });
+            return { changed:count > 0, count };
+        }
+    ),
+
     migrateJobNamesV1: (data = App.data) => App.runOneTimeCompatibilityMigration(
         data,
         '20260815_jobNamesV1',
@@ -4590,9 +4763,11 @@ const App = {
         const initialLevel = Math.max(1, Math.min(100, Math.max(Number.isFinite(requestedInitialLevel) ? requestedInitialLevel : 1, inheritedLevel)));
         const existing = App.data.characters.find(c => c.charId === charId);
         const storyJobOverride = App.getStoryCharacterJobOverride(charId);
-        if (existing && storyJobOverride) {
-            existing.storyJobOverride = storyJobOverride;
-            existing.job = storyJobOverride;
+        if (existing) {
+            const expectedExistingJob = App.getExpectedStoryCharacterJob(existing);
+            if (storyJobOverride) existing.storyJobOverride = storyJobOverride;
+            if (expectedExistingJob) existing.job = expectedExistingJob;
+            App.ensureCharacterJobCareer?.(existing);
         }
         const applyCarryover = (ally) => {
             if (!ally || !carryover) return ally;
@@ -4675,6 +4850,7 @@ const App = {
             reincarnationCount: 0,
             expMultiplierPct: Math.max(1, Math.round(Number(options.expMultiplierPct ?? master.expMultiplierPct ?? 100) || 100))
         };
+        App.ensureCharacterJobCareer?.(saveAlly);
 
         if (typeof PassiveSkill !== 'undefined' && PassiveSkill.applyLevelUpTraits) {
             PassiveSkill.applyLevelUpTraits(saveAlly);
@@ -7884,6 +8060,7 @@ load: () => {
         const reincMult = App.getReincarnationGrowthMultiplier(charData);
 
         charData.level++;
+        App.noteCurrentJobProgress?.(charData);
 
         // DBの基礎値を取得
         const master = (window.CHARACTERS_DATA || []).find(c => c.id === charData.charId) || charData;
@@ -9148,6 +9325,7 @@ load: () => {
         App.ensureStoryCharacterStates(data);
         App.migrateJobNamesV1(data);
         App.migrateAlanLightMagicKnightAwakeningV1(data);
+        App.migrateJobCareerV1(data);
 
         // 旧開発版では焼け焦げたペンダントがNEW GAME初期所持に混入していた。
         // 崩落前のプロローグ途中データだけを対象に除去し、5年後へ進行済みのセーブは保持する。
@@ -9536,6 +9714,10 @@ load: () => {
             mapId: best.mapId || null,
             name: best.name || 'フィールド',
             rank: Math.max(1, Number(best.rank || best.encounterRank || 1) || 1),
+            encounterRankMin: Number.isFinite(Number(best.encounterRankMin)) ? Number(best.encounterRankMin) : null,
+            encounterRankMax: Number.isFinite(Number(best.encounterRankMax)) ? Number(best.encounterRankMax) : null,
+            encounterRaces: Array.isArray(best.encounterRaces) ? [...best.encounterRaces] : [],
+            rareEncounterMonsterIds: Array.isArray(best.rareEncounterMonsterIds) ? [...best.rareEncounterMonsterIds] : [],
             monsters: null
         };
     },
@@ -9599,10 +9781,11 @@ load: () => {
             abyssBalanceFloor: mapEncounter?.balanceFloor || null,
             useHabitatEncounters: !!(mapEncounter?.useHabitatEncounters || isSeaEncounter || worldEncounter?.mapId),
             encounterRank: mapEncounter?.encounterRank || (worldEncounter ? worldEncounter.rank : null),
-            encounterRankMin: Number.isFinite(Number(mapEncounter?.encounterRankMin)) ? Number(mapEncounter.encounterRankMin) : null,
-            encounterRankMax: Number.isFinite(Number(mapEncounter?.encounterRankMax)) ? Number(mapEncounter.encounterRankMax) : null,
+            encounterRankMin: Number.isFinite(Number(mapEncounter?.encounterRankMin)) ? Number(mapEncounter.encounterRankMin) : (Number.isFinite(Number(worldEncounter?.encounterRankMin)) ? Number(worldEncounter.encounterRankMin) : null),
+            encounterRankMax: Number.isFinite(Number(mapEncounter?.encounterRankMax)) ? Number(mapEncounter.encounterRankMax) : (Number.isFinite(Number(worldEncounter?.encounterRankMax)) ? Number(worldEncounter.encounterRankMax) : null),
+            encounterRaces: Array.isArray(mapEncounter?.encounterRaces) ? [...mapEncounter.encounterRaces] : (Array.isArray(worldEncounter?.encounterRaces) ? [...worldEncounter.encounterRaces] : []),
             rareEncounterAll: mapEncounter?.rareEncounterAll === true,
-            rareEncounterMonsterIds: Array.isArray(mapEncounter?.rareEncounterMonsterIds) ? [...mapEncounter.rareEncounterMonsterIds] : [],
+            rareEncounterMonsterIds: Array.isArray(mapEncounter?.rareEncounterMonsterIds) ? [...mapEncounter.rareEncounterMonsterIds] : (Array.isArray(worldEncounter?.rareEncounterMonsterIds) ? [...worldEncounter.rareEncounterMonsterIds] : []),
 			monsters: Array.isArray(mapEncounter?.monsters) ? [...mapEncounter.monsters] : null,
             exactMonsters: !!mapEncounter?.exactMonsters,
             memoryRealm: !!mapEncounter?.memoryRealm,

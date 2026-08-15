@@ -1,4 +1,41 @@
 /* job_data.js */
+
+// 職業IDはセーブ・転職の書・将来の職業特性判定で共有する固定ID。名称変更時もIDは変更しない。
+window.JOB_MASTER_DATA = Object.freeze([
+    Object.freeze({ id: 1, name: "戦士" }),
+    Object.freeze({ id: 2, name: "僧侶" }),
+    Object.freeze({ id: 3, name: "魔法使い" }),
+    Object.freeze({ id: 4, name: "武闘家" }),
+    Object.freeze({ id: 5, name: "斥候" }),
+    Object.freeze({ id: 6, name: "踊り子" }),
+    Object.freeze({ id: 7, name: "魔法剣士" }),
+    Object.freeze({ id: 8, name: "賢者" }),
+    Object.freeze({ id: 9, name: "侍" }),
+    Object.freeze({ id: 10, name: "剣闘士" }),
+    Object.freeze({ id: 11, name: "エンターテイナー" }),
+    Object.freeze({ id: 12, name: "星詠師" }),
+    Object.freeze({ id: 13, name: "聖拳士" }),
+    Object.freeze({ id: 14, name: "聖騎士" }),
+    Object.freeze({ id: 15, name: "狩人" }),
+    Object.freeze({ id: 16, name: "魔弓使い" }),
+    Object.freeze({ id: 17, name: "光魔剣士" }),
+    Object.freeze({ id: 18, name: "忍者" }),
+    Object.freeze({ id: 19, name: "竜騎士" }),
+    Object.freeze({ id: 20, name: "聖女" }),
+    Object.freeze({ id: 21, name: "魔王" }),
+    Object.freeze({ id: 22, name: "神" }),
+    Object.freeze({ id: 23, name: "勇者" })
+]);
+
+window.JobData = Object.freeze({
+    getAll: () => window.JOB_MASTER_DATA.slice(),
+    getById: (id) => window.JOB_MASTER_DATA.find(job => Number(job.id) === Number(id)) || null,
+    getByName: (name) => {
+        const normalized = String(name || "");
+        return window.JOB_MASTER_DATA.find(job => job.name === normalized) || null;
+    }
+});
+
 window.JOB_SKILLS_DATA = {
     "戦士": {
         "2": 104,
@@ -648,3 +685,4 @@ window.JOB_SKILLS_DATA = {
     }
 };
 window.JOB_SKILLS = window.JOB_SKILLS_DATA;
+window.refreshJobChangeBookItemMetadata?.();

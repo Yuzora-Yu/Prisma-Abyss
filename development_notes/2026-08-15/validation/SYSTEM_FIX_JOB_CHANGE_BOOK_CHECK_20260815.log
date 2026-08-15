@@ -1,0 +1,63 @@
+SYSTEM_FIX_JOB_CHANGE_BOOK_CHECK: 62/62 PASS
+01. PASS Rexnote B1 has explicit estate exit point
+02. PASS procedural cached exit gets template exit point
+03. PASS new procedural exit link embeds exit point
+04. PASS dead ally 50 percent result text removed
+05. PASS reserve ally 25 percent result text removed
+06. PASS reward rate logic remains
+07. PASS reincarnation fruit random chest opt-out
+08. PASS dungeon chest filter honors randomChestDrop
+09. PASS catalog chest filter honors randomChestDrop
+10. PASS angel trial label HP
+11. PASS angel trial label MP
+12. PASS angel trial label 攻撃力
+13. PASS angel trial label 防御力
+14. PASS angel trial label 魔力
+15. PASS angel trial label 魔法防御
+16. PASS angel trial label 素早さ
+17. PASS angel trial stores 5-9 center rank bonus
+18. PASS rift stores 5-9 center rank bonus
+19. PASS angel second enemy gets center bonus
+20. PASS rift second enemy gets center bonus
+21. PASS slime island zone exists
+22. PASS slime island is exact 3-tile rect
+23. PASS slime island normal rank range 1-140
+24. PASS slime island race limited to slime
+25. PASS slime island metal rares exact
+26. PASS slime island has normal slime candidates
+27. PASS all normal island candidates are slime
+28. PASS all normal island candidates are rank <=140
+29. PASS Prism King excluded from island rares
+30. PASS world encounter profile carries race filters
+31. PASS battle encounter generation consumes race filters
+32. PASS 23 stable job definitions
+33. PASS job IDs unique
+34. PASS job names unique
+35. PASS 23 transfer books
+36. PASS transfer book IDs unique
+37. PASS all item IDs remain globally unique
+38. PASS transfer books link by jobId
+39. PASS database refreshes job book metadata after masters load
+40. PASS transfer books have no acquisition route yet
+41. PASS transfer books are consumable field items
+42. PASS job trait layer remains unimplemented
+43. PASS future trait check can use current job only
+44. PASS career baseline current job is warrior
+45. PASS career baseline records history
+46. PASS transfer book rejects below Lv100
+47. PASS transfer book rejects same job
+48. PASS transfer book changes job
+49. PASS transfer book reincarnates at same time
+50. PASS old job skill persists after transfer
+51. PASS new job Lv1 skill learned
+52. PASS new job high-level skill not auto-learned
+53. PASS job history appends transfer
+54. PASS new job progress starts at Lv1
+55. PASS effective level formula still gives multiple of 100 before transfer rule
+56. PASS player transfer overrides story/master job on reload correction
+57. PASS Player reconstruction keeps previous-job skill
+58. PASS Player reconstruction keeps new-job Lv1 skill
+59. PASS Player reconstruction does not grant new-job Lv100 skill
+60. PASS transfer books are growth-tab items
+61. PASS transfer confirmation warns reincarnation
+62. PASS transfer failure message explains Lv100

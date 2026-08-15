@@ -1020,7 +1020,10 @@ function getEncounterCandidates(options = {}) {
   const hasRankRange = Number.isFinite(rankMinRaw) || Number.isFinite(rankMaxRaw);
   const rankMin = Number.isFinite(rankMinRaw) ? Math.max(1, Math.floor(rankMinRaw)) : 1;
   const rankMax = Number.isFinite(rankMaxRaw) ? Math.max(rankMin, Math.floor(rankMaxRaw)) : Infinity;
+  const raceSet = new Set((Array.isArray(options.races) ? options.races : (options.race ? [options.race] : []))
+    .map(value => String(value || '').trim()).filter(Boolean));
   return NORMAL_MONSTER_BASES.filter((monster) => {
+    if (raceSet.size > 0 && !raceSet.has(String(monster?.race || ''))) return false;
     if (abyssFloor > 0) return matchesFloorRanges(monster.abyssFloors, abyssFloor) && Array.isArray(monster.abyssFloors) && monster.abyssFloors.length > 0;
     if (hasRankRange) {
       const rank = Math.max(1, Number(monster?.rank || monster?.minF || 1));

@@ -282,8 +282,8 @@ const Dungeon = {
         if (!item || Number(item.id) <= 0) return false;
         const type = String(item.type || '');
         return type !== '貴重品' && type !== '乗り物' && type !== '移動'
-            && type !== 'スキル書' && type !== '特性書'
-            && item.medalOnly !== true && item.abyssDrop !== false;
+            && type !== 'スキル書' && type !== '特性書' && type !== '転職の書'
+            && item.medalOnly !== true && item.abyssDrop !== false && item.randomChestDrop !== false;
     },
 
     // アイテムIDはマップエディタやセーブ復元経由で文字列になる可能性があるため、
@@ -1733,7 +1733,14 @@ const Dungeon = {
         const runId = Math.max(1, Number(progress.fixedProceduralRunIds[areaKey]));
         const cacheKey = `${areaKey}:R${runId}:F${Number(floorNo)}`;
         const cached = progress.fixedProceduralFloors[cacheKey];
-        if (Dungeon.isValidFixedProceduralFloor(cached)) return JSON.parse(JSON.stringify(cached));
+        if (Dungeon.isValidFixedProceduralFloor(cached)) {
+            const restored = JSON.parse(JSON.stringify(cached));
+            if (template.proceduralEntryReturnsOutside === true && template.proceduralExitPoint) {
+                const exitLink = Array.isArray(restored.floorLinks) ? restored.floorLinks.find(link => link?.to === 'EXIT') : null;
+                if (exitLink) exitLink.exitPoint = JSON.parse(JSON.stringify(template.proceduralExitPoint));
+            }
+            return restored;
+        }
 
         const previousDungeonData = JSON.parse(JSON.stringify(App.data.dungeon || {}));
         const previousDungeonState = {
@@ -1878,7 +1885,10 @@ const Dungeon = {
             chests,
             floorLinks: [
                 template.proceduralEntryReturnsOutside === true
-                    ? { x: entryPoint.x, y: entryPoint.y, to: 'EXIT', label: template.proceduralExitLabel || '外へ戻る' }
+                    ? {
+                        x: entryPoint.x, y: entryPoint.y, to: 'EXIT', label: template.proceduralExitLabel || '外へ戻る',
+                        ...(template.proceduralExitPoint ? { exitPoint: JSON.parse(JSON.stringify(template.proceduralExitPoint)) } : {})
+                    }
                     : { x: entryPoint.x, y: entryPoint.y, toFloor: Number(floorNo) - 1, label: '前の階へ' },
                 { x: exitPoint.x, y: exitPoint.y, toFloor: Number(floorNo) + 1, label: '次の階へ' }
             ]
@@ -3579,6 +3589,7 @@ const Dungeon = {
                 enemyCount:Math.max(1, Number(master.enemyCount || 3)),
                 statMultiplier:Math.max(1, Number(master.statMultiplier || 1.35)),
                 rewardCount:Math.max(1, Number(master.rewardCount || 3)),
+                centerRankBonus:5 + Math.floor(Math.random() * 5),
                 enemyBoost:{
                     nameSuffix:'・試練',
                     elmRes:{ [resistElm]:80 },
@@ -3599,6 +3610,7 @@ const Dungeon = {
         const members = (App.data.party || []).map(uid => App.getChar ? App.getChar(uid) : null).filter(Boolean);
         if (members.length === 0) return [];
         const statKeys = ['hp', 'mp', 'atk', 'def', 'mag', 'mdef', 'spd'];
+        const statLabels = { hp:'HP', mp:'MP', atk:'攻撃力', def:'防御力', mag:'魔力', mdef:'魔法防御', spd:'素早さ' };
         const logs = [];
         const count = Math.max(1, Number(trial.rewardCount || 1));
         for (let i = 0; i < count; i++) {
@@ -3606,7 +3618,7 @@ const Dungeon = {
             const key = statKeys[Math.floor(Math.random() * statKeys.length)];
             const amount = key === 'hp' ? (3 + Math.floor(Math.random() * 5)) : (key === 'mp' ? (2 + Math.floor(Math.random() * 4)) : (1 + Math.floor(Math.random() * 3)));
             char[key] = Number(char[key] || 0) + amount;
-            logs.push(`<span style="color:#fff3a6;">${char.name}の${key.toUpperCase()}が${amount}上がった！</span>`);
+            logs.push(`<span style="color:#fff3a6;">${char.name}の${statLabels[key] || key}が${amount}上がった！</span>`);
         }
         if (App.data.battle) {
             App.data.battle.angelTrialOutcome = {
@@ -4618,6 +4630,7 @@ const Dungeon = {
                 riftDisplayFloor: targetFloor,
                 riftRewardId: App.data?.dungeon?.abyssRift?.rewardId || null,
                 riftEnemyCount: Math.max(1, Number(riftMaster.enemyCount || 3)),
+                riftCenterRankBonus: 5 + Math.floor(Math.random() * 5),
                 riftStatMultiplier: Math.max(1, Number(riftMaster.statMultiplier || 1.25)),
                 riftRewardPlus: Math.max(0, Number(riftMaster.rewardPlus || 3)),
             };

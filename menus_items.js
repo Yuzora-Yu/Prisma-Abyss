@@ -9,7 +9,7 @@ const MenuItems = {
     getUseSeKey: (item) => {
         if (!item) return null;
         if (item.type === '乗り物' || item.type === '移動' || item.id === 110 || item.name === 'スカイプリズム') return 'ui_item_move';
-        if ((Number(item.id) >= 100 && Number(item.id) <= 107) || String(item.type || '').includes('育成') || item.type === 'スキル書' || item.type === '特性書') return 'ui_item_growth';
+        if ((Number(item.id) >= 100 && Number(item.id) <= 107) || String(item.type || '').includes('育成') || item.type === '転職の書' || item.type === 'スキル書' || item.type === '特性書') return 'ui_item_growth';
         if (item.fieldGroup || item.effectKind === 'camp' || String(item.type || '').includes('回復') || String(item.type || '').includes('蘇生')) return 'ui_item_heal';
         return null;
     },
@@ -49,7 +49,7 @@ const MenuItems = {
     isGrowth: (def) => {
         if (!def) return false;
         const type = String(def.type || '');
-        return type.includes('育成') || type === 'スキル書' || type === '特性書';
+        return type.includes('育成') || type === '転職の書' || type === 'スキル書' || type === '特性書';
     },
 
     getOwnedItems: () => {
@@ -199,6 +199,11 @@ const MenuItems = {
         if (Number(item.id) === Number(window.PRISMA_DIVINE_ANVIL_ITEM_ID || 599998)) {
             MenuItems.selectedItem = item;
             MenuItems.openDivineAnvilEquipmentSelection(item);
+        }
+        // 転職の書は通常仲間を対象にし、Lv100到達時だけ転職＋転生を行う。
+        else if (item.type === '転職の書' && Number(item.jobId) > 0) {
+            MenuItems.selectedItem = item;
+            MenuItems.renderTargetList();
         }
         // スキル書は通常仲間の専用2枠、仲間モンスターの合計8枠を専用UIで管理する。
         else if (item.type === 'スキル書' || Number(item.skillId) >= 100) {
@@ -747,14 +752,37 @@ const MenuItems = {
             return;
         }
 
-        Menu.confirm(`${target.name} に ${item.name} を使いますか？`, () => {
+        const jobBookDef = item.type === '転職の書' ? App.getJobDefinitionById?.(item.jobId) : null;
+        const confirmText = jobBookDef
+            ? `${target.name}を「${jobBookDef.name}」へ転職させますか？\n転職と同時に転生し、Lv1に戻ります。`
+            : `${target.name} に ${item.name} を使いますか？`;
+
+        Menu.confirm(confirmText, () => {
             let success = false;
             let msg = "";
             const s = App.calcStats(target);
             const master = DB.CHARACTERS.find(c => c.id === target.charId) || target;
 
+            // --- 転職の書：職業IDと職歴を更新し、同時に転生する ---
+            if (item.type === '転職の書' && Number(item.jobId) > 0) {
+                const result = App.changeJobByBook?.(target, item.jobId, { save:false }) || { ok:false, reason:'system_missing' };
+                if (!result.ok) {
+                    const reasonMessages = {
+                        monster_ally: '仲間モンスターには転職の書を使用できません。',
+                        level_requirement: '転職の書はLv100到達時にのみ使用できます。',
+                        same_job: '現在と同じ職業の転職の書は使用できません。',
+                        job_missing: '転職先の職業データを確認できません。',
+                        current_job_missing: '現在の職業データを確認できません。',
+                        system_missing: '転職処理を利用できません。'
+                    };
+                    Menu.msg(reasonMessages[result.reason] || 'この転職の書は使用できません。');
+                    return;
+                }
+                success = true;
+                msg = `${target.name}は ${result.job}へ転職した！\nそのまま転生し、レベル1に戻った！\n(転生回数: ${result.reincarnationCount}回目)`;
+            }
             // --- A. 通常の回復アイテム処理 ---
-            if(item.type === 'HP回復') {
+            else if(item.type === 'HP回復') {
                 if(target.currentHp >= s.maxHp) { Menu.msg("HPは満タンです"); return; }
                 target.currentHp = Math.min(s.maxHp, (target.currentHp || 0) + item.val);
                 success = true; msg = `${target.name}は回復した！`;
@@ -822,6 +850,8 @@ const MenuItems = {
                             Menu.msg("レベルが不足しており使用できません");
                             success = false;
                         } else {
+                            App.ensureCharacterJobCareer?.(target);
+                            App.noteCurrentJobProgress?.(target);
                             target.level = 1;
                             target.exp = 0;
                             target.reincarnationCount = (target.reincarnationCount || 0) + 1;
