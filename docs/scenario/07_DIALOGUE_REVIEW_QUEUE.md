@@ -1038,3 +1038,96 @@ Updated: 2026-08-13
 - source: `development_notes/2026-08-13/scenario/REXNOTE_BASEMENT_PHASE3_APPROVED_20260813.md`
 - compatibility: `20260813_rexnoteBasementRouteV1`
 - validation: 同梱validatorは使用せず、構文・ID・MAP到達性・flag連鎖を個別確認する。
+
+## DR-20260815-cycle-crystal-octaprism-realignment
+
+Status: pending  
+Created: 2026-08-15
+
+### Target
+- file: `story.js` / `items.js` / `battle.js` / `item_runtime.js`
+- legacy script key: `ABYSS_SPIRIT_TRIAL_ALL_COMPLETE`
+- legacy event key: `abyss_spirit_trials_octaprism_grant`
+- map / area: 六精霊試練各地 → 結晶樹の秘跡
+- related item: 701008
+- source proposal: `docs/scenario/44_CYCLE_CRYSTAL_RITUAL_REALIGNMENT_PROPOSAL_20260815.md`
+
+### Story timing
+深淵編・六精霊巡礼完了後、最終決戦前。
+
+### Speakers
+- ミネルバ
+- ルーナ
+- リュシオン
+- システム
+
+### Current text
+```text
+リュシオン：
+深淵の混沌へ抗う時、その光は六精霊の道を結びます。
+受け取りなさい――オクタプリズマを。
+
+システム：
+焼け焦げたペンダントは、澄んだ光を宿す結晶へと姿を変えた。
+光結晶のペンダントと、オクタプリズマを手に入れた！
+```
+
+### Concern
+- 2026-08-04時点の承認済み旧設計だが、後発 `PRISMA_SCENARIO_CANON_MASTER_v8.md` §47 が構造を上書きしている。
+- 最新正本では六精霊試練直後にリュシオンが完成品を授与しない。
+- 結晶樹へ戻り、ミネルバが循環の儀を主導する。
+- ルーナ／焼け焦げたペンダント／リュシオンの神性痕跡が共鳴し、人間の到達した循環理論へ神が立ち会う。
+- 名称も「オクタプリズマ」から「輪廻の結晶」へ変更される。
+- 単純な固有名詞置換だけではcanon不整合が残る。
+
+### Why it matters
+最終回答である「統合ではなく循環」を、
+神が便利な完成品として渡すイベントにしてしまうと、
+ミネルバの研究者としての役割と、人間側が自分で答えへ到達した意味が弱くなる。
+
+### Option A: 現行維持
+- 2026-08-04承認済み本文と即時grant構造を維持。
+- 最新canon §47とは不一致が残る。
+
+### Option B: 軽微修正
+- 「オクタプリズマ」だけ「輪廻の結晶」へ置換。
+- event位置・生成主体は現行のまま。
+- save互換リスクは低いが、物語構造の不一致は解消しない。
+
+### Option C: 大幅修正
+- 六精霊完了時は六片が揃ったことだけ示す。
+- 結晶樹へ戻る目的を追加。
+- ミネルバが六片を環状配置し循環の儀を主導。
+- ルーナと焼け焦げたペンダントが共鳴。
+- リュシオンは人間側の理論へ立ち会い、残った神性を返す／支える。
+- その結果として「輪廻の結晶」Item 701008を取得。
+- 内部 `octaprism*` keyは既存save互換のため維持。
+
+### Codex recommendation
+- recommended option: Option C
+- reason: canon v8 §47と開発者core thoughtsの「統合ではなく循環」「ミネルバ主導」を最も自然に反映できる。
+- confidence: high
+
+### Implementation impact
+- scenario Markdown承認後にruntime変更が必要。
+- `story.js`: grant eventの移設、新script/event。
+- `story_logic.js`: trial complete と grant commit の分離。
+- `main.js`: 旧migration維持＋非退行互換。
+- `items.js`: player-facing名称／説明。
+- `battle.js`: player-facing log。
+- `item_runtime.js`: player-facing messageまたはdead branch整理。
+- `news.js`: 実装日レコードへ追記。
+- 内部 `octaprism*` function/state/migration IDは当面renameしない。
+
+### User decision
+- decision: undecided
+- selected option:
+- user notes:
+- approved date:
+
+### Implementation tracking
+- implemented file:
+- implemented script key:
+- implemented date:
+- validation:
+

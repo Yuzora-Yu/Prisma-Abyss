@@ -358,8 +358,8 @@ Status: **inventory / no automatic replacement**
 |335|ui_html_text|`battle.js:1841`|html/template text|闇の大精霊の支援！ 深淵王の全能力が低下した！|（未提案・レビュー待ち）|inventory_only|
 |336|ui_html_text|`battle.js:1859`|html/template text|雷の大精霊の支援！ 深淵王へ${total}ダメージを与え、守備力を低下させた！|（未提案・レビュー待ち）|inventory_only|
 |337|ui_html_text|`battle.js:1861`|html/template text|炎の大精霊の支援！ 深淵王へ${total}ダメージ！|（未提案・レビュー待ち）|inventory_only|
-|338|ui_html_text|`battle.js:2388`|html/template text|オクタプリズマが六精霊の道を開き、主人公の混沌属性耐性を90%まで高めた！|（未提案・レビュー待ち）|inventory_only|
-|339|ui_html_text|`battle.js:2389`|html/template text|オクタプリズマが輝き、六精霊が戦いを見守っている。|（未提案・レビュー待ち）|inventory_only|
+|338|ui_html_text|`battle.js:2639`|html/template text|オクタプリズマが六精霊の道を開き、主人公の混沌属性耐性を90%まで高めた！|輪廻の結晶が巡り、六精霊の加護がアルスを混沌から守る！|proposal_pending_20260815|
+|339|ui_html_text|`battle.js:2640`|html/template text|オクタプリズマが輝き、六精霊が戦いを見守っている。|輪廻の結晶の六色が巡り、精霊たちの気配が戦場を満たした。|proposal_pending_20260815|
 |340|ui_html_text|`battle.js:2398`|html/template text|まものの むれに ふいうちを うけた！|（未提案・レビュー待ち）|inventory_only|
 |341|ui_html_text|`battle.js:2400`|html/template text|まものの むれを さきに みつけた！|（未提案・レビュー待ち）|inventory_only|
 |342|ui_html_text|`battle.js:3198`|html/template text|天使の試練を担う強敵が現れた！|（未提案・レビュー待ち）|inventory_only|
@@ -1724,3 +1724,8 @@ Status: **inventory / no automatic replacement**
 |1698|ui_description|`menus_config.js:196`|save/settings menu|未取得のゲーム画像をブラウザへ保存|（2026-08-14役割明確化）|new_copy_inventory|
 |1699|ui_confirm|`main.html:286`|new game overwrite|はじめから開始すると、現在のオートセーブは即時上書きされます。 / 手動セーブNo.1～20は変更されません。 / 新しい冒険を始めますか？|（既存文言の枠数更新）|approved_rewrite|
 |1700|ui_confirm|`main.html:303`|auto-save delete|現在のオートセーブを削除しますか？ / 手動セーブNo.1～20は削除されません。|（既存文言の枠数更新）|approved_rewrite|
+
+|1701|item_name|`items.js:6978`|Item 701008|オクタプリズマ|輪廻の結晶|proposal_pending_20260815|
+|1702|item_description|`items.js:6981`|Item 701008|六つの大精霊と光の神の加護を宿す結晶。所持していると、深淵王アゼルガラグとの戦いで真価を発揮する。|六つの属性が互いへ役割を渡し続ける循環を封じた結晶。深淵の「統合」に抗う力を秘める。|proposal_pending_20260815|
+|1703|ui_battle_log|`item_runtime.js:214`|Item 701008 special message|オクタプリズマは使用せず、所持しているだけでアゼルガラグ戦を支援する。|輪廻の結晶は道具として使うものではない。六つの光は、深淵王との戦いで巡り続ける。|proposal_pending_20260815|
+|1704|story_system|`story.js:8645`|ABYSS_SPIRIT_TRIAL_ALL_COMPLETE|焼け焦げたペンダントは、澄んだ光を宿す結晶へと姿を変えた。 / 光結晶のペンダントと、オクタプリズマを手に入れた！|結晶樹の循環の儀へ移設し、「輪廻の結晶」を手に入れた。へ再構成。詳細は `44_CYCLE_CRYSTAL_RITUAL_REALIGNMENT_PROPOSAL_20260815.md`。|proposal_pending_20260815|
