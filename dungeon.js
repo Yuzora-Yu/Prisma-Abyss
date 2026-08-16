@@ -1202,8 +1202,10 @@ const Dungeon = {
                 if (x >= 0) resolvedTarget = { x, y };
             }
         }
-        Field.x = resolvedTarget?.x ?? (nextDef.entryPoint?.x || 1);
-        Field.y = resolvedTarget?.y ?? (nextDef.entryPoint?.y || 1);
+        const preferredTarget = resolvedTarget || nextDef.entryPoint || { x: 1, y: 1 };
+        const safeTarget = Field.resolveSafeLocalSpawn?.(nextDef, preferredTarget, nextDef.entryPoint) || preferredTarget;
+        Field.x = Number(safeTarget.x);
+        Field.y = Number(safeTarget.y);
         App.data.location.x = Field.x;
         App.data.location.y = Field.y;
         Dungeon.rollTrialAngelSpawn({ fixed: true });
@@ -1994,8 +1996,10 @@ const Dungeon = {
             || ((options.entryKey && areaDef.entryPoints && areaDef.entryPoints[options.entryKey])
                 ? areaDef.entryPoints[options.entryKey]
                 : (areaDef.entryPoint || ((Number(baseDef?.entryFloor || 1) === startFloor && baseDef?.entryPoint) ? baseDef.entryPoint : null)));
-        Field.x = selectedEntry ? selectedEntry.x : 1;
-        Field.y = selectedEntry ? selectedEntry.y : 1;
+        const preferredEntry = selectedEntry || { x: 1, y: 1 };
+        const safeEntry = Field.resolveSafeLocalSpawn?.(areaDef, preferredEntry, areaDef.entryPoint) || preferredEntry;
+        Field.x = Number(safeEntry.x);
+        Field.y = Number(safeEntry.y);
         App.data.location.x = Field.x;
         App.data.location.y = Field.y;
         Dungeon.rollTrialAngelSpawn({ fixed: true });
@@ -2059,18 +2063,26 @@ const Dungeon = {
         if (typeof FIXED_DUNGEON_MAPS !== 'undefined' && FIXED_DUNGEON_MAPS[areaKey]) {
             Dungeon.floor = App.data.progress.floor || 1;
             Field.currentMapData = Dungeon.getFixedFloorDef(areaKey, Dungeon.floor);
-            const restoredX = Number(App.data?.location?.x);
-            const restoredY = Number(App.data?.location?.y);
-            const restoredTile = String(Field.currentMapData?.tiles?.[restoredY]?.[restoredX] || 'W').toUpperCase();
-            const blockedTiles = new Set(['W', ...(Array.isArray(Field.currentMapData?.impassableTiles) ? Field.currentMapData.impassableTiles : [])]
-                .map(tile => String(tile || '').toUpperCase()));
-            if (Field.currentMapData?.generatedFromAbyssLogic && (Field.currentMapData.proceduralEntryRepairRequired === true || blockedTiles.has(restoredTile))) {
-                const safeEntry = Field.currentMapData.entryPoint || { x: 1, y: 1 };
+            const restoredPoint = {
+                x: Number(App.data?.location?.x),
+                y: Number(App.data?.location?.y)
+            };
+            const requiresRepair = Field.currentMapData?.proceduralEntryRepairRequired === true
+                || !Field.isSafeLocalSpawnCell?.(restoredPoint.x, restoredPoint.y, Field.currentMapData);
+            if (requiresRepair) {
+                const safeEntry = Field.resolveSafeLocalSpawn?.(
+                    Field.currentMapData,
+                    restoredPoint,
+                    Field.currentMapData.entryPoint || { x: 1, y: 1 }
+                ) || Field.currentMapData.entryPoint || { x: 1, y: 1 };
                 Field.x = Number(safeEntry.x);
                 Field.y = Number(safeEntry.y);
                 App.data.location.x = Field.x;
                 App.data.location.y = Field.y;
                 App.save();
+            } else {
+                Field.x = restoredPoint.x;
+                Field.y = restoredPoint.y;
             }
             if (typeof Dungeon.resetFixedHunterStateForCurrentMap === 'function') Dungeon.resetFixedHunterStateForCurrentMap();
             App.changeScene('field');
@@ -3953,7 +3965,7 @@ const Dungeon = {
     getFloorArrivalMessage: () => {
         const floor = Number(Dungeon.floor || App.data?.progress?.floor || 0);
         const lines = [Dungeon.isMemoryRealm()
-            ? `追憶の魔境 ${floor}階に到達した（Rank${Dungeon.getBalanceFloor(floor, 'memory')}相当）`
+            ? `追憶の魔境 ${floor}階に到達した（Rank ${Dungeon.getBalanceFloor(floor, 'memory')}相当）`
             : `地下 ${floor} 階に到達した`];
 
         if (Dungeon.isBossFloor()) {
@@ -5140,10 +5152,10 @@ const Dungeon = {
             const rank = floor === 10 ? 100 : 110;
             const cost = floor === 10 ? 50000 : 100000;
             return [
-                { x:3, y:4, type:'shop', shopType:'item', shopRank:rank, title:`追憶の道具屋 Rank${rank}`, label:'道具屋', imageKey:'overlay_field_shop', blocksMovement:true, interactFromAdjacent:true },
-                { x:7, y:4, type:'shop', shopType:'weapon', shopRank:rank, title:`追憶の武器屋 Rank${rank}`, label:'武器屋', imageKey:'overlay_field_weapon', blocksMovement:true, interactFromAdjacent:true },
-                { x:11, y:4, type:'shop', shopType:'armor', shopRank:rank, title:`追憶の防具屋 Rank${rank}`, label:'防具屋', imageKey:'overlay_field_weapon', blocksMovement:true, interactFromAdjacent:true },
-                { x:15, y:4, type:'memoryInn', cost, label:`宿屋（${cost.toLocaleString()}G）`, imageKey:'overlay_field_inn', blocksMovement:true, interactFromAdjacent:true },
+                { x:3, y:4, type:'shop', shopType:'item', shopRank:rank, title:`追憶の道具屋 Rank ${rank}`, label:'道具屋', imageKey:'overlay_field_shop', blocksMovement:true, interactFromAdjacent:true },
+                { x:7, y:4, type:'shop', shopType:'weapon', shopRank:rank, title:`追憶の武器屋 Rank ${rank}`, label:'武器屋', imageKey:'overlay_field_weapon', blocksMovement:true, interactFromAdjacent:true },
+                { x:11, y:4, type:'shop', shopType:'armor', shopRank:rank, title:`追憶の防具屋 Rank ${rank}`, label:'防具屋', imageKey:'overlay_field_weapon', blocksMovement:true, interactFromAdjacent:true },
+                { x:15, y:4, type:'memoryInn', cost, label:`宿屋（${cost.toLocaleString()} Gold）`, imageKey:'overlay_field_inn', blocksMovement:true, interactFromAdjacent:true },
                 { x:19, y:4, type:'blacksmith', label:'鍛冶屋', imageKey:'overlay_field_smith', blocksMovement:true, interactFromAdjacent:true },
                 { x:21, y:10, type:'alchemy', label:'錬金屋', imageKey:'overlay_building_water_alchemy', blocksMovement:true, interactFromAdjacent:true }
             ];

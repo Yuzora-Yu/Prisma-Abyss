@@ -200,7 +200,7 @@ const MenuItems = {
             MenuItems.selectedItem = item;
             MenuItems.openDivineAnvilEquipmentSelection(item);
         }
-        // 転職の書は通常仲間を対象にし、Lv100到達時だけ転職＋転生を行う。
+        // 転職の書は通常仲間を対象にし、Lv.100到達時だけ転職＋転生を行う。
         else if (item.type === '転職の書' && Number(item.jobId) > 0) {
             MenuItems.selectedItem = item;
             MenuItems.renderTargetList();
@@ -463,24 +463,22 @@ const MenuItems = {
         }
         const replacing = replaceSkillId != null ? DB.SKILLS.find(entry => Number(entry.id) === Number(replaceSkillId)) : null;
         const prompt = replacing
-            ? `${character.name}の「${replacing.name || `スキル${replaceSkillId}`}」を忘れ、「${skill.name}」を覚えますか？
-スキル書は1冊消費されます。`
-            : `${character.name}に「${skill.name}」を覚えさせますか？
-スキル書は1冊消費されます。`;
+            ? `${character.name}の「${replacing.name || 'スキル'}」を忘れ、「${skill.name}」を覚えますか？\nスキル書は1冊消費されます。`
+            : `${character.name}に「${skill.name}」を覚えさせますか？\nスキル書は1冊消費されます。`;
         Menu.confirm(prompt, () => {
-            if (Number(App.data?.items?.[item.id] || 0) <= 0) {
-                Menu.msg('アイテムを持っていません。');
+            const transaction = App.runAtomicSaveMutation(() => {
+                if (Number(App.data?.items?.[item.id] || 0) <= 0) return { ok:false, message:'アイテムを持っていません。' };
+                const result = App.learnSkillFromBook?.(character, Number(skill.id), replaceSkillId, { save: false });
+                if (!result?.ok) return { ok:false, reason:result?.reason, message:result?.message || 'スキルを習得できませんでした。' };
+                App.data.items[item.id] -= 1;
+                if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
+                return { ok:true };
+            });
+            if (!transaction.ok) {
+                if (transaction.reason === 'needsReplacement') MenuItems.openSkillBookReplacementSelection(item, character);
+                else Menu.msg(transaction.message || '使用内容を保存できませんでした。');
                 return;
             }
-            const result = App.learnSkillFromBook?.(character, Number(skill.id), replaceSkillId, { save: false });
-            if (!result?.ok) {
-                if (result?.reason === 'needsReplacement') MenuItems.openSkillBookReplacementSelection(item, character);
-                else Menu.msg(result?.message || 'スキルを習得できませんでした。');
-                return;
-            }
-            App.data.items[item.id] -= 1;
-            if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
-            App.save();
             MenuItems.playUseSe(item);
             Menu.msg(`${character.name}は「${skill.name}」を覚えた！`, () => {
                 MenuItems.selectedItem = null;
@@ -567,7 +565,7 @@ const MenuItems = {
             const currentMaster = PassiveSkill.MASTER?.[Number(entry.current?.id)];
             const level = Math.max(1, Number(entry.current?.level || entry.current?.lv || 1));
             return {
-                label: `${entry.index + 1}枠目：${currentMaster?.name || `特性${entry.current?.id}`} Lv${level}`,
+                label: `${entry.index + 1}枠目：${currentMaster?.name || `特性${entry.current?.id}`} Lv.${level}`,
                 disabled: !entry.check.ok,
                 callback: () => MenuItems.applyTraitBook(item, character, entry.index)
             };
@@ -588,27 +586,24 @@ const MenuItems = {
             return;
         }
         const prompt = isAdding
-            ? `${character.name}に「${targetMaster.name}」Lv1を追加しますか？
-特性書は1冊消費されます。`
-            : `${character.name}の「${currentMaster?.name || '特性'}」Lv${level}を「${targetMaster.name}」Lv${level}へ交換しますか？
-特性書は1冊消費されます。`;
+            ? `${character.name}に「${targetMaster.name}」Lv.1を追加しますか？\n特性書は1冊消費されます。`
+            : `${character.name}の「${currentMaster?.name || '特性'}」Lv.${level}を「${targetMaster.name}」Lv.${level}へ交換しますか？\n特性書は1冊消費されます。`;
         Menu.confirm(prompt, () => {
-            if (!Number(App.data?.items?.[item.id] || 0)) {
-                Menu.msg('アイテムを持っていません。');
-                return;
-            }
-            const result = isAdding
-                ? PassiveSkill.addTraitWithBook(character, Number(item.traitId))
-                : PassiveSkill.replaceTraitWithBook(character, slotIndex, Number(item.traitId));
-            if (!result.success) {
-                Menu.msg(result.message || '特性書を使用できませんでした。');
-                return;
-            }
-            App.data.items[item.id] -= 1;
-            if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
-            App.save();
+            let successMessage = '';
+            const transaction = App.runAtomicSaveMutation(() => {
+                if (!Number(App.data?.items?.[item.id] || 0)) return { ok:false, message:'アイテムを持っていません。' };
+                const result = isAdding
+                    ? PassiveSkill.addTraitWithBook(character, Number(item.traitId))
+                    : PassiveSkill.replaceTraitWithBook(character, slotIndex, Number(item.traitId));
+                if (!result.success) return { ok:false, message:result.message || '特性書を使用できませんでした。' };
+                successMessage = result.message;
+                App.data.items[item.id] -= 1;
+                if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
+                return { ok:true };
+            });
+            if (!transaction.ok) return Menu.msg(transaction.message || '使用内容を保存できませんでした。');
             MenuItems.playUseSe(item);
-            Menu.msg(result.message, () => {
+            Menu.msg(successMessage, () => {
                 MenuItems.selectedItem = null;
                 MenuItems.changeScreen('list');
                 Menu.renderPartyBar();
@@ -627,16 +622,19 @@ const MenuItems = {
         }
         Menu.confirm(`仲間全員に ${item.name} を使いますか？`, () => {
             const party = (App.data.party || []).map(uid => uid ? App.getChar(uid) : null).filter(Boolean);
-            const result = window.ItemRuntime.applyFieldGroupItem({ App, item, party });
-            if (!result.success) {
-                Menu.msg(result.message || "今は使用する必要がありません。");
-                return;
-            }
-            App.data.items[item.id] -= 1;
-            if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
-            App.save();
+            let successMessage = '';
+            const transaction = App.runAtomicSaveMutation(() => {
+                if (Number(App.data.items?.[item.id] || 0) <= 0) return { ok:false, message:'アイテムを持っていません。' };
+                const result = window.ItemRuntime.applyFieldGroupItem({ App, item, party });
+                if (!result.success) return { ok:false, message:result.message || '今は使用する必要がありません。' };
+                successMessage = result.message;
+                App.data.items[item.id] -= 1;
+                if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
+                return { ok:true };
+            });
+            if (!transaction.ok) return Menu.msg(transaction.message || '使用内容を保存できませんでした。');
             MenuItems.playUseSe(item);
-            Menu.msg(result.message, () => {
+            Menu.msg(successMessage, () => {
                 MenuItems.renderList();
                 Menu.renderPartyBar();
             });
@@ -771,7 +769,7 @@ const MenuItems = {
         cancel.className = 'btn';
         cancel.style.width = '100%';
         cancel.style.background = '#555';
-        cancel.innerText = 'やめる';
+        cancel.innerText = 'キャンセル';
         cancel.onclick = () => Menu.closeDialog();
         btnEl.appendChild(cancel);
         area.style.display = 'flex';
@@ -779,29 +777,33 @@ const MenuItems = {
 
     useReincarnationFruit: (target, item) => {
         if (App.isMonsterAlly?.(target)) { Menu.msg('仲間モンスターには転生の実を使用できません。'); return; }
-        if (Math.floor(Number(target.level || 1)) !== 100) { Menu.msg('転生の実はLv100到達時に使用できます。'); return; }
+        if (Math.floor(Number(target.level || 1)) !== 100) { Menu.msg('転生の実はLv.100到達時に使用できます。'); return; }
         const options = App.getReincarnationJobOptions?.(target) || [];
-        if (!options.length) { Menu.msg('現在の職業情報を確認できません。'); return; }
+        if (!options.length) { Menu.msg('現在は転生できません。'); return; }
 
         const commit = (entry) => {
             const label = entry.current ? entry.job : `${entry.job}へ戻る`;
-            Menu.confirm(`${target.name}を${label}状態で転生させますか？\nLv1に戻り、転生回数が1増えます。`, () => {
-                const result = App.reincarnateCharacter?.(target, entry.jobId, { save:false }) || { ok:false, reason:'system_missing' };
-                if (!result.ok) {
-                    const messages = {
-                        monster_ally:'仲間モンスターには転生の実を使用できません。',
-                        level_requirement:'転生の実はLv100到達時に使用できます。',
-                        job_not_in_history:'その職業へ戻った履歴を確認できません。',
-                        job_missing:'職業データを確認できません。',
-                        current_job_missing:'現在の職業データを確認できません。',
-                        system_missing:'転生処理を利用できません。'
-                    };
-                    Menu.msg(messages[result.reason] || '転生できません。');
-                    return;
-                }
-                App.data.items[item.id]--;
-                if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
-                App.save();
+            Menu.confirm(`${target.name}を${label}状態で転生させますか？\nLv.1に戻り、転生回数が1増えます。`, () => {
+                let result = null;
+                const transaction = App.runAtomicSaveMutation(() => {
+                    if (Number(App.data?.items?.[item.id] || 0) <= 0) return { ok:false, message:'アイテムを持っていません。' };
+                    result = App.reincarnateCharacter?.(target, entry.jobId, { save:false }) || { ok:false, reason:'system_missing' };
+                    if (!result.ok) {
+                        const messages = {
+                            monster_ally:'仲間モンスターには転生の実を使用できません。',
+                            level_requirement:'転生の実はLv.100到達時に使用できます。',
+                            job_not_in_history:'その職業へ戻れません。',
+                            job_missing:'今は転生できません。',
+                            current_job_missing:'今は転生できません。',
+                            system_missing:'今は転生できません。'
+                        };
+                        return { ok:false, message:messages[result.reason] || '転生できません。' };
+                    }
+                    App.data.items[item.id]--;
+                    if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
+                    return { ok:true };
+                });
+                if (!transaction.ok) return Menu.msg(transaction.message || '転生内容を保存できませんでした。');
                 MenuItems.playUseSe(item);
                 const msg = result.changedJob
                     ? `${target.name}は ${result.job}へ戻り、そのまま転生した！\nレベル1に戻った！\n(転生回数: ${result.reincarnationCount}回目)`
@@ -834,115 +836,92 @@ const MenuItems = {
 
         const jobBookDef = item.type === '転職の書' ? App.getJobDefinitionById?.(item.jobId) : null;
         const confirmText = jobBookDef
-            ? `${target.name}を「${jobBookDef.name}」へ転職させますか？\n転職と同時に転生し、Lv1に戻ります。`
+            ? `${target.name}を「${jobBookDef.name}」へ転職させますか？\n転職と同時に転生し、Lv.1に戻ります。`
             : `${target.name} に ${item.name} を使いますか？`;
 
         Menu.confirm(confirmText, () => {
-            let success = false;
-            let msg = "";
-            const s = App.calcStats(target);
-            const master = DB.CHARACTERS.find(c => c.id === target.charId) || target;
+            let successMessage = '';
+            const transaction = App.runAtomicSaveMutation(() => {
+                if (!App.data.items?.[item.id] || App.data.items[item.id] <= 0) return { ok:false, message:'アイテムを持っていません。' };
+                let success = false;
+                let msg = "";
+                const stats = App.calcStats(target);
 
-            // --- 転職の書：職業IDと職歴を更新し、同時に転生する ---
-            if (item.type === '転職の書' && Number(item.jobId) > 0) {
-                const result = App.changeJobByBook?.(target, item.jobId, { save:false }) || { ok:false, reason:'system_missing' };
-                if (!result.ok) {
-                    const reasonMessages = {
-                        monster_ally: '仲間モンスターには転職の書を使用できません。',
-                        level_requirement: '転職の書はLv100到達時にのみ使用できます。',
-                        same_job: '現在と同じ職業の転職の書は使用できません。',
-                        job_missing: '転職先の職業データを確認できません。',
-                        current_job_missing: '現在の職業データを確認できません。',
-                        system_missing: '転職処理を利用できません。'
-                    };
-                    Menu.msg(reasonMessages[result.reason] || 'この転職の書は使用できません。');
-                    return;
-                }
-                success = true;
-                msg = `${target.name}は ${result.job}へ転職した！\nそのまま転生し、レベル1に戻った！\n(転生回数: ${result.reincarnationCount}回目)`;
-            }
-            // --- A. 通常の回復アイテム処理 ---
-            else if(item.type === 'HP回復') {
-                if(target.currentHp >= s.maxHp) { Menu.msg("HPは満タンです"); return; }
-                target.currentHp = Math.min(s.maxHp, (target.currentHp || 0) + item.val);
-                success = true; msg = `${target.name}は回復した！`;
-            } else if(item.type === 'MP回復') {
-                if(target.currentMp >= s.maxMp) { Menu.msg("MPは満タンです"); return; }
-                target.currentMp = Math.min(s.maxMp, (target.currentMp || 0) + item.val);
-                success = true; msg = `${target.name}は回復した！`;
-            } else if(item.type === '蘇生') {
-                if(target.currentHp > 0) { Menu.msg("生き返っています"); return; }
-                target.currentHp = Math.floor(s.maxHp * 1);
-                success = true; msg = `${target.name}は生き返った！`;
-            }
-
-            // --- B. LB育成アイテム ---
-            else if (item.effectKind === 'limitBreak' || Number(item.id) === 123) {
-                if (typeof App.addLimitBreak !== 'function' || typeof App.getLimitBreakTrialCap !== 'function') {
-                    Menu.msg("LB成長処理を利用できません。");
-                    return;
-                }
-                App.backfillLimitBreakLegacy?.(target);
-                App.applyLimitBreakCap?.(target);
-                const currentLb = Math.max(0, Math.floor(Number(target.limitBreak) || 0));
-                const maxLb = Math.max(1, Math.floor(Number(App.limitBreakConfig?.max) || 99));
-                const trialCap = Math.max(0, Math.floor(Number(App.getLimitBreakTrialCap(target)) || 0));
-                if (currentLb >= maxLb) {
-                    Menu.msg("LBはすでに最大です。");
-                    return;
-                }
-                if (currentLb >= trialCap) {
-                    const gateName = trialCap < 50 ? "中間試練" : "最終試練";
-                    Menu.msg(`${gateName}に合格するまで、これ以上LBを増やせません。`);
-                    return;
-                }
-                const amount = Math.max(1, Math.floor(Number(item.limitBreakAmount) || 1));
-                const result = App.addLimitBreak(target, amount, 'item');
-                if (!result.changed) {
-                    Menu.msg("今はLBを増やせません。");
-                    return;
-                }
-                success = true;
-                msg = `${target.name}のLBが ${result.before} から ${result.after} に上がった！`;
-            }
-
-            // --- C. 育成アイテム(100-106)の処理 ---
-            else if (item.id >= 100 && item.id <= 106) {
-                success = true;
-                if (!target.permanentStatBonuses || typeof target.permanentStatBonuses !== 'object' || Array.isArray(target.permanentStatBonuses)) target.permanentStatBonuses = {};
-                const addPermanentStat = (key, amount) => {
-                    target[key] = (Number(target[key]) || 0) + amount;
-                    target.permanentStatBonuses[key] = (Number(target.permanentStatBonuses[key]) || 0) + amount;
-                };
-                switch(item.id) {
-                    case 100: addPermanentStat('hp', 3); msg = `${target.name}の最大HPが上がった！`; break;
-                    case 101: addPermanentStat('mp', 2); msg = `${target.name}の最大MPが上がった！`; break;
-                    case 102: addPermanentStat('atk', 1); msg = `${target.name}の攻撃力が上がった！`; break;
-                    case 103: addPermanentStat('mag', 1); msg = `${target.name}の魔力が上がった！`; break;
-                    case 104: addPermanentStat('spd', 1); msg = `${target.name}の素早さが上がった！`; break;
-                    case 105: addPermanentStat('def', 1); msg = `${target.name}の防御力が上がった！`; break;
-                    case 106: target.sp = (target.sp || 0) + 1; msg = `${target.name}のSPが 1 増えた！`; break;
-                }
-            }
-
-            if(success) {
-                App.data.items[item.id]--;
-                const currentCount = App.data.items[item.id];
-                
-                if(currentCount <= 0) delete App.data.items[item.id];
-                
-                App.save();
-                MenuItems.playUseSe(item);
-                Menu.msg(msg, () => {
-                    // ★修正: 使い切った(個数がなくなった)場合はリスト画面にもどる
-                    if(!App.data.items[item.id] || App.data.items[item.id] <= 0) {
-                        MenuItems.changeScreen('list');
-                    } else {
-                        MenuItems.renderTargetList();
+                if (item.type === '転職の書' && Number(item.jobId) > 0) {
+                    const result = App.changeJobByBook?.(target, item.jobId, { save:false }) || { ok:false, reason:'system_missing' };
+                    if (!result.ok) {
+                        const reasonMessages = {
+                            monster_ally: '仲間モンスターには転職の書を使用できません。',
+                            level_requirement: '転職の書はLv.100到達時にのみ使用できます。',
+                            same_job: '現在と同じ職業の転職の書は使用できません。',
+                            job_missing: '今は転職できません。',
+                            current_job_missing: '今は転職できません。',
+                            system_missing: '今は転職できません。'
+                        };
+                        return { ok:false, message:reasonMessages[result.reason] || 'この転職の書は使用できません。' };
                     }
-                    Menu.renderPartyBar();
-                });
-            }
+                    success = true;
+                    msg = `${target.name}は ${result.job}へ転職した！\nそのまま転生し、レベル1に戻った！\n(転生回数: ${result.reincarnationCount}回目)`;
+                } else if(item.type === 'HP回復') {
+                    if(target.currentHp >= stats.maxHp) return { ok:false, message:'HPは満タンです' };
+                    target.currentHp = Math.min(stats.maxHp, (target.currentHp || 0) + item.val);
+                    success = true; msg = `${target.name}は回復した！`;
+                } else if(item.type === 'MP回復') {
+                    if(target.currentMp >= stats.maxMp) return { ok:false, message:'MPは満タンです' };
+                    target.currentMp = Math.min(stats.maxMp, (target.currentMp || 0) + item.val);
+                    success = true; msg = `${target.name}は回復した！`;
+                } else if(item.type === '蘇生') {
+                    if(target.currentHp > 0) return { ok:false, message:'生き返っています' };
+                    target.currentHp = Math.floor(stats.maxHp);
+                    success = true; msg = `${target.name}は生き返った！`;
+                } else if (item.effectKind === 'limitBreak' || Number(item.id) === 123) {
+                    if (typeof App.addLimitBreak !== 'function' || typeof App.getLimitBreakTrialCap !== 'function') return { ok:false, message:'今はLBを増やせません。' };
+                    App.backfillLimitBreakLegacy?.(target);
+                    App.applyLimitBreakCap?.(target);
+                    const currentLb = Math.max(0, Math.floor(Number(target.limitBreak) || 0));
+                    const maxLb = Math.max(1, Math.floor(Number(App.limitBreakConfig?.max) || 99));
+                    const trialCap = Math.max(0, Math.floor(Number(App.getLimitBreakTrialCap(target)) || 0));
+                    if (currentLb >= maxLb) return { ok:false, message:'LBはすでに最大です。' };
+                    if (currentLb >= trialCap) {
+                        const gateName = trialCap < 50 ? '中間試練' : '最終試練';
+                        return { ok:false, message:`${gateName}に合格するまで、これ以上LBを増やせません。` };
+                    }
+                    const amount = Math.max(1, Math.floor(Number(item.limitBreakAmount) || 1));
+                    const result = App.addLimitBreak(target, amount, 'item');
+                    if (!result.changed) return { ok:false, message:'今はLBを増やせません。' };
+                    success = true;
+                    msg = `${target.name}のLBが ${result.before} から ${result.after} に上がった！`;
+                } else if (item.id >= 100 && item.id <= 106) {
+                    success = true;
+                    if (!target.permanentStatBonuses || typeof target.permanentStatBonuses !== 'object' || Array.isArray(target.permanentStatBonuses)) target.permanentStatBonuses = {};
+                    const addPermanentStat = (key, amount) => {
+                        target[key] = (Number(target[key]) || 0) + amount;
+                        target.permanentStatBonuses[key] = (Number(target.permanentStatBonuses[key]) || 0) + amount;
+                    };
+                    switch(item.id) {
+                        case 100: addPermanentStat('hp', 3); msg = `${target.name}の最大HPが上がった！`; break;
+                        case 101: addPermanentStat('mp', 2); msg = `${target.name}の最大MPが上がった！`; break;
+                        case 102: addPermanentStat('atk', 1); msg = `${target.name}の攻撃力が上がった！`; break;
+                        case 103: addPermanentStat('mag', 1); msg = `${target.name}の魔力が上がった！`; break;
+                        case 104: addPermanentStat('spd', 1); msg = `${target.name}の素早さが上がった！`; break;
+                        case 105: addPermanentStat('def', 1); msg = `${target.name}の防御力が上がった！`; break;
+                        case 106: target.sp = (target.sp || 0) + 1; msg = `${target.name}のSPが 1 増えた！`; break;
+                    }
+                }
+
+                if (!success) return { ok:false, message:'今は使用できません。' };
+                App.data.items[item.id]--;
+                if(App.data.items[item.id] <= 0) delete App.data.items[item.id];
+                successMessage = msg;
+                return { ok:true };
+            });
+            if (!transaction.ok) return Menu.msg(transaction.message || '使用内容を保存できませんでした。');
+            MenuItems.playUseSe(item);
+            Menu.msg(successMessage, () => {
+                if(!App.data.items[item.id] || App.data.items[item.id] <= 0) MenuItems.changeScreen('list');
+                else MenuItems.renderTargetList();
+                Menu.renderPartyBar();
+            });
         });
     }
 };

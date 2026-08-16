@@ -12,10 +12,13 @@ Status: **inventory / no automatic replacement**
 
 ## 集計
 
-- total entries: **1656**
-- story system narration: **159**
-- story objective text: **55**
-- other UI/map/menu candidates: **1442**
+- total entries: **1840**
+- story system narration: **179**
+- story objective text: **58**
+- other UI/map/menu candidates: **1603**
+- status breakdown: **inventory_only 1627 / reviewed-or-new 213**
+
+> 2026-08-17再集計。表の追記に対して集計欄が更新されていなかったため、master inventoryの実行数から再計算した。以後は表追記時にこの集計も同時更新する。
 
 ## レビュー項目
 
@@ -1908,3 +1911,21 @@ Status: **inventory / no automatic replacement**
 |1838|map_label_set|`map.js`|海底火山通常階|地下1階 / 地下2階 / 地下3階|通常階は階数表示へ戻す|approved_applied_20260816|
 |1839|map_label_set|`map.js`|深淵世界後半の通常階|1層 / 2層 / …|通常階は階数表示を基本とする|approved_applied_20260816|
 |1840|map_label_policy|`map.js`|固定ダンジョン全般|固有名は研究棟・祭壇・最奥など特殊階に限定|通常階の過剰な固有名化を撤回|approved_applied_20260816|
+
+### 2026-08-17 共通UI表記・エラー表現の承認済み判断
+
+以下は個別台詞の一括改稿ではなく、2026-08-17のレビューで承認された共通UI規約。runtimeへ反映した箇所は、意味を変えない範囲のシステム表示・ボタン語彙に限定する。固有名、世界観上の言い回し、チュートリアル文は機械置換しない。
+
+|対象|現行例|承認後の扱い|状態|
+|---|---|---|---|
+|通貨表記|`1000 G` / `1000 GOLD` / `1000 gold`|プレイヤー向けは `1000 Gold`。内部enum/変数名の `GOLD` / `gold` は変更しない|approved_applied_20260817|
+|GEM表記|`gem` / `GEM` の混在|プレイヤー向け通貨名は `GEM`|approved_applied_20260817|
+|レベル数値|`Lv1` / `Lv 1` / `Lv.1`|数値メタデータは `Lv.1`|approved_applied_20260817|
+|ランク数値|`Rank70` / `Rank.70` / `Rank 70`|数値メタデータは `Rank 70`|approved_applied_20260817|
+|階層移動|`戻る` / `もどる`|UI階層を一つ戻るボタンは `もどる`|approved_applied_20260817|
+|モーダル終了|`とじる` / `戻る`|情報・モーダルを閉じるボタンは `閉じる`|approved_applied_20260817|
+|未確定操作の取消|`やめる` / `キャンセル`|未確定の選択・処理取消は `キャンセル`|approved_applied_20260817|
+|開始済み行動の中断|`キャンセル` / `やめる`|挑戦・勝負など開始済み行動の中断は `やめる`|approved_applied_20260817|
+|内部定義エラー|`この場所の定義が見つかりません` / `アイテムID:...`|プレイヤーには実行可否だけを自然文で示し、areaKey/itemId/eid等はconsole診断へ分離|approved_applied_20260817|
+
+`storyStep-subStep` の「ストーリー進行度」表示は本規約の内部値露出禁止の例外ではなく、承認済みの正式表示として `docs/development-policy.md` に明記し現行維持する。

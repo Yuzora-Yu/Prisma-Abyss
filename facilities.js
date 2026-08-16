@@ -84,7 +84,7 @@ const Facilities = {
                 <div id="${sceneId}-modal-window" style="background:#000; border:3px double #fff; width:100%; max-width:320px; max-height:calc(100% - 20px); padding:15px; box-sizing:border-box; display:flex; flex-direction:column;">
                     <div id="${sceneId}-modal-title" style="color:#ffd700; font-size:14px; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px; font-weight:bold; flex-shrink:0;"></div>
                     <div id="${sceneId}-modal-body" class="scroll-area" style="min-height:0; max-height:50vh; overflow-y:auto; color:#fff;"></div>
-                    <button id="${sceneId}-modal-close" class="btn" style="width:100%; margin-top:15px; background:#444; border:1px solid #fff; height:40px; flex-shrink:0;" onclick="Facilities.closeModal('${sceneId}')">とじる</button>
+                    <button id="${sceneId}-modal-close" class="btn" style="width:100%; margin-top:15px; background:#444; border:1px solid #fff; height:40px; flex-shrink:0;" onclick="Facilities.closeModal('${sceneId}')">閉じる</button>
                 </div>
             </div>
         `;
@@ -120,7 +120,7 @@ const Facilities = {
         body.style.maxHeight = options.bodyMaxHeight || '50vh';
         body.style.overflowY = options.bodyOverflowY || 'auto';
         closeButton.style.marginTop = options.closeMarginTop || '15px';
-        closeButton.textContent = options.closeLabel || 'とじる';
+        closeButton.textContent = options.closeLabel || '閉じる';
 
         if (typeof options.onClose === 'function') {
             Facilities.modalCloseHandlers[sceneId] = options.onClose;
@@ -161,11 +161,16 @@ const Facilities = {
     },
 
     stayInn: (cost) => {
-        if(App.data.gold < cost) return Menu.msg("ゴールドが 足りないようです。");
+        if(App.data.gold < cost) return Menu.msg("Goldが足りないようです。");
         Menu.confirm("一泊して ＨＰ・ＭＰを 回復しますか？", () => {
-            App.data.gold -= cost;
-            App.data.characters.forEach(c => { const s = App.calcStats(c); c.currentHp = s.maxHp; c.currentMp = s.maxMp; });
-            App.save(); Facilities.initInn();
+            const transaction = App.runAtomicSaveMutation(() => {
+                if (Number(App.data.gold || 0) < cost) return { ok:false, reason:'gold' };
+                App.data.gold -= cost;
+                App.data.characters.forEach(c => { const stats = App.calcStats(c); c.currentHp = stats.maxHp; c.currentMp = stats.maxMp; });
+                return { ok:true };
+            });
+            if (!transaction.ok) return Menu.msg(transaction.reason === 'gold' ? 'Goldが足りません。' : '宿泊内容を保存できませんでした。');
+            Facilities.initInn();
             Menu.msg("体力が 全回復した！");
         });
     },
@@ -222,13 +227,31 @@ const Facilities = {
         if (!App.data?.progress?.flags?.abyssRandomUnlocked) return Menu.msg('転送先となる深層の亀裂は、まだ見つかっていない。');
         if (typeof App !== 'undefined' && typeof App.requireFeatureUnlocked === 'function' && !App.requireFeatureUnlocked('teleport')) return;
         Facilities.teleportFloor = Math.max(1, Math.min(Facilities.getAbyssTeleportMaxFloor(), Number(Facilities.teleportFloor || 1)));
-        const cost = Facilities.getAbyssTeleportCost(Facilities.teleportFloor);
-        if (App.data.gold < cost) return Menu.msg("ゴールドが 足りません。");
-        Menu.confirm(`深淵の亀裂 ${Facilities.teleportFloor}階への転送には ${cost.toLocaleString()} Gold 必要です。よろしいですか？`, () => {
-            App.data.gold -= cost;
-            App.save();
+        const floor = Facilities.teleportFloor;
+        const cost = Facilities.getAbyssTeleportCost(floor);
+        if (App.data.gold < cost) return Menu.msg("Goldが足りません。");
+        Menu.confirm(`深淵の亀裂 ${floor}階への転送には ${cost.toLocaleString()} Gold 必要です。よろしいですか？`, () => {
+            const transaction = App.runAtomicSaveMutation(() => {
+                if (Number(App.data.gold || 0) < cost) return { ok:false, reason:'gold' };
+                App.data.gold -= cost;
+                return { ok:true };
+            });
+            if (!transaction.ok) {
+                Menu.msg(transaction.reason === 'gold' ? 'Goldが足りません。' : '転送準備を保存できませんでした。');
+                return;
+            }
             Facilities.closeModal('inn-scene');
-            if (typeof Dungeon !== 'undefined') Dungeon.start(Facilities.teleportFloor, { mode: 'random' });
+            if (typeof Dungeon !== 'undefined' && Dungeon.start(floor, { mode: 'random' }) === false) {
+                // 事前条件は確認済みだが、開始できなかった場合は料金だけ失わないよう返金する。
+                const refund = App.runAtomicSaveMutation(() => {
+                    App.currencyTrackingSuspended = true;
+                    try { App.data.gold += cost; }
+                    finally { App.currencyTrackingSuspended = false; }
+                    return { ok:true };
+                });
+                if (!refund.ok) Menu.msg('転送を開始できず、返金の保存にも失敗しました。セーブデータを確認してください。');
+                else Menu.msg('転送を開始できなかったため、Goldを返却しました。');
+            }
         });
     },
 
@@ -259,7 +282,7 @@ const Facilities = {
             const equipMaster = r.type === 'equip' ? window.EQUIP_MASTER.find(eq => Number(eq.eid) === Number(r.equipId)) : null;
             let detail = (r.type === 'item')
                 ? (DB.ITEMS.find(it => it.id === r.id)?.desc || "不思議な道具")
-                : (equipMaster ? `Rank.${equipMaster.rank} ${equipMaster.baseName || equipMaster.type}の特殊装備` : '特殊装備');
+                : (equipMaster ? `Rank ${equipMaster.rank} ${equipMaster.baseName || equipMaster.type}の特殊装備` : '特殊装備');
             html += `<div style="border: 1px solid #444; margin-bottom: 8px; padding: 10px; opacity:${can?1:0.5}; background:rgba(255,255,255,0.05);">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:5px;">
                     <div style="font-weight:bold;font-size:14px;color:#fff;display:flex;align-items:center;gap:7px;min-width:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name}</span>${equipMaster ? `<small style="color:#aaa;white-space:nowrap;">Rank ${Number(equipMaster.rank || 0)}</small>` : ''}</div>
@@ -277,14 +300,14 @@ const Facilities = {
         }
         return (Array.isArray(rewards) ? rewards : []).map(reward => {
             if (reward.type === 'GEM') return `${Number(reward.val) || 0} GEM`;
-            if (reward.type === 'GOLD') return `${Number(reward.val) || 0} GOLD`;
+            if (reward.type === 'GOLD') return `${Number(reward.val) || 0} Gold`;
             if (reward.type === 'ITEM') {
                 const item = DB.ITEMS.find(entry => Number(entry.id) === Number(reward.id));
-                return `${item?.name || `アイテムID:${reward.id}`} x${Number(reward.val) || 1}`;
+                return `${item?.name || 'アイテム'} x${Number(reward.val) || 1}`;
             }
             if (reward.type === 'EQUIP') {
                 const equip = window.EQUIP_MASTER?.find(entry => Number(entry.eid) === Number(reward.eid));
-                return `${equip?.name || `装備ID:${reward.eid}`}${reward.plus ? `+${reward.plus}` : ''}（Rank ${Number(equip?.rank || 0)}）`;
+                return `${equip?.name || '装備品'}${reward.plus ? `+${reward.plus}` : ''}（Rank ${Number(equip?.rank || 0)}）`;
             }
             return String(reward.type || '報酬');
         }).join('、');
@@ -365,7 +388,7 @@ const Facilities = {
     claimCoinSpendingReward: (milestone) => {
         const rewardMaster = Array.isArray(DB.COIN_SPENDING_REWARDS) ? DB.COIN_SPENDING_REWARDS : [];
         const entry = rewardMaster.find(reward => Number(reward.coins) === Number(milestone));
-        if (!entry) return Menu.msg('累計報酬データが見つかりません。');
+        if (!entry) { console.warn('[COIN REWARD] 累計報酬を取得できません。', { milestone }); return Menu.msg('今はこの報酬を受け取れません。'); }
         const state = typeof App.ensureCoinSpendingRewardProgress === 'function'
             ? App.ensureCoinSpendingRewardProgress(App.data)
             : (App.data.progress.coinSpendingRewards ||= { claimedMilestones: [] });
@@ -374,9 +397,24 @@ const Facilities = {
         if (claimed.has(Number(entry.coins))) return Menu.msg('すでに受け取り済みです。');
         if (spent < Number(entry.coins)) return Menu.msg('累計消費枚数が足りません。');
 
-        const rewardText = Facilities.grantCoinSpendingRewards(entry.rewards || []);
-        state.claimedMilestones = Array.from(new Set([...(state.claimedMilestones || []).map(Number), Number(entry.coins)])).sort((a, b) => a - b);
-        App.save();
+        let rewardText = '';
+        const transaction = App.runAtomicSaveMutation(() => {
+            const currentState = typeof App.ensureCoinSpendingRewardProgress === 'function'
+                ? App.ensureCoinSpendingRewardProgress(App.data)
+                : (App.data.progress.coinSpendingRewards ||= { claimedMilestones: [] });
+            const currentClaimed = new Set((currentState?.claimedMilestones || []).map(Number));
+            if (currentClaimed.has(Number(entry.coins))) return { ok:false, reason:'claimed' };
+            if (Math.max(0, Math.floor(Number(App.data.stats?.totalCoinsSpent) || 0)) < Number(entry.coins)) return { ok:false, reason:'spent' };
+            rewardText = Facilities.grantCoinSpendingRewards(entry.rewards || []);
+            currentState.claimedMilestones = Array.from(new Set([...(currentState.claimedMilestones || []).map(Number), Number(entry.coins)])).sort((a, b) => a - b);
+            return { ok:true };
+        });
+        if (!transaction.ok) {
+            Menu.msg(transaction.reason === 'claimed'
+                ? 'すでに受け取り済みです。'
+                : (transaction.reason === 'spent' ? '累計消費枚数が足りません。' : '累計報酬を保存できませんでした。'));
+            return;
+        }
         Facilities.closeModal('medal-scene');
         Facilities.openCoinSpendingRewards();
         Menu.msg(`累計報酬を受け取りました！\n${rewardText}`);
@@ -392,41 +430,48 @@ const Facilities = {
             Menu.msg("ふるびたコインが足りません。");
             return;
         }
-        // ふるびたコインを消費
-        App.data.items[99] -= r.medals;
-        
-        if(r.type === 'item') { 
-            // アイテムの場合
-            App.data.items[r.id] = (App.data.items[r.id] || 0) + r.count; 
-        }
-        else {
-            // 特殊装備は equips.js の正式レコードから生成する。
-            const eq = (typeof App.createEquipById === 'function')
-                ? App.createEquipById(Number(r.equipId), Number(r.plus || 0), r.fixedOpts || null, r.fixedTraits || null)
-                : null;
-            if (!eq) {
-                App.data.items[99] += r.medals;
-                Menu.msg("今は利用できないようだ。");
-                return;
+
+        let acquiredEquip = null;
+        const transaction = App.runAtomicSaveMutation(() => {
+            if (r.unique && r.type === 'item' && App.data.items && App.data.items[r.id] > 0) return { ok:false, reason:'owned' };
+            if ((App.data.items[99] || 0) < r.medals) return { ok:false, reason:'medals' };
+            App.data.items[99] -= r.medals;
+
+            if (r.type === 'item') {
+                App.data.items[r.id] = (App.data.items[r.id] || 0) + r.count;
+            } else {
+                const eq = (typeof App.createEquipById === 'function')
+                    ? App.createEquipById(Number(r.equipId), Number(r.plus || 0), r.fixedOpts || null, r.fixedTraits || null)
+                    : null;
+                if (!eq) return { ok:false, reason:'reward' };
+                eq.source = 'coinExchange';
+                if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+                App.data.inventory.push(eq);
+                acquiredEquip = eq;
             }
-            eq.source = 'coinExchange';
-            if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
-            App.data.inventory.push(eq);
-            window.EquipAcquisitionCard?.enqueue(eq, { source:'coinExchange' });
+
+            if (typeof App.incrementLifetimeStat === 'function') {
+                App.incrementLifetimeStat('totalCoinsSpent', r.medals, { save: false });
+            } else {
+                if (!App.data.stats || typeof App.data.stats !== 'object') App.data.stats = {};
+                App.data.stats.totalCoinsSpent = Math.max(0, Number(App.data.stats.totalCoinsSpent || 0) + Number(r.medals || 0));
+            }
+            return { ok:true };
+        });
+
+        if (!transaction.ok) {
+            if (transaction.reason === 'owned') Menu.msg("すでに持っています。");
+            else if (transaction.reason === 'medals') Menu.msg("ふるびたコインが足りません。");
+            else if (transaction.reason === 'reward') Menu.msg("今は利用できないようだ。");
+            else Menu.msg("交換内容を保存できませんでした。");
+            return;
         }
 
-        if (typeof App.incrementLifetimeStat === 'function') {
-            App.incrementLifetimeStat('totalCoinsSpent', r.medals, { save: false });
-        } else {
-            if (!App.data.stats || typeof App.data.stats !== 'object') App.data.stats = {};
-            App.data.stats.totalCoinsSpent = Math.max(0, Number(App.data.stats.totalCoinsSpent || 0) + Number(r.medals || 0));
-        }
-        App.save(); 
-        Facilities.closeModal('medal-scene'); 
-        Facilities.initMedal(); // 画面更新
+        if (acquiredEquip) window.EquipAcquisitionCard?.enqueue(acquiredEquip, { source:'coinExchange' });
+        Facilities.closeModal('medal-scene');
+        Facilities.initMedal();
         Menu.msg(r.name + "を 受け取った！");
     },
-
 
 
     // --- 3. 店舗共通（道具屋・武器屋・防具屋） ---
@@ -1004,7 +1049,7 @@ const Facilities = {
             <div id="shop-lineup-layer" class="shop-lineup-layer">
                 <div class="shop-lineup-window" role="dialog" aria-modal="true">
                     <div class="shop-lineup-titlebar">
-                        <div class="shop-gold-card"><span class="shop-gold-label">所持金</span><span id="shop-gold-display" class="shop-gold-value">${(App.data.gold || 0).toLocaleString()} G</span></div>
+                        <div class="shop-gold-card"><span class="shop-gold-label">所持金</span><span id="shop-gold-display" class="shop-gold-value">${(App.data.gold || 0).toLocaleString()} Gold</span></div>
                     </div>
                     <div class="shop-lineup-body">
                         <section class="shop-list-panel">
@@ -1155,7 +1200,7 @@ const Facilities = {
     },
 
     updateShopGoldDisplay: () => {
-        const text = `${(App.data.gold || 0).toLocaleString()} G`;
+        const text = `${(App.data.gold || 0).toLocaleString()} Gold`;
         const gold = document.getElementById('shop-gold-display');
         if (gold) gold.textContent = text;
         const mainGold = document.getElementById('shop-main-gold');
@@ -1223,7 +1268,7 @@ const Facilities = {
         Facilities.setShopHelp(`
             <div class="shop-detail-titlebar">
                 <div class="shop-detail-name">${Facilities.escapeAttr(item.name)}</div>
-                <div class="shop-detail-price">${cost.toLocaleString()} G</div>
+                <div class="shop-detail-price">${cost.toLocaleString()} Gold</div>
             </div>
             <div class="shop-detail-meta">所持 ${owned.toLocaleString()}</div>
             <div class="shop-detail-box">${Facilities.escapeAttr(item.desc || '')}</div>
@@ -1238,7 +1283,7 @@ const Facilities = {
         Facilities.setShopHelp(`
             <div class="shop-detail-titlebar">
                 <div class="shop-detail-name" style="display:flex;gap:8px;align-items:center;min-width:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${Facilities.escapeAttr(base.name)}</span><small style="color:#aaa;white-space:nowrap;">Rank ${Number(base.rank || 0)}</small></div>
-                <div class="shop-detail-price">${price.toLocaleString()} G</div>
+                <div class="shop-detail-price">${price.toLocaleString()} Gold</div>
             </div>
             <div class="shop-detail-meta">${Facilities.escapeAttr(Facilities.getEquipShopCategory(base))}</div>
             <div class="shop-detail-box">${Facilities.escapeAttr(Facilities.getEquipBaseSummary(base, 0))}</div>
@@ -1303,7 +1348,7 @@ const Facilities = {
             return `<button class="shop-row item" data-shop-key="${Facilities.escapeAttr(key)}" onclick="Facilities.selectShopBuyItem(${Number(item.id)})" onmouseenter="Facilities.showShopItemHelp(${Number(item.id)})" onfocus="Facilities.showShopItemHelp(${Number(item.id)})">
                 <span class="shop-row-name">${Facilities.escapeAttr(item.name)}</span>
                 <span class="shop-owned">${owned.toLocaleString()}</span>
-                <span class="shop-price">${cost.toLocaleString()} G</span>
+                <span class="shop-price">${cost.toLocaleString()} Gold</span>
             </button>`;
         }).join('');
         Facilities.setShopHelp('品物を選んでください。');
@@ -1328,7 +1373,7 @@ const Facilities = {
         const price = Facilities.getShopItemPrice(item);
         if (price <= 0) return Menu.msg('その品物は購入できません。');
         const affordable = Math.floor((App.data.gold || 0) / price);
-        if (affordable <= 0) return Menu.msg('ゴールドが 足りません。');
+        if (affordable <= 0) return Menu.msg('Goldが足りません。');
         Facilities.shopPendingTrade = { kind: 'buyItem', itemId: Number(item.id), qty: 1, max: Math.max(1, affordable), price };
         Facilities.showModal('shop-scene', '購入確認', Facilities.renderShopItemBuyModalHtml(item));
         Facilities.updateShopItemBuyQtyDisplay();
@@ -1340,7 +1385,7 @@ const Facilities = {
             <div class="shop-confirm-card">
                 <div class="shop-confirm-title">${Facilities.escapeAttr(item.name)}</div>
                 <div class="shop-confirm-meta">${Facilities.escapeAttr(item.desc || '')}</div>
-                <div class="shop-confirm-box">単価 ${price.toLocaleString()} G</div>
+                <div class="shop-confirm-box">単価 ${price.toLocaleString()} Gold</div>
                 <div class="shop-qty-grid">
                     <button class="shop-qty-btn" onclick="Facilities.changeShopItemBuyQty(-10)">-10</button>
                     <button class="shop-qty-btn" onclick="Facilities.changeShopItemBuyQty(-1)">-</button>
@@ -1368,7 +1413,7 @@ const Facilities = {
         const totalEl = document.getElementById('shop-item-total-display');
         const total = Number(trade.qty || 1) * Number(trade.price || 0);
         if (qtyEl) qtyEl.textContent = `${Number(trade.qty || 1).toLocaleString()} 個`;
-        if (totalEl) totalEl.textContent = `合計 ${total.toLocaleString()} G / 所持金 ${(App.data.gold || 0).toLocaleString()} G`;
+        if (totalEl) totalEl.textContent = `合計 ${total.toLocaleString()} Gold / 所持金 ${(App.data.gold || 0).toLocaleString()} Gold`;
     },
 
     confirmBuyShopItem: () => {
@@ -1378,11 +1423,15 @@ const Facilities = {
         if (!item) return Menu.msg('その品物は見つかりません。');
         const qty = Math.max(1, Number(trade.qty || 1));
         const total = qty * Math.max(0, Number(trade.price || item.price || 0));
-        if ((App.data.gold || 0) < total) return Menu.msg('ゴールドが 足りません。');
-        if (!App.data.items) App.data.items = {};
-        App.data.gold -= total;
-        App.data.items[item.id] = Number(App.data.items[item.id] || 0) + qty;
-        App.save();
+        if ((App.data.gold || 0) < total) return Menu.msg('Goldが足りません。');
+        const transaction = App.runAtomicSaveMutation(() => {
+            if (Number(App.data.gold || 0) < total) return { ok:false, reason:'gold' };
+            if (!App.data.items) App.data.items = {};
+            App.data.gold -= total;
+            App.data.items[item.id] = Number(App.data.items[item.id] || 0) + qty;
+            return { ok:true };
+        });
+        if (!transaction.ok) return Menu.msg(transaction.reason === 'gold' ? 'Goldが足りません。' : '購入内容を保存できませんでした。');
         Facilities.shopPendingTrade = null;
         Facilities.closeModal('shop-scene');
         Facilities.updateShopGoldDisplay();
@@ -1472,7 +1521,7 @@ const Facilities = {
             const traitId = Number(t?.id ?? t);
             const lv = Number(t?.level || t?.lv || 1);
             const master = (typeof PassiveSkill !== 'undefined' && PassiveSkill.MASTER) ? PassiveSkill.MASTER[traitId] : null;
-            return `${master?.name || `特性${traitId}`}Lv${Number.isFinite(lv) ? lv : 1}`;
+            return `${master?.name || `特性${traitId}`} Lv.${Number.isFinite(lv) ? lv : 1}`;
         }).filter(Boolean);
         return parts.length ? `特性:${parts.join('・')}` : '';
     },
@@ -1518,7 +1567,7 @@ const Facilities = {
             return `<button class="shop-row equip" data-shop-key="${Facilities.escapeAttr(key)}" onclick="Facilities.selectShopBuyEquip(${Number(base.eid)})" onmouseenter="Facilities.showShopEquipHelp(${Number(base.eid)})" onfocus="Facilities.showShopEquipHelp(${Number(base.eid)})">
                 <span class="shop-type-pill">${Facilities.escapeAttr(Facilities.getEquipShopCategory(base))}</span>
                 <span class="shop-row-name"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${Facilities.escapeAttr(base.name)}</span><small style="color:#aaa;white-space:nowrap;margin-left:auto;">Rank ${Number(base.rank || 0)}</small></span><span class="shop-row-effect">${Facilities.escapeAttr(effectSummary)}</span></span>
-                <span class="shop-price">${cost.toLocaleString()} G</span>
+                <span class="shop-price">${cost.toLocaleString()} Gold</span>
             </button>`;
         }).join('');
         Facilities.setShopHelp('装備を選んでください。');
@@ -1543,13 +1592,13 @@ const Facilities = {
         const base = Facilities.getEquipShopLineup(cfg.type, cfg.rank).find(eq => Number(eq.eid) === Number(eid));
         if (!base) return Menu.msg('その装備は見つかりません。');
         const price = Facilities.getEquipShopPrice(base);
-        if ((App.data.gold || 0) < price) return Menu.msg('ゴールドが 足りません。');
+        if ((App.data.gold || 0) < price) return Menu.msg('Goldが足りません。');
         Facilities.showModal('shop-scene', '購入確認', `
             <div class="shop-confirm-card">
                 <div class="shop-confirm-title" style="display:flex;justify-content:space-between;gap:8px;"><span>${Facilities.escapeAttr(base.name)}</span><small style="color:#aaa;white-space:nowrap;">Rank ${Number(base.rank || 0)}</small></div>
                 <div class="shop-confirm-meta">${Facilities.escapeAttr(Facilities.getEquipShopCategory(base))}</div>
                 <div class="shop-confirm-box">${Facilities.escapeAttr(Facilities.getEquipBaseSummary(base, 0))}</div>
-                <div class="shop-total-line">${price.toLocaleString()} G</div>
+                <div class="shop-total-line">${price.toLocaleString()} Gold</div>
                 <button class="shop-primary-btn" onclick="Facilities.confirmBuyShopEquip(${Number(base.eid)})">はい</button>
             </div>
         `);
@@ -1654,16 +1703,20 @@ const Facilities = {
         const base = Facilities.getEquipShopLineup(cfg.type, cfg.rank).find(eq => Number(eq.eid) === Number(eid));
         if (!base) return Menu.msg('その装備は見つかりません。');
         const price = Facilities.getEquipShopPrice(base);
-        if ((App.data.gold || 0) < price) return Menu.msg('ゴールドが 足りません。');
+        if ((App.data.gold || 0) < price) return Menu.msg('Goldが足りません。');
 
         const plus = Facilities.rollShopEquipPlus();
         const purchased = Facilities.createShopEquipFromBase(base, cfg.rank, plus);
         if (!purchased) return Menu.msg('その装備は準備できませんでした。');
 
-        if (!App.data.inventory) App.data.inventory = [];
-        App.data.gold -= price;
-        App.data.inventory.push(purchased);
-        App.save();
+        const transaction = App.runAtomicSaveMutation(() => {
+            if (Number(App.data.gold || 0) < price) return { ok:false, reason:'gold' };
+            if (!App.data.inventory) App.data.inventory = [];
+            App.data.gold -= price;
+            App.data.inventory.push(purchased);
+            return { ok:true };
+        });
+        if (!transaction.ok) return Menu.msg(transaction.reason === 'gold' ? 'Goldが足りません。' : '購入内容を保存できませんでした。');
         Facilities.updateShopGoldDisplay();
         Facilities.renderShopEquip();
         const key = `buy-equip-${Number(base.eid)}`;
@@ -1681,7 +1734,7 @@ const Facilities = {
                     <span>購入品</span><span>+${plus}</span>
                 </div>
                 <div class="shop-confirm-box">${detailHtml}</div>
-                <div class="shop-total-line">支払い ${price.toLocaleString()} G / 残金 ${(App.data.gold || 0).toLocaleString()} G</div>
+                <div class="shop-total-line">支払い ${price.toLocaleString()} Gold / 残金 ${(App.data.gold || 0).toLocaleString()} Gold</div>
             </div>
         `);
     },
@@ -1785,13 +1838,13 @@ const Facilities = {
                 return `<button class="shop-row item" data-shop-key="${Facilities.escapeAttr(entry.key)}" onclick='Facilities.selectShopSellEquip(${Facilities.jsArg(entry.equip.id)})' onmouseenter='Facilities.showShopSellEquipHelp(${Facilities.jsArg(entry.equip.id)})' onfocus='Facilities.showShopSellEquipHelp(${Facilities.jsArg(entry.equip.id)})'>
                     <span class="shop-row-name"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${Facilities.escapeAttr(entry.name)}</span><small style="color:#aaa;white-space:nowrap;margin-left:auto;">Rank ${rank}</small></span></span>
                     <span class="shop-owned">装備</span>
-                    <span class="shop-price">${entry.price.toLocaleString()} G</span>
+                    <span class="shop-price">${entry.price.toLocaleString()} Gold</span>
                 </button>`;
             }
             return `<button class="shop-row item" data-shop-key="${Facilities.escapeAttr(entry.key)}" onclick="Facilities.selectShopSellItem(${Number(entry.item.id)})" onmouseenter="Facilities.showShopSellItemHelp(${Number(entry.item.id)})" onfocus="Facilities.showShopSellItemHelp(${Number(entry.item.id)})">
                 <span class="shop-row-name">${Facilities.escapeAttr(entry.name)}</span>
                 <span class="shop-owned">${Number(entry.count || 0).toLocaleString()}</span>
-                <span class="shop-price">${entry.price.toLocaleString()} G</span>
+                <span class="shop-price">${entry.price.toLocaleString()} Gold</span>
             </button>`;
         }).join('');
         Facilities.setShopHelp('売る道具・装備を選んでください。');
@@ -1819,7 +1872,7 @@ const Facilities = {
         Facilities.setShopHelp(`
             <div class="shop-detail-titlebar">
                 <div class="shop-detail-name">${Facilities.escapeAttr(item.name)}</div>
-                <div class="shop-detail-price">${price.toLocaleString()} G</div>
+                <div class="shop-detail-price">${price.toLocaleString()} Gold</div>
             </div>
             <div class="shop-detail-meta">所持 ${count.toLocaleString()}</div>
             <div class="shop-detail-box">${Facilities.escapeAttr(item.desc || '')}</div>
@@ -1839,7 +1892,7 @@ const Facilities = {
         <div class="shop-confirm-card">
             <div class="shop-confirm-title">${Facilities.escapeAttr(item.name)}</div>
             <div class="shop-confirm-meta">${Facilities.escapeAttr(item.desc || '')}</div>
-            <div class="shop-confirm-box">単価 ${Facilities.getItemSellPrice(item).toLocaleString()} G</div>
+            <div class="shop-confirm-box">単価 ${Facilities.getItemSellPrice(item).toLocaleString()} Gold</div>
             <div class="shop-qty-grid">
                 <button class="shop-qty-btn" onclick="Facilities.changeShopItemSellQty(-10)">-10</button>
                 <button class="shop-qty-btn" onclick="Facilities.changeShopItemSellQty(-1)">-</button>
@@ -1866,7 +1919,7 @@ const Facilities = {
         const totalEl = document.getElementById('shop-sell-total-display');
         const total = Number(trade.qty || 1) * Number(trade.price || 0);
         if (qtyEl) qtyEl.textContent = `${Number(trade.qty || 1).toLocaleString()} 個`;
-        if (totalEl) totalEl.textContent = `合計 ${total.toLocaleString()} G`;
+        if (totalEl) totalEl.textContent = `合計 ${total.toLocaleString()} Gold`;
     },
 
     confirmSellShopItem: () => {
@@ -1877,17 +1930,22 @@ const Facilities = {
         if (!item || owned <= 0 || !Facilities.isSellableItemDef(item)) return Menu.msg('その品物は売却できません。');
         const qty = Math.max(1, Math.min(owned, Number(trade.qty || 1)));
         const total = qty * Facilities.getItemSellPrice(item);
-        App.data.items[item.id] = owned - qty;
-        if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
-        App.data.gold = Number(App.data.gold || 0) + total;
-        App.save();
+        const transaction = App.runAtomicSaveMutation(() => {
+            const currentOwned = Number(App.data.items?.[item.id] || 0);
+            if (currentOwned < qty) return { ok:false, reason:'owned' };
+            App.data.items[item.id] = currentOwned - qty;
+            if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
+            App.data.gold = Number(App.data.gold || 0) + total;
+            return { ok:true };
+        });
+        if (!transaction.ok) return Menu.msg(transaction.reason === 'owned' ? 'その品物は売却できません。' : '売却内容を保存できませんでした。');
         Facilities.shopPendingTrade = null;
         Facilities.closeModal('shop-scene');
         Facilities.updateShopGoldDisplay();
         Facilities.renderShopSellList();
         Facilities.setShopHelp('売却しました。');
         if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('ui_shop_sell');
-        Menu.msg(`${total.toLocaleString()}G 獲得しました。`);
+        Menu.msg(`${total.toLocaleString()} Gold 獲得しました。`);
     },
 
     selectShopSellEquip: (equipId) => {
@@ -1913,7 +1971,7 @@ const Facilities = {
         Facilities.setShopHelp(`
             <div class="shop-detail-titlebar">
                 <div class="shop-detail-name" style="display:flex;gap:8px;align-items:center;min-width:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${Facilities.escapeAttr(equip.name || '装備')}</span><small style="color:#aaa;white-space:nowrap;">Rank ${Number(equip.rank || 0)}</small></div>
-                <div class="shop-detail-price">${price.toLocaleString()} G</div>
+                <div class="shop-detail-price">${price.toLocaleString()} Gold</div>
             </div>
             <div class="shop-detail-meta">${Facilities.escapeAttr(equip.type || '装備')}</div>
             <div class="shop-detail-box">${detailHtml}</div>
@@ -1932,7 +1990,7 @@ const Facilities = {
                 <div class="shop-confirm-title" style="display:flex;justify-content:space-between;gap:8px;"><span>${Facilities.escapeAttr(equip.name || '装備')}</span><small style="color:#aaa;white-space:nowrap;">Rank ${Number(equip.rank || 0)}</small></div>
                 <div class="shop-confirm-meta">${Facilities.escapeAttr(equip.type || '装備')}</div>
                 <div class="shop-confirm-box">${detailHtml}</div>
-                <div class="shop-total-line">${price.toLocaleString()} G</div>
+                <div class="shop-total-line">${price.toLocaleString()} Gold</div>
                 <button class="shop-secondary-btn" onclick='Facilities.confirmSellShopEquip(${Facilities.jsArg(equip.id)})'>はい</button>
             </div>
         `);
@@ -1945,15 +2003,22 @@ const Facilities = {
         const equip = App.data.inventory[index];
         if (!equip || equip.locked || equippedIds.has(String(equip.id))) return Menu.msg('その装備は売却できません。');
         const price = Facilities.getEquipSellPrice(equip);
-        App.data.inventory.splice(index, 1);
-        App.data.gold = Number(App.data.gold || 0) + price;
-        App.save();
+        const transaction = App.runAtomicSaveMutation(() => {
+            const currentIndex = (App.data.inventory || []).findIndex(eq => String(eq.id) === String(equipId));
+            if (currentIndex < 0) return { ok:false, reason:'missing' };
+            const currentEquip = App.data.inventory[currentIndex];
+            if (!currentEquip || currentEquip.locked || Facilities.getEquippedIdSet().has(String(currentEquip.id))) return { ok:false, reason:'blocked' };
+            App.data.inventory.splice(currentIndex, 1);
+            App.data.gold = Number(App.data.gold || 0) + price;
+            return { ok:true };
+        });
+        if (!transaction.ok) return Menu.msg(['missing','blocked'].includes(transaction.reason) ? 'その装備は売却できません。' : '売却内容を保存できませんでした。');
         Facilities.closeModal('shop-scene');
         Facilities.updateShopGoldDisplay();
         Facilities.renderShopSellList();
         Facilities.setShopHelp('売却しました。');
         if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('ui_shop_sell');
-        Menu.msg(`${price.toLocaleString()}G 獲得しました。`);
+        Menu.msg(`${price.toLocaleString()} Gold 獲得しました。`);
     },
 
     // --- 3. カジノ ---
@@ -1978,7 +2043,7 @@ const Facilities = {
         const exitFn = "App.changeScene('field')";
         const cmds = `
             <button class="menu-btn" style="background:#000; border:1px solid #4af; height:40px; color:#fff;" onclick="Casino.openGameSelect('gem')">GEMを賭ける</button>
-            <button class="menu-btn" style="background:#000; border:1px solid #ffd700; height:40px; color:#fff;" onclick="Casino.openGameSelect('gold')">GOLDを賭ける</button>
+            <button class="menu-btn" style="background:#000; border:1px solid #ffd700; height:40px; color:#fff;" onclick="Casino.openGameSelect('gold')">Goldを賭ける</button>
             <button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff;" onclick="Facilities.openCasinoExchange()">ジェム交換所</button>
         `;
         Facilities.setupBaseLayout('casino-scene', 'カジノ', 'facility_bg_casino', cmds, exitFn);
@@ -1991,13 +2056,13 @@ const Facilities = {
 
     casinoExchangeLineup: [
         { kind: 'item', itemId: 106, qty: 1, cost: 500, label: 'スキルのたね', desc: 'SPを1増やす希少な種' },
-        { kind: 'item', itemId: 107, qty: 1, cost: 5000, label: '転生の実', desc: '能力を維持してLv1に戻る禁断の実' },
+        { kind: 'item', itemId: 107, qty: 1, cost: 5000, label: '転生の実', desc: '能力を維持してLv.1に戻る禁断の実' },
         { kind: 'item', itemId: 6, qty: 1, cost: 2500, label: '世界樹の雫', desc: '味方全員のHPを全回復する高級回復品' },
         { kind: 'item', itemId: 7, qty: 1, cost: 1500, label: 'エルフの飲み薬', desc: 'MPを全回復する高級回復品' },
-        { kind: 'equip', category: 'weapon', rank: 70, plus: 3, cost: 8000, label: '希少武器+3', desc: 'Rank70相当のランダム武器+3' },
-        { kind: 'equip', category: 'armor', rank: 70, plus: 3, cost: 8000, label: '希少防具+3', desc: 'Rank70相当のランダム防具+3' },
-        { kind: 'equip', category: 'weapon', rank: 100, plus: 3, cost: 20000, label: '英雄武器+3', desc: 'Rank100相当のランダム武器+3' },
-        { kind: 'equip', category: 'armor', rank: 100, plus: 3, cost: 20000, label: '英雄防具+3', desc: 'Rank100相当のランダム防具+3' }
+        { kind: 'equip', category: 'weapon', rank: 70, plus: 3, cost: 8000, label: '希少武器+3', desc: 'Rank 70相当のランダム武器+3' },
+        { kind: 'equip', category: 'armor', rank: 70, plus: 3, cost: 8000, label: '希少防具+3', desc: 'Rank 70相当のランダム防具+3' },
+        { kind: 'equip', category: 'weapon', rank: 100, plus: 3, cost: 20000, label: '英雄武器+3', desc: 'Rank 100相当のランダム武器+3' },
+        { kind: 'equip', category: 'armor', rank: 100, plus: 3, cost: 20000, label: '英雄防具+3', desc: 'Rank 100相当のランダム防具+3' }
     ],
 
     openCasinoExchange: () => {
@@ -2063,14 +2128,19 @@ const Facilities = {
             name = equipToAdd.name;
         }
 
-        App.data.gems -= reward.cost;
-        if (itemToAdd) App.data.items[itemToAdd.id] = (App.data.items[itemToAdd.id] || 0) + (reward.qty || 1);
-        if (equipToAdd) {
-            App.data.inventory.push(equipToAdd);
-            window.EquipAcquisitionCard?.enqueue(equipToAdd, { source:'casinoExchange' });
+        const transaction = App.runAtomicSaveMutation(() => {
+            if ((App.data.gems || 0) < reward.cost) return { ok:false, reason:'gems' };
+            App.data.gems -= reward.cost;
+            if (itemToAdd) App.data.items[itemToAdd.id] = (App.data.items[itemToAdd.id] || 0) + (reward.qty || 1);
+            if (equipToAdd) App.data.inventory.push(equipToAdd);
+            return { ok:true };
+        });
+        if (!transaction.ok) {
+            Menu.msg(transaction.reason === 'gems' ? 'GEMが 足りません。' : '交換内容を保存できませんでした。');
+            return;
         }
+        if (equipToAdd) window.EquipAcquisitionCard?.enqueue(equipToAdd, { source:'casinoExchange' });
 
-        App.save();
         Facilities.openCasinoExchange();
         Menu.msg(`${name}を 交換しました！`);
     }
@@ -2146,26 +2216,58 @@ const Casino = {
     begin: (bet) => {
         const currency = Casino.targetCurrency === 'gem' ? 'gem' : 'gold';
         const unit = Casino.getCurrencyLabel(currency);
-        if(Casino.getCurrencyAmount(currency) < bet) return Menu.msg(`${unit}が 足りません！`);
-        Casino.spendCurrency(currency, bet);
+        const wager = Math.max(0, Math.floor(Number(bet) || 0));
+        if (wager <= 0) return Menu.msg('掛け金を確認できません。');
+        if (Casino.getCurrencyAmount(currency) < wager) return Menu.msg(`${unit}が 足りません！`);
+
+        // 先にプレイ状態をローカルで組み立て、掛け金の消費と同じ保存で確定する。
+        // カード配布中に saveState() を挟むと、保存失敗時に掛け金だけが減るため、ここでは App.data を触らない。
+        const deck = Casino.createDeck();
+        const duDeck = Casino.createDeck();
+        const draw = () => {
+            if (deck.length <= 5) deck.push(...Casino.createDeck());
+            return deck.pop();
+        };
+        let hand = [];
+        let dealer = [];
+        if (Casino.currentGame === 'poker') {
+            for (let i = 0; i < 5; i++) hand.push({ ...draw(), hold:false });
+        } else {
+            hand = [draw(), draw()];
+            dealer = [draw(), draw()];
+        }
+        const nextState = {
+            isPlaying:true,
+            currentGame:Casino.currentGame,
+            betGold:wager,
+            targetCurrency:currency,
+            betCurrency:currency,
+            hand,
+            dealer,
+            deck,
+            duDeck,
+            payout:0
+        };
+        const transaction = App.runAtomicSaveMutation(() => {
+            if (Casino.getCurrencyAmount(currency) < wager) return { ok:false, reason:'funds' };
+            Casino.spendCurrency(currency, wager);
+            App.data.casinoState = nextState;
+            return { ok:true };
+        });
+        if (!transaction.ok) {
+            return Menu.msg(transaction.reason === 'funds'
+                ? `${unit}が 足りません！`
+                : 'カジノの状態を保存できませんでした。');
+        }
+
         Casino.targetCurrency = currency;
-        Casino.betGold = bet;
+        Casino.betGold = wager;
         Casino.currentPayout = 0;
         Casino.isPlaying = true;
-        
-        // 4デッキ管理 (208枚)
-        Casino.deck = Casino.createDeck();
-        Casino.duDeck = Casino.createDeck();
-
-        if (Casino.currentGame === 'poker') {
-            Casino.hand = []; for(let i=0; i<5; i++) Casino.hand.push({...Casino.getCard(), hold:false});
-            Casino.dealer = [];
-        } else {
-            Casino.hand = [Casino.getCard(), Casino.getCard()];
-            Casino.dealer = [Casino.getCard(), Casino.getCard()];
-        }
-        
-        Casino.saveState();
+        Casino.deck = deck;
+        Casino.duDeck = duDeck;
+        Casino.hand = hand;
+        Casino.dealer = dealer;
         Facilities.closeModal('casino-scene');
         Casino.renderGameUI();
     },
@@ -2385,9 +2487,23 @@ const Casino = {
     },
 
     collect: () => {
-        const unit = Casino.getCurrencyLabel();
-        Casino.addCurrency(Casino.targetCurrency, Casino.currentPayout);
-        Casino.isPlaying = false; App.data.casinoState = { isPlaying: false }; App.save();
-        Menu.msg(`${Casino.currentPayout.toLocaleString()} ${unit} を手に入れた！`, () => Facilities.initCasino());
+        const currency = Casino.targetCurrency === 'gem' ? 'gem' : 'gold';
+        const unit = Casino.getCurrencyLabel(currency);
+        const payout = Math.max(0, Math.floor(Number(Casino.currentPayout) || 0));
+        const transaction = App.runAtomicSaveMutation(() => {
+            const state = App.data.casinoState;
+            if (!Casino.isPlaying || !state?.isPlaying) return { ok:false, reason:'state' };
+            Casino.addCurrency(currency, payout);
+            App.data.casinoState = { isPlaying:false };
+            return { ok:true };
+        });
+        if (!transaction.ok) {
+            return Menu.msg(transaction.reason === 'state'
+                ? '受け取り状態を確認できません。'
+                : '配当を保存できませんでした。');
+        }
+        Casino.isPlaying = false;
+        Casino.currentPayout = 0;
+        Menu.msg(`${payout.toLocaleString()} ${unit} を手に入れた！`, () => Facilities.initCasino());
     }
 };

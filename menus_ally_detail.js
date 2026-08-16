@@ -211,9 +211,9 @@ const MenuAllyDetail = {
 
         const milestones = [
             { id: 'base',  label: '初期', cond: () => true },
-            { id: 'lv50',  label: 'Lv50', cond: () => c.level >= 50 },
+            { id: 'lv50',  label: 'Lv.50', cond: () => c.level >= 50 },
             { id: 'lb50',  label: '+50',  cond: () => c.limitBreak >= 50 },
-            { id: 'lv100', label: 'Lv100',cond: () => c.level >= 100 },
+            { id: 'lv100', label: 'Lv.100',cond: () => c.level >= 100 },
             { id: 'lb99',  label: '+99',  cond: () => c.limitBreak >= 99 }
         ];
 

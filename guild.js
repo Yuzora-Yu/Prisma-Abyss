@@ -205,6 +205,7 @@
         },
 
         getLocalDateKey(date = new Date()) {
+            if (typeof App !== 'undefined' && typeof App.getLocalDateKey === 'function') return App.getLocalDateKey(date);
             const y = date.getFullYear();
             const m = String(date.getMonth() + 1).padStart(2, '0');
             const d = String(date.getDate()).padStart(2, '0');
@@ -1283,9 +1284,10 @@
             Guild.getEffectiveRewardItems(def).forEach(reward => {
                 const itemId = Number(reward.id ?? reward.itemId);
                 const item = DB.ITEMS?.find(entry => Number(entry.id) === itemId);
-                rows.push(`${item?.name || `アイテム${itemId}`} x${Math.max(1, Number(reward.count || 1))}`);
+                if (!item) console.warn('[GUILD] 報酬アイテム名を取得できません。', { itemId, questId:def.id || null });
+                rows.push(`${item?.name || 'アイテム'} x${Math.max(1, Number(reward.count || 1))}`);
             });
-            (def.rewardEquipment || []).forEach(reward => rows.push(String(reward.label || `RANK${reward.floor || 1} 装備+${reward.plus || 0}`)));
+            (def.rewardEquipment || []).forEach(reward => rows.push(String(reward.label || `Rank ${reward.floor || 1} 装備+${reward.plus || 0}`)));
             rows.push(`ギルド経験値 +${Number(def.guildExp || 0)}`)
             rows.push(`ギルドポイント +${Number(def.guildPoints || 0)}`);
             return rows.join('\n');
@@ -1326,28 +1328,36 @@
             id = Guild.resolveQuestId(id);
             const state = Guild.ensureState();
             const def = Guild.getDefinitions()[id];
-            if (!state || !def || !Guild.isObjectiveComplete(id) || !Guild.consumeRequirements(def)) return null;
-            if (!App.data.items) App.data.items = {};
-            Guild.getEffectiveRewardItems(def).forEach(reward => {
-                const itemId = Number(reward.id ?? reward.itemId);
-                App.data.items[itemId] = Number(App.data.items[itemId] || 0) + Math.max(1, Number(reward.count || 1));
-            });
-            if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+            if (!state || !def || !Guild.isObjectiveComplete(id)) return null;
+
             const equipmentRewards = (def.rewardEquipment || []).map(reward => Guild.createRewardEquipment(reward)).filter(Boolean);
-            equipmentRewards.forEach(equip => {
-                App.data.inventory.push(equip);
-                window.EquipAcquisitionCard?.enqueue(equip, { source:'guildQuest' });
+            const transaction = App.runAtomicSaveMutation(() => {
+                if (!Guild.isObjectiveComplete(id) || !Guild.consumeRequirements(def)) return { ok:false, reason:'requirements' };
+                if (!App.data.items) App.data.items = {};
+                Guild.getEffectiveRewardItems(def).forEach(reward => {
+                    const itemId = Number(reward.id ?? reward.itemId);
+                    App.data.items[itemId] = Number(App.data.items[itemId] || 0) + Math.max(1, Number(reward.count || 1));
+                });
+                if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+                equipmentRewards.forEach(equip => App.data.inventory.push(equip));
+
+                const currentState = Guild.ensureState();
+                currentState.exp += Math.max(0, Number(def.guildExp || 0));
+                currentState.points += Math.max(0, Number(def.guildPoints || 0));
+                if (def.generatedQuest) currentState.generatedCompletionTotal = Number(currentState.generatedCompletionTotal || 0) + 1;
+                else currentState.completionCounts[id] = Number(currentState.completionCounts[id] || 0) + 1;
+                App.incrementLifetimeStat?.('totalGuildQuestCompletions', 1, { save: false });
+                currentState.questStates[id] = { state: 'completed', completedAt: Date.now(), progress: {} };
+                currentState.offers = currentState.offers.filter(offerId => offerId !== id);
+                Guild.pruneGeneratedQuests(currentState);
+                Guild.fillOfferSlots({ avoidIds: [id] });
+                return { ok:true };
             });
-            state.exp += Math.max(0, Number(def.guildExp || 0));
-            state.points += Math.max(0, Number(def.guildPoints || 0));
-            if (def.generatedQuest) state.generatedCompletionTotal = Number(state.generatedCompletionTotal || 0) + 1;
-            else state.completionCounts[id] = Number(state.completionCounts[id] || 0) + 1;
-            App.incrementLifetimeStat?.('totalGuildQuestCompletions', 1, { save: false });
-            state.questStates[id] = { state: 'completed', completedAt: Date.now(), progress: {} };
-            state.offers = state.offers.filter(offerId => offerId !== id);
-            Guild.pruneGeneratedQuests(state);
-            Guild.fillOfferSlots({ avoidIds: [id] });
-            App.save();
+            if (!transaction.ok) {
+                console.warn('[GUILD] 依頼報告を確定できませんでした。', { id, reason:transaction.reason });
+                return null;
+            }
+            equipmentRewards.forEach(equip => window.EquipAcquisitionCard?.enqueue(equip, { source:'guildQuest' }));
             if (typeof MenuStatus !== 'undefined' && typeof MenuStatus.render === 'function') MenuStatus.render();
             return { def, guildExp: Number(def.guildExp || 0), guildPoints: Number(def.guildPoints || 0), equipmentRewards };
         },
@@ -1430,14 +1440,19 @@
             const entry = EXCHANGE.find(value => value.id === entryId);
             if (!state || !entry || state.points < entry.cost) return false;
             if (entry.requiredRank && Guild.rankIndex(state.rank) < Guild.rankIndex(entry.requiredRank)) return false;
-            state.points -= entry.cost;
-            if (entry.gems) App.data.gems = Number(App.data.gems || 0) + Number(entry.gems);
-            if (entry.itemId) {
-                if (!App.data.items) App.data.items = {};
-                App.data.items[entry.itemId] = Number(App.data.items[entry.itemId] || 0) + Math.max(1, Number(entry.count || 1));
-            }
-            App.save();
-            return true;
+            const transaction = App.runAtomicSaveMutation(() => {
+                const currentState = Guild.ensureState();
+                if (!currentState || currentState.points < entry.cost) return { ok:false, reason:'points' };
+                if (entry.requiredRank && Guild.rankIndex(currentState.rank) < Guild.rankIndex(entry.requiredRank)) return { ok:false, reason:'rank' };
+                currentState.points -= entry.cost;
+                if (entry.gems) App.data.gems = Number(App.data.gems || 0) + Number(entry.gems);
+                if (entry.itemId) {
+                    if (!App.data.items) App.data.items = {};
+                    App.data.items[entry.itemId] = Number(App.data.items[entry.itemId] || 0) + Math.max(1, Number(entry.count || 1));
+                }
+                return { ok:true };
+            });
+            return transaction.ok;
         },
 
         freeRest() {

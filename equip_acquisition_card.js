@@ -353,7 +353,7 @@
 
         getTraitText(trait) {
             const parts = Manager.getTraitParts(trait);
-            return `${parts.name} Lv${parts.level}`;
+            return `${parts.name} Lv.${parts.level}`;
         },
 
         buildRows(equip) {
@@ -375,7 +375,7 @@
                     kind:'trait',
                     traitIndex,
                     sectionStart:optionCount >= 3 && traitIndex === 0,
-                    html:`<span class="equip-acquisition-trait-name">${escapeHtml(parts.name)}</span><span class="equip-acquisition-trait-level"> Lv${parts.level}</span>`
+                    html:`<span class="equip-acquisition-trait-name">${escapeHtml(parts.name)}</span><span class="equip-acquisition-trait-level"> Lv.${parts.level}</span>`
                 });
             });
             const calculatedSynergies = typeof App.checkSynergy === 'function' ? App.checkSynergy(equip) : [];

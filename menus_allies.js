@@ -411,7 +411,7 @@ const MenuAllies = {
 		if (eq.traits && eq.traits.length > 0) {
 			const traitList = eq.traits.map(t => {
 				const m = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.MASTER[t.id] : null;
-				return m ? `<span style="display:inline-flex; align-items:center; color:#d9c4a1; background:rgba(24,14,8,0.72); border:1px solid rgba(232,178,91,0.30); border-radius:4px; padding:2px 6px; font-size:10px; line-height:1.2; white-space:nowrap;">${m.name} Lv${t.level}</span>` : '';
+				return m ? `<span style="display:inline-flex; align-items:center; color:#d9c4a1; background:rgba(24,14,8,0.72); border:1px solid rgba(232,178,91,0.30); border-radius:4px; padding:2px 6px; font-size:10px; line-height:1.2; white-space:nowrap;">${m.name} Lv.${t.level}</span>` : '';
 			}).join('');
 			traitHtml = `<div style="display:flex; flex-wrap:wrap; gap:4px 6px; width:100%; box-sizing:border-box; margin-top:4px;">${traitList}</div>`;
 		}
@@ -737,7 +737,7 @@ const MenuAllies = {
 						});
 					}
 
-					const buttonsHtml = `<div style="display:flex; gap:10px; margin: 10px 0;"><button class="btn" style="flex:1; background:#555;" onclick="MenuAllies.selectedEquip=null; MenuAllies.renderDetail()">やめる</button><button class="btn" style="flex:1; background:#d00;" onclick="MenuAllies.doEquip()">変更する</button></div>`;
+					const buttonsHtml = `<div style="display:flex; gap:10px; margin: 10px 0;"><button class="btn" style="flex:1; background:#555;" onclick="MenuAllies.selectedEquip=null; MenuAllies.renderDetail()">キャンセル</button><button class="btn" style="flex:1; background:#d00;" onclick="MenuAllies.doEquip()">変更する</button></div>`;
 					contentHtml = `<div style="padding:10px; text-align:center; color:#ffd700; font-weight:bold; border-bottom:1px solid #444;">装備変更の確認 (${MenuAllies.targetPart})</div>
                             <div style="padding:5px; font-size:14px; margin-bottom:1px;">${isRemove ? '<div style="text-align:center;color:#aaa;">(装備を外す)</div>' : Menu.getEquipmentNameLineHTML(newItem)}</div>
                             <div style="text-align:center;font-size:11px;color:#aaa;margin-bottom:3px;">に変更しますか？</div>
@@ -1023,7 +1023,7 @@ const MenuAllies = {
                             <button class="btn" style="margin-left:5px; padding:2px 6px; font-size:10px;" onclick="window.saveName()">OK</button>
                         </div>
 
-                        <div style="font-size:11px; color:#aaa; margin-bottom:4px;">${c.job} Lv.${c.level} / ${c.rarity} Rank${App.isMonsterAlly?.(c) ? ((c.monsterFusionCount || 0) > 0 ? `  ◆合成${c.monsterFusionCount}` : '') : (c.reincarnationCount > 0 ? `  ★${c.reincarnationCount}` : '')}</div>
+                        <div style="font-size:11px; color:#aaa; margin-bottom:4px;">${c.job} Lv.${c.level} / ${c.rarity} Rank ${App.isMonsterAlly?.(c) ? ((c.monsterFusionCount || 0) > 0 ? `  ◆合成${c.monsterFusionCount}` : '') : (c.reincarnationCount > 0 ? `  ★${c.reincarnationCount}` : '')}</div>
 
                         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px;">
                             <div style="background:#333; padding:2px 4px; border-radius:3px; line-height:1.1;">
@@ -1350,7 +1350,7 @@ const MenuAllies = {
                 <div style="font-weight:bold; color:#ffd700;">装備変更の確認</div>
                 <div style="font-size:11px; color:#aaa; margin-top:2px;">${MenuAllies.escapeHtml(partLabel)}</div>
             </div>
-            <button class="btn" style="flex:0 0 auto; padding:4px 10px; background:#555;" onclick="MenuAllies.selectedEquip=null; MenuAllies.renderEquipModalList()">戻る</button>
+            <button class="btn" style="flex:0 0 auto; padding:4px 10px; background:#555;" onclick="MenuAllies.selectedEquip=null; MenuAllies.renderEquipModalList()">もどる</button>
         `;
         content.innerHTML = `
             <div style="font-weight:bold; margin-bottom:8px;">
@@ -1363,7 +1363,7 @@ const MenuAllies = {
         if (footer) {
             footer.innerHTML = `
                 <div style="display:flex; gap:8px;">
-                    <button class="btn" style="flex:1; background:#555;" onclick="MenuAllies.selectedEquip=null; MenuAllies.renderEquipModalList()">やめる</button>
+                    <button class="btn" style="flex:1; background:#555;" onclick="MenuAllies.selectedEquip=null; MenuAllies.renderEquipModalList()">キャンセル</button>
                     <button class="btn" style="flex:1; background:#d00;" onclick="MenuAllies.doEquip()">変更する</button>
                 </div>
             `;

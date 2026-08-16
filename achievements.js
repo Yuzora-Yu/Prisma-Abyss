@@ -88,8 +88,8 @@ const ACHIEVEMENTS_DATA = [
     { id: 603, type: "BOOK", goal: 100, category: "図鑑", title: "深淵生態系の記録者", desc: "魔物図鑑を100種類埋める", rewards: [{ type: 'GEM', val: 1000 }] },
 
     // --- 7. 累計獲得ゴールド / GEM ---
-    { id: 701, type: "GOLD", goal: 100000, category: "収集", title: "貯金家", desc: "累計獲得ゴールド 100,000突破", rewards: [{ type: 'GEM', val: 100 }] },
-    { id: 702, type: "GOLD", goal: 1000000, category: "収集", title: "大富豪", desc: "累計獲得ゴールド 1,000,000突破", rewards: [{ type: 'GEM', val: 1000 }] },
+    { id: 701, type: "GOLD", goal: 100000, category: "収集", title: "貯金家", desc: "累計獲得Gold 100,000突破", rewards: [{ type: 'GEM', val: 100 }] },
+    { id: 702, type: "GOLD", goal: 1000000, category: "収集", title: "大富豪", desc: "累計獲得Gold 1,000,000突破", rewards: [{ type: 'GEM', val: 1000 }] },
     { id: 703, type: "GEM", goal: 10000, category: "収集", title: "輝石を集めし者", desc: "累計獲得GEM 10,000突破", rewards: [{ type: 'GOLD', val: 100000 }] },
 
     // --- 8. 特殊ボス討伐 ---
@@ -424,21 +424,23 @@ const AchievementManager = {
     getItemName: (id) => {
         const items = window.ITEMS_DATA || ((typeof DB !== 'undefined' && DB.ITEMS) ? DB.ITEMS : []);
         const item = items.find(i => Number(i.id) === Number(id));
-        return item ? item.name : `アイテムID:${id}`;
+        if (!item) console.warn('[ACHIEVEMENT] アイテム報酬名を取得できません。', { id });
+        return item ? item.name : 'アイテム';
     },
 
     getEquipMaster: (eid) => (window.EQUIP_MASTER || []).find(e => Number(e.eid) === Number(eid)) || null,
 
     getEquipName: (eid) => {
         const eq = AchievementManager.getEquipMaster(eid);
-        return eq ? eq.name : `装備ID:${eid}`;
+        if (!eq) console.warn('[ACHIEVEMENT] 装備報酬名を取得できません。', { eid });
+        return eq ? eq.name : '装備品';
     },
 
     getRewardText: (rewards = []) => {
         if (!Array.isArray(rewards) || rewards.length === 0) return 'なし';
         return rewards.map((r) => {
             if (r.type === 'GEM') return `${r.val || 0} GEM`;
-            if (r.type === 'GOLD') return `${r.val || 0} GOLD`;
+            if (r.type === 'GOLD') return `${r.val || 0} Gold`;
             if (r.type === 'ITEM') return `${AchievementManager.getItemName(r.id)} x${r.val || 1}`;
             if (r.type === 'EQUIP') {
                 const equip = AchievementManager.getEquipMaster(r.eid);
@@ -463,7 +465,7 @@ const AchievementManager = {
                     break;
                 case 'GOLD':
                     App.data.gold = (Number(App.data.gold) || 0) + (Number(r.val) || 0);
-                    msgParts.push(`${r.val || 0} GOLD`);
+                    msgParts.push(`${r.val || 0} Gold`);
                     break;
                 case 'ITEM': {
                     const count = Number(r.val) || 1;

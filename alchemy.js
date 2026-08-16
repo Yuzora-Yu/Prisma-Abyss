@@ -432,15 +432,24 @@
             }
             const result = Alchemy.chooseRandomOutput(entries, random);
             if (!result?.item) return false;
-            entries.forEach(entry => {
-                App.data.items[entry.itemId] = Alchemy.owned(entry.itemId) - entry.count;
-                if (App.data.items[entry.itemId] <= 0) delete App.data.items[entry.itemId];
+            const transaction = App.runAtomicSaveMutation(() => {
+                const currentValidation = Alchemy.validateRandomSelection(entries);
+                if (!currentValidation.ok) return { ok:false, reason:'materials' };
+                entries.forEach(entry => {
+                    App.data.items[entry.itemId] = Alchemy.owned(entry.itemId) - entry.count;
+                    if (App.data.items[entry.itemId] <= 0) delete App.data.items[entry.itemId];
+                });
+                App.data.items[result.item.id] = Alchemy.owned(result.item.id) + 1;
+                App.incrementLifetimeStat?.('totalAlchemyCrafts', 1, { save: false });
+                App.incrementLifetimeStat?.('totalAlchemyItemsCrafted', 1, { save: false });
+                return { ok:true };
             });
-            App.data.items[result.item.id] = Alchemy.owned(result.item.id) + 1;
-            App.incrementLifetimeStat?.('totalAlchemyCrafts', 1, { save: false });
-            App.incrementLifetimeStat?.('totalAlchemyItemsCrafted', 1, { save: false });
+            if (!transaction.ok) {
+                Menu.msg(transaction.reason === 'materials' ? '素材が足りません。' : '錬成内容を保存できませんでした。');
+                Alchemy.renderRandomModal();
+                return false;
+            }
             Alchemy.randomSelection = {};
-            App.save();
             Alchemy.renderHome();
             Alchemy.renderRandomModal();
             Menu.msg(`${result.quality.label}錬成に成功！\n${result.item.name}を 1個 錬成した！`);
@@ -503,7 +512,7 @@
                 const item = Alchemy.item(part.itemId);
                 const need = part.count * Alchemy.quantity;
                 const owned = Alchemy.owned(part.itemId);
-                return `<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #555;padding:5px 0;color:${owned >= need ? '#fff' : '#ff7777'};"><span>${esc(item?.name || `ID ${part.itemId}`)}</span><span>${owned} / ${need}</span></div>`;
+                return `<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #555;padding:5px 0;color:${owned >= need ? '#fff' : '#ff7777'};"><span>${esc(item?.name || '素材')}</span><span>${owned} / ${need}</span></div>`;
             }).join('');
             const available = Alchemy.canCraft(recipe, variant, Alchemy.quantity);
             body.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:8px;">${tabs}</div><div id="alchemy-recipe-list" style="max-height:150px;overflow:auto;margin-bottom:10px;">${list}</div><div style="border:1px solid #777;padding:9px;background:#080808;"><div style="font-size:15px;color:#ffd700;font-weight:bold;">${esc(output?.name || recipe.id)} × ${recipe.outputCount * Alchemy.quantity}</div><div style="font-size:10px;color:#aaa;margin-bottom:7px;">${esc(output?.desc || '')}</div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">${variants}</div>${ingredientRows}<div style="display:grid;grid-template-columns:42px 1fr 42px;gap:6px;align-items:center;margin-top:9px;"><button class="btn" onclick="Alchemy.adjustQuantity(-1)">－</button><div style="text-align:center;color:#ffd700;">${Alchemy.quantity}回分</div><button class="btn" onclick="Alchemy.adjustQuantity(1)">＋</button></div><button class="menu-btn" ${available ? '' : 'disabled'} onclick="Alchemy.confirmCraft()" style="width:100%;height:42px;margin-top:9px;background:${available ? '#665000' : '#222'};border:2px solid ${available ? '#ffd700' : '#555'};color:${available ? '#fff' : '#777'};">${available ? '錬成する' : '素材が足りない'}</button></div>`;
@@ -531,15 +540,23 @@
                 Alchemy.renderRecipeModal();
                 return false;
             }
-            variant.ingredients.forEach(part => {
-                App.data.items[part.itemId] = Alchemy.owned(part.itemId) - part.count * batches;
-                if (App.data.items[part.itemId] <= 0) delete App.data.items[part.itemId];
-            });
             const made = recipe.outputCount * batches;
-            App.data.items[recipe.outputItemId] = Alchemy.owned(recipe.outputItemId) + made;
-            App.incrementLifetimeStat?.('totalAlchemyCrafts', batches, { save: false });
-            App.incrementLifetimeStat?.('totalAlchemyItemsCrafted', made, { save: false });
-            App.save();
+            const transaction = App.runAtomicSaveMutation(() => {
+                if (!Alchemy.canCraft(recipe, variant, batches)) return { ok:false, reason:'materials' };
+                variant.ingredients.forEach(part => {
+                    App.data.items[part.itemId] = Alchemy.owned(part.itemId) - part.count * batches;
+                    if (App.data.items[part.itemId] <= 0) delete App.data.items[part.itemId];
+                });
+                App.data.items[recipe.outputItemId] = Alchemy.owned(recipe.outputItemId) + made;
+                App.incrementLifetimeStat?.('totalAlchemyCrafts', batches, { save: false });
+                App.incrementLifetimeStat?.('totalAlchemyItemsCrafted', made, { save: false });
+                return { ok:true };
+            });
+            if (!transaction.ok) {
+                Menu.msg(transaction.reason === 'materials' ? '素材が足りません。' : '錬成内容を保存できませんでした。');
+                Alchemy.renderRecipeModal();
+                return false;
+            }
             Alchemy.renderHome();
             Alchemy.renderRecipeModal();
             Menu.msg(`${Alchemy.item(recipe.outputItemId)?.name || '品物'}を ${made}個 錬成した！`);

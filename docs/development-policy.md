@@ -1,6 +1,6 @@
 # PRISMA ABYSS Development Policy
 
-Last updated: 2026-08-14
+Last updated: 2026-08-17
 
 This document records the current long-term development direction. Treat it as a product/design policy, not just an implementation TODO.
 
@@ -28,6 +28,19 @@ Opening asset delivery is staged: before play begins, preload Lumina Village, th
 
 チュートリアルを除き、既存のシステム文、現在の目的、マップ操作文、メニュー、施設、戦闘等のUI文言は、現在の作業範囲に関係なくレビュー候補として収集する。既存文言を変更する場合は、必ず `現行` と `修正案` を併記し、ユーザーの最終判断前にruntimeへ反映しない。master inventoryは `docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md` とし、新規文言も継続追記する。チュートリアルは既存のUI完成ゲートを優先し、この全体レビューからは保留する。
 
+### 冒険記録のストーリー進行度表示（2026-08-17追記）
+
+- 冒険記録／ステータス系画面で `storyStep-subStep`（例: `12-3`）をそのまま「ストーリー進行度」として表示する現行仕様は、承認済みのプレイヤー向け表現として維持する。
+- この表示は開発用デバッグ値の誤露出とは扱わない。章名・目的名への自動置換や非表示化を行わない。
+- `storyStep` / `subStep` 自体の保存互換・進行判定上の意味は従来どおり内部契約として維持し、表示仕様の変更が必要な場合のみ個別に再レビューする。
+
+### プレイヤー向け短縮表記・操作語彙（2026-08-17追記）
+
+- 通貨表記はプレイヤー向け画面では `Gold` / `GEM` を正本とする。内部enumの `GOLD` や変数名 `gold` は変更しないが、価格・報酬・所持金表示で `G` / `GOLD` / `ゴールド` を混在させない。
+- ランクは数値メタデータとして表示する場合 `Rank 70` のように半角スペースを入れる。レベルは `Lv.70` を標準とする。固有名や外部データ由来の名称そのものを機械的に改名しない。
+- 画面階層を一つ戻る操作は `もどる`、モーダルや情報画面を閉じる操作は `閉じる`、未確定の選択・処理を取り消す操作は `キャンセル`、開始済みの挑戦等を中断する意味では `やめる` を使う。
+- マップ上の「○○へ戻る」は行き先を表す自然文であり、上記UIボタン規約の一括置換対象にしない。
+
 ## Core Intent
 
 The game has become feature-rich, but the next direction is to reorganize it as an RPG where features open naturally through story progression.
@@ -52,6 +65,14 @@ The game has become feature-rich, but the next direction is to reorganize it as 
 - Phaser itself currently uses its Canvas backend for asset compatibility. This is separate from the legacy Canvas fallback above; “Phaser-first” still applies.
 - After the Phaser implementation is complete, mirror the minimum equivalent behavior into the legacy Canvas path so a renderer failure does not break movement or essential readability.
 - A map-editor preview or a passing legacy-Canvas check does not prove the production renderer is correct. Visual changes must be checked in the active Phaser game view, and validation must assert both paths when fallback parity matters.
+- Phaser-layer failures and legacy 2D Canvas failures are not identical. Missing Phaser initialization, scene lifecycle errors, resize/wake/sync failures, or Phaser texture/object handling failures can still leave the direct 2D Canvas fallback usable even though Phaser itself is configured with its Canvas backend. Therefore the legacy fallback remains enabled for now.
+- Do not remove the legacy fallback merely because Phaser normally succeeds. Removal requires explicit failure-path testing and a replacement fatal-render diagnostic/recovery UX so a Phaser-only failure cannot silently turn the field blank.
+
+### ワールドマップ端のループ仕様（2026-08-17追記）
+
+- ワールドマップの上下左右端は、昔ながらのRPGと同様に反対側へ連続するループ世界を正式仕様とする。`Field.move()` 等の座標剰余によるwrapを、範囲外バグとしてclamp・移動禁止へ変更しない。
+- 地理上の進行制約は、ワールド端を塞ぐことで作らず、マップ配置、乗り物の利用条件、固定マップ、イベントゲート等の既存仕様で管理する。
+- 深淵世界では船・飛行を使用できないため、ワールド側の乗り物仕様から深淵の進行迂回を推測しない。移動監査では各worldKeyの利用可能な移動手段を先に確認する。
 
 ### 町・建物マップの外周と出入口
 

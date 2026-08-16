@@ -361,13 +361,20 @@ const MenuInventory = {
         if (targets.length === 0) return Menu.msg("売却するアイテムを選択してください");
 
         const totalGold = MenuInventory.calcSellGold(targets);
-        Menu.confirm(`${targets.length} 個の装備を合計 ${totalGold.toLocaleString()}G で売却しますか？`, () => {
-            MenuInventory.removeTargets(targets);
-            App.data.gold += totalGold;
+        Menu.confirm(`${targets.length} 個の装備を合計 ${totalGold.toLocaleString()} Gold で売却しますか？`, () => {
+            const targetIds = new Set(targets.map(item => String(item.id)));
+            const transaction = App.runAtomicSaveMutation(() => {
+                const currentOwnerMap = MenuInventory.getOwnerMap();
+                const currentTargets = (App.data.inventory || []).filter(item => targetIds.has(String(item.id)) && !item.locked && !currentOwnerMap.has(String(item.id)));
+                if (currentTargets.length !== targets.length) return { ok:false, reason:'changed' };
+                MenuInventory.removeTargets(currentTargets);
+                App.data.gold += totalGold;
+                return { ok:true };
+            });
+            if (!transaction.ok) return Menu.msg(transaction.reason === 'changed' ? '売却対象が変更されています。' : '売却内容を保存できませんでした。');
             MenuInventory.selectedIds = [];
-            App.save();
             if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('ui_shop_sell');
-            Menu.msg(`${totalGold.toLocaleString()}G 獲得しました`);
+            Menu.msg(`${totalGold.toLocaleString()} Gold 獲得しました`);
             MenuInventory.render();
         });
     },
@@ -466,7 +473,7 @@ const MenuInventory = {
         cancelBtn.className = 'btn';
         cancelBtn.style.minWidth = '100px';
         cancelBtn.style.background = '#444';
-        cancelBtn.innerText = 'やめる';
+        cancelBtn.innerText = 'キャンセル';
         cancelBtn.onclick = () => Menu.closeDialog();
 
         btnEl.appendChild(executeBtn);
@@ -500,7 +507,7 @@ const MenuInventory = {
         const totalGold = MenuInventory.calcSellGold(targets);
         preview.innerHTML = `
             対象装備: <span style="color:#fff; font-weight:bold;">${targets.length.toLocaleString()}</span> 個<br>
-            売却額: <span style="color:#ffd700; font-weight:bold;">${totalGold.toLocaleString()}G</span>
+            売却額: <span style="color:#ffd700; font-weight:bold;">${totalGold.toLocaleString()} Gold</span>
         `;
     },
 
@@ -514,15 +521,22 @@ const MenuInventory = {
 
         const totalGold = MenuInventory.calcSellGold(targets);
         Menu.confirm(
-            `${targets.length.toLocaleString()} 個の装備を一括売却します。\n合計 ${totalGold.toLocaleString()}G を獲得します。\n本当に実行しますか？`,
+            `${targets.length.toLocaleString()} 個の装備を一括売却します。\n合計 ${totalGold.toLocaleString()} Gold を獲得します。\n本当に実行しますか？`,
             () => {
-                MenuInventory.removeTargets(targets);
-                App.data.gold += totalGold;
+                const targetIds = new Set(targets.map(item => String(item.id)));
+                const transaction = App.runAtomicSaveMutation(() => {
+                    const ownerMap = MenuInventory.getOwnerMap();
+                    const currentTargets = (App.data.inventory || []).filter(item => targetIds.has(String(item.id)) && !item.locked && !ownerMap.has(String(item.id)));
+                    if (currentTargets.length !== targets.length) return { ok:false, reason:'changed' };
+                    MenuInventory.removeTargets(currentTargets);
+                    App.data.gold += totalGold;
+                    return { ok:true };
+                });
+                if (!transaction.ok) return Menu.msg(transaction.reason === 'changed' ? '売却対象が変更されています。' : '売却内容を保存できませんでした。');
                 MenuInventory.page = 0;
-                App.save();
                 MenuInventory.render();
                 if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('ui_shop_sell');
-                Menu.msg(`${targets.length.toLocaleString()} 個の装備を売却し、${totalGold.toLocaleString()}G を獲得しました。`);
+                Menu.msg(`${targets.length.toLocaleString()} 個の装備を売却し、${totalGold.toLocaleString()} Gold を獲得しました。`);
             }
         );
     }

@@ -698,7 +698,7 @@ ${outcome.name} が完成しました。
 			targetTraits = `<div style="font-size:9px; color:#0ff; margin-top:2px;">` + 
 				target.traits.map(t => {
 					const m = (typeof PassiveSkill !== 'undefined') ? PassiveSkill.MASTER[t.id] : null;
-					return m ? `★${m.name} Lv${t.level}` : '';
+					return m ? `★${m.name} Lv.${t.level}` : '';
 				}).join(' ') + `</div>`;
 		}
 		header.innerHTML = `

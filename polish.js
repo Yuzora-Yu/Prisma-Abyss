@@ -48,7 +48,7 @@
     const deleteBtn = byId("deleteBtn");
     if (deleteBtn) deleteBtn.textContent = "セーブデータを削除";
     const closeBtn = document.querySelector(".btn-close");
-    if (closeBtn) closeBtn.textContent = "戻る";
+    if (closeBtn) closeBtn.textContent = "閉じる";
     const dataButtons = document.querySelectorAll("#modal-content .btn-modal:not(#installBtn):not(#updateBtn):not(#deleteBtn)");
     if (dataButtons[0] && shouldReplace(dataButtons[0].textContent)) dataButtons[0].textContent = "データ出力";
     if (dataButtons[1] && shouldReplace(dataButtons[1].textContent)) dataButtons[1].textContent = "データ読込";
@@ -77,7 +77,7 @@
     const listTitle = byId("battle-list-title");
     if (listTitle && shouldReplace(listTitle.textContent)) listTitle.textContent = "選択";
     document.querySelectorAll('button[onclick*="Battle.cancelSubMenu"]').forEach((button) => {
-      if (shouldReplace(button.textContent)) button.textContent = "戻る";
+      if (shouldReplace(button.textContent)) button.textContent = "もどる";
     });
     const menuClose = document.querySelector('#menu-overlay button[onclick*="Menu.closeMainMenu"]');
     if (menuClose && shouldReplace(menuClose.textContent)) menuClose.textContent = "閉じる";

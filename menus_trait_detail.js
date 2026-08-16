@@ -83,14 +83,36 @@ const MenuTraitDetail = {
                 return;
             }
 
-            App.data.gems -= 2000;
-            App.data.progress.rerollState = {
-                charUid: char.uid,
-                slotIndex: t.slotIndex,
-                oldTraitId: char.traits[t.slotIndex].id,
-                newTraitId: newMaster.id
-            };
-            App.save();
+            const transaction = App.runAtomicSaveMutation(() => {
+                if ((App.data.gems || 0) < 2000) return { ok:false, reason:'gems' };
+                const liveChar = (App.data.characters || []).find(entry => entry?.uid === char.uid);
+                const liveTrait = liveChar?.traits?.[t.slotIndex];
+                if (!liveChar || !liveTrait) return { ok:false, reason:'changed' };
+                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.isTraitBookLockedSlot?.(liveChar, t.slotIndex)) {
+                    return { ok:false, reason:'locked' };
+                }
+                App.data.gems -= 2000;
+                if (!App.data.progress || typeof App.data.progress !== 'object') App.data.progress = {};
+                App.data.progress.rerollState = {
+                    charUid: liveChar.uid,
+                    slotIndex: t.slotIndex,
+                    oldTraitId: liveTrait.id,
+                    newTraitId: newMaster.id
+                };
+                return { ok:true };
+            });
+            if (!transaction.ok) {
+                const message = transaction.reason === 'gems'
+                    ? 'GEMが足りません。'
+                    : transaction.reason === 'locked'
+                        ? '特性書で習得した特性は再抽選では変更できません。'
+                        : transaction.reason === 'changed'
+                            ? '対象の特性が変更されています。'
+                            : '再抽選内容を保存できませんでした。';
+                Menu.msg(message);
+                if (dialogArea) dialogArea.style.zIndex = '50000';
+                return;
+            }
             MenuTraitDetail.renderRerollResult();
         });
 
@@ -107,24 +129,37 @@ const MenuTraitDetail = {
         const container = document.querySelector(selector);
         const scrollPos = container ? container.scrollTop : 0;
 
-        if (applyNew && char) {
-            if (typeof PassiveSkill !== 'undefined' && PassiveSkill.isTraitBookLockedSlot?.(char, state.slotIndex)) {
-                delete App.data.progress.rerollState;
-                App.save();
-                Menu.msg('特性書で習得した特性は再抽選では変更できません。');
-                MenuTraitDetail.close();
-                MenuAllies.renderDetail();
-                return;
+        const transaction = App.runAtomicSaveMutation(() => {
+            const liveState = App.data.progress?.rerollState;
+            if (!liveState || String(liveState.charUid) !== String(state.charUid) || Number(liveState.slotIndex) !== Number(state.slotIndex)) {
+                return { ok:false, reason:'changed' };
             }
-            char.traits[state.slotIndex] = { id: state.newTraitId, level: 1, battleCount: 0 };
-            App.save();
-            Menu.msg('新しい特性を習得しました！');
-        } else {
-            Menu.msg('既存の特性を維持しました。');
+            const liveChar = (App.data.characters || []).find(entry => entry?.uid === liveState.charUid);
+            if (applyNew) {
+                if (!liveChar?.traits?.[liveState.slotIndex]) return { ok:false, reason:'changed' };
+                if (typeof PassiveSkill !== 'undefined' && PassiveSkill.isTraitBookLockedSlot?.(liveChar, liveState.slotIndex)) {
+                    delete App.data.progress.rerollState;
+                    return { ok:true, lockedCleanup:true };
+                }
+                liveChar.traits[liveState.slotIndex] = { id: liveState.newTraitId, level: 1, battleCount: 0 };
+            }
+            delete App.data.progress.rerollState;
+            return { ok:true };
+        });
+        if (!transaction.ok) {
+            const message = transaction.reason === 'locked'
+                ? '特性書で習得した特性は再抽選では変更できません。'
+                : transaction.reason === 'changed'
+                    ? '再抽選の状態が変更されています。'
+                    : '再抽選内容を保存できませんでした。';
+            Menu.msg(message);
+            return;
         }
-
-        delete App.data.progress.rerollState;
-        App.save();
+        if (transaction.result?.lockedCleanup) {
+            Menu.msg('特性書で習得した特性は再抽選では変更できません。');
+        } else {
+            Menu.msg(applyNew ? '新しい特性を習得しました！' : '既存の特性を維持しました。');
+        }
         MenuTraitDetail.close();
         MenuAllies.renderDetail();
 
@@ -144,9 +179,13 @@ const MenuTraitDetail = {
         const char = App.data.characters.find(c => c.uid === state.charUid);
         if (!char) return;
         if (typeof PassiveSkill !== 'undefined' && PassiveSkill.isTraitBookLockedSlot?.(char, state.slotIndex)) {
-            delete App.data.progress.rerollState;
-            App.save();
-            Menu.msg('特性書で習得した特性は再抽選では変更できません。');
+            const cleanup = App.runAtomicSaveMutation(() => {
+                delete App.data.progress.rerollState;
+                return { ok:true };
+            });
+            Menu.msg(cleanup.ok
+                ? '特性書で習得した特性は再抽選では変更できません。'
+                : '再抽選の状態を保存できませんでした。');
             return;
         }
 
@@ -158,9 +197,30 @@ const MenuTraitDetail = {
             return;
         }
 
-        App.data.gems -= 2000;
-        state.newTraitId = newMaster.id;
-        App.save();
+        const transaction = App.runAtomicSaveMutation(() => {
+            const liveState = App.data.progress?.rerollState;
+            if (!liveState || String(liveState.charUid) !== String(state.charUid) || Number(liveState.slotIndex) !== Number(state.slotIndex)) {
+                return { ok:false, reason:'changed' };
+            }
+            const liveChar = (App.data.characters || []).find(entry => entry?.uid === liveState.charUid);
+            if (!liveChar?.traits?.[liveState.slotIndex]) return { ok:false, reason:'changed' };
+            if (typeof PassiveSkill !== 'undefined' && PassiveSkill.isTraitBookLockedSlot?.(liveChar, liveState.slotIndex)) {
+                return { ok:false, reason:'locked' };
+            }
+            if ((App.data.gems || 0) < 2000) return { ok:false, reason:'gems' };
+            App.data.gems -= 2000;
+            liveState.newTraitId = newMaster.id;
+            return { ok:true };
+        });
+        if (!transaction.ok) {
+            return Menu.msg(transaction.reason === 'gems'
+                ? 'GEMが足りません。'
+                : transaction.reason === 'locked'
+                    ? '特性書で習得した特性は再抽選では変更できません。'
+                    : transaction.reason === 'changed'
+                        ? '再抽選の状態が変更されています。'
+                        : '再抽選内容を保存できませんでした。');
+        }
         MenuTraitDetail.renderRerollResult();
     },
 

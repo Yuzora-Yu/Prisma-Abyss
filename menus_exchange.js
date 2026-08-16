@@ -107,7 +107,7 @@ const MenuExchange = {
     },
 
     // 日付チェック (YYYY-MM-DD 形式)
-    getTodayStr: () => new Date().toLocaleDateString('sv-SE'),
+    getTodayStr: () => (typeof App !== 'undefined' && typeof App.getLocalDateKey === 'function') ? App.getLocalDateKey() : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`,
 
     claimDaily: (type) => {
         if (!App.data.flags) App.data.flags = {};
@@ -119,13 +119,23 @@ const MenuExchange = {
         }
 
         const amount = type === 'GEM' ? 1000 : 10000;
-        const label = type === 'GEM' ? 'GEM' : 'GOLD';
+        const label = type === 'GEM' ? 'GEM' : 'Gold';
         const grantReward = () => {
-            if (type === 'GEM') App.data.gems += amount;
-            else App.data.gold += amount;
-
-            App.data.flags[flagKey] = today;
-            App.save();
+            const transaction = App.runAtomicSaveMutation(() => {
+                if (!App.data.flags) App.data.flags = {};
+                if (App.data.flags[flagKey] === today) return { ok:false, reason:'claimed' };
+                if (type === 'GEM') App.data.gems += amount;
+                else App.data.gold += amount;
+                App.data.flags[flagKey] = today;
+                return { ok:true };
+            });
+            if (!transaction.ok) {
+                Menu.msg(transaction.reason === 'claimed'
+                    ? '本日は既に受け取っています。'
+                    : '報酬を保存できませんでした。もう一度お試しください。');
+                MenuExchange.render();
+                return;
+            }
 
             if (typeof Menu.renderPartyBar === 'function') Menu.renderPartyBar();
             Menu.msg(`${label}を ${amount.toLocaleString()} 獲得しました！`);
@@ -208,8 +218,8 @@ const MenuExchange = {
                         <div style="font-weight:bold;">${gemClaimed ? '取得済み' : 'GEMを受け取る'}</div>
                     </button>
                     <button class="btn" style="height:60px; background:${goldClaimed ? '#333' : '#440'};" onclick="MenuExchange.claimDaily('GOLD')" ${goldClaimed ? 'disabled' : ''}>
-                        <div style="font-size:10px;">毎日10000 GOLD</div>
-                        <div style="font-weight:bold;">${goldClaimed ? '取得済み' : 'GOLDを受け取る'}</div>
+                        <div style="font-size:10px;">毎日10000 Gold</div>
+                        <div style="font-weight:bold;">${goldClaimed ? '取得済み' : 'Goldを受け取る'}</div>
                     </button>
                 </div>
             </div>

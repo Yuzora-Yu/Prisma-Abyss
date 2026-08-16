@@ -127,7 +127,7 @@ const MonsterNursery = {
         return `<button onclick="MonsterNursery.selectCharacter('${esc(character.uid)}','${mode}')" style="display:grid;grid-template-columns:54px minmax(0,1fr);gap:9px;align-items:center;width:100%;text-align:left;border:1px solid #566;background:#0b1110;color:#fff;padding:7px;">
             <div style="width:50px;height:50px;border:1px solid #667;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;">${image ? `<img src="${image}" alt="" style="max-width:100%;max-height:100%;image-rendering:pixelated;">` : ''}</div>
             <div style="min-width:0;">
-                <div style="display:flex;justify-content:space-between;gap:8px;"><b style="color:#ffe08a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(character.name)}</b><span style="font-size:11px;color:#9cb7ff;">Lv${Number(character.level || 1)} / 合成${fusionCount}</span></div>
+                <div style="display:flex;justify-content:space-between;gap:8px;"><b style="color:#ffe08a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(character.name)}</b><span style="font-size:11px;color:#9cb7ff;">Lv.${Number(character.level || 1)} / 合成${fusionCount}</span></div>
                 <div style="font-size:11px;color:#b8f4d0;">${esc(MonsterNursery.getGrowthLabel(character))}</div>
                 <div style="font-size:9px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">HP / MP / 攻 / 防 / 魔 / 魔防 / 速　${stats}</div>
             </div>
@@ -195,7 +195,7 @@ const MonsterNursery = {
         const traitHtml = preview.allTraits.map(trait => {
             const active = MonsterNursery.state.selectedTraitIds.map(Number).includes(Number(trait.id));
             const master = PassiveSkill.MASTER?.[Number(trait.id)];
-            return `<button onclick="MonsterNursery.toggleTrait(${Number(trait.id)})" style="border:1px solid ${active ? '#76e6a7' : '#444'};background:${active ? '#123522' : '#111'};color:${active ? '#fff' : '#888'};padding:5px;text-align:left;">${active ? '✓ ' : ''}${esc(master?.name || `特性${trait.id}`)} Lv${Number(trait.level || 1)}</button>`;
+            return `<button onclick="MonsterNursery.toggleTrait(${Number(trait.id)})" style="border:1px solid ${active ? '#76e6a7' : '#444'};background:${active ? '#123522' : '#111'};color:${active ? '#fff' : '#888'};padding:5px;text-align:left;">${active ? '✓ ' : ''}${esc(master?.name || `特性${trait.id}`)} Lv.${Number(trait.level || 1)}</button>`;
         }).join('');
         const skillsValid = !preview.requiresSkillSelection || MonsterNursery.state.selectedSkillIds.length === 8;
         const traitsValid = !preview.requiresTraitSelection || MonsterNursery.state.selectedTraitIds.length === 6;
@@ -210,7 +210,7 @@ const MonsterNursery = {
             <div style="border:1px solid #555;padding:7px;margin-bottom:9px;"><div style="display:grid;grid-template-columns:46px 1fr 1fr 1fr;gap:4px;font-size:9px;color:#888;"><span></span><span style="text-align:right;">現在</span><span style="text-align:right;">素材10%</span><span style="text-align:right;">合成後</span></div>${statsHtml}</div>
             <div style="margin-bottom:9px;"><div style="display:flex;justify-content:space-between;color:#9cb7ff;font-size:11px;margin-bottom:4px;"><b>スキル</b><span>${MonsterNursery.state.selectedSkillIds.length} / ${Math.min(8, preview.allSkills.length)}</span></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;">${skillHtml || '<span style="color:#888;">なし</span>'}</div></div>
             <div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;color:#76e6a7;font-size:11px;margin-bottom:4px;"><b>特性</b><span>${MonsterNursery.state.selectedTraitIds.length} / ${Math.min(6, preview.allTraits.length)}</span></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;">${traitHtml || '<span style="color:#888;">なし</span>'}</div></div>
-            <div style="border-top:1px solid #555;padding-top:8px;font-size:11px;color:#ddd;">合成後 Lv1 / 合成回数 ${preview.nextFusionCount}<span style="float:right;color:#ffd86a;">合成の壺 ${MonsterNursery.getPotCount()}個</span></div>
+            <div style="border-top:1px solid #555;padding-top:8px;font-size:11px;color:#ddd;">合成後 Lv.1 / 合成回数 ${preview.nextFusionCount}<span style="float:right;color:#ffd86a;">合成の壺 ${MonsterNursery.getPotCount()}個</span></div>
             <button class="menu-btn" ${canFuse ? '' : 'disabled'} onclick="MonsterNursery.confirmFusion()" style="width:100%;height:44px;margin-top:9px;background:${canFuse ? '#235a39' : '#222'};border:2px solid ${canFuse ? '#76e6a7' : '#555'};color:${canFuse ? '#fff' : '#777'};">${potValid ? (canFuse ? 'この内容で合成する' : '選択数を確認してください') : '合成の壺がありません'}</button>
         `, { modalMaxWidth:'760px', bodyMaxHeight:'72vh' });
     },

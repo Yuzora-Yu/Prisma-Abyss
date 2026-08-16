@@ -6346,24 +6346,11 @@ const FIXED_MAPS = {
                 ]
             }
         ],
-        "floorDecorations": [
-            {
-                "authoredPlacementId": "water-city-restored-fountain",
-                "type": "image",
-                "imageKey": "overlay_shrine_healing_spring",
-                "x": 19, "y": 13,
-                "drawWidth": 44, "drawHeight": 44,
-                "renderLayer": "object",
-                "shimmer": true,
-                "shimmerDuration": 900,
-                "alpha": 0.96,
-                "baseTile": "T"
-            }
-        ],
+        "floorDecorations": [],
         "mapActions": [
             {
-                "x": 19,
-                "y": 13,
+                "x": 16,
+                "y": 12,
                 "label": "復旧した噴水に祈る",
                 "type": "waterCityFountain",
                 "requiredFlag": "waterCityRiotSuppressed",

@@ -130,6 +130,35 @@ const PRISMA_CHARACTER_MAP_STAND_GRAPHICS = {
 };
 
 const PRISMA_ASSETS = {
+  // メニュー側は拡張子を推測せず、用途キーからこのregistryを参照する。
+  // 既存のPNG/SVG併存はasset側の事情としてここへ閉じ込める。
+  uiIcons: {
+    item: {
+      attack: "assets/ui/menu-icons/item-attack.png",
+      buff: "assets/ui/menu-icons/item-buff.png",
+      debuff: "assets/ui/menu-icons/item-debuff.png",
+      growth: "assets/ui/menu-icons/item-growth.png",
+      heal: "assets/ui/menu-icons/item-heal.png",
+      item: "assets/ui/menu-icons/item-item.svg",
+      key: "assets/ui/menu-icons/item-key.png",
+      material: "assets/ui/menu-icons/item-material.png",
+      revive: "assets/ui/menu-icons/item-revive.png",
+      "skill-book": "assets/ui/menu-icons/item-skill-book.png",
+      "trait-book": "assets/ui/menu-icons/item-trait-book.png",
+      travel: "assets/ui/menu-icons/item-travel.png",
+      vehicle: "assets/ui/menu-icons/item-vehicle.png",
+    },
+    skill: {
+      attack: "assets/ui/menu-icons/skill-attack.svg",
+      debuff: "assets/ui/menu-icons/skill-debuff.svg",
+      heal: "assets/ui/menu-icons/skill-heal.svg",
+      magic: "assets/ui/menu-icons/skill-magic.svg",
+      revive: "assets/ui/menu-icons/skill-revive.svg",
+      skill: "assets/ui/menu-icons/skill-skill.svg",
+      support: "assets/ui/menu-icons/skill-support.svg",
+    },
+  },
+
   // Field.render / Battle 背景 / 主人公歩行画像で使う GRAPHICS 用画像。
   graphics: {
     opening_prism_collapse: "assets/generated/opening-prism-collapse.png",
@@ -719,7 +748,8 @@ const PRISMA_ASSETS = {
   // installImages: Service Worker の初回install時にキャッシュする画像全体。
   // backgroundImages: install後の再試行/補助ウォームキャッシュ用。
   cacheWarmup: {
-    version: "2026-08-14-map-tile-runtime-character-walk-v26",
+    version: "2026-08-17-runtime-cache-contract-v28",
+    runtimeCacheName: "prisma-abyss-v47.20260817-runtime",
     initialGraphicKeys: [
       "floor", "sea", "forest", "mountain", "Low_mountain", "cave", "house-1", "house-2", "inn", "wall", "dungeon_floor",
       "item_icon_attack", "item_icon_buff", "item_icon_debuff", "item_icon_material", "item_icon_vehicle", "item_icon_travel",
@@ -859,6 +889,7 @@ function refreshPrismaAssetWarmupLists() {
   const allImages = unique([
     ...Object.values(PRISMA_ASSETS.graphics || {}),
     ...Object.values(PRISMA_ASSETS.battleFx || {}),
+    ...Object.values(PRISMA_ASSETS.uiIcons || {}).flatMap((group) => Object.values(group || {})),
     ...(PRISMA_ASSETS.characterImages || []),
     "assets/gacha/back_card.png",
     "assets/gacha/front_card.png",

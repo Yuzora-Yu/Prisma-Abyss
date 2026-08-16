@@ -23,8 +23,9 @@ try {
 
 // 表示用語・お知らせUI更新ではApp Shellだけ更新し、画像の全量キャッシュは再取得しない。
 // RUNTIME_CACHE_NAMEはmain.jsのfullDataCacheNameと同じ値を維持する。
-const CACHE_NAME = "prisma-abyss-v69.20260816";
-const RUNTIME_CACHE_NAME = "prisma-abyss-v45.20260814-runtime";
+const CACHE_NAME = "prisma-abyss-v71.20260817";
+const ASSET_WARMUP = (self.PRISMA_ASSETS && self.PRISMA_ASSETS.cacheWarmup) || {};
+const RUNTIME_CACHE_NAME = ASSET_WARMUP.runtimeCacheName || "prisma-abyss-v47.20260817-runtime";
 const WARM_CACHE_META_KEY = "__prisma_abyss_warm_cache_complete__";
 
 // 起動に必要な App Shell。
@@ -101,8 +102,6 @@ const PRECACHE_FILES = [
   "news.js",
 ];
 
-const ASSET_WARMUP = (self.PRISMA_ASSETS && self.PRISMA_ASSETS.cacheWarmup) || {};
-
 // 初回表示で特に遅延が目立つ画像。assets.js から取得する。
 const INITIAL_IMAGE_PRECACHE = ASSET_WARMUP.criticalImages || [
   "assets/generated/battle-field-ai.png",
@@ -152,12 +151,14 @@ const isAppShellRequest = (request) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const cacheFirst = async (request) => {
-  const cached = await caches.match(request);
+  // 画像は必ず現在のruntime世代だけを参照する。
+  // CacheStorage全体を検索すると、固定ファイル名で差し替えた画像が旧世代から復活し得る。
+  const cache = await caches.open(RUNTIME_CACHE_NAME);
+  const cached = await cache.match(request);
   if (cached) return cached;
 
   const response = await fetch(request);
   if (response && response.ok) {
-    const cache = await caches.open(RUNTIME_CACHE_NAME);
     cache.put(request, response.clone());
   }
   return response;

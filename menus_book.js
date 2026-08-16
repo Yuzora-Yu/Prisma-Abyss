@@ -246,7 +246,7 @@ const MenuBook = {
                 </header>
                 <div class="game-modal-body" tabindex="0">
                     <div class="game-modal-meta-grid">
-                        <div><span>Lv</span><b>${escape(t.lv)}</b></div>
+                        <div><span>Lv.</span><b>${escape(t.lv)}</b></div>
                         <div><span>分類</span><b>${escape(t.type || '不明')}</b></div>
                     </div>
                     ${t.effect ? `<div class="game-modal-effect">${escape(t.effect)}</div>` : ''}
@@ -433,7 +433,7 @@ const MenuBook = {
 							</div>
 
 							<div style="background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
-								<div style="font-size:8px; color:#aaa; line-height:1;">GOLD</div>
+								<div style="font-size:8px; color:#aaa; line-height:1;">Gold</div>
 								<div style="font-weight:bold; color:#ffd700; font-size:11px; line-height:1.2; text-align:right;">${monsterGold.toLocaleString()}</div>
 							</div>
 

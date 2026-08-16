@@ -190,7 +190,7 @@ PassiveSkill.addTraitWithBook = function(char, traitId) {
         success:true,
         newTraitId:normalizedTraitId,
         level:1,
-        message:`${char.name || '対象'}は「${newMaster?.name || '特性'}」Lv1を習得した！`
+        message:`${char.name || '対象'}は「${newMaster?.name || '特性'}」Lv.1を習得した！`
     };
 };
 
@@ -250,7 +250,7 @@ PassiveSkill.replaceTraitWithBook = function(char, slotIndex, traitId) {
         oldTraitId: Number(oldTrait.id),
         newTraitId: normalizedTraitId,
         level: inheritedLevel,
-        message: `${char.name || '対象'}の「${oldMaster?.name || '特性'}」Lv${inheritedLevel}を「${newMaster?.name || '特性'}」Lv${inheritedLevel}へ交換した！`
+        message: `${char.name || '対象'}の「${oldMaster?.name || '特性'}」Lv.${inheritedLevel}を「${newMaster?.name || '特性'}」Lv.${inheritedLevel}へ交換した！`
     };
 };
 
@@ -395,7 +395,7 @@ PassiveSkill.checkTraitGrowth = function(char) {
 
             const m = PassiveSkill.MASTER[trait.id];
             if (m) {
-                growthLogs.push(`<span style="color:#ffd700;">${char.name}の特性【${m.name}】がLv${trait.level}に上がった！</span>`);
+                growthLogs.push(`<span style="color:#ffd700;">${char.name}の特性【${m.name}】がLv.${trait.level}に上がった！</span>`);
             }
         }
     });

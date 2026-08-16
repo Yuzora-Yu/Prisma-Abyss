@@ -147,7 +147,7 @@ const MenuStatus = {
                 <div style="font-size:10px; color:#44ff44; margin-bottom:8px; display:flex; align-items:center; gap:5px;">
                     <span style="background:#44ff44; width:3px; height:12px; display:inline-block;"></span> 資産の記録
                 </div>
-                ${row('累計獲得Gold', `${(stats.totalGoldEarned || 0).toLocaleString()} gold`)}
+                ${row('累計獲得Gold', `${(stats.totalGoldEarned || 0).toLocaleString()} Gold`)}
                 ${row('累計獲得GEM',  `${(stats.totalGemsEarned || 0).toLocaleString()} GEM`)}
                 ${row('累計獲得コイン', `${(stats.totalMedals || 0).toLocaleString()} 枚`)}
             </div>
@@ -340,10 +340,13 @@ const MenuStatus = {
             Menu.msg('すでに依頼迷宮を探索中です。');
             return false;
         }
-        Menu.closeSubScreen?.('status');
         const started = Guild.startChallengeQuest(questId);
-        if (!started) Menu.msg('この依頼迷宮は現在開始できません。');
-        return started;
+        if (!started) {
+            Menu.msg('この依頼迷宮は現在開始できません。');
+            return false;
+        }
+        Menu.closeSubScreen?.('status');
+        return true;
     },
 
     travelToGuildReception: () => {

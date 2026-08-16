@@ -278,7 +278,7 @@ window.ITEMS_DATA = [
         "id": 107,
         "name": "転生の実",
         "type": "育成",
-        "desc": "能力と習得スキルを維持したままLv1に戻る禁断の果実。過去に経験した職業へ戻ることもできる",
+        "desc": "能力と習得スキルを維持したままLv.1に戻る禁断の果実。過去に経験した職業へ戻ることもできる",
         "target": "単体",
         "price": 0,
         "randomChestDrop": false
@@ -7097,7 +7097,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7115,7 +7115,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7133,7 +7133,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7151,7 +7151,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7169,7 +7169,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7187,7 +7187,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7205,7 +7205,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7223,7 +7223,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7241,7 +7241,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7259,7 +7259,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7277,7 +7277,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7295,7 +7295,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7313,7 +7313,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7331,7 +7331,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7349,7 +7349,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7367,7 +7367,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7385,7 +7385,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7403,7 +7403,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7421,7 +7421,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7439,7 +7439,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7457,7 +7457,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7475,7 +7475,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 },
 {
     "consumable": true,
@@ -7493,7 +7493,7 @@ window.ITEMS_DATA.push(
     "price": 0,
     "sellPrice": 0,
     "icon": "assets/ui/menu-icons/item-skill-book.png",
-    "desc": "Lv100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
+    "desc": "Lv.100到達時に使用すると、指定職へ転職すると同時に転生する。取得方法は未設定。"
 }
 );
 
@@ -7644,7 +7644,7 @@ window.ITEMS_DATA.push(
             const job = byId.get(Number(item.jobId));
             if (!job) return;
             item.name = `${job.name}の転職の書`;
-            item.desc = `Lv100到達時に使用すると「${job.name}」へ転職し、そのまま転生してLv1に戻る。別職で習得したスキルは失わない。`;
+            item.desc = `Lv.100到達時に使用すると「${job.name}」へ転職し、そのまま転生してLv.1に戻る。別職で習得したスキルは失わない。`;
         });
         return items;
     };

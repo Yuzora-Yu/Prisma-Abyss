@@ -1028,8 +1028,8 @@
             ],
             gimmicks: [
                 { id: 'element50', label: '敵のテーマ属性攻撃+50%', minRarity: 'SSR' },
-                { id: 'regen10', label: '敵全員が再生Lv10', minRarity: 'SSR' },
-                { id: 'guts10', label: '敵全員が根性Lv10', minRarity: 'UR' },
+                { id: 'regen10', label: '敵全員が再生Lv.10', minRarity: 'SSR' },
+                { id: 'guts10', label: '敵全員が根性Lv.10', minRarity: 'UR' },
                 { id: 'rare50_toxic', label: 'レアモンスター率50%／味方は常に猛毒', minRarity: 'EX' },
                 { id: 'rare50_elite', label: 'レアモンスター率50%／レア以外は超強敵', minRarity: 'EX' }
             ]

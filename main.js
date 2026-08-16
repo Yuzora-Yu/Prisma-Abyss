@@ -783,6 +783,14 @@ const App = {
 
     getDefaultSettings: () => ({ ...App.defaultSettings }),
 
+    getLocalDateKey: (date = new Date()) => {
+        const value = date instanceof Date ? date : new Date(date);
+        const y = value.getFullYear();
+        const m = String(value.getMonth() + 1).padStart(2, '0');
+        const d = String(value.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    },
+
     ensureSettings: () => {
         if (!App.data) return App.getDefaultSettings();
         if (!App.data.settings || typeof App.data.settings !== 'object' || Array.isArray(App.data.settings)) {
@@ -2414,7 +2422,9 @@ const App = {
 		  const prev = App.data[internalKey] || 0;
 		  const next = Math.max(0, Math.floor(Number(v) || 0));
 		  const diff = next - prev;
-		  if (diff > 0) App.data.stats[statKey] = (App.data.stats[statKey] || 0) + diff;
+		  if (diff > 0 && App.currencyTrackingSuspended !== true) {
+		    App.data.stats[statKey] = (App.data.stats[statKey] || 0) + diff;
+		  }
 		  App.data[internalKey] = next;
 		}
 	  });
@@ -2427,7 +2437,7 @@ const App = {
 
 	// 全画像データの手動/初回ダウンロード用キャッシュ名。
 	// sw.js の RUNTIME_CACHE_NAME と揃えること。
-	fullDataCacheName: 'prisma-abyss-v45.20260814-runtime',
+	fullDataCacheName: (typeof window !== 'undefined' && window.PRISMA_ASSETS?.cacheWarmup?.runtimeCacheName) || 'prisma-abyss-v47.20260817-runtime',
 
 
 	// 初回起動時の「全データを今ダウンロードしますか？」で「いいえ」を選んだ記録。
@@ -3061,45 +3071,35 @@ const App = {
 		if (typeof App.totalGoldGem === 'function') App.totalGoldGem();
 
 		
-		// ★追加: 既存セーブデータの拡張（コンフィグ初期化）
+		// 既存セーブのキャラクター補完・職業同期は1回のmigration batchとして処理する。
+		// 起動のたびに同じ補正を二重実行・二重保存しない。
 		if (App.data.characters) {
+            let beforeCharacterMigration = '';
+            try { beforeCharacterMigration = JSON.stringify(App.data.characters); } catch (e) { beforeCharacterMigration = ''; }
+
 			App.data.characters.forEach(c => {
 				App.ensureCharacterBattleConfig(c);
                 App.ensureCharacterJobCareer?.(c);
 
-				// charId修正ロジック（既存）
 				if (c.charId) {
 					const expectedJob = App.getExpectedStoryCharacterJob(c);
 					if (expectedJob && c.job !== expectedJob) {
+                        console.log(`[DataFix] ${c.name}の職業を修正: ${c.job} -> ${expectedJob}`);
 						c.job = expectedJob;
 					}
 				}
 
 				// 仲間モンスターの職業欄は、固定の「魔物」ではなくモンスター名を表示する。
-				// 既に加入済みの旧データも、起動時に最低限補正する。
 				if (App.isMonsterAlly && App.isMonsterAlly(c)) {
 					const monsterJobName = c.monsterAllyMeta?.originalName || c.name || c.job || '仲間モンスター';
 					if (!c.job || c.job === '魔物') c.job = monsterJobName;
 				}
 			});
-			App.save();
+
+            let afterCharacterMigration = beforeCharacterMigration;
+            try { afterCharacterMigration = JSON.stringify(App.data.characters); } catch (e) {}
+            if (beforeCharacterMigration !== afterCharacterMigration) App.save();
 		}
-		
-		// ★追加: 既存セーブデータの職業情報をDBマスタに合わせて強制上書き
-        if (App.data.characters) {
-            App.data.characters.forEach(c => {
-                // charId（マスタID）を持っているキャラのみ対象
-                if (c.charId) {
-                    const expectedJob = App.getExpectedStoryCharacterJob(c);
-                    if (expectedJob && c.job !== expectedJob) {
-                        console.log(`[DataFix] ${c.name}の職業を修正: ${c.job} -> ${expectedJob}`);
-                        c.job = expectedJob;
-                    }
-                }
-            });
-            // 修正結果を即座に保存（次回以降のため）
-            App.save();
-        }
 
         // シナジー情報の更新
         if (App.data) {
@@ -3122,6 +3122,17 @@ const App = {
         if(App.data.location) {
             Field.x = App.data.location.x;
             Field.y = App.data.location.y;
+            if (Field.currentMapData && Field.resolveSafeLocalSpawn) {
+                const restoredPoint = { x: Number(Field.x), y: Number(Field.y) };
+                const safePoint = Field.resolveSafeLocalSpawn(Field.currentMapData, restoredPoint, Field.currentMapData.entryPoint);
+                if (safePoint && (Number(safePoint.x) !== Number(Field.x) || Number(safePoint.y) !== Number(Field.y))) {
+                    Field.x = Number(safePoint.x);
+                    Field.y = Number(safePoint.y);
+                    App.data.location.x = Field.x;
+                    App.data.location.y = Field.y;
+                    App.save();
+                }
+            }
         }
 
         if (App.data.progress && App.data.progress.floor > 0 && typeof Dungeon !== 'undefined') {
@@ -3774,7 +3785,10 @@ const App = {
         if (!visited[areaKey]) return { ok: false, message: 'まだ発見していない場所には移動できない。' };
 
         const info = App.getFixedMapDef(areaKey);
-        if (!info) return { ok: false, message: 'この場所の定義が見つかりません。' };
+        if (!info) {
+            console.warn('[SKY PRISM] 移動先定義を取得できません。', { areaKey });
+            return { ok: false, message: '今はこの場所へ移動できない。' };
+        }
         const targetWorldKey = info.kind === 'world'
             ? areaKey
             : ((typeof STORY_DATA !== 'undefined' && STORY_DATA.areas?.[areaKey]?.worldKey) || visited[areaKey]?.worldKey || 'WORLD');
@@ -3788,7 +3802,10 @@ const App = {
             return { ok: false, message: '統合の祭壇へ向かうには、先に奈落への洞窟の祭壇側出口を確保する必要がある。' };
         }
         const dest = App.getFixedMapWorldDestination(areaKey);
-        if (!dest) return { ok: false, message: 'この場所のフィールド座標が見つかりません。' };
+        if (!dest) {
+            console.warn('[SKY PRISM] フィールド上の移動先を取得できません。', { areaKey, targetWorldKey });
+            return { ok: false, message: '今はこの場所へ移動できない。' };
+        }
         const authoredEntry = info.kind === 'field' && info.def?.skyPrismEntryPoint
             ? info.def.skyPrismEntryPoint
             : null;
@@ -3807,42 +3824,8 @@ const App = {
             }
             : (App.getFixedMapLocalEntranceDestination?.(areaKey) || null);
 
-        App.data.items[110] = (Number(App.data.items[110]) || 0) - 1;
-        if (App.data.items[110] <= 0) delete App.data.items[110];
-
-        if (typeof Field !== 'undefined' && typeof Field.stopMove === 'function') Field.stopMove();
-        if (typeof App.clearAction === 'function') App.clearAction();
-
-        App.data.transportMode = null;
-        if (localDest) {
-            App.data.mapReturnPoint = Number.isFinite(localDest.worldX) && Number.isFinite(localDest.worldY)
-                ? { areaKey: targetWorldKey, worldKey: targetWorldKey, x: localDest.worldX, y: localDest.worldY }
-                : null;
-            App.data.location.area = localDest.parentAreaKey;
-            App.data.location.worldKey = targetWorldKey;
-            App.data.location.x = localDest.x;
-            App.data.location.y = localDest.y;
-        } else {
-            App.data.mapReturnPoint = null;
-            App.data.location.area = targetWorldKey;
-            App.data.location.worldKey = targetWorldKey;
-            App.data.location.x = dest.x;
-            App.data.location.y = dest.y;
-        }
-        if (App.data.dungeon) {
-            App.data.dungeon.returnPoint = null;
-            App.data.dungeon.returnStack = [];
-            App.data.dungeon.map = null;
-            App.data.dungeon.adventurer = null;
-            App.data.dungeon.healSpring = null;
-            App.data.dungeon.abyssRift = null;
-            App.data.dungeon.pendingRiftReward = null;
-            App.data.dungeon.visitedMap = null;
-        }
         const localDungeon = !!(localDest && localDest.parentKind === 'dungeon');
-        if (App.data.progress) App.data.progress.floor = localDungeon ? Math.max(1, Number(localDest.parentFloor || 1)) : 0;
-
-        Field.currentMapData = localDest
+        const targetMapData = localDest
             ? (localDungeon
                 ? (MapRegistry.getFixedDungeonFloor(localDest.parentAreaKey, localDest.parentFloor || 1) || localDest.parentMapDef)
                 : {
@@ -3852,11 +3835,69 @@ const App = {
                     areaKey: localDest.parentAreaKey
                 })
             : null;
-        if (localDungeon && typeof Dungeon !== 'undefined') Dungeon.floor = App.data.progress.floor;
-        Field.x = localDest ? localDest.x : dest.x;
-        Field.y = localDest ? localDest.y : dest.y;
+        const previousField = {
+            currentMapData: Field.currentMapData,
+            x: Field.x,
+            y: Field.y,
+            dungeonFloor: (typeof Dungeon !== 'undefined' ? Dungeon.floor : null)
+        };
+        let resolvedLocalDest = localDest ? { x: localDest.x, y: localDest.y } : null;
 
-        App.save();
+        const transaction = App.runAtomicSaveMutation(() => {
+            if (!App.hasItem(110)) return { ok:false, reason:'missing-item' };
+            App.data.items[110] = (Number(App.data.items[110]) || 0) - 1;
+            if (App.data.items[110] <= 0) delete App.data.items[110];
+
+            App.data.transportMode = null;
+            if (localDest) {
+                App.data.mapReturnPoint = Number.isFinite(localDest.worldX) && Number.isFinite(localDest.worldY)
+                    ? { areaKey: targetWorldKey, worldKey: targetWorldKey, x: localDest.worldX, y: localDest.worldY }
+                    : null;
+                App.data.location.area = localDest.parentAreaKey;
+                App.data.location.worldKey = targetWorldKey;
+                Field.currentMapData = targetMapData;
+                resolvedLocalDest = typeof Field.resolveSafeLocalSpawn === 'function'
+                    ? Field.resolveSafeLocalSpawn(targetMapData, { x: localDest.x, y: localDest.y }, targetMapData?.entryPoint)
+                    : { x: localDest.x, y: localDest.y };
+                App.data.location.x = resolvedLocalDest.x;
+                App.data.location.y = resolvedLocalDest.y;
+            } else {
+                App.data.mapReturnPoint = null;
+                App.data.location.area = targetWorldKey;
+                App.data.location.worldKey = targetWorldKey;
+                App.data.location.x = dest.x;
+                App.data.location.y = dest.y;
+                Field.currentMapData = null;
+            }
+            if (App.data.dungeon) {
+                App.data.dungeon.returnPoint = null;
+                App.data.dungeon.returnStack = [];
+                App.data.dungeon.map = null;
+                App.data.dungeon.adventurer = null;
+                App.data.dungeon.healSpring = null;
+                App.data.dungeon.abyssRift = null;
+                App.data.dungeon.pendingRiftReward = null;
+                App.data.dungeon.visitedMap = null;
+            }
+            if (App.data.progress) App.data.progress.floor = localDungeon ? Math.max(1, Number(localDest.parentFloor || 1)) : 0;
+            if (localDungeon && typeof Dungeon !== 'undefined') Dungeon.floor = App.data.progress.floor;
+            Field.x = localDest ? resolvedLocalDest.x : dest.x;
+            Field.y = localDest ? resolvedLocalDest.y : dest.y;
+            return { ok:true };
+        });
+
+        if (!transaction.ok) {
+            Field.currentMapData = previousField.currentMapData;
+            Field.x = previousField.x;
+            Field.y = previousField.y;
+            if (typeof Dungeon !== 'undefined' && previousField.dungeonFloor !== null) Dungeon.floor = previousField.dungeonFloor;
+            if (transaction.reason === 'missing-item') return { ok:false, message:'スカイプリズムを持っていません。' };
+            console.warn('[SKY PRISM] 移動状態を保存できなかったため取り消しました。', { areaKey, reason: transaction.reason });
+            return { ok:false, message:'移動できませんでした。もう一度お試しください。' };
+        }
+
+        if (typeof Field !== 'undefined' && typeof Field.stopMove === 'function') Field.stopMove();
+        if (typeof App.clearAction === 'function') App.clearAction();
         App.changeScene('field');
         if (typeof Field.render === 'function') Field.render();
         if (typeof Field.refreshCurrentAction === 'function') Field.refreshCurrentAction({ silent: true });
@@ -3865,10 +3906,6 @@ const App = {
         const targetName = info.def.name || areaKey;
         const suffix = localDest ? 'の入口' : (dest.parentAreaKey && dest.parentAreaKey !== areaKey ? 'の入口付近' : 'の入口');
         const message = `${targetName}${suffix}へ移動した！`;
-        // 移動完了そのものはフィールドログへ出さない。
-
-        // スカイプリズム成功時は追加モーダルを出さず呼び出し側へ通知する。
-        // 使用確認の後に追加のOKモーダルを出さないため、呼び出し側へ通知する。
         return { ok: true, message, silentSuccess: true };
     },
 
@@ -3921,39 +3958,64 @@ const App = {
             : (typeof FIXED_DUNGEON_MAPS !== 'undefined' && FIXED_DUNGEON_MAPS[areaKey]
                 ? { ...FIXED_DUNGEON_MAPS[areaKey], isDungeon: true, isFixed: true, areaKey, floor: floorNo }
                 : null);
-        if (!floorData) return { ok: false, message: 'ギルド受付のマップ情報を読み込めませんでした。' };
+        if (!floorData) {
+            console.warn('[GUILD TRAVEL] ライザーク要塞1階のマップを取得できません。', { areaKey, floorNo });
+            return { ok: false, message: '今はギルド受付へ移動できません。' };
+        }
+
+        const previousField = {
+            currentMapData: Field.currentMapData,
+            x: Field.x,
+            y: Field.y,
+            dir: Field.dir,
+            dungeonFloor: (typeof Dungeon !== 'undefined' ? Dungeon.floor : null)
+        };
+        const transaction = App.runAtomicSaveMutation(() => {
+            App.data.transportMode = null;
+            const worldDest = App.getFixedMapWorldDestination?.(areaKey);
+            App.data.mapReturnPoint = worldDest
+                ? { areaKey: 'WORLD', worldKey: 'WORLD', x: Number(worldDest.x), y: Number(worldDest.y) }
+                : null;
+            App.data.location.area = areaKey;
+            App.data.location.worldKey = 'WORLD';
+            if (App.data.progress) App.data.progress.floor = floorNo;
+            if (App.data.dungeon) {
+                App.data.dungeon.returnPoint = null;
+                App.data.dungeon.returnStack = [];
+                App.data.dungeon.map = null;
+                App.data.dungeon.adventurer = null;
+                App.data.dungeon.healSpring = null;
+                App.data.dungeon.abyssRift = null;
+                App.data.dungeon.pendingRiftReward = null;
+                App.data.dungeon.visitedMap = null;
+            }
+
+            Field.currentMapData = floorData;
+            const safeSpawn = typeof Field.resolveSafeLocalSpawn === 'function'
+                ? Field.resolveSafeLocalSpawn(floorData, { x:5, y:22 }, floorData.entryPoint)
+                : { x:5, y:22 };
+            Field.x = safeSpawn.x;
+            Field.y = safeSpawn.y;
+            Field.dir = 3;
+            App.data.location.x = safeSpawn.x;
+            App.data.location.y = safeSpawn.y;
+            if (typeof Dungeon !== 'undefined') Dungeon.floor = floorNo;
+            return { ok:true };
+        });
+
+        if (!transaction.ok) {
+            Field.currentMapData = previousField.currentMapData;
+            Field.x = previousField.x;
+            Field.y = previousField.y;
+            Field.dir = previousField.dir;
+            if (typeof Dungeon !== 'undefined' && previousField.dungeonFloor !== null) Dungeon.floor = previousField.dungeonFloor;
+            console.warn('[GUILD TRAVEL] 移動状態を保存できなかったため取り消しました。', { reason: transaction.reason });
+            return { ok:false, message:'ギルド受付へ移動できませんでした。もう一度お試しください。' };
+        }
 
         if (typeof Field !== 'undefined' && typeof Field.stopMove === 'function') Field.stopMove();
         if (typeof App.clearAction === 'function') App.clearAction();
         if (typeof Menu !== 'undefined' && typeof Menu.closeAll === 'function') Menu.closeAll();
-
-        App.data.transportMode = null;
-        const worldDest = App.getFixedMapWorldDestination?.(areaKey);
-        App.data.mapReturnPoint = worldDest
-            ? { areaKey: 'WORLD', x: Number(worldDest.x), y: Number(worldDest.y) }
-            : null;
-        App.data.location.area = areaKey;
-        App.data.location.x = 5;
-        App.data.location.y = 22;
-        if (App.data.progress) App.data.progress.floor = floorNo;
-        if (App.data.dungeon) {
-            App.data.dungeon.returnPoint = null;
-            App.data.dungeon.returnStack = [];
-            App.data.dungeon.map = null;
-            App.data.dungeon.adventurer = null;
-            App.data.dungeon.healSpring = null;
-            App.data.dungeon.abyssRift = null;
-            App.data.dungeon.pendingRiftReward = null;
-            App.data.dungeon.visitedMap = null;
-        }
-
-        Field.currentMapData = floorData;
-        Field.x = 5;
-        Field.y = 22;
-        Field.dir = 3;
-        if (typeof Dungeon !== 'undefined') Dungeon.floor = floorNo;
-
-        App.save();
         App.changeScene('field');
         Field.render?.();
         Field.refreshCurrentAction?.({ silent: true });
@@ -6080,7 +6142,7 @@ const App = {
         const buttons = options.offer ? `
             <div style="display:flex; gap:8px; padding:0 14px 14px;">
                 <button id="quest-modal-accept" class="btn" style="flex:1; border-color:#ffd56b; color:#fff7dc; background:#6f4b1f;">受ける</button>
-                <button id="quest-modal-decline" class="btn" style="flex:1; background:#2f2f2f;">やめる</button>
+                <button id="quest-modal-decline" class="btn" style="flex:1; background:#2f2f2f;">キャンセル</button>
             </div>
         ` : `
             <div style="display:flex; gap:8px; padding:0 14px 14px;">
@@ -6297,9 +6359,9 @@ const App = {
     useWaterCityFountain: async () => {
         const progress = App.data?.progress || (App.data.progress = {});
         const flags = progress.flags || (progress.flags = {});
-        const today = (typeof MenuExchange !== 'undefined' && typeof MenuExchange.getTodayStr === 'function')
-            ? MenuExchange.getTodayStr()
-            : new Date().toLocaleDateString('sv-SE');
+        const today = typeof App.getLocalDateKey === 'function'
+            ? App.getLocalDateKey()
+            : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
         if (String(flags.waterCityFountainLastDate || '') === today) {
             App.log('噴水の水面は静かだ。今日の祈りは、もう届いている。');
             return false;
@@ -6312,26 +6374,37 @@ const App = {
         const accepted = await App.showConfirm(`復旧した噴水へ ${cost.toLocaleString()} Gold を投げ入れますか？
 一日に一度だけ、水の加護から小さな返礼を受けられます。`);
         if (!accepted) return false;
-        if (String(flags.waterCityFountainLastDate || '') === today) return false;
-        if (Number(App.data.gold || 0) < cost) {
-            App.log('Goldが足りない。');
+
+        let rewardMessage = '';
+        const transaction = App.runAtomicSaveMutation(() => {
+            const currentFlags = App.data.progress?.flags || (App.data.progress.flags = {});
+            if (String(currentFlags.waterCityFountainLastDate || '') === today) return { ok:false, reason:'claimed' };
+            if (Number(App.data.gold || 0) < cost) return { ok:false, reason:'gold' };
+
+            App.data.gold = Math.max(0, Number(App.data.gold || 0) - cost);
+            currentFlags.waterCityFountainLastDate = today;
+            if (Math.random() < 0.35) {
+                const gems = 15 + Math.floor(Math.random() * 26);
+                App.data.gems = Math.max(0, Number(App.data.gems || 0)) + gems;
+                rewardMessage = `硬貨が澄んだ光に溶け、${gems} GEM が水面へ浮かび上がった。`;
+            } else {
+                const itemPool = [4, 4, 5, 8, 9, 10, 11, 13, 13];
+                const itemId = itemPool[Math.floor(Math.random() * itemPool.length)];
+                if (!App.data.items || typeof App.data.items !== 'object') App.data.items = {};
+                App.data.items[itemId] = Number(App.data.items[itemId] || 0) + 1;
+                const item = (typeof DB !== 'undefined' && Array.isArray(DB.ITEMS)) ? DB.ITEMS.find(entry => Number(entry.id) === itemId) : null;
+                rewardMessage = `噴水の底から ${item?.name || '何か'} が一つ、流れに押されて現れた。`;
+            }
+            return { ok:true };
+        });
+
+        if (!transaction.ok) {
+            if (transaction.reason === 'gold') App.log('Goldが足りない。');
+            else if (transaction.reason === 'claimed') App.log('噴水の水面は静かだ。今日の祈りは、もう届いている。');
+            else App.log('祈りは届かなかった。少ししてから、もう一度試してみよう。');
             return false;
         }
-        App.data.gold = Math.max(0, Number(App.data.gold || 0) - cost);
-        flags.waterCityFountainLastDate = today;
-        if (Math.random() < 0.35) {
-            const gems = 15 + Math.floor(Math.random() * 26);
-            App.data.gems = Math.max(0, Number(App.data.gems || 0)) + gems;
-            App.log(`硬貨が澄んだ光に溶け、${gems} GEM が水面へ浮かび上がった。`);
-        } else {
-            const itemPool = [4, 4, 5, 8, 9, 10, 11, 13, 13];
-            const itemId = itemPool[Math.floor(Math.random() * itemPool.length)];
-            if (!App.data.items || typeof App.data.items !== 'object') App.data.items = {};
-            App.data.items[itemId] = Number(App.data.items[itemId] || 0) + 1;
-            const item = (typeof DB !== 'undefined' && Array.isArray(DB.ITEMS)) ? DB.ITEMS.find(entry => Number(entry.id) === itemId) : null;
-            App.log(`噴水の底から ${item?.name || `アイテム${itemId}`} が一つ、流れに押されて現れた。`);
-        }
-        App.save();
+        App.log(rewardMessage);
         return true;
     },
 
@@ -7216,40 +7289,155 @@ load: () => {
         App.saveTransactionPending = false;
     },
 
-    restoreSaveDataSnapshot: (snapshot) => {
+    getSnapshotObjectIdentity: (value) => {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+        for (const key of ['uid', 'id', 'guid', 'uniqueId']) {
+            const candidate = value[key];
+            if (candidate !== undefined && candidate !== null && String(candidate) !== '') {
+                return `${key}:${String(candidate)}`;
+            }
+        }
+        return null;
+    },
+
+    captureSaveObjectReferences: (root) => {
+        const byPath = new Map();
+        const byIdentity = new Map();
+        const seen = new WeakSet();
+        const parentPathOf = (path) => path.replace(/\[\d+\]$/, '').replace(/\.[^.]+$/, '');
+        const visit = (value, path) => {
+            if (!value || typeof value !== 'object' || seen.has(value)) return;
+            seen.add(value);
+            byPath.set(path, value);
+            const identity = App.getSnapshotObjectIdentity(value);
+            if (identity) {
+                if (!byIdentity.has(identity)) byIdentity.set(identity, []);
+                byIdentity.get(identity).push({ path, parentPath: parentPathOf(path), value });
+            }
+            if (Array.isArray(value)) {
+                value.forEach((entry, index) => visit(entry, `${path}[${index}]`));
+                return;
+            }
+            Object.keys(value).forEach(key => visit(value[key], `${path}.${key}`));
+        };
+        visit(root, '$');
+        return { byPath, byIdentity };
+    },
+
+    restoreSaveDataSnapshot: (snapshot, references = null) => {
         const restored = typeof snapshot === 'string' ? JSON.parse(snapshot) : snapshot;
         if (!restored || typeof restored !== 'object') return false;
         if (!App.data || typeof App.data !== 'object') {
             App.data = restored;
+            if (typeof App.totalGoldGem === 'function') App.totalGoldGem();
             return true;
         }
-        Object.keys(App.data).forEach(key => { delete App.data[key]; });
-        Object.assign(App.data, restored);
+
+        const refs = references || App.captureSaveObjectReferences(App.data);
+        const parentPathOf = (path) => path.replace(/\[\d+\]$/, '').replace(/\.[^.]+$/, '');
+        const chooseTarget = (source, path, current) => {
+            if (!source || typeof source !== 'object') return null;
+            const identity = App.getSnapshotObjectIdentity(source);
+            const identityEntries = identity ? (refs?.byIdentity?.get(identity) || []) : [];
+            const parentPath = parentPathOf(path);
+            const scopedIdentity = identityEntries.find(entry =>
+                entry?.parentPath === parentPath &&
+                entry?.value &&
+                Array.isArray(entry.value) === Array.isArray(source)
+            );
+            if (scopedIdentity?.value) return scopedIdentity.value;
+            const byPath = refs?.byPath?.get(path);
+            if (byPath && Array.isArray(byPath) === Array.isArray(source)) return byPath;
+            if (identityEntries.length === 1) {
+                const only = identityEntries[0]?.value;
+                if (only && Array.isArray(only) === Array.isArray(source)) return only;
+            }
+            if (current && typeof current === 'object' && Array.isArray(current) === Array.isArray(source)) return current;
+            return Array.isArray(source) ? [] : {};
+        };
+        const restoreInto = (target, source, path) => {
+            if (Array.isArray(source)) {
+                const next = source.map((entry, index) => {
+                    if (!entry || typeof entry !== 'object') return entry;
+                    const childPath = `${path}[${index}]`;
+                    const child = chooseTarget(entry, childPath, target[index]);
+                    restoreInto(child, entry, childPath);
+                    return child;
+                });
+                target.splice(0, target.length, ...next);
+                return target;
+            }
+
+            Object.keys(target).forEach(key => {
+                if (!Object.prototype.hasOwnProperty.call(source, key)) {
+                    try { delete target[key]; } catch (e) { /* descriptor-safe rollback */ }
+                }
+            });
+            Object.keys(source).forEach(key => {
+                const entry = source[key];
+                const childPath = `${path}.${key}`;
+                if (entry && typeof entry === 'object') {
+                    const child = chooseTarget(entry, childPath, target[key]);
+                    restoreInto(child, entry, childPath);
+                    target[key] = child;
+                } else {
+                    target[key] = entry;
+                }
+            });
+            return target;
+        };
+
+        App.currencyTrackingSuspended = true;
+        try {
+            restoreInto(App.data, restored, '$');
+        } finally {
+            App.currencyTrackingSuspended = false;
+        }
+        if (typeof App.totalGoldGem === 'function') App.totalGoldGem();
         return true;
     },
 
-    // 装備・素材・通貨を伴う処理向け。保存失敗時は同じ App.data 参照へ全状態を戻す。
+    // 装備・素材・通貨を伴う処理向け。保存失敗時は同じ App.data と既存の主要オブジェクト参照へ状態を戻す。
     runAtomicSaveMutation: (mutator) => {
         if (!App.data || typeof mutator !== 'function') return { ok:false, reason:'invalid' };
+        // battle.js などの外側保存トランザクション中に入ると、この関数単体では永続化成功を保証できない。
+        // 現在の呼び出し元はすべて通常状態なので、将来の誤用は明示的に拒否する。
+        if (Number(App.saveTransactionDepth || 0) > 0) return { ok:false, reason:'nestedSaveTransaction' };
         let snapshot;
+        let references;
         try {
+            references = App.captureSaveObjectReferences(App.data);
             snapshot = App.serializeSaveData(App.data);
         } catch (error) {
             return { ok:false, reason:'snapshot', error };
         }
+        const rollback = () => {
+            App.restoreSaveDataSnapshot(snapshot, references);
+            App.updateHUD?.();
+            if (typeof Menu !== 'undefined') Menu.renderPartyBar?.();
+        };
+        let result;
         try {
-            const result = mutator();
+            // mutator が既存ヘルパーを呼び、その中で App.save() しても部分状態を書き出さない。
+            // save() は depth > 0 の間 pending に留まり、mutator 完了後に明示的な1回の保存へ集約する。
+            App.beginSaveTransaction();
+            try {
+                result = mutator();
+            } finally {
+                App.saveTransactionDepth = 0;
+                App.saveTransactionPending = false;
+            }
             if (result && result.ok === false) {
-                App.restoreSaveDataSnapshot(snapshot);
+                rollback();
                 return result;
             }
             if (App.save()) return { ok:true, result };
-            App.restoreSaveDataSnapshot(snapshot);
-            App.updateHUD?.();
+            rollback();
             return { ok:false, reason:'save', saveFailed:true };
         } catch (error) {
-            App.restoreSaveDataSnapshot(snapshot);
-            App.updateHUD?.();
+            App.saveTransactionDepth = 0;
+            App.saveTransactionPending = false;
+            rollback();
             console.error('[ATOMIC SAVE] 処理を取り消しました。', error);
             return { ok:false, reason:'mutation', error };
         }
@@ -7405,23 +7593,20 @@ load: () => {
         // スキルツリー初期化
         App.data.characters[0].tree = { ATK:0, MAG:0, SPD:0, HP:0, MP:0 };
 
-        // ★ 主人公の初期装備（武器）を Rank 1 / +3 の武器(eid 1-6)からランダム生成
-        let startWeapon;
-        while (true) {
-            // sourceに'drop'を渡すことで +3 の抽選ロジックを有効化
-            startWeapon = App.createEquipByFloor('drop', 1, 3);
-            
-            // 生成されたアイテムが eid 1〜6 (武器カテゴリ) かチェック
-            // 武器名から「+3」を除去してマスタを検索
-            const baseName = startWeapon.name.replace('+3', '');
-            const master = window.EQUIP_MASTER.find(e => e.name === baseName);
-            
-            // 武器タイプであり、かつ指定された eid 範囲内であれば確定
-            if (master && master.type === '武器' && master.eid >= 1 && master.eid <= 6) {
-                break;
-            }
+        // 主人公の初期装備は、仕様どおり eid 1〜6 の武器から直接1本選び +3 で生成する。
+        // 汎用drop抽選を繰り返して目的カテゴリを待つ方式は、装備DB変更時に無限ループ化し得るため使わない。
+        const startWeaponPool = (window.EQUIP_MASTER || []).filter(base =>
+            base && base.type === '武器' && Number(base.eid) >= 1 && Number(base.eid) <= 6
+        );
+        const startWeaponBase = startWeaponPool[Math.floor(Math.random() * startWeaponPool.length)] || null;
+        const startWeapon = startWeaponBase && typeof App.createEquipById === 'function'
+            ? App.createEquipById(Number(startWeaponBase.eid), 3)
+            : null;
+        if (!startWeapon) {
+            App.showMessage('初期装備を準備できませんでした。タイトルへ戻ります。');
+            return;
         }
-        
+
         // 主人公の武器スロットに装備
         App.data.characters[0].equips['武器'] = startWeapon;
 
@@ -9145,74 +9330,83 @@ load: () => {
         const potId = Number(window.PRISMA_SYNTHESIS_POT_ITEM_ID || 599999);
         if (Number(App.data?.items?.[potId] || 0) <= 0) return { ok:false, reason:'noPot', message:'合成の壺を持っていません。' };
 
-        const { primary, material, skills, traits, stats, nextFusionCount } = preview;
-        if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
-        const returnedEquipment = [];
-        const seenEquipment = new Set();
-        [primary, material].forEach(character => {
-            Object.values(character.equips || {}).forEach(equip => {
-                if (!equip || seenEquipment.has(equip)) return;
-                seenEquipment.add(equip);
-                returnedEquipment.push(equip);
-            });
-        });
-        returnedEquipment.forEach(equip => App.data.inventory.push(equip));
-
-        const retainedSkillSet = new Set(skills.map(Number));
-        const retainedTraitSet = new Set(traits.map(trait => Number(trait.id)));
-        const oldConfig = (primary.config && typeof primary.config === 'object') ? primary.config : {};
-        const oldMeta = (primary.monsterAllyMeta && typeof primary.monsterAllyMeta === 'object') ? primary.monsterAllyMeta : {};
-        const primaryGrowthBase = primary.growthBase ? { ...primary.growthBase } : null;
-        const emptyEquips = { '武器':null, '盾':null, '頭':null, '体':null, '足':null };
-
-        Object.assign(primary, stats, {
-            level:1,
-            exp:0,
-            currentHp:stats.hp,
-            currentMp:stats.mp,
-            skills:skills.slice(0, 8),
-            skillBookSkills:[],
-            traits:traits.map(trait => ({ ...trait })),
-            disabledTraits:(primary.disabledTraits || []).map(Number).filter(id => retainedTraitSet.has(id)),
-            equips:emptyEquips,
-            reincarnationCount:0,
-            monsterFusionCount:nextFusionCount,
-            config:{
-                ...oldConfig,
-                hiddenSkills:(oldConfig.hiddenSkills || []).map(Number).filter(id => retainedSkillSet.has(id)),
-                autoDisabledSkills:(oldConfig.autoDisabledSkills || []).map(Number).filter(id => retainedSkillSet.has(id))
+        const transaction = App.runAtomicSaveMutation(() => {
+            if (Number(App.data?.items?.[potId] || 0) <= 0) {
+                return { ok:false, reason:'noPot', message:'合成の壺を持っていません。' };
             }
+            const { primary, material, skills, traits, stats, nextFusionCount } = preview;
+            if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+            const returnedEquipment = [];
+            const seenEquipment = new Set();
+            [primary, material].forEach(character => {
+                Object.values(character.equips || {}).forEach(equip => {
+                    if (!equip || seenEquipment.has(equip)) return;
+                    seenEquipment.add(equip);
+                    returnedEquipment.push(equip);
+                });
+            });
+            returnedEquipment.forEach(equip => App.data.inventory.push(equip));
+    
+            const retainedSkillSet = new Set(skills.map(Number));
+            const retainedTraitSet = new Set(traits.map(trait => Number(trait.id)));
+            const oldConfig = (primary.config && typeof primary.config === 'object') ? primary.config : {};
+            const oldMeta = (primary.monsterAllyMeta && typeof primary.monsterAllyMeta === 'object') ? primary.monsterAllyMeta : {};
+            const primaryGrowthBase = primary.growthBase ? { ...primary.growthBase } : null;
+            const emptyEquips = { '武器':null, '盾':null, '頭':null, '体':null, '足':null };
+    
+            Object.assign(primary, stats, {
+                level:1,
+                exp:0,
+                currentHp:stats.hp,
+                currentMp:stats.mp,
+                skills:skills.slice(0, 8),
+                skillBookSkills:[],
+                traits:traits.map(trait => ({ ...trait })),
+                disabledTraits:(primary.disabledTraits || []).map(Number).filter(id => retainedTraitSet.has(id)),
+                equips:emptyEquips,
+                reincarnationCount:0,
+                monsterFusionCount:nextFusionCount,
+                config:{
+                    ...oldConfig,
+                    hiddenSkills:(oldConfig.hiddenSkills || []).map(Number).filter(id => retainedSkillSet.has(id)),
+                    autoDisabledSkills:(oldConfig.autoDisabledSkills || []).map(Number).filter(id => retainedSkillSet.has(id))
+                }
+            });
+            if (primaryGrowthBase) primary.growthBase = primaryGrowthBase;
+            else App.applyMonsterAllyGrowthProfile(primary);
+            primary.monsterAllyMeta = {
+                ...oldMeta,
+                growthProfileVersion:App.monsterAllyGrowthConfig.schemaVersion,
+                fusedAt:Date.now(),
+                fusionCount:nextFusionCount,
+                absorbedMonsterId:material.monsterId || material.sourceMonsterId || null,
+                absorbedName:material.name || ''
+            };
+    
+            App.data.characters = (App.data.characters || []).filter(character => character && character.uid !== material.uid);
+            if (Array.isArray(App.data.party)) App.data.party = App.data.party.map(uid => uid === material.uid ? null : uid);
+            App.data.items[potId]--;
+            if (App.data.items[potId] <= 0) delete App.data.items[potId];
+            App.ensureCharacterBattleConfig?.(primary);
+            if (typeof PassiveSkill !== 'undefined') PassiveSkill.normalizeDisabledTraits?.(primary);
+            const fusedStats = typeof App.calcStats === 'function'
+                ? App.calcStats(primary)
+                : { maxHp:primary.hp, maxMp:primary.mp };
+            primary.currentHp = Math.max(1, Math.floor(Number(fusedStats?.maxHp ?? primary.hp) || 1));
+            primary.currentMp = Math.max(0, Math.floor(Number(fusedStats?.maxMp ?? primary.mp) || 0));
+            return {
+                ok:true,
+                character:primary,
+                consumedUid:material.uid,
+                returnedEquipmentCount:returnedEquipment.length,
+                message:`${primary.name}は新たな力を得てレベル1になった！\n合成回数: ${nextFusionCount}回`
+            };
         });
-        if (primaryGrowthBase) primary.growthBase = primaryGrowthBase;
-        else App.applyMonsterAllyGrowthProfile(primary);
-        primary.monsterAllyMeta = {
-            ...oldMeta,
-            growthProfileVersion:App.monsterAllyGrowthConfig.schemaVersion,
-            fusedAt:Date.now(),
-            fusionCount:nextFusionCount,
-            absorbedMonsterId:material.monsterId || material.sourceMonsterId || null,
-            absorbedName:material.name || ''
-        };
-
-        App.data.characters = (App.data.characters || []).filter(character => character && character.uid !== material.uid);
-        if (Array.isArray(App.data.party)) App.data.party = App.data.party.map(uid => uid === material.uid ? null : uid);
-        App.data.items[potId]--;
-        if (App.data.items[potId] <= 0) delete App.data.items[potId];
-        App.ensureCharacterBattleConfig?.(primary);
-        if (typeof PassiveSkill !== 'undefined') PassiveSkill.normalizeDisabledTraits?.(primary);
-        const fusedStats = typeof App.calcStats === 'function'
-            ? App.calcStats(primary)
-            : { maxHp:primary.hp, maxMp:primary.mp };
-        primary.currentHp = Math.max(1, Math.floor(Number(fusedStats?.maxHp ?? primary.hp) || 1));
-        primary.currentMp = Math.max(0, Math.floor(Number(fusedStats?.maxMp ?? primary.mp) || 0));
-        App.save();
-        return {
-            ok:true,
-            character:primary,
-            consumedUid:material.uid,
-            returnedEquipmentCount:returnedEquipment.length,
-            message:`${primary.name}は新たな力を得てレベル1になった！\n合成回数: ${nextFusionCount}回`
-        };
+        if (!transaction.ok) {
+            if (transaction.message) return transaction;
+            return { ok:false, reason:transaction.reason || 'save', message:'合成内容を保存できませんでした。' };
+        }
+        return transaction.result;
     },
 
     getLifetimeStatDefaults: () => ({
@@ -10678,8 +10872,13 @@ const Field = {
         };
         const requestedEntry = options.entryKey && areaDef.entryPoints ? areaDef.entryPoints[options.entryKey] : null;
         const entryPoint = requestedEntry || areaDef.entryPoint || { x: Math.floor(areaDef.width / 2), y: areaDef.height - 3 };
-        Field.x = Number.isFinite(Number(options.targetX)) ? Number(options.targetX) : Number(entryPoint.x);
-        Field.y = Number.isFinite(Number(options.targetY)) ? Number(options.targetY) : Number(entryPoint.y);
+        const requestedPoint = {
+            x: Number.isFinite(Number(options.targetX)) ? Number(options.targetX) : Number(entryPoint.x),
+            y: Number.isFinite(Number(options.targetY)) ? Number(options.targetY) : Number(entryPoint.y)
+        };
+        const safeEntry = Field.resolveSafeLocalSpawn?.(Field.currentMapData, requestedPoint, entryPoint) || requestedPoint;
+        Field.x = Number(safeEntry.x);
+        Field.y = Number(safeEntry.y);
         App.data.location.x = Field.x;
         App.data.location.y = Field.y;
         Field.resetPartyTrail();
@@ -11541,6 +11740,70 @@ const Field = {
             ? Field.currentMapData.impassableTiles
             : [];
         return authored.some(sign => String(sign || '').toUpperCase() === upper);
+    },
+
+    isSafeLocalSpawnCell: (x, y, mapDef = Field.currentMapData) => {
+        if (!mapDef) return false;
+        const tx = Number(x);
+        const ty = Number(y);
+        const width = Number(mapDef.width || 0);
+        const height = Number(mapDef.height || 0);
+        if (!Number.isInteger(tx) || !Number.isInteger(ty) || tx < 0 || ty < 0 || tx >= width || ty >= height) return false;
+
+        const previousMap = Field.currentMapData;
+        if (previousMap !== mapDef) Field.currentMapData = mapDef;
+        try {
+            const areaKey = mapDef.areaKey || App.data?.location?.area || Field.getCurrentAreaKey?.();
+            const tile = Field.getRenderedTileForDraw(tx, ty, width, height, areaKey);
+            if (Field.isTileImpassableForCurrentMap(tile)) return false;
+            if (String(tile).toUpperCase() === '~' && !(mapDef.isDungeon && !mapDef.isFixed && App.data?.dungeon?.isFloodedFloor)) return false;
+            if (Field.getBlockingObjectAt?.(tx, ty)) return false;
+
+            const action = typeof MapRegistry !== 'undefined' && MapRegistry.findMapAction
+                ? MapRegistry.findMapAction(mapDef, tx, ty)
+                : null;
+            if (action && Field.isMapActionAvailable?.(action) && Field.isBlockingMapActor?.(action)) return false;
+
+            // セーブ互換の復帰地点として、未処理のボス・宝箱そのもののマスも避ける。
+            const special = String(tile || '').toUpperCase();
+            if (['B', 'C', 'R'].includes(special)) return false;
+            return true;
+        } finally {
+            Field.currentMapData = previousMap;
+        }
+    },
+
+    resolveSafeLocalSpawn: (mapDef, preferred = null, fallback = null) => {
+        if (!mapDef) return preferred || fallback || null;
+        const candidates = [preferred, fallback, mapDef.entryPoint]
+            .filter(Boolean)
+            .map(point => ({ x: Number(point.x), y: Number(point.y) }))
+            .filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
+
+        for (const point of candidates) {
+            if (Field.isSafeLocalSpawnCell(point.x, point.y, mapDef)) return { x: point.x, y: point.y };
+        }
+
+        const start = candidates[0] || { x: Math.floor(Number(mapDef.width || 1) / 2), y: Math.floor(Number(mapDef.height || 1) / 2) };
+        const width = Number(mapDef.width || 0);
+        const height = Number(mapDef.height || 0);
+        const queue = [{ x: Math.max(0, Math.min(width - 1, Math.floor(start.x))), y: Math.max(0, Math.min(height - 1, Math.floor(start.y))) }];
+        const seen = new Set();
+        while (queue.length) {
+            const point = queue.shift();
+            const key = `${point.x},${point.y}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            if (Field.isSafeLocalSpawnCell(point.x, point.y, mapDef)) return point;
+            [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx, dy]) => {
+                const nx = point.x + dx;
+                const ny = point.y + dy;
+                if (nx >= 0 && ny >= 0 && nx < width && ny < height && !seen.has(`${nx},${ny}`)) {
+                    queue.push({ x:nx, y:ny });
+                }
+            });
+        }
+        return fallback || mapDef.entryPoint || preferred || { x: 1, y: 1 };
     },
 
 

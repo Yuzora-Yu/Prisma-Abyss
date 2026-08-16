@@ -349,8 +349,12 @@ const Menu = {
     },
 
     getMenuIconPath: (kind, value) => {
+        const group = String(kind || '').toLowerCase();
         const key = String(value || '').toLowerCase();
-        return `assets/ui/menu-icons/${kind}-${key}.svg`;
+        const registered = globalThis.PRISMA_ASSETS?.uiIcons?.[group]?.[key];
+        if (registered) return registered;
+        // 未移行の旧iconだけ互換規則へフォールバックする。新規iconはassets.jsへ登録すること。
+        return `assets/ui/menu-icons/${group}-${key}.svg`;
     },
 
     getSkillIconPath: (skill) => {
@@ -367,26 +371,42 @@ const Menu = {
 
     getItemIconPath: (item) => {
         const type = String(item?.type || '');
-        if (type === 'スキル書') return 'assets/ui/menu-icons/item-skill-book.png';
-        if (type === '特性書') return 'assets/ui/menu-icons/item-trait-book.png';
         if (item?.icon) return item.icon;
-        if (type === '攻撃道具') return 'assets/ui/menu-icons/item-attack.png';
-        if (type === '強化道具') return 'assets/ui/menu-icons/item-buff.png';
-        if (type === '弱体道具') return 'assets/ui/menu-icons/item-debuff.png';
-        if (type === '素材') return 'assets/ui/menu-icons/item-material.png';
-        if (type === '乗り物') return 'assets/ui/menu-icons/item-vehicle.png';
-        if (type === '移動' || Number(item?.id) === 110 || item?.name === 'スカイプリズム') return 'assets/ui/menu-icons/item-travel.png';
-        if (type === '蘇生') return 'assets/ui/menu-icons/item-revive.png';
-        if (type === '育成' || type === '特性書') return 'assets/ui/menu-icons/item-growth.png';
-        if (type === '貴重品') return 'assets/ui/menu-icons/item-key.png';
-        if (type === 'HP回復' || type === 'MP回復' || type === '状態異常回復' || type.includes('回復')) {
-            return 'assets/ui/menu-icons/item-heal.png';
-        }
-        return Menu.getMenuIconPath('item', 'item');
+        let key = 'item';
+        if (type === 'スキル書') key = 'skill-book';
+        else if (type === '特性書') key = 'trait-book';
+        else if (type === '攻撃道具') key = 'attack';
+        else if (type === '強化道具') key = 'buff';
+        else if (type === '弱体道具') key = 'debuff';
+        else if (type === '素材') key = 'material';
+        else if (type === '乗り物') key = 'vehicle';
+        else if (type === '移動' || Number(item?.id) === 110 || item?.name === 'スカイプリズム') key = 'travel';
+        else if (type === '蘇生') key = 'revive';
+        else if (type === '育成') key = 'growth';
+        else if (type === '貴重品') key = 'key';
+        else if (type === 'HP回復' || type === 'MP回復' || type === '状態異常回復' || type.includes('回復')) key = 'heal';
+        return Menu.getMenuIconPath('item', key);
     },
 
     getIconFallbackAttr: (fallbackPath) => ` onerror="this.onerror=null;this.src='${fallbackPath}'"`,
 
+    subScreenRegistry: {
+        party:        { init: () => MenuParty.init() },
+        items:        { init: () => MenuItems.init() },
+        inventory:    { init: () => MenuInventory.init() },
+        allies:       { init: () => MenuAllies.init() },
+        skills:       { init: () => MenuSkills.init() },
+        book:         { init: () => MenuBook.init() },
+        blacksmith:   { featureKey:'craftingMenu', init: () => MenuBlacksmith.init() },
+        status:       { ensureDOM: () => { if (!document.getElementById('sub-screen-status')) MenuStatus.createDOM(); }, init: () => MenuStatus.init() },
+        config:       { ensureDOM: () => { if (typeof MenuConfig !== 'undefined' && !document.getElementById('sub-screen-config')) MenuConfig.createDOM(); }, init: () => { if (typeof MenuConfig !== 'undefined') MenuConfig.init(); } },
+        exchange:     { init: () => MenuExchange.init() },
+        achievements: { init: () => MenuAchievements.init() },
+        gacha:        { featureKey:'gacha', init: () => { if (typeof Gacha !== 'undefined') Gacha.init(); } },
+        dungeon:      { featureKey:'dungeonMenu', init: () => { if (typeof Dungeon !== 'undefined') Dungeon.initMenu(); } },
+    },
+
+    // featureButton等の旧参照との互換。新規route metadataはsubScreenRegistryへ置く。
     subScreenFeatureMap: {
         crafting: 'craftingMenu',
         blacksmith: 'craftingMenu',
@@ -473,7 +493,9 @@ const Menu = {
             const hasUnclaimedAchievement = Object.values(App.data.achievements || {}).some(a => a.completed && !a.claimed);
             
             // 2. 取引所: 本日の日付と保存されている最後受取日が一致しない（＝未受取）か
-            const today = (typeof MenuExchange !== 'undefined' && MenuExchange.getTodayStr) ? MenuExchange.getTodayStr() : new Date().toLocaleDateString('sv-SE');
+            const today = (typeof MenuExchange !== 'undefined' && MenuExchange.getTodayStr)
+                ? MenuExchange.getTodayStr()
+                : (typeof App !== 'undefined' && typeof App.getLocalDateKey === 'function' ? App.getLocalDateKey() : '');
             const hasUnclaimedDaily = (App.data.flags?.lastGemClaimDate !== today) || (App.data.flags?.lastGoldClaimDate !== today);
             
             // バッジ用HTMLパーツ
@@ -581,7 +603,7 @@ const Menu = {
             div.innerHTML = `
                 <div class="menu-party-head">
                     <div class="menu-party-name">${Menu.escapeHtml(p.name)}${lbText}</div>
-                    <div class="menu-party-level">Lv ${p.level || 1}</div>
+                    <div class="menu-party-level">Lv.${p.level || 1}</div>
                     <div class="menu-party-position ${formationClass}" title="${formationLabel}">${formationMark}</div>
                 </div>
                 <div class="menu-party-body">
@@ -658,7 +680,8 @@ const Menu = {
         Menu.installKeyboardNavigation();
         Menu.installBackGuard();
         Menu.ensureBackGuard();
-        const requiredFeature = Menu.subScreenFeatureMap[id];
+        const route = Menu.subScreenRegistry[id] || null;
+        const requiredFeature = route?.featureKey || Menu.subScreenFeatureMap[id];
         const bypassFeatureLock = id === 'dungeon' && Menu.isDungeonEscapeContext();
         if (!bypassFeatureLock && requiredFeature && typeof App !== 'undefined' && typeof App.requireFeatureUnlocked === 'function' && !App.requireFeatureUnlocked(requiredFeature)) {
             return;
@@ -667,29 +690,12 @@ const Menu = {
         document.getElementById('menu-overlay').style.display = 'none';
         document.querySelectorAll('.sub-screen').forEach(e => e.style.display = 'none');
         
-        if (id === 'status' && !document.getElementById('sub-screen-status')) {
-            MenuStatus.createDOM();
-        }
-        if (id === 'config' && typeof MenuConfig !== 'undefined' && !document.getElementById('sub-screen-config')) {
-            MenuConfig.createDOM();
-        }
+        route?.ensureDOM?.();
 
         const target = document.getElementById('sub-screen-' + id);
         if(target) target.style.display = 'flex';
-        
-        if(id === 'party') MenuParty.init();
-        if(id === 'items') MenuItems.init();
-        if(id === 'inventory') MenuInventory.init();
-        if(id === 'allies') MenuAllies.init();
-        if(id === 'skills') MenuSkills.init();
-        if(id === 'book') MenuBook.init();
-        if(id === 'blacksmith') MenuBlacksmith.init();
-        if(id === 'status') MenuStatus.init();
-        if(id === 'config' && typeof MenuConfig !== 'undefined') MenuConfig.init();
-			if(id === 'exchange') MenuExchange.init();
-		if(id === 'achievements') MenuAchievements.init();
-        if(id === 'gacha' && typeof Gacha !== 'undefined') Gacha.init();
-		if(id === 'dungeon' && typeof Dungeon !== 'undefined') Dungeon.initMenu();
+
+        route?.init?.();
         const targetRoot = document.getElementById('sub-screen-' + id);
         if (targetRoot) Menu.refreshKeyboardNavigation(targetRoot);
     },
@@ -826,7 +832,7 @@ const Menu = {
                 const traitId = Number(t?.id ?? t);
                 const lv = Number(t?.level || t?.lv || 1);
                 const master = (typeof PassiveSkill !== 'undefined' && PassiveSkill.MASTER) ? PassiveSkill.MASTER[traitId] : null;
-                return `${master?.name || `特性${traitId}`}Lv${Number.isFinite(lv) ? lv : 1}`;
+                return `${master?.name || `特性${traitId}`} Lv.${Number.isFinite(lv) ? lv : 1}`;
             }).filter(Boolean);
             if (traitList.length > 0) traitsHTML = `<div style="font-size:10px; color:#ffd27a; margin-top:2px;">特性: ${traitList.join('・')}</div>`;
         }
@@ -973,7 +979,7 @@ const Menu = {
         btnCancel.className = 'btn';
         btnCancel.style.marginLeft = '10px';
         btnCancel.style.background = '#333';
-        btnCancel.innerText = 'やめる';
+        btnCancel.innerText = 'キャンセル';
         btnCancel.onclick = () => { Menu.closeDialog(); };
 
         btnEl.appendChild(btn1);
@@ -1221,7 +1227,7 @@ const Menu = {
                 renderPage();
             }, { width: '48px', padding: '8px' }));
             footer.appendChild(nav);
-            footer.appendChild(makeButton('やめる', () => {
+            footer.appendChild(makeButton('キャンセル', () => {
                 cleanup();
                 Menu.closeDialog();
                 if (options.onCancel) options.onCancel();
@@ -1327,7 +1333,7 @@ const Menu = {
                 btnEl.appendChild(nav);
             }
 
-            btnEl.appendChild(makeButton('やめる', () => { 
+            btnEl.appendChild(makeButton('キャンセル', () => { 
                 resetDialogButtons();
                 Menu.closeDialog(); 
             }, { background: '#444' }));
