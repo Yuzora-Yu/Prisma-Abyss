@@ -1022,8 +1022,8 @@ Status: **inventory / no automatic replacement**
 |999|ui_label|`map.js:11025`|label|1階・潮風の塔道|（未提案・レビュー待ち）|inventory_only|
 |1000|ui_label|`map.js:11060`|label|外に出る|（未提案・レビュー待ち）|inventory_only|
 |1001|ui_label|`map.js:11068`|label|2階へ|（未提案・レビュー待ち）|inventory_only|
-|1002|ui_label|`map.js:11149`|label|船着き場から海底火山へ向かう|（未提案・レビュー待ち）|inventory_only|
-|1003|ui_log|`map.js:11150`|log|ゼリードが示した海底火山への航路を確認する。|（未提案・レビュー待ち）|inventory_only|
+|1002|ui_label|`map.js:旧導線`|label|船着き場から海底火山へ向かう|2026-08-16 ワールド海上入口へ一本化したため廃止|retired_20260816|
+|1003|ui_log|`map.js:旧導線`|log|ゼリードが示した海底火山への航路を確認する。|2026-08-16 ワールド海上入口へ一本化したため廃止|retired_20260816|
 |1004|ui_label|`map.js:11166`|label|2階・螺旋階段|（未提案・レビュー待ち）|inventory_only|
 |1005|ui_label|`map.js:11206`|label|1階へ戻る|（未提案・レビュー待ち）|inventory_only|
 |1006|ui_label|`map.js:11214`|label|3階へ|（未提案・レビュー待ち）|inventory_only|
@@ -1836,3 +1836,19 @@ Status: **inventory / no automatic replacement**
 |1786|battle_log|`job_traits.js`|星詠師 / 強化|${star.name}の星巡り――味方を星の加護が包んだ！|（2026-08-16職業特性演出）|new_copy_inventory|
 |1787|battle_log|`job_traits.js`|星詠師 / 属性攻撃|${enemy.name}に星光が降り、${dmg}の${elm}属性ダメージ！|（2026-08-16職業特性演出）|new_copy_inventory|
 |1788|battle_log|`job_traits.js`|星詠師 / 弱体|${star.name}の星巡り――凶星が敵の力を奪った！|（2026-08-16職業特性演出）|new_copy_inventory|
+
+### 2026-08-16 転生職歴復帰・海底火山ワールド導線
+
+|ID|種別|参照|用途/条件|現行/新規文言|レビュー案|状態|
+|---:|---|---|---|---|---|---|
+|1789|ui_prompt|`menus_items.js`|転生の実 / 職業選択|${target.name}の転生後の職業を選んでください。 / 過去に経験した職業へは、転職の書なしで戻れます。|（2026-08-16ユーザー指定機能）|new_copy_approved_20260816|
+|1790|ui_label|`menus_items.js`|転生の実 / 現在職|現在の職業：${entry.job}|（2026-08-16新規）|new_copy_inventory|
+|1791|ui_label|`menus_items.js`|転生の実 / 過去職|過去の職業：${entry.job}|（2026-08-16新規）|new_copy_inventory|
+|1792|ui_confirm|`menus_items.js`|転生の実 / 職業確認|${target.name}を${label}状態で転生させますか？ / Lv1に戻り、転生回数が1増えます。|（2026-08-16新規）|new_copy_inventory|
+|1793|ui_success|`menus_items.js`|転生の実 / 過去職復帰|${target.name}は ${result.job}へ戻り、そのまま転生した！ / レベル1に戻った！|（2026-08-16新規）|new_copy_inventory|
+|1794|ui_error|`menus_items.js`|転生の実 / 職歴外|その職業へ戻った履歴を確認できません。|（安全ガード）|new_copy_inventory|
+|1795|story_objective|`story.js`|6-2 / 海底火山への航路|バロンたちを追い、光の宮殿の北東――大灯台と反対側の外海にある海底火山へ向かおう|（2026-08-16ユーザー指定導線修正）|approved_applied_20260816|
+|1796|map_action|`map.js`|雷の要塞・水上都市 / 航路ヒント|海底火山の場所を聞く|（2026-08-16新規）|new_copy_approved_20260816|
+|1797|map_exit|`map.js`|海底火山第1層 / 退出|海上へ戻る|（大灯台直通廃止に伴う修正）|approved_applied_20260816|
+|1798|map_locked|`map.js`|海底火山 / 航路未解禁|海底火山への航路はまだ特定できていない。|（2026-08-16新規）|new_copy_inventory|
+|1799|item_description|`items.js`|転生の実|能力と習得スキルを維持したままLv1に戻る禁断の果実。過去に経験した職業へ戻ることもできる|（2026-08-16ユーザー指定機能）|approved_applied_20260816|

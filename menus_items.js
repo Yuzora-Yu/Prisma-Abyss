@@ -743,12 +743,92 @@ const MenuItems = {
             list.appendChild(div);
         });
     },
+    showReincarnationJobChoice: (target, options, onSelect) => {
+        const area = Menu.getDialogEl?.('menu-dialog-area');
+        const textEl = Menu.getDialogEl?.('menu-dialog-text');
+        const btnEl = Menu.getDialogEl?.('menu-dialog-buttons');
+        if (!area || !textEl || !btnEl) return;
+        Menu.resetDialogLayout?.();
+        textEl.innerHTML = `${Menu.escapeHtml(target.name)}の転生後の職業を選んでください。<br><span style="font-size:11px;color:#bbb;">過去に経験した職業へは、転職の書なしで戻れます。</span>`;
+        btnEl.innerHTML = '';
+        btnEl.classList.add('is-list');
+        btnEl.style.flexDirection = 'column';
+        btnEl.style.gap = '6px';
+        btnEl.style.width = 'min(420px, 88vw)';
+        btnEl.style.maxHeight = '48vh';
+        btnEl.style.overflowY = 'auto';
+
+        (options || []).forEach(entry => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.style.width = '100%';
+            btn.style.minHeight = '36px';
+            btn.innerText = entry.current ? `現在の職業：${entry.job}` : `過去の職業：${entry.job}`;
+            btn.onclick = () => { Menu.closeDialog(); onSelect?.(entry); };
+            btnEl.appendChild(btn);
+        });
+        const cancel = document.createElement('button');
+        cancel.className = 'btn';
+        cancel.style.width = '100%';
+        cancel.style.background = '#555';
+        cancel.innerText = 'やめる';
+        cancel.onclick = () => Menu.closeDialog();
+        btnEl.appendChild(cancel);
+        area.style.display = 'flex';
+    },
+
+    useReincarnationFruit: (target, item) => {
+        if (App.isMonsterAlly?.(target)) { Menu.msg('仲間モンスターには転生の実を使用できません。'); return; }
+        if (Math.floor(Number(target.level || 1)) !== 100) { Menu.msg('転生の実はLv100到達時に使用できます。'); return; }
+        const options = App.getReincarnationJobOptions?.(target) || [];
+        if (!options.length) { Menu.msg('現在の職業情報を確認できません。'); return; }
+
+        const commit = (entry) => {
+            const label = entry.current ? entry.job : `${entry.job}へ戻る`;
+            Menu.confirm(`${target.name}を${label}状態で転生させますか？\nLv1に戻り、転生回数が1増えます。`, () => {
+                const result = App.reincarnateCharacter?.(target, entry.jobId, { save:false }) || { ok:false, reason:'system_missing' };
+                if (!result.ok) {
+                    const messages = {
+                        monster_ally:'仲間モンスターには転生の実を使用できません。',
+                        level_requirement:'転生の実はLv100到達時に使用できます。',
+                        job_not_in_history:'その職業へ戻った履歴を確認できません。',
+                        job_missing:'職業データを確認できません。',
+                        current_job_missing:'現在の職業データを確認できません。',
+                        system_missing:'転生処理を利用できません。'
+                    };
+                    Menu.msg(messages[result.reason] || '転生できません。');
+                    return;
+                }
+                App.data.items[item.id]--;
+                if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
+                App.save();
+                MenuItems.playUseSe(item);
+                const msg = result.changedJob
+                    ? `${target.name}は ${result.job}へ戻り、そのまま転生した！\nレベル1に戻った！\n(転生回数: ${result.reincarnationCount}回目)`
+                    : `${target.name}は 転生しレベル1に戻った！\n(転生回数: ${result.reincarnationCount}回目)`;
+                Menu.msg(msg, () => {
+                    if(!App.data.items[item.id] || App.data.items[item.id] <= 0) MenuItems.changeScreen('list');
+                    else MenuItems.renderTargetList();
+                    Menu.renderPartyBar();
+                });
+            });
+        };
+
+        if (options.length === 1) commit(options[0]);
+        else MenuItems.showReincarnationJobChoice(target, options, commit);
+    },
+
     useItem: (target) => {
         const item = MenuItems.selectedItem;
         // ★修正: 所持チェックの厳格化 (undefined または 0 以下なら中止)
         if(!item || !App.data.items[item.id] || App.data.items[item.id] <= 0) {
             Menu.msg("アイテムを持っていません。");
             MenuItems.changeScreen('list');
+            return;
+        }
+
+        if (Number(item.id) === 107) {
+            MenuItems.useReincarnationFruit(target, item);
             return;
         }
 
@@ -826,8 +906,8 @@ const MenuItems = {
                 msg = `${target.name}のLBが ${result.before} から ${result.after} に上がった！`;
             }
 
-            // --- C. 育成アイテム(100-107)の処理 ---
-            else if (item.id >= 100 && item.id <= 107) {
+            // --- C. 育成アイテム(100-106)の処理 ---
+            else if (item.id >= 100 && item.id <= 106) {
                 success = true;
                 if (!target.permanentStatBonuses || typeof target.permanentStatBonuses !== 'object' || Array.isArray(target.permanentStatBonuses)) target.permanentStatBonuses = {};
                 const addPermanentStat = (key, amount) => {
@@ -842,22 +922,6 @@ const MenuItems = {
                     case 104: addPermanentStat('spd', 1); msg = `${target.name}の素早さが上がった！`; break;
                     case 105: addPermanentStat('def', 1); msg = `${target.name}の防御力が上がった！`; break;
                     case 106: target.sp = (target.sp || 0) + 1; msg = `${target.name}のSPが 1 増えた！`; break;
-                    case 107:
-                        if (App.isMonsterAlly?.(target)) {
-                            Menu.msg("仲間モンスターには転生の実を使用できません。");
-                            success = false;
-                        } else if (target.level < 100) {
-                            Menu.msg("レベルが不足しており使用できません");
-                            success = false;
-                        } else {
-                            App.ensureCharacterJobCareer?.(target);
-                            App.noteCurrentJobProgress?.(target);
-                            target.level = 1;
-                            target.exp = 0;
-                            target.reincarnationCount = (target.reincarnationCount || 0) + 1;
-                            msg = `${target.name}は 転生しレベル1に戻った！\n(転生回数: ${target.reincarnationCount}回目)`;
-                        }
-                        break;
                 }
             }
 

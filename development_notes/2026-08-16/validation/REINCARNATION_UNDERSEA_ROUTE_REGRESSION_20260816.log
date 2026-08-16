@@ -1,0 +1,130 @@
+=== development_notes/2026-08-15/validation/ALAN_PHASE17_MAINLINE_CHECK_20260815.js ===
+PASS: Alan awakening exact system text exists
+PASS: Immediate Jasper rejoin order = ALLY -> awakening -> SET_JOB -> EXP
+PASS: Deferred Legacion rejoin order = ALLY -> awakening -> SET_JOB -> EXP
+PASS: Generic SET_JOB story action exists
+PASS: Persistent story job override exists
+PASS: Startup job repair respects story override
+PASS: Old-save Alan awakening migration exists and is invoked
+PASS: Old-save migration does not reference awakening conversation
+PASS: Light Magic Knight job table exists
+PASS: Light Magic Knight provisional skill table has skills
+PASS: Every Light Magic Knight skill ID exists
+PASS: Roadmap fixes Alan awakening before +1m EXP
+PASS: Canon no longer marks Alan Light Magic Knight timing undecided
+PASS: Fixed dungeon links support requiredFlags
+PASS: Final altar route requires Illuminacia, all six spirit trials, and the Cycle Crystal
+PASS: Final altar event itself guards all spirit trials and the Cycle Crystal
+PASS: Vegnasis remains five wedges
+PASS: Veld remains the dark fifth wedge
+PASS: Jasper is not a Vegnasis wedge
+PASS: 2026/08/15 NEWS_DATA remains one record
+TOTAL=20 FAIL=0
+RESULT PASS
+=== development_notes/2026-08-15/validation/CYCLE_CRYSTAL_PHASE17_CHECK_20260815.js ===
+PASS Six-spirit completion no longer grants completed item immediately
+PASS Legacy grant event is retained only as return-to-Crystal-Tree compatibility route
+PASS Crystal Tree ritual script exists with Minerva-led circulation and Lycion witness
+PASS Crystal Tree ritual event commits Cycle Crystal creation exactly through dedicated action
+PASS Story runtime has dedicated Cycle Crystal create action and keeps legacy action as non-grant compatibility path
+PASS Create API requires six blessings and prior Crystal Tree clear
+PASS Create API transforms pendant, grants Item 701008, and commits created flag
+PASS Legacy API alias is retained for code compatibility
+PASS One-time Cycle Crystal migration exists
+PASS Migration preserves old Item 701008 owners without ritual replay
+PASS Migration backfills only already-past-final-gate legacy saves when Item 701008 is missing
+PASS Crystal Tree Minerva actor exposes ritual state before repeat state
+PASS Final Altar map gate requires Illuminacia + six spirits + Cycle Crystal
+PASS Final Altar event itself guards Illuminacia + six spirits + Cycle Crystal
+PASS Vegnasis remains five wedges
+PASS Vegnasis clear now shows Cycle Crystal counter-scene before Azelgarag
+PASS Item 701008 player-facing identity is Cycle Crystal
+PASS Abyss content exposes canonical Cycle Crystal names plus legacy aliases
+PASS Battle logs are Cycle Crystal-facing while octaprism battle state remains compatible
+PASS Item runtime message uses Cycle Crystal terminology
+PASS Abyss objective routes completed trials back to Crystal Tree
+PASS Active runtime has no player-facing old Octaprism Japanese name
+PASS Canon §47 is definitive and uses established pendant/Lycion terminology
+PASS Roadmap Phase17 gate includes Cycle Crystal generation
+PASS news.js keeps exactly one 2026/08/15 record
+PASS 2026/08/15 news mentions Cycle Crystal mainline event
+
+RESULT 26/26 PASS
+RESULT PASS
+=== development_notes/2026-08-15/validation/EDITOR_TRAIT_ULTRA_CHEST_CHECK_20260815.js ===
+EDITOR_TRAIT_ULTRA_CHEST_CHECK: 744/744 PASS
+RESULT PASS
+=== development_notes/2026-08-15/validation/HAYATE_REXNOTE_PHASE17_AUDIT_CHECK_20260815.js ===
+{
+  "hayate": "ok",
+  "phase17Audit": {
+    "currentLinkedPillars": 5,
+    "linkedIds": [
+      302080,
+      302081,
+      302082,
+      302083,
+      302084
+    ]
+  }
+}
+RESULT PASS
+=== development_notes/2026-08-15/validation/PHASE17_OPTIONAL_ALLY_SPIRIT_JOB_CHECK_20260815.js ===
+PASS Legacion proposal, optional ally branches, six spirit conversations, and pre-battle confirmations
+PASS IF_ALLY reusable condition semantics
+PASS Six spirit map gates use abyssSpiritPilgrimageStarted
+PASS Renamed jobs, three provisional jobs, skill IDs, and character job labels
+PASS Save compatibility hooks for job rename and pilgrimage progression
+PASS Canon and roadmap corrected to five-wedge Vegnasis / no final Jasper
+ALL TARGETED CHECKS PASSED
+RESULT PASS
+=== development_notes/2026-08-15/validation/PHASE18_GAMEPLAY_DENSITY_LOGIC_CHECK_20260815.js ===
+PHASE18_GAMEPLAY_DENSITY_LOGIC_CHECK PASS 34/34
+RESULT PASS
+=== development_notes/2026-08-15/validation/PHASE18_NPC_STAGE_BATCH1_CHECK_20260815.js ===
+PASS START_VILLAGE nextActorPlacementId
+PASS FIRE_VILLAGE nextActorPlacementId
+PASS lumina_baker_01 exists with stable profile/placement IDs
+PASS lumina_baker_01 coordinate remains on intended walkable base tile — 4,9
+PASS lumina_baker_01 does not share its placement cell with another actor
+PASS lumina_baker_01 does not cover an existing mapAction cell
+PASS lumina_goat_boy_01 exists with stable profile/placement IDs
+PASS lumina_goat_boy_01 coordinate remains on intended walkable base tile — 12,7
+PASS lumina_goat_boy_01 does not share its placement cell with another actor
+PASS lumina_goat_boy_01 does not cover an existing mapAction cell
+PASS ignisia_communal_kitchen_01 exists with stable profile/placement IDs
+PASS ignisia_communal_kitchen_01 coordinate remains on intended walkable base tile — 17,16
+PASS ignisia_communal_kitchen_01 does not share its placement cell with another actor
+PASS ignisia_communal_kitchen_01 does not cover an existing mapAction cell
+PASS ignisia_bath_elder_01 exists with stable profile/placement IDs
+PASS ignisia_bath_elder_01 coordinate remains on intended walkable base tile — 9,10
+PASS ignisia_bath_elder_01 does not share its placement cell with another actor
+PASS ignisia_bath_elder_01 does not cover an existing mapAction cell
+PASS lumina baker before cave resolves correct state — before_cave / before_cave
+PASS lumina baker after cave resolves correct state — after_cave / after_cave
+PASS lumina baker later revisit resolves correct state — later_revisit / later_revisit
+PASS lumina goat boy before cave resolves correct state — before_cave / before_cave
+PASS lumina goat boy after cave resolves correct state — after_cave / after_cave
+PASS ignisia kitchen crisis resolves correct state — fire_unstable / fire_unstable
+PASS ignisia kitchen restored resolves correct state — fire_restored / fire_restored
+PASS ignisia kitchen late resolves correct state — later_revisit / later_revisit
+PASS ignisia bath crisis resolves correct state — during_crisis / during_crisis
+PASS ignisia bath after resolves correct state — after_clear / after_clear
+PASS all Phase18 Batch1 conversation scripts exist
+PASS goat-boy revisit reuses common optional-party branch logic
+PASS Sara branch remains optional rather than blocking dialogue
+PASS map actor state runtime supports step/sub min/max gates
+PASS Phase18 Batch1 implementation source exists and preserves legacy dialogue boundary
+PASS NEWS_DATA still has exactly one 2026/08/15 record — 1
+PASS NEWS_DATA mentions first staged-town-dialogue batch
+RESULT 35/35 PASS
+RESULT PASS
+=== development_notes/2026-08-15/validation/REXNOTE_BASEMENT_ROUTE_TARGETED_CHECK_20260815.js ===
+{
+  "floorDirection": "ok",
+  "hiddenArchiveExit": "ok",
+  "fixedMapReturnResolution": "ok",
+  "regulusBossChain": "ok",
+  "news": "ok"
+}
+RESULT PASS

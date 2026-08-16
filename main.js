@@ -4228,6 +4228,69 @@ const App = {
         return character.jobProgress[id];
     },
 
+    getReincarnationJobOptions: (character) => {
+        const state = App.ensureCharacterJobCareer(character);
+        if (!state) return [];
+        const ids = [];
+        const seen = new Set();
+        const add = (jobId, source = 'history') => {
+            const id = Number(jobId);
+            if (!Number.isFinite(id) || seen.has(id)) return;
+            const job = App.getJobDefinitionById(id);
+            if (!job) return;
+            seen.add(id);
+            ids.push({ jobId:id, job:job.name, current:id === Number(state.currentJob.id), source });
+        };
+        add(state.currentJob.id, 'current');
+        (state.history || []).forEach(entry => add(entry?.jobId, 'history'));
+        return ids;
+    },
+
+    reincarnateCharacter: (character, targetJobId = null, options = {}) => {
+        if (!character || typeof character !== 'object') return { ok:false, reason:'character_missing' };
+        if (App.isMonsterAlly?.(character)) return { ok:false, reason:'monster_ally' };
+        const state = App.ensureCharacterJobCareer(character);
+        if (!state) return { ok:false, reason:'current_job_missing' };
+        const displayedLevel = Math.max(1, Math.floor(Number(character.level || 1)));
+        if (displayedLevel !== 100) return { ok:false, reason:'level_requirement' };
+
+        const allowed = App.getReincarnationJobOptions(character);
+        const requestedId = Number.isFinite(Number(targetJobId)) ? Number(targetJobId) : Number(state.currentJob.id);
+        const selected = allowed.find(entry => Number(entry.jobId) === requestedId);
+        if (!selected) return { ok:false, reason:'job_not_in_history' };
+        const targetJob = App.getJobDefinitionById(requestedId);
+        if (!targetJob || !JOB_SKILLS[targetJob.name]) return { ok:false, reason:'job_missing' };
+
+        App.noteCurrentJobProgress(character);
+        const beforeJob = state.currentJob;
+        const changedJob = Number(beforeJob.id) !== Number(targetJob.id);
+        character.job = targetJob.name;
+        character.jobId = targetJob.id;
+        if (changedJob || Number.isFinite(Number(character.jobTransferJobId))) character.jobTransferJobId = targetJob.id;
+        character.reincarnationCount = Math.max(0, Math.floor(Number(character.reincarnationCount) || 0)) + 1;
+        character.level = 1;
+        character.exp = 0;
+        if (!character.jobProgress || typeof character.jobProgress !== 'object' || Array.isArray(character.jobProgress)) character.jobProgress = {};
+        character.jobProgress[targetJob.id] = Math.max(Number(character.jobProgress[targetJob.id] || 0), 1);
+        App.recordCharacterJobHistory(character, targetJob.id, {
+            source: changedJob ? 'reincarnation_fruit_return' : 'reincarnation_fruit',
+            fromJobId: beforeJob.id
+        });
+        const learnedSkillIds = App.learnCurrentJobSkillsThroughLevel(character, 1);
+        if (options.save !== false && typeof App.save === 'function') App.save();
+        if (typeof Menu !== 'undefined' && typeof Menu.renderPartyBar === 'function') Menu.renderPartyBar();
+        return {
+            ok:true,
+            beforeJobId:beforeJob.id,
+            beforeJob:beforeJob.name,
+            jobId:targetJob.id,
+            job:targetJob.name,
+            changedJob,
+            reincarnationCount:character.reincarnationCount,
+            learnedSkillIds
+        };
+    },
+
     learnCurrentJobSkillsThroughLevel: (character, level = null) => {
         const state = App.ensureCharacterJobCareer(character);
         if (!state) return [];

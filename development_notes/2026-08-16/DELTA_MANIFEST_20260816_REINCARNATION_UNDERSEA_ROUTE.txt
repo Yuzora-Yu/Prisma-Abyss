@@ -1,0 +1,30 @@
+PRISMA ABYSS delta manifest - 2026-08-16
+Task: reincarnation fruit job-history return + undersea volcano world route + Holy Fist all-MP audit
+
+Changed / newly created files (20):
+1. canon/PRISMA_CODING_HANDOFF_v5.md
+2. canon/PRISMA_DEVELOPMENT_ROADMAP_v2.md
+3. development_notes/2026-08-16/DELTA_MANIFEST_20260816_REINCARNATION_UNDERSEA_ROUTE.txt
+4. development_notes/2026-08-16/reports/REINCARNATION_RETURN_UNDERSEA_WORLD_ROUTE_20260816.md
+5. development_notes/2026-08-16/review/HOLY_FIST_ALL_MP_SYNERGY_AUDIT_20260816.md
+6. development_notes/2026-08-16/validation/JOB_TRAIT_SYSTEM_REGRESSION_REINC_ROUTE_20260816.log
+7. development_notes/2026-08-16/validation/REINCARNATION_UNDERSEA_ROUTE_CHECK_20260816.js
+8. development_notes/2026-08-16/validation/REINCARNATION_UNDERSEA_ROUTE_CHECK_20260816.log
+9. development_notes/2026-08-16/validation/REINCARNATION_UNDERSEA_ROUTE_REGRESSION_20260816.log
+10. development_notes/2026-08-16/validation/TOP_LEVEL_JS_NODE_CHECK_20260816_REINC_ROUTE.log
+11. docs/design/JOB_CHANGE_BOOK_CAREER_SYSTEM_20260815.md
+12. docs/scenario/59_REINCARNATION_JOB_RETURN_AND_UNDERSEA_VOLCANO_WORLD_ROUTE_20260816.md
+13. docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+14. items.js
+15. main.js
+16. map.js
+17. menus_items.js
+18. news.js
+19. story.js
+20. sw.js
+
+Validation:
+- REINCARNATION_UNDERSEA_ROUTE_CHECK_20260816.js: 43/43 PASS
+- JOB_TRAIT_SYSTEM_CHECK_20260816.js regression: 115/115 PASS
+- Selected prior regression scripts: 8/8 PASS
+- Top-level JavaScript node --check: 63/63 PASS

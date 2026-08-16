@@ -37,7 +37,7 @@ const STORY_MANAGER_DATA = {
         "5-2": "雷の制御炉へ向かい、レナードを止めよう",
         "6-0": "大灯台へ向かい、光の神殿の第一結界源を壊そう",
         "6-1": "雷の要塞へ戻り、もう一つの結界源について相談しよう",
-        "6-2": "バロンたちを追い、海底火山へ向かおう",
+        "6-2": "バロンたちを追い、光の宮殿の北東――大灯台と反対側の外海にある海底火山へ向かおう",
         "6-3": "海底火山の三層を進み、最深部の研究区画を探ろう",
         "6-4": "研究区画を抜け、最奥で炎楔のグラドを止めよう",
         "6-5": "第二結界源を破壊した。雷の要塞へ戻ろう",
@@ -2676,6 +2676,17 @@ const STORY_MANAGER_DATA = {
         ],
         "UNDERSEA_VOLCANO_DEPARTURE": [
                 { "name": "ゼリード", "charId": 103, "text": "入口はこの沖だ。バロンたちも先に入ったはずだ。追うぞ。" }
+        ],
+        "UNDERSEA_VOLCANO_WORLD_ENTRY": [
+                { "name": "ゼリード", "charId": 103, "text": "海面の下から熱が上がってる。ここだ。先に入った連中の痕もある。行くぞ。" }
+        ],
+        "UNDERSEA_VOLCANO_ROUTE_HINT_THUNDER": [
+                { "name": "冒険者", "text": "海底火山へ行くなら、光の宮殿を目印にしろ。大灯台とは宮殿を挟んで真逆、北東の外海だ。" },
+                { "name": "冒険者", "text": "海面は普通に見えるが、船縁から手を出すと潮だけ妙にぬるい。そこまで行けば入口は分かる。" }
+        ],
+        "UNDERSEA_VOLCANO_ROUTE_HINT_WATER": [
+                { "name": "船大工", "text": "海底火山？　宮殿の北東だよ。大灯台と反対側まで外海へ出な。" },
+                { "name": "船大工", "text": "あそこだけ船底の松脂が柔らかくなる。湯気なんぞ待つな、潮のぬるさを見ろ。" }
         ],
         "UNDERSEA_VOLCANO_RESEARCH_ENTRY": [
                 { "name": "システム", "text": "自然洞の先に、人の手で造られた研究区画が現れた。火の力を長期間肉体へ馴染ませるための記録が並んでいる。" },
@@ -7597,7 +7608,7 @@ const STORY_MANAGER_DATA = {
                         { "type": "FLAG", "key": "underseaVolcanoRouteOpened" },
                         { "type": "WORLD_STATE", "key": "underseaVolcanoState", "value": 1 },
                         { "type": "SUB", "value": 2 },
-                        { "type": "LOG", "value": "バロンたちを追い、海底火山へ向かおう。" }
+                        { "type": "LOG", "value": "バロンたちを追い、光の宮殿の北東――大灯台と反対側の外海にある海底火山へ向かおう。" }
                 ],
                 "winActions": []
         },
@@ -7609,6 +7620,24 @@ const STORY_MANAGER_DATA = {
                         { "type": "SUB", "value": 3 },
                         { "type": "START_FIXED_DUNGEON", "value": "UNDERSEA_VOLCANO" }
                 ],
+                "winActions": []
+        },
+        "undersea_volcano_world_entry": {
+                "actions": [
+                        { "type": "CONV", "value": "UNDERSEA_VOLCANO_WORLD_ENTRY" },
+                        { "type": "FLAG", "key": "underseaVolcanoEntered" },
+                        { "type": "WORLD_STATE", "key": "underseaVolcanoState", "value": 2 },
+                        { "type": "SUB", "value": 3 },
+                        { "type": "START_FIXED_DUNGEON", "value": "UNDERSEA_VOLCANO" }
+                ],
+                "winActions": []
+        },
+        "undersea_volcano_route_hint_thunder": {
+                "actions": [{ "type": "CONV", "value": "UNDERSEA_VOLCANO_ROUTE_HINT_THUNDER" }],
+                "winActions": []
+        },
+        "undersea_volcano_route_hint_water": {
+                "actions": [{ "type": "CONV", "value": "UNDERSEA_VOLCANO_ROUTE_HINT_WATER" }],
                 "winActions": []
         },
         "undersea_volcano_research_entry": {

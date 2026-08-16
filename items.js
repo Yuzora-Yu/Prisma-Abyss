@@ -278,7 +278,7 @@ window.ITEMS_DATA = [
         "id": 107,
         "name": "転生の実",
         "type": "育成",
-        "desc": "能力を維持したままLv1に戻る禁断の果実",
+        "desc": "能力と習得スキルを維持したままLv1に戻る禁断の果実。過去に経験した職業へ戻ることもできる",
         "target": "単体",
         "price": 0,
         "randomChestDrop": false

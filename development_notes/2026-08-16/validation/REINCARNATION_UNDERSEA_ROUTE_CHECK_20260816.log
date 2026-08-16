@@ -1,0 +1,44 @@
+REINCARNATION_UNDERSEA_ROUTE_CHECK: 43/43 PASS
+01. PASS world has rows
+02. PASS world width expanded from 110 to 130
+03. PASS undersea volcano coordinate is sea tile
+04. PASS light palace coordinate canonical
+05. PASS big lighthouse coordinate canonical
+06. PASS undersea volcano coordinate exact
+07. PASS undersea volcano is point-symmetric opposite lighthouse around palace
+08. PASS undersea volcano world marker waits for route flag
+09. PASS undersea volcano hidden before route-open flag
+10. PASS undersea volcano resolves on world map after route-open flag
+11. PASS undersea volcano fixed dungeon uses world-entry event
+12. PASS undersea volcano first floor exits to sea
+13. PASS old lighthouse direct action removed
+14. PASS world route remains fixed dungeon route
+15. PASS story data exported
+16. PASS objective tells exact undersea volcano direction
+17. PASS new world entry event exists
+18. PASS thunder hint event exists
+19. PASS water-city hint event exists
+20. PASS world entry dialogue exists
+21. PASS thunder hint dialogue exists
+22. PASS water hint dialogue exists
+23. PASS thunder fort has route hint actor state
+24. PASS water city has route hint actor state
+25. PASS setup transfer to priest succeeds
+26. PASS fruit options include current priest
+27. PASS fruit options include past warrior
+28. PASS fruit options exclude unexperienced mage
+29. PASS fruit returns to previous job without book
+30. PASS fruit reincarnates at same time
+31. PASS fruit preserves prior learned skills
+32. PASS return records history source
+33. PASS return sets transfer override to chosen historical job
+34. PASS fruit cannot jump to unexperienced job
+35. PASS fruit UI intercepts item 107 before generic growth handling
+36. PASS fruit item description mentions past jobs
+37. PASS all current all-MP skills are magic
+38. PASS holy-fist trait only applies extra HP cost to physical skills
+39. PASS full-MP skills have dedicated cost handling
+40. PASS NEWS has one 2026/08/16 record
+41. PASS NEWS mentions reincarnation job-history return
+42. PASS NEWS mentions east-world / undersea route update
+43. PASS service-worker app-shell cache version bumped
