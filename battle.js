@@ -159,6 +159,9 @@ const Battle = {
         if (dualLv > 0 && cost > 0) {
             cost = Math.ceil(cost * (1 + (dualLv * 0.1)));
         }
+        if (cost > 0 && typeof JobTraits !== 'undefined') {
+            cost = Math.max(0, Math.ceil(cost * JobTraits.getMpCostMultiplier(actor, skill)));
+        }
         return cost;
     },
 
@@ -588,9 +591,10 @@ const Battle = {
         }, 0);
     },
 
-    getEffectTurn: (data) => {
+    getEffectTurn: (data, actor = null, kind = 'effect') => {
         const turn = Number(data?.turn);
-        return Number.isFinite(turn) && turn > 0 ? turn : 3;
+        const baseTurn = Number.isFinite(turn) && turn > 0 ? turn : 3;
+        return typeof JobTraits !== 'undefined' ? JobTraits.adjustEffectTurns(actor, data, baseTurn, kind) : baseTurn;
     },
 
     abyssVegnasisIds: Object.freeze([302080, 302081, 302082, 302083, 302084]),
@@ -846,6 +850,7 @@ const Battle = {
         unit.battleStatus.buffs = unit.battleStatus.buffs || {};
         unit.battleStatus.debuffs = unit.battleStatus.debuffs || {};
         unit.battleStatus.ailments = unit.battleStatus.ailments || {};
+        unit.battleStatus.jobTraits = unit.battleStatus.jobTraits || {};
         return unit.battleStatus;
     },
 
@@ -2624,6 +2629,8 @@ const Battle = {
                 defeatedPhases: [],
                 phaseTransitionCount: 0,
                 currentPhaseMonsterId: null,
+                // 職業特性の戦闘内カウンタは新規戦闘ごとに必ず初期化する。
+                jobTraitRuntime: {},
                 ...(isVegnasisBattle ? {
                     vegnasisFallCount: 0,
                     vegnasisFinalAwakenedUnitId: null
@@ -2699,7 +2706,7 @@ const Battle = {
     },
 	
     initBattleStatus: (actor) => {
-        actor.battleStatus = { buffs: {}, debuffs: {}, ailments: {} };
+        actor.battleStatus = { buffs: {}, debuffs: {}, ailments: {}, jobTraits: {} };
     },
 
     // 装備シナジー由来の常時効果は、通常バフと違って戦闘不能で失効しない。
@@ -2782,9 +2789,12 @@ const Battle = {
             }
             return res;
         }
+        if (key === 'elmRes' && typeof JobTraits !== 'undefined') {
+            return JobTraits.adjustBattleStat(Battle, actor, key, val);
+        }
 
         const b = actor.battleStatus;
-        if (!b) return val;
+        if (!b) return typeof JobTraits !== 'undefined' ? JobTraits.adjustBattleStat(Battle, actor, key, val) : val;
         
         if (b.buffs[key]) val = Math.floor(val * b.buffs[key].val);
         if (b.debuffs[key]) val = Math.floor(val * b.debuffs[key].val);
@@ -2793,6 +2803,7 @@ const Battle = {
         if (key === 'def' && b.debuffs.octaprismDef) {
             val = Math.floor(val * b.debuffs.octaprismDef.val);
         }
+        if (typeof JobTraits !== 'undefined') val = JobTraits.adjustBattleStat(Battle, actor, key, val);
         return val;
     },
 	
@@ -4590,7 +4601,9 @@ findNextActor: () => {
             if ([1, 2, 9].includes(sId)) return false;
             if (Battle.isMadanteSkillId(sId)) return false;
             if (autoDisabledIds.includes(sId)) return false;
-            if (actor.mp < Battle.getSkillMpCost(actor, s)) return false;
+            const jobMpCost = Battle.getSkillMpCost(actor, s);
+            if (actor.mp < jobMpCost) return false;
+            if (typeof JobTraits !== 'undefined' && !JobTraits.canPayHolyFistCost(actor, s, jobMpCost)) return false;
 
             const ailments = actor.battleStatus?.ailments || {};
             if (ailments['SpellSeal'] && ['魔法','強化','弱体'].includes(s.type)) return false;
@@ -4916,6 +4929,10 @@ findNextActor: () => {
 
     // Auto battle strategy dispatcher
     decideAutoAction: (actor) => {
+        if (typeof JobTraits !== 'undefined') {
+            const traitAction = JobTraits.chooseAutoAction(Battle, actor);
+            if (traitAction) return traitAction;
+        }
         return Battle.decideTacticalAutoAction(actor);
     },
 
@@ -6055,7 +6072,8 @@ findNextActor: () => {
                     } else if (isSupport) {
                         cmd.target = Battle.chooseEnemySupportTarget(actor, cmd.data);
                     } else {
-                        const aliveParty = Battle.party.filter(member => Battle.isBattleAlive(member));
+                        let aliveParty = Battle.party.filter(member => Battle.isBattleAlive(member));
+                        if (typeof JobTraits !== 'undefined') aliveParty = JobTraits.filterEnemySingleTargetCandidates(Battle, aliveParty);
                         if (aliveParty.length > 0) {
                             const weights = aliveParty.map(member => {
                                 let weight = 100;
@@ -6079,6 +6097,15 @@ findNextActor: () => {
                             cmd.target = null;
                         }
                     }
+                }
+
+                if (cmd.isEnemy && typeof JobTraits !== 'undefined' && JobTraits.tryDemonKingSuppress(Battle, actor)) {
+                    await Battle.onActionEnd(actor);
+                    Battle.updateDeadState();
+                    if (Battle.checkFinish()) return false;
+                    Battle.renderEnemies();
+                    Battle.renderPartyStatus();
+                    continue;
                 }
 
                 const fear = actor.battleStatus?.ailments?.Fear;
@@ -6123,7 +6150,8 @@ findNextActor: () => {
                     if (Battle.enemies.includes(cmd.target)) {
                         cmd.target = Battle.getRandomAliveEnemy();
                     } else if (Battle.party.includes(cmd.target) && cmd.data?.type !== '蘇生') {
-                        const aliveParty = Battle.party.filter(member => Battle.isBattleAlive(member));
+                        let aliveParty = Battle.party.filter(member => Battle.isBattleAlive(member));
+                        if (cmd.isEnemy && typeof JobTraits !== 'undefined') aliveParty = JobTraits.filterEnemySingleTargetCandidates(Battle, aliveParty);
                         cmd.target = aliveParty.length > 0
                             ? aliveParty[Math.floor(Math.random() * aliveParty.length)]
                             : null;
@@ -6318,6 +6346,7 @@ findNextActor: () => {
             }
         }
         
+        if (typeof JobTraits !== 'undefined') await JobTraits.onEndOfRound(Battle);
         // 画面表示の更新
         Battle.renderEnemies();
         Battle.renderPartyStatus();
@@ -6347,6 +6376,7 @@ findNextActor: () => {
             let dmg = Math.floor(actor.baseMaxHp * dmgRate);
             if (dmg < 1) dmg = 1;
             actor.hp -= dmg;
+            if (typeof JobTraits !== 'undefined') JobTraits.onDamageTaken(Battle, actor, dmg);
             Battle.log(`${actor.name}は ${msgType}のダメージを ${dmg} 受けた！`);
             if (actor.hp <= 0) { 
                 Battle.markDefeated(actor); 
@@ -6395,6 +6425,7 @@ findNextActor: () => {
         unit.hasDiedThisTurn = true;
         if (unit.status) unit.status.defend = false;
         if (!alreadyDead && message !== false) Battle.log(message || `${unit.name}は倒れた！`);
+        if (!alreadyDead && typeof JobTraits !== 'undefined') JobTraits.onUnitDefeated(Battle, unit);
         if (!alreadyDead && Battle.party.includes(unit)) Battle.refreshPartyFormationAuras();
         return !alreadyDead;
     },
@@ -6405,6 +6436,7 @@ findNextActor: () => {
         if (!actor || (cmd.type !== 'item' && !Battle.isBattleAlive(actor))) return;
         const actorBattleStatus = Battle.ensureUnitBattleStatus(actor);
         const actorName = Battle.getColoredName(actor);
+        if (!cmd.jobTraitActionToken) cmd.jobTraitActionToken = `jt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
 
         // --- [1] 実行時の封印チェック ---
         if (cmd.type !== 'item' && cmd.type !== 'defend') {
@@ -6438,6 +6470,9 @@ findNextActor: () => {
             Battle.log(`${actor.name}は身を守っている`);
             actor.status = actor.status || {};
             actor.status.defend = true;
+            if (typeof JobTraits !== 'undefined') JobTraits.onDefend(Battle, actor);
+            Battle.renderPartyStatus();
+            if (typeof JobTraits !== 'undefined') await JobTraits.onActionComplete(Battle, actor, { type:'特殊', name:'ぼうぎょ' }, cmd);
             return;
         }
         if (actor.status) actor.status.defend = false;
@@ -6451,6 +6486,7 @@ findNextActor: () => {
                 if (result.handled) {
                     Battle.renderPartyStatus();
                     Battle.renderEnemies();
+                    if (typeof JobTraits !== 'undefined') await JobTraits.onActionComplete(Battle, actor, item, cmd);
                     return;
                 }
             }
@@ -6461,12 +6497,14 @@ findNextActor: () => {
                     if (App.data.items[item.id] <= 0) delete App.data.items[item.id];
                 }
                 const targets = (cmd.target === 'all_ally') ? Battle.party : [cmd.target];
+                const itemEffectMult = (typeof JobTraits !== 'undefined') ? JobTraits.getItemEffectMultiplier(actor) : 1;
                 for (let t of targets) {
                     if (!t) continue;
                     if (item.type === '蘇生') {
                         if (t.isDead) { 
                             t.isDead = false; 
                             let rate = (item.rate !== undefined) ? item.rate : 1;
+                            rate = Math.min(1, rate * itemEffectMult);
                             t.hp = Math.floor(t.baseMaxHp * rate); 
                             if(t.hp < 1) t.hp = 1;
                             Battle.applyPersistentBattlePassives(t);
@@ -6477,7 +6515,7 @@ findNextActor: () => {
                         else Battle.log(`${t.name}には効果がなかった`);
                     } else if (item.type === 'HP回復') {
                         if (!t.isDead) {
-                            let rec = item.val; if (item.val >= 9999) rec = t.baseMaxHp;
+                            let rec = item.val; if (item.val >= 9999) rec = t.baseMaxHp; else rec = Math.floor(Number(rec || 0) * itemEffectMult);
                             const beforeHp = t.hp;
                             t.hp = Math.min(t.baseMaxHp, t.hp + rec);
                             if (t.hp > beforeHp) Battle.playRecoverySe();
@@ -6485,7 +6523,7 @@ findNextActor: () => {
                         }
                     } else if (item.type === 'MP回復') {
                         if (!t.isDead) {
-                            let rec = item.val; if (item.val >= 9999) rec = t.baseMaxMp;
+                            let rec = item.val; if (item.val >= 9999) rec = t.baseMaxMp; else rec = Math.floor(Number(rec || 0) * itemEffectMult);
                             const beforeMp = t.mp;
                             t.mp = Math.min(t.baseMaxMp, t.mp + Math.floor(rec));
                             if (t.mp > beforeMp) Battle.playRecoverySe();
@@ -6522,6 +6560,7 @@ findNextActor: () => {
                 }
             }
             Battle.renderPartyStatus();
+            if (typeof JobTraits !== 'undefined') await JobTraits.onActionComplete(Battle, actor, item, cmd);
             return;
         }
 
@@ -6549,14 +6588,20 @@ findNextActor: () => {
             hitCount = (typeof data.count === 'number') ? data.count : 1;
             if (data.SuccessRate !== undefined) rawSuccessRate = data.SuccessRate;
 
-            mpCost = Battle.getSkillMpCost(actor, data, 'spend');
+            mpCost = cmd.isJobTraitFollowup ? 0 : Battle.getSkillMpCost(actor, data, 'spend');
             if (actor.mp < mpCost) {
                 Battle.log(`${actor.name}は${skillName}を唱えたがMPが足りない！`);
                 return;
             }
+            if (!cmd.isJobTraitFollowup && typeof JobTraits !== 'undefined' && !JobTraits.canPayHolyFistCost(actor, data, mpCost)) {
+                Battle.log(`${actor.name}は${skillName}を使おうとしたがHPが足りない！`);
+                return;
+            }
             actor.mp -= mpCost;
+            cmd.jobTraitHolyFistHpCost = (!cmd.isJobTraitFollowup && typeof JobTraits !== 'undefined') ? JobTraits.spendHolyFistHp(actor, data, mpCost) : 0;
             Battle.renderPartyStatus();
         }
+        if (typeof JobTraits !== 'undefined') JobTraits.onActionStart(actor, data, cmd);
 
         // 特性 8: 二刀流 (特殊、強化、弱体、回復、攻撃、魔法、ブレス、物理の全てに対応)
         let totalActionLoops = 1;
@@ -6564,6 +6609,7 @@ findNextActor: () => {
         // アイテム使用以外で、かつ actor が「二刀流」の特性を持っている場合を判定
         const canDualWield =
 			  cmd.type !== 'item' &&
+              !cmd.isJobTraitFollowup &&
 			  Battle.isDualWieldActive(actor);
 
         if (canDualWield) {
@@ -6646,11 +6692,12 @@ findNextActor: () => {
 								if(spKey) pierce += PassiveSkill.getSumValue(actor, spKey + '_pierce_pct');
 							}
 
-                            const baseRes = (targetToHit.getStat('elmRes') || {})[element] || 0;
+                            const baseRes = (Battle.getBattleStat(targetToHit, 'elmRes') || {})[element] || 0;
                             const buffRes = (targetToHit.battleStatus.buffs['elmResUp'] || {}).val || 0;
                             const debuffRes = (targetToHit.battleStatus.debuffs['elmResDown'] || {}).val || 0; 
                             
                             let resVal = baseRes + buffRes - debuffRes - pierce;
+                            if (typeof JobTraits !== 'undefined') resVal = JobTraits.overrideElementResistance(actor, targetToHit, element, resVal);
                             if (!isImmune) {
                                 if (resVal >= 100) isImmune = true; else cutRate += resVal;
                             }
@@ -6664,6 +6711,9 @@ findNextActor: () => {
                         let dmg = baseBaseDmg;
                         if (dmg > 0) {
                             dmg = dmg * (1.0 + bonusRate / 100) * (1.0 - cutRate / 100) * (0.85 + Math.random() * 0.3); 
+                            if (typeof JobTraits !== 'undefined') {
+                                dmg = JobTraits.adjustFinalDamage(Battle, { actor, target:targetToHit, data, cmd, isPhysical:false, effectType:'魔法', holyFistHpCost:0 }, dmg);
+                            }
                             if (targetToHit.status && targetToHit.status.defend) dmg *= 0.5;
                             dmg = Math.floor(dmg); 
                             if (!isImmune && dmg < 1) dmg = 1; 
@@ -6671,6 +6721,10 @@ findNextActor: () => {
                         if (isImmune) dmg = 0;
                         const hpBeforeDamage = targetToHit.hp;
                         targetToHit.hp -= dmg;
+                        if (typeof JobTraits !== 'undefined') {
+                            JobTraits.onDamageTaken(Battle, targetToHit, dmg);
+                            if (dmg > 0) JobTraits.onSuccessfulHit(Battle, { actor, target:targetToHit, data, cmd, isPhysical:false, effectType:'魔法' });
+                        }
                         Battle.stageHpVisualTransition(targetToHit, hpBeforeDamage);
 
                         Battle.recordMaxDamage(actor, data, dmg, cmd);
@@ -6694,7 +6748,8 @@ findNextActor: () => {
                         // [修正] マダンテ系ダメージでも根性判定を行う
                         if (targetToHit.hp <= 0) {
                             if (!Battle.tryGutsSurvive(targetToHit, hpBeforeDamage)) {
-                                Battle.markDefeated(targetToHit);
+                                const newlyDefeated = Battle.markDefeated(targetToHit);
+                                if (newlyDefeated && typeof JobTraits !== 'undefined') JobTraits.onKill(Battle, actor, targetToHit);
                             }
                         }
                         Battle.renderEnemies(); Battle.renderPartyStatus();
@@ -6704,6 +6759,7 @@ findNextActor: () => {
                 }
                 if (loop === 0 && totalActionLoops > 1) continue; 
                 await Battle.resultWait(500);
+                if (typeof JobTraits !== 'undefined') await JobTraits.onActionComplete(Battle, actor, data, cmd);
                 return;
             }
 
@@ -6788,7 +6844,7 @@ findNextActor: () => {
 
                 if (d.buff) {
                     for (let key in d.buff) {
-                        const turn = Battle.getEffectTurn(d); 
+                        const turn = Battle.getEffectTurn(d, actor, 'buff'); 
                         if (key === 'elmResUp' || key.startsWith('resists_')) {
                             // 属性・状態耐性は倍率ではなく加算百分率。能力値バフの2.5倍上限を適用しない。
                             const existing = t.battleStatus.buffs[key];
@@ -6813,7 +6869,7 @@ findNextActor: () => {
                     const existing = t.battleStatus.buffs.HPRegen;
                     t.battleStatus.buffs.HPRegen = {
                         val: Math.max(Number(existing?.val || 0), Number(d.HPRegen || 0)),
-                        turns: mergeEffectTurns(existing?.turns, Battle.getEffectTurn(d))
+                        turns: mergeEffectTurns(existing?.turns, Battle.getEffectTurn(d, actor, 'buff'))
                     };
                     Battle.log(`${t.name}の HPが徐々に回復する！`);
                 }
@@ -6821,7 +6877,7 @@ findNextActor: () => {
                     const existing = t.battleStatus.buffs.MPRegen;
                     t.battleStatus.buffs.MPRegen = {
                         val: Math.max(Number(existing?.val || 0), Number(d.MPRegen || 0)),
-                        turns: mergeEffectTurns(existing?.turns, Battle.getEffectTurn(d))
+                        turns: mergeEffectTurns(existing?.turns, Battle.getEffectTurn(d, actor, 'buff'))
                     };
                     Battle.log(`${t.name}の MPが徐々に回復する！`);
                 }
@@ -6838,7 +6894,7 @@ findNextActor: () => {
                         Battle.log(`${t.name}には 能力低下 は きかなかった！`);
                     }
                     for (const key of debuffSucceeded ? debuffKeys : []) {
-                        const turn = Battle.getEffectTurn(d);
+                        const turn = Battle.getEffectTurn(d, actor, 'debuff');
                         if (key === 'elmResDown') {
                             const existing = t.battleStatus.debuffs[key];
                             t.battleStatus.debuffs[key] = {
@@ -7019,6 +7075,10 @@ findNextActor: () => {
                         
                         if (Math.random() * 100 >= finalHitChance) {
                             Battle.log(`ミス！ ${targetToHit.name}は身をかわした！`);
+                            if (typeof JobTraits !== 'undefined') {
+                                JobTraits.onMissedHit(actor);
+                                await JobTraits.onEvadedAttack(Battle, targetToHit, actor, cmd);
+                            }
                             await Battle.resultWait(200); continue; 
                         }
                     }
@@ -7047,11 +7107,12 @@ findNextActor: () => {
 
 					if (!isFixedDamage && effectType !== 'ブレス') {
 						// 装備・特性分はcalcStats済みなので、スキル固有値と戦闘ステータスだけを合算する。
-						const totalCritRate = Number(data?.critRate ?? 0) +
+						let totalCritRate = Number(data?.critRate ?? 0) +
 											  (Battle.getBattleStat(actor, 'cri') || 0);
+                        if (typeof JobTraits !== 'undefined') totalCritRate += JobTraits.getCritBonus(actor);
 
-						// A. 通常の会心判定
-						if (Math.random() * 100 < totalCritRate) {
+						// A. 通常の会心判定（狩人の必殺は次ターンのみ強制会心）
+						if ((typeof JobTraits !== 'undefined' && JobTraits.forceCritical(actor, isPhysical)) || Math.random() * 100 < totalCritRate) {
 							isCrit = true;
 						} 
 						// B. 魔法の場合のみ：スキルツリー等の magCrit パッシブによる独立 20% 判定
@@ -7127,6 +7188,7 @@ findNextActor: () => {
 					if (isCrit) {
 						// 防御無視に加え、ダメージを1.5倍にする（ご要望どおり魔法も1.5倍で統一）
 						totalMult *= 1.5;
+                        if (typeof JobTraits !== 'undefined') totalMult *= JobTraits.criticalDamageMultiplier(actor, isPhysical);
 						
 						// 会心時は状態異常付与率を1.5倍にする
 						ailmentChanceMult = 1.5;
@@ -7148,7 +7210,8 @@ findNextActor: () => {
                             const spKey = {火:'fire',水:'water',風:'wind',雷:'thunder',光:'light',闇:'dark',混沌:'chaos'}[element];
                             if(spKey) pierce += PassiveSkill.getSumValue(actor, spKey + '_pierce_pct');
                         }
-                        const finalRes = ((targetToHit.getStat('elmRes') || {})[element] || 0) + (targetToHit.battleStatus.buffs['elmResUp']?.val || 0) - (targetToHit.battleStatus.debuffs['elmResDown']?.val || 0) - pierce;
+                        let finalRes = ((Battle.getBattleStat(targetToHit, 'elmRes') || {})[element] || 0) + (targetToHit.battleStatus.buffs['elmResUp']?.val || 0) - (targetToHit.battleStatus.debuffs['elmResDown']?.val || 0) - pierce;
+                        if (typeof JobTraits !== 'undefined') finalRes = JobTraits.overrideElementResistance(actor, targetToHit, element, finalRes);
                         if (finalRes >= 100) isImmune = true; else cutRate += finalRes;
                     }
                     if (!isFixedDamage) {
@@ -7184,12 +7247,22 @@ findNextActor: () => {
 						dmg = Math.floor(dmg * (1 - typeRedPct / 100));
 					}
 					
+                    if (!isImmune && typeof JobTraits !== 'undefined') {
+                        dmg = JobTraits.adjustFinalDamage(Battle, {
+                            actor, target: targetToHit, data, cmd, isPhysical, effectType,
+                            holyFistHpCost: cmd.jobTraitHolyFistHpCost
+                        }, dmg);
+                    }
 					if (targetToHit.status?.defend) dmg = Math.floor(dmg * 0.5);
                     if (isImmune) dmg = 0; else if (dmg < 1 && baseDmgCalc > 0) dmg = 1;
 
                     const hpBeforeDamage = targetToHit.hp;
 
                     targetToHit.hp -= dmg;
+                    if (typeof JobTraits !== 'undefined') {
+                        JobTraits.onDamageTaken(Battle, targetToHit, dmg);
+                        if (dmg > 0) JobTraits.onSuccessfulHit(Battle, { actor, target: targetToHit, data, cmd, isPhysical, effectType });
+                    }
                     Battle.stageHpVisualTransition(targetToHit, hpBeforeDamage, { critical: isCrit });
                     targetToHit.revengeStack = (targetToHit.revengeStack || 0) + 1;
                     actor.revengeStack = 0;
@@ -7201,7 +7274,8 @@ findNextActor: () => {
                     else Battle.log(`${targetToHit.name}に<span style="color:${dColor}">${dmg}</span>のダメージ！`);
                     if (targetToHit.hp <= 0) {
                         if (!Battle.tryGutsSurvive(targetToHit, hpBeforeDamage)) {
-                            Battle.markDefeated(targetToHit);
+                            const newlyDefeated = Battle.markDefeated(targetToHit);
+                            if (newlyDefeated && typeof JobTraits !== 'undefined') JobTraits.onKill(Battle, actor, targetToHit);
                         }
                     }
 
@@ -7243,6 +7317,7 @@ findNextActor: () => {
 							const refDmg = Math.floor(dmg * (reflectRate / 100));
 							const actorHpBeforeDamage = actor.hp;
 							actor.hp -= refDmg; 
+                            if (typeof JobTraits !== 'undefined') JobTraits.onDamageTaken(Battle, actor, refDmg);
 							Battle.log(`${targetToHit.name}の理力の壁が 反射！ ${actor.name}に ${refDmg} のダメージ！`);
 
 							// 反射による自爆死の判定と根性処理
@@ -7281,9 +7356,10 @@ findNextActor: () => {
 						const finalID = Math.max(0, Math.min(100, (baseID > 0 ? (baseID + assaBonus) * ailmentChanceMult : 0) - rv));
 
 						if (finalID > 0 && Math.random() * 100 < finalID) {
-							targetToHit.hp = 0; 
-							Battle.markDefeated(targetToHit, `<span style="color:#ff00ff; font-weight:bold;">急所を貫いた！ ${targetToHit.name}は 息絶えた！</span>`); 
-						}
+                                targetToHit.hp = 0;
+                                const newlyDefeated = Battle.markDefeated(targetToHit, `<span style="color:#ff00ff; font-weight:bold;">急所を貫いた！ ${targetToHit.name}は 息絶えた！</span>`);
+                                if (newlyDefeated && typeof JobTraits !== 'undefined') JobTraits.onKill(Battle, actor, targetToHit);
+                            }
                     }
 
                     if (actor instanceof Player && Battle.isBattleAlive(targetToHit)) {
@@ -7298,7 +7374,11 @@ findNextActor: () => {
                                     if (effect === 'instantDeath20' && Battle.isBattleAlive(targetToHit)) {
                                         const resist = (Battle.getBattleStat(targetToHit, 'resists') || {}).InstantDeath || 0;
                                         const chance = Math.max(0, 20 - resist);
-                                        if (Math.random() * 100 < chance) { targetToHit.hp = 0; Battle.markDefeated(targetToHit, `<span style="color:#ff00ff; font-weight:bold;">急所を貫いた！ ${targetToHit.name}は 息絶えた！</span>`); }
+                                        if (Math.random() * 100 < chance) {
+                                            targetToHit.hp = 0;
+                                            const newlyDefeated = Battle.markDefeated(targetToHit, `<span style="color:#ff00ff; font-weight:bold;">急所を貫いた！ ${targetToHit.name}は 息絶えた！</span>`);
+                                            if (newlyDefeated && typeof JobTraits !== 'undefined') JobTraits.onKill(Battle, actor, targetToHit);
+                                        }
                                     }
                                 });
                             }
@@ -7391,6 +7471,7 @@ findNextActor: () => {
             await Battle.awaitActionVisualPhase();
             await Battle.resultWait(100);
         }
+        if (typeof JobTraits !== 'undefined') await JobTraits.onActionComplete(Battle, actor, data, cmd);
     },
 	
 	/**
@@ -7431,7 +7512,9 @@ findNextActor: () => {
                 // このターン中に死んだことを記録する。
                 e.hasDiedThisTurn = true;
                 if (e.status) e.status.defend = false;
-                e.battleStatus = { buffs: {}, debuffs: {}, ailments: {} };
+                const preservedJobTraits = e.battleStatus?.jobTraits || {};
+                e.battleStatus = { buffs: {}, debuffs: {}, ailments: {}, jobTraits: preservedJobTraits };
+                if (newlyDead && typeof JobTraits !== 'undefined') JobTraits.onUnitDefeated(Battle, e);
                 if (newlyDead && Battle.party.includes(e)) partyAuraDirty = true;
             }
         });

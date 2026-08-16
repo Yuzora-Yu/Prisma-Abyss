@@ -247,7 +247,17 @@ const MenuAllyDetail = {
         const jobData = window.JOB_SKILLS_DATA ? window.JOB_SKILLS_DATA[c.job] : null;
         if(!jobData) return `<div style="color:#666; text-align:center; padding:40px;">データが存在しません</div>`;
 
-        let html = `<div style="font-size:11px; color:#aaa; margin-bottom:15px; text-align:center;">解放される可能性の断片</div>`;
+        const jobTrait = (typeof JobTraits !== 'undefined') ? JobTraits.getDefinition(c) : null;
+        let html = '';
+        if (jobTrait) {
+            html += `
+                <div style="background:rgba(255,215,0,0.06); border:1px solid #665500; padding:12px; margin-bottom:14px; border-radius:10px;">
+                    <div style="font-size:10px; color:#bda85a; margin-bottom:4px;">現在の職業特性</div>
+                    <div style="font-size:15px; font-weight:bold; color:#ffd700;">${jobTrait.name}</div>
+                    <div style="font-size:11px; color:#bbb; line-height:1.6; margin-top:5px;">${jobTrait.summary}</div>
+                </div>`;
+        }
+        html += `<div style="font-size:11px; color:#aaa; margin-bottom:15px; text-align:center;">解放される可能性の断片</div>`;
         
         const allPossible = [];
         // 通常スキル (LV 1-100)

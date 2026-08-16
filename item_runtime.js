@@ -35,6 +35,7 @@
     };
     const getMaxHp = (Battle, target) => Math.max(1, Number(Battle.getBattleStat?.(target, 'maxHp') || target?.baseMaxHp || target?.maxHp || target?.hp || 1));
     const getMaxMp = (Battle, target) => Math.max(0, Number(Battle.getBattleStat?.(target, 'maxMp') || target?.baseMaxMp || target?.maxMp || target?.mp || 0));
+    const itemEffectMultiplier = command => (typeof JobTraits !== 'undefined' ? JobTraits.getItemEffectMultiplier(command?.actor) : 1);
     const livingEnemies = Battle => (Battle.enemies || []).filter(target => Battle.isBattleAlive ? Battle.isBattleAlive(target) : isAlive(target));
     const livingParty = Battle => (Battle.party || []).filter(target => Battle.isBattleAlive ? Battle.isBattleAlive(target) : isAlive(target));
     const commandTargets = (Battle, command, item) => {
@@ -73,14 +74,18 @@
         const attackOnce = target => {
             if (!target || !(Battle.isBattleAlive ? Battle.isBattleAlive(target) : isAlive(target))) return;
             const hpBefore = Number(target.hp || 0);
-            const damage = elementalDamage(Battle, target, item);
+            const damage = Math.max(0, Math.floor(elementalDamage(Battle, target, item) * itemEffectMultiplier(command)));
             target.hp = Math.max(0, hpBefore - damage);
+            if (typeof JobTraits !== 'undefined') JobTraits.onDamageTaken(Battle, target, damage);
             const color = { 火:'#f88', 水:'#88f', 雷:'#ff0', 風:'#8f8', 光:'#ffc', 闇:'#a8f', 混沌:'#d4d' }[item.element] || '#fff';
             if (damage > 0) Battle.log(`${target.name}に<span style="color:${color}">${damage}</span>の${item.element}属性ダメージ！`);
             else Battle.log(`${target.name}は${item.element}属性を無効化した！`);
             if (target.hp <= 0) {
                 const survived = typeof Battle.tryGutsSurvive === 'function' && Battle.tryGutsSurvive(target, hpBefore);
-                if (!survived && typeof Battle.markDefeated === 'function') Battle.markDefeated(target);
+                if (!survived && typeof Battle.markDefeated === 'function') {
+                    const newlyDefeated = Battle.markDefeated(target);
+                    if (newlyDefeated && typeof JobTraits !== 'undefined') JobTraits.onKill(Battle, command.actor, target);
+                }
             }
             effected += 1;
         };
@@ -101,17 +106,20 @@
         commandTargets(Battle, command, item).forEach(target => {
             if (!isAlive(target)) return;
             const status = ensureBattleStatus(target);
+            const effectMult = itemEffectMultiplier(command);
             Object.entries(item.buff || {}).forEach(([key, value]) => {
                 const turns = Math.max(1, Number(item.turn || 4));
                 const current = status.buffs[key]?.val;
                 if (key === 'elmResUp' || key.startsWith('resists_')) {
+                    const scaled = Number(value || 0) * effectMult;
                     status.buffs[key] = {
-                        val: Math.max(Number(current || 0), Number(value)),
+                        val: Math.max(Number(current || 0), scaled),
                         turns: status.buffs[key]?.turns === null ? null : Math.max(Number(status.buffs[key]?.turns || 0), turns)
                     };
                 } else {
+                    const scaled = 1 + (Number(value || 1) - 1) * effectMult;
                     status.buffs[key] = {
-                        val: Math.max(Number(current || 1), Number(value)),
+                        val: Math.max(Number(current || 1), scaled),
                         turns: status.buffs[key]?.turns === null ? null : Math.max(Number(status.buffs[key]?.turns || 0), turns)
                     };
                 }
@@ -132,17 +140,20 @@
                 Battle.log(`${target.name}には弱体効果が効かなかった！`);
                 return;
             }
+            const effectMult = itemEffectMultiplier(command);
             Object.entries(item.debuff || {}).forEach(([key, value]) => {
                 const turns = Math.max(1, Number(item.turn || 4));
                 const current = status.debuffs[key]?.val;
                 if (key === 'elmResDown') {
+                    const scaled = Number(value || 0) * effectMult;
                     status.debuffs[key] = {
-                        val: Math.max(Number(current || 0), Number(value)),
+                        val: Math.max(Number(current || 0), scaled),
                         turns: status.debuffs[key]?.turns === null ? null : Math.max(Number(status.debuffs[key]?.turns || 0), turns)
                     };
                 } else {
+                    const scaled = Math.max(0.1, 1 - (1 - Number(value || 1)) * effectMult);
                     status.debuffs[key] = {
-                        val: Math.min(Number(current || 1), Number(value)),
+                        val: Math.min(Number(current || 1), scaled),
                         turns: status.debuffs[key]?.turns === null ? null : Math.max(Number(status.debuffs[key]?.turns || 0), turns)
                     };
                 }
@@ -160,7 +171,7 @@
             if (item.type === '蘇生') {
                 if (!target.isDead && Number(target.hp || 0) > 0) return;
                 target.isDead = false;
-                const rate = Number(item.rate ?? 1);
+                const rate = Math.min(1, Number(item.rate ?? 1) * itemEffectMultiplier(command));
                 target.hp = Math.max(1, Math.floor(getMaxHp(Battle, target) * rate));
                 if (typeof Battle.applyPersistentBattlePassives === 'function') {
                     Battle.applyPersistentBattlePassives(target);
@@ -175,14 +186,14 @@
             if (!isAlive(target)) return;
             if (item.type === 'HP回復') {
                 const before = Number(target.hp || 0);
-                const amount = Number(item.val || 0) >= 9999 ? getMaxHp(Battle, target) : Number(item.val || 0);
+                const amount = Number(item.val || 0) >= 9999 ? getMaxHp(Battle, target) : Math.floor(Number(item.val || 0) * itemEffectMultiplier(command));
                 target.hp = Math.min(getMaxHp(Battle, target), before + amount);
                 const recovered = target.hp - before;
                 if (recovered > 0) Battle.log(`${target.name}のHPが${recovered}回復！`);
                 effected += recovered > 0 ? 1 : 0;
             } else if (item.type === 'MP回復') {
                 const before = Number(target.mp || 0);
-                const amount = Number(item.val || 0) >= 9999 ? getMaxMp(Battle, target) : Number(item.val || 0);
+                const amount = Number(item.val || 0) >= 9999 ? getMaxMp(Battle, target) : Math.floor(Number(item.val || 0) * itemEffectMultiplier(command));
                 target.mp = Math.min(getMaxMp(Battle, target), before + amount);
                 const recovered = target.mp - before;
                 if (recovered > 0) Battle.log(`${target.name}のMPが${recovered}回復！`);

@@ -1790,3 +1790,49 @@ Status: **inventory / no automatic replacement**
 |1747|ui_error|`menus_trait_detail.js`|特性書由来の特性を再抽選しようとした場合|特性書で習得した特性は、別の特性書を使う場合だけ変更できます。|（2026-08-15ユーザー指定仕様の案内）|new_copy_inventory|
 |1748|ui_error|`menus_trait_detail.js`|再抽選確定時に特性書ロックを再検出した場合|特性書で習得した特性は再抽選では変更できません。|（2026-08-15安全確認用）|new_copy_inventory|
 |1749|ui_error|`main.js`|仲間モンスター合成で特性書ロックが6枠を超える場合|特性書で固定された特性が6個を超えているため合成できません。先に特性書で整理してください。|（2026-08-15安全確認用）|new_copy_inventory|
+
+
+### 2026-08-16 職業固有特性
+
+
+|ID|種別|参照|用途/条件|現行/新規文言|レビュー案|状態|
+|---:|---|---|---|---|---|---|
+|1750|ui_job_trait|`job_traits.js`|jobId 1 / 戦士|精神集中：ぼうぎょした次のターン、最終与ダメージが大きく上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1751|ui_job_trait|`job_traits.js`|jobId 2 / 僧侶|加護：回復スキルのMP消費を減らし、強化スキルを1ターン延長する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1752|ui_job_trait|`job_traits.js`|jobId 3 / 魔法使い|魔素吸収：敵を倒すとMPを回復し、MPが少ないほど与ダメージが上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1753|ui_job_trait|`job_traits.js`|jobId 4 / 武闘家|連撃の型：連続ヒット数に応じて会心率と会心ダメージが上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1754|ui_job_trait|`job_traits.js`|jobId 5 / 斥候|先読み：敵の攻撃を回避すると通常攻撃で反撃し、特殊な弱体を付与する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1755|ui_job_trait|`job_traits.js`|jobId 6 / 踊り子|舞の余韻：行動時、一定確率で味方全体強化か敵全体弱体が追加発動する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1756|ui_job_trait|`job_traits.js`|jobId 7 / 魔法剣士|魔装剣：物理攻撃と魔法攻撃を交互に使うほど与ダメージが上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1757|ui_job_trait|`job_traits.js`|jobId 8 / 賢者|深慮：全スキルのMP消費を減らし、MPが高いほど与ダメージが上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1758|ui_job_trait|`job_traits.js`|jobId 9 / 侍|残心：頭・体・足の未装備数に応じて与ダメージ・回避率・会心率が上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1759|ui_job_trait|`job_traits.js`|jobId 10 / 剣闘士|闘争心：ダメージを受けるたびに与ダメージが上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1760|ui_job_trait|`job_traits.js`|jobId 11 / エンターテイナー|ボルテージ：生存ターン数に応じて味方全体の与ダメージが上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1761|ui_job_trait|`job_traits.js`|jobId 12 / 星詠師|星巡り：毎ターン終了時、偶数ターンは味方支援、奇数ターンは敵妨害が必ず発生する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1762|ui_job_trait|`job_traits.js`|jobId 13 / 聖拳士|聖気循環：物理特技でMPと同量のHPも消費し、その量に応じて与ダメージが上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1763|ui_job_trait|`job_traits.js`|jobId 14 / 聖騎士|守護誓約：生存中、味方全体の被ダメージを減少させる。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1764|ui_job_trait|`job_traits.js`|jobId 15 / 狩人|必殺：ぼうぎょした次のターン、必ず会心になり会心ダメージも上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1765|ui_job_trait|`job_traits.js`|jobId 16 / 魔弓使い|魔導弦：戦闘時に攻撃力の半分を魔力へ加え、魔法攻撃時に味方全体を小回復する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1766|ui_job_trait|`job_traits.js`|jobId 17 / 光魔剣士|霊脈破壊：同じ敵へ物理と魔法を交互に当てると、その敵の被ダメージが上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1767|ui_job_trait|`job_traits.js`|jobId 18 / 忍者|影走り：道具効果が増加し、仲間生存中は敵の単体指定攻撃の対象にならない。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1768|ui_job_trait|`job_traits.js`|jobId 19 / 竜騎士|竜脈：HPが高いほど全体攻撃、低いほど単体攻撃の与ダメージが上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1769|ui_job_trait|`job_traits.js`|jobId 20 / 聖女|慈愛：ぼうぎょ時、味方全体のHP/MPを回復し、独立枠の強化を付与する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1770|ui_job_trait|`job_traits.js`|jobId 21 / 魔王|覇気：生存中、敵行動を止め、その敵の被ダメージを一時的に増やすことがある。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1771|ui_job_trait|`job_traits.js`|jobId 22 / 神|神託：生存中に味方を確率で完全蘇生し、攻撃時は対象の光耐性を-100%として扱う。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1772|ui_job_trait|`job_traits.js`|jobId 23 / 勇者|希望：生存中は他の味方を強化し、味方が倒れるほど自身の能力が上昇する。|（2026-08-16ユーザー確定案から実装）|new_copy_approved_20260816|
+|1773|ui_label|`menus_ally_detail.js`|仲間詳細 / 成長の記録|現在の職業特性|（現在職の特性表示）|new_copy_inventory|
+|1774|battle_log|`job_traits.js`|聖女 / 慈愛|${actor.name}の慈愛が仲間を包んだ！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1775|battle_log|`job_traits.js`|斥候 / 全能力低下|${target.name}の全能力が下がった！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1776|battle_log|`job_traits.js`|斥候 / 全属性耐性低下|${target.name}の全属性耐性が下がった！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1777|battle_log|`job_traits.js`|斥候 / 状態異常|${target.name}は${names[chosen]}を受けた！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1778|battle_log|`job_traits.js`|斥候 / 回避反撃|${defender.name}は攻撃を読み切った！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1779|battle_log|`job_traits.js`|魔法使い / 魔素吸収|${actor.name}は魔素を吸収し、MPを${gained}回復した！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1780|battle_log|`job_traits.js`|魔弓使い / 魔導弦|${actor.name}の魔導弦が仲間の傷を癒した！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1781|battle_log|`job_traits.js`|踊り子 / 舞の余韻|${actor.name}の舞の余韻！ ${skill.name}が響いた！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1782|battle_log|`job_traits.js`|魔王 / 覇気|${enemy.name}は魔王の覇気に呑まれ、動けない！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1783|battle_log|`job_traits.js`|神 / 神託|${god.name}の神託！ ${unit.name}は完全に蘇った！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1784|battle_log|`job_traits.js`|星詠師 / HP回復|${star.name}の星巡り――生命の星が瞬いた！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1785|battle_log|`job_traits.js`|星詠師 / MP回復|${star.name}の星巡り――魔力の星が巡った！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1786|battle_log|`job_traits.js`|星詠師 / 強化|${star.name}の星巡り――味方を星の加護が包んだ！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1787|battle_log|`job_traits.js`|星詠師 / 属性攻撃|${enemy.name}に星光が降り、${dmg}の${elm}属性ダメージ！|（2026-08-16職業特性演出）|new_copy_inventory|
+|1788|battle_log|`job_traits.js`|星詠師 / 弱体|${star.name}の星巡り――凶星が敵の力を奪った！|（2026-08-16職業特性演出）|new_copy_inventory|

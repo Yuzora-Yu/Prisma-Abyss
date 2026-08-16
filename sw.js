@@ -23,7 +23,7 @@ try {
 
 // 表示用語・お知らせUI更新ではApp Shellだけ更新し、画像の全量キャッシュは再取得しない。
 // RUNTIME_CACHE_NAMEはmain.jsのfullDataCacheNameと同じ値を維持する。
-const CACHE_NAME = "prisma-abyss-v64.20260814";
+const CACHE_NAME = "prisma-abyss-v65.20260816";
 const RUNTIME_CACHE_NAME = "prisma-abyss-v45.20260814-runtime";
 const WARM_CACHE_META_KEY = "__prisma_abyss_warm_cache_complete__";
 
@@ -85,6 +85,7 @@ const PRECACHE_FILES = [
   "guild.js",
   "items.js",
   "job_data.js",
+  "job_traits.js",
   "map.js",
   "maps_logic.js",
   "story.js",

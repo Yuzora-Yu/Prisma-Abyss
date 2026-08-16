@@ -1,0 +1,17 @@
+battle.js
+canon/PRISMA_DEVELOPMENT_ROADMAP_v2.md
+development_notes/2026-08-16/DELTA_MANIFEST_20260816_JOB_TRAITS.txt
+development_notes/2026-08-16/reports/JOB_TRAIT_SYSTEM_IMPLEMENTATION_20260816.md
+development_notes/2026-08-16/validation/JOB_TRAIT_REGRESSION_20260816.log
+development_notes/2026-08-16/validation/JOB_TRAIT_SYSTEM_CHECK_20260816.js
+development_notes/2026-08-16/validation/JOB_TRAIT_SYSTEM_CHECK_20260816.log
+development_notes/2026-08-16/validation/TOP_LEVEL_JS_NODE_CHECK_20260816_JOB_TRAITS.log
+docs/design/JOB_CHANGE_BOOK_CAREER_SYSTEM_20260815.md
+docs/design/JOB_TRAIT_SYSTEM_20260816.md
+docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+index.html
+item_runtime.js
+job_traits.js
+menus_ally_detail.js
+news.js
+sw.js

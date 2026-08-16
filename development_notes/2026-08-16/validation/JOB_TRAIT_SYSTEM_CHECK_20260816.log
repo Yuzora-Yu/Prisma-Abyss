@@ -1,0 +1,116 @@
+PASS 23職すべてに職業特性定義がある
+PASS jobId 1 戦士 に特性定義がある
+PASS 戦士: 現在jobIdを正しく参照
+PASS jobId 2 僧侶 に特性定義がある
+PASS 僧侶: 現在jobIdを正しく参照
+PASS jobId 3 魔法使い に特性定義がある
+PASS 魔法使い: 現在jobIdを正しく参照
+PASS jobId 4 武闘家 に特性定義がある
+PASS 武闘家: 現在jobIdを正しく参照
+PASS jobId 5 斥候 に特性定義がある
+PASS 斥候: 現在jobIdを正しく参照
+PASS jobId 6 踊り子 に特性定義がある
+PASS 踊り子: 現在jobIdを正しく参照
+PASS jobId 7 魔法剣士 に特性定義がある
+PASS 魔法剣士: 現在jobIdを正しく参照
+PASS jobId 8 賢者 に特性定義がある
+PASS 賢者: 現在jobIdを正しく参照
+PASS jobId 9 侍 に特性定義がある
+PASS 侍: 現在jobIdを正しく参照
+PASS jobId 10 剣闘士 に特性定義がある
+PASS 剣闘士: 現在jobIdを正しく参照
+PASS jobId 11 エンターテイナー に特性定義がある
+PASS エンターテイナー: 現在jobIdを正しく参照
+PASS jobId 12 星詠師 に特性定義がある
+PASS 星詠師: 現在jobIdを正しく参照
+PASS jobId 13 聖拳士 に特性定義がある
+PASS 聖拳士: 現在jobIdを正しく参照
+PASS jobId 14 聖騎士 に特性定義がある
+PASS 聖騎士: 現在jobIdを正しく参照
+PASS jobId 15 狩人 に特性定義がある
+PASS 狩人: 現在jobIdを正しく参照
+PASS jobId 16 魔弓使い に特性定義がある
+PASS 魔弓使い: 現在jobIdを正しく参照
+PASS jobId 17 光魔剣士 に特性定義がある
+PASS 光魔剣士: 現在jobIdを正しく参照
+PASS jobId 18 忍者 に特性定義がある
+PASS 忍者: 現在jobIdを正しく参照
+PASS jobId 19 竜騎士 に特性定義がある
+PASS 竜騎士: 現在jobIdを正しく参照
+PASS jobId 20 聖女 に特性定義がある
+PASS 聖女: 現在jobIdを正しく参照
+PASS jobId 21 魔王 に特性定義がある
+PASS 魔王: 現在jobIdを正しく参照
+PASS jobId 22 神 に特性定義がある
+PASS 神: 現在jobIdを正しく参照
+PASS jobId 23 勇者 に特性定義がある
+PASS 勇者: 現在jobIdを正しく参照
+PASS 職歴ではなく現在職だけが特性判定に使われる
+PASS 実質Lv=表示Lv+転生回数×100を使用
+PASS 戦士Lv100: 防御次ターンは+200%=3倍 (3 ~= 3)
+PASS 戦士: 最大+300%=4倍 (4 ~= 4)
+PASS 僧侶Lv100: 回復MP30%減 (0.7 ~= 0.7)
+PASS 僧侶: 強化効果+1ターン
+PASS 僧侶: 強化技の代償デバフは延長しない
+PASS 魔法使い: MP0で与ダメ+50% (1.5 ~= 1.5)
+PASS 魔法使い: MP満タンでは低MP補正なし (1 ~= 1)
+PASS 魔法使いLv100: 討伐で最大MP10%回復
+PASS 武闘家: 8連続ヒットで会心率+16%
+PASS 武闘家: 8連続ヒットで会心ダメ+32% (1.32 ~= 1.32)
+PASS 武闘家: ミスで連続ヒット解除
+PASS 斥候: 敵攻撃回避時に通常反撃
+PASS 斥候: 反撃後に4ターン状態異常を付与
+PASS 踊り子: 最大20%抽選成功時に習得可能な全体強化/弱体を追加発動
+PASS 魔法剣士: 物理→魔法で+5%蓄積 (1.05 ~= 1.05)
+PASS 賢者Lv100: 全スキルMP30%減 (0.7 ~= 0.7)
+PASS 賢者: MP満タンで与ダメ+50% (1.5 ~= 1.5)
+PASS 侍: 頭体足すべて未装備で与ダメ+75% (1.75 ~= 1.75)
+PASS 侍: 回避+45%
+PASS 侍: 会心+30%
+PASS 剣闘士: 50被ダメージで+100%上限 (2 ~= 2)
+PASS エンターテイナー: 3生存ターンで味方与ダメ+15% (1.15 ~= 1.15)
+PASS 星詠師: 偶数ターン終了時にHP/MP/バフのいずれかが必ず発動
+PASS 聖拳士: HPが消費MPより多ければ使用可能
+PASS 聖拳士: 物理特技で消費MPと同量HP消費
+PASS 聖拳士: HP100消費で与ダメ+50% (1.5 ~= 1.5)
+PASS 聖騎士: 味方被ダメ30%減上限 (0.7 ~= 0.7)
+PASS 狩人: 防御次ターンは物理攻撃が強制会心
+PASS 狩人: 魔法攻撃は必殺の強制会心対象外
+PASS 狩人Lv100: 会心ダメ+75% (1.75 ~= 1.75)
+PASS 魔弓使い: 攻撃力の半分を魔力へ加算
+PASS 光魔剣士: 同対象へ交互に命中で被ダメ+5% (1.05 ~= 1.05)
+PASS 忍者Lv100: 道具効果+150%=2.5倍 (2.5 ~= 2.5)
+PASS 忍者: 他仲間生存時は敵の単体指定対象外
+PASS 忍者: 最後の生存者なら単体指定対象になる
+PASS 竜騎士: HP100%で全体与ダメ+50% (1.5 ~= 1.5)
+PASS 竜騎士: HP100%で単体補正0% (1 ~= 1)
+PASS 竜騎士: HP10%で単体補正が大幅上昇
+PASS 聖女: 防御時に既存バフと別枠の慈愛強化を付与
+PASS 聖女: 各能力/全属性耐性を独立50%判定
+PASS 魔王: 発動率抽選成功で敵行動を停止
+PASS 魔王: 行動不能対象の被ダメ+20% (1.2 ~= 1.2)
+PASS 魔王: 発動ラウンド末を越えて1ターン分維持できる内部値
+PASS 神: 味方死亡時にHPMP全回復蘇生
+PASS 神: 光以外の耐性は上書きしない
+PASS 神: 攻撃時の光耐性を-100%として計算
+PASS 勇者: 自分以外の味方ステータス+30%上限
+PASS 勇者: 仲間死亡1回で自身ステータス+10%
+PASS battle.js integration: JobTraits.adjustFinalDamage
+PASS battle.js integration: JobTraits.onEvadedAttack
+PASS battle.js integration: JobTraits.tryDemonKingSuppress
+PASS battle.js integration: JobTraits.onEndOfRound
+PASS battle.js integration: JobTraits.getCritBonus
+PASS battle.js integration: JobTraits.forceCritical
+PASS battle.js integration: JobTraits.onActionStart
+PASS battle.js integration: JobTraits.onActionComplete
+PASS battle.js integration: JobTraits.filterEnemySingleTargetCandidates
+PASS index.html loads job_traits.js
+PASS job_traits.js is loaded before battle.js
+PASS sw.js precaches job_traits.js
+PASS sw.js cache version is bumped for job traits
+PASS new battle initializes a fresh jobTraitRuntime
+PASS battle save persists player job-trait status with battleStatus
+PASS enemy snapshots persist job-trait status
+PASS item_runtime.js applies Ninja item multiplier
+PASS 忍者: 戦闘中のHP回復道具100が2.5倍の250回復になる
+RESULT 115/115 PASS
