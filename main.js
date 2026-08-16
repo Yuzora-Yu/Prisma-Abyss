@@ -6447,9 +6447,11 @@ const App = {
                 <span style="display:block; color:#98d9a8; font-size:11px; margin-top:5px; white-space:pre-wrap;">報酬: ${App.escapeHtml(App.getQuestRewardSummary(quest))}</span>
             </button>`;
         }).join('');
+        const boardTitle = App.escapeHtml(String(action.boardTitle || '依頼掲示板'));
+        const boardSubtitle = App.escapeHtml(String(action.boardSubtitle || '討伐・素材交換依頼'));
         overlay.innerHTML = `<div style="width:min(460px,calc(100vw - 24px)); max-height:calc(100vh - 30px); overflow:auto; background:#17110d; border:2px solid #b88a4c; border-radius:8px; box-shadow:0 18px 60px rgba(0,0,0,.75); padding:14px; box-sizing:border-box;">
             <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid #5c432a; padding-bottom:10px;">
-                <div><div style="font-size:18px; color:#fff2c6; font-weight:bold;">依頼掲示板</div><div style="font-size:11px; color:#bfa77f; margin-top:3px;">討伐・素材交換依頼</div></div>
+                <div><div style="font-size:18px; color:#fff2c6; font-weight:bold;">${boardTitle}</div><div style="font-size:11px; color:#bfa77f; margin-top:3px;">${boardSubtitle}</div></div>
                 <button id="quest-board-close" class="btn" style="min-width:72px;">閉じる</button>
             </div>${rows}
         </div>`;

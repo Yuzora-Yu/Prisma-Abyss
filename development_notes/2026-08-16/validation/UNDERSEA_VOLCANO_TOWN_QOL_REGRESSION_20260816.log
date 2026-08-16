@@ -1,0 +1,175 @@
+PASS undersea-world-entry-always-visible
+PASS undersea-world-entry-no-required-flag
+PASS undersea-world-position
+PASS undersea-cave-icon
+PASS undersea-five-floors
+PASS undersea-b1-label
+PASS undersea-b2-label
+PASS undersea-b3-label
+PASS undersea-b4-label
+PASS undersea-b5-label
+PASS undersea-b3-cache-version
+PASS undersea-b3-gate-flag
+PASS undersea-b3-gate-locked-text
+PASS undersea-b3-open-label
+PASS undersea-story-entry-gated-not-map-entry
+PASS undersea-b5-boss-tile :: tile=B
+PASS undersea-b5-grad-present
+PASS undersea-floor-4-row-widths :: width=19
+PASS undersea-floor-5-row-widths :: width=19
+PASS rees-world-entry-unlocked
+PASS rees-hut-exit-unlocked
+PASS rees-two-beds
+PASS rees-bed-positions
+PASS water-broker-direct-quest-list
+PASS water-broker-three-quests
+PASS water-old-board-action-removed
+PASS water-fountain-position-decoration
+PASS water-fountain-position-action
+PASS water-fountain-base-tile-walkable :: tile=T
+PASS water-fountain-sparkle
+PASS sophia-crystal_tree_main_route-moved-off-fountain
+PASS sophia-water_city_post_clear-moved-off-fountain
+PASS sophia-water_city_rexnote_route-moved-off-fountain
+PASS sophia-sophia_alan_seabed_depths-moved-off-fountain
+PASS rees-initial-talk-heals
+PASS rees-repeat-talk-heals
+PASS undersea-research-name-story
+PASS undersea-boss-area-name-story
+PASS undersea-can-enter-fixed-always
+PASS procedural-next-link-contract-merged
+PASS fixed-trial-uses-current-rank
+PASS fixed-trial-no-extra-stat-multiplier
+PASS fixed-boss-floor-blocks-trial-angel
+PASS trial-center-bonus-5-9
+PASS quest-board-custom-title
+PASS quest-board-custom-subtitle
+PASS generic-battle-area-name-removed-runtime
+PASS generic-research-area-name-removed-runtime
+PASS generic-number-only-abyss-floor-names-removed :: []
+
+RESULT 49/49 PASS; 0 FAIL
+UNDERSEA_VOLCANO_STABILITY_CHECK: 70/70 PASS
+01. PASS world entrance is grass
+02. PASS world entrance remains one-tile island
+03. PASS run 1: fixed dungeon starts
+04. PASS run 1: spawn is generated entry stair
+05. PASS run 1: return point preserves volcano world coordinate
+06. PASS run 1: first floor has explicit stable world exit
+07. PASS run 1: deeper link is down staircase
+08. PASS run 1: escape returns to volcano entrance
+09. PASS run 1: escape does not trigger unstable fallback
+10. PASS run 2: fixed dungeon starts
+11. PASS run 2: spawn is generated entry stair
+12. PASS run 2: return point preserves volcano world coordinate
+13. PASS run 2: first floor has explicit stable world exit
+14. PASS run 2: deeper link is down staircase
+15. PASS run 2: escape returns to volcano entrance
+16. PASS run 2: escape does not trigger unstable fallback
+17. PASS run 3: fixed dungeon starts
+18. PASS run 3: spawn is generated entry stair
+19. PASS run 3: return point preserves volcano world coordinate
+20. PASS run 3: first floor has explicit stable world exit
+21. PASS run 3: deeper link is down staircase
+22. PASS run 3: escape returns to volcano entrance
+23. PASS run 3: escape does not trigger unstable fallback
+24. PASS run 4: fixed dungeon starts
+25. PASS run 4: spawn is generated entry stair
+26. PASS run 4: return point preserves volcano world coordinate
+27. PASS run 4: first floor has explicit stable world exit
+28. PASS run 4: deeper link is down staircase
+29. PASS run 4: escape returns to volcano entrance
+30. PASS run 4: escape does not trigger unstable fallback
+31. PASS run 5: fixed dungeon starts
+32. PASS run 5: spawn is generated entry stair
+33. PASS run 5: return point preserves volcano world coordinate
+34. PASS run 5: first floor has explicit stable world exit
+35. PASS run 5: deeper link is down staircase
+36. PASS run 5: escape returns to volcano entrance
+37. PASS run 5: escape does not trigger unstable fallback
+38. PASS run 6: fixed dungeon starts
+39. PASS run 6: spawn is generated entry stair
+40. PASS run 6: return point preserves volcano world coordinate
+41. PASS run 6: first floor has explicit stable world exit
+42. PASS run 6: deeper link is down staircase
+43. PASS run 6: escape returns to volcano entrance
+44. PASS run 6: escape does not trigger unstable fallback
+45. PASS run 7: fixed dungeon starts
+46. PASS run 7: spawn is generated entry stair
+47. PASS run 7: return point preserves volcano world coordinate
+48. PASS run 7: first floor has explicit stable world exit
+49. PASS run 7: deeper link is down staircase
+50. PASS run 7: escape returns to volcano entrance
+51. PASS run 7: escape does not trigger unstable fallback
+52. PASS run 8: fixed dungeon starts
+53. PASS run 8: spawn is generated entry stair
+54. PASS run 8: return point preserves volcano world coordinate
+55. PASS run 8: first floor has explicit stable world exit
+56. PASS run 8: deeper link is down staircase
+57. PASS run 8: escape returns to volcano entrance
+58. PASS run 8: escape does not trigger unstable fallback
+59. PASS first-floor exit link is an up-stair exit
+60. PASS using first-floor up staircase returns to volcano island
+61. PASS random fixed-floor type chooser never returns maze type
+62. PASS procedural volcano floors use current template versions
+63. PASS B3 template carries deep-route gate
+64. PASS all procedural volcano floors leave forceMaze disabled
+65. PASS volcano dungeon uses basement direction mode
+66. PASS old maze-profile cache regenerates with template version 2
+67. PASS old cache migration snaps player to regenerated entry stair
+68. PASS research floor back link is up staircase
+69. PASS research floor deeper link is down staircase
+70. PASS boss floor return link is up staircase
+REINCARNATION_UNDERSEA_ROUTE_CHECK: 51/51 PASS
+01. PASS world has rows
+02. PASS world width expanded from 110 to 130
+03. PASS undersea volcano coordinate is a one-tile grass island
+04. PASS light palace coordinate canonical
+05. PASS big lighthouse coordinate canonical
+06. PASS undersea volcano coordinate exact
+07. PASS undersea volcano world marker uses cave icon over the grass base tile
+08. PASS undersea volcano remains at the planned northeast coordinate
+09. PASS undersea volcano world marker is always visible
+10. PASS undersea volcano resolves before route-open flag
+11. PASS undersea volcano remains resolved after route-open flag
+12. PASS undersea volcano fixed dungeon uses world-entry event
+13. PASS undersea volcano uses basement stair semantics
+14. PASS undersea volcano first floor exits to world entrance
+15. PASS undersea volcano procedural floors no longer force maze generation
+16. PASS undersea volcano B3 carries deep-route gate contract
+17. PASS undersea volcano does not retain a fixed base entry coordinate
+18. PASS Sky Prism places undersea volcano immediately below big lighthouse
+19. PASS fixed dungeon entry prefers resolved floor entry point
+20. PASS procedural generation restores world location after temporary spawn generation
+21. PASS old lighthouse direct action removed
+22. PASS world route remains fixed dungeon route
+23. PASS story data exported
+24. PASS objective uses Kazaria as the practical landmark
+25. PASS new world entry event exists
+26. PASS thunder hint event exists
+27. PASS water-city hint event exists
+28. PASS world entry dialogue exists
+29. PASS thunder hint dialogue exists
+30. PASS water hint dialogue exists
+31. PASS thunder fort has route hint actor state
+32. PASS water city has route hint actor state
+33. PASS setup transfer to priest succeeds
+34. PASS fruit options include current priest
+35. PASS fruit options include past warrior
+36. PASS fruit options exclude unexperienced mage
+37. PASS fruit returns to previous job without book
+38. PASS fruit reincarnates at same time
+39. PASS fruit preserves prior learned skills
+40. PASS return records history source
+41. PASS return sets transfer override to chosen historical job
+42. PASS fruit cannot jump to unexperienced job
+43. PASS fruit UI intercepts item 107 before generic growth handling
+44. PASS fruit item description mentions past jobs
+45. PASS all current all-MP skills are magic
+46. PASS holy-fist trait only applies extra HP cost to physical skills
+47. PASS full-MP skills have dedicated cost handling
+48. PASS NEWS has one 2026/08/16 record
+49. PASS NEWS mentions reincarnation job-history return
+50. PASS NEWS mentions east-world / undersea route update
+51. PASS service-worker app-shell cache version bumped
+CORE REGRESSION PASS

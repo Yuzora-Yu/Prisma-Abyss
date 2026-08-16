@@ -74,7 +74,8 @@ ok('using first-floor up staircase returns to volcano island', stairCtx.App.data
 
 ok('random fixed-floor type chooser never returns maze type', Array.from({ length: 2000 }, () => Dungeon.pickRandomFloorType()).every(type => type !== 2));
 const base = MapRegistry.getFixedDungeonBase('UNDERSEA_VOLCANO');
-ok('all procedural volcano floors opt into template version 2', base.floors.slice(0, 3).every(floor => floor.proceduralTemplateVersion === 2));
+ok('procedural volcano floors use current template versions', base.floors[0].proceduralTemplateVersion === 2 && base.floors[1].proceduralTemplateVersion === 2 && base.floors[2].proceduralTemplateVersion >= 3);
+ok('B3 template carries deep-route gate', base.floors[2].proceduralNextLink?.requiredFlag === 'underseaVolcanoRouteOpened');
 ok('all procedural volcano floors leave forceMaze disabled', base.floors.slice(0, 3).every(floor => floor.forceMaze !== true));
 ok('volcano dungeon uses basement direction mode', base.floorDirectionMode === 'basement');
 

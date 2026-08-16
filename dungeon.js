@@ -1556,9 +1556,9 @@ const Dungeon = {
                 // 雷の要塞イベント前はボスが出現せず、金鍵も得られない。
                 return ok();
             case 'UNDERSEA_VOLCANO':
-                return flags.underseaVolcanoRouteOpened
-                    ? ok()
-                    : block('海底火山への航路はまだ特定できていない。', null);
+                // 海底火山そのものはいつでも探索可能。
+                // 本編ゲートは第3層の隔壁に置き、雷の要塞でのブリーフィング後だけ深部へ進める。
+                return ok();
             case 'LIGHT_PALACE':
                 if (!flags.lighthouseCleared) {
                     return block('光の神殿は、触れる前から肌を刺すような結界に包まれている。', 'locked_light_palace');
@@ -1914,7 +1914,15 @@ const Dungeon = {
                         ...(template.proceduralExitPoint ? { exitPoint: JSON.parse(JSON.stringify(template.proceduralExitPoint)) } : {})
                     }
                     : { x: entryPoint.x, y: entryPoint.y, toFloor: Number(floorNo) - 1, label: '前の階へ' },
-                { x: exitPoint.x, y: exitPoint.y, toFloor: Number(floorNo) + 1, label: '次の階へ' }
+                {
+                    ...(template.proceduralNextLink && typeof template.proceduralNextLink === 'object'
+                        ? JSON.parse(JSON.stringify(template.proceduralNextLink))
+                        : {}),
+                    x: exitPoint.x,
+                    y: exitPoint.y,
+                    toFloor: Number(floorNo) + 1,
+                    label: template.proceduralNextLink?.label || '次の階へ'
+                }
             ]
         };
         progress.fixedProceduralFloors[cacheKey] = result;
@@ -3620,8 +3628,14 @@ const Dungeon = {
             App.data.dungeon.trialAngel.active = false;
         }
         const master = Dungeon.getPhase2IMaster().angelTrial || {};
-        const displayFloor = Math.max(1, Number(Dungeon.floor || App.data?.progress?.floor || 1) + Number(master.targetFloorOffset || 15));
-        const targetFloor = Dungeon.getBalanceFloor(displayFloor);
+        const fixedTrial = !!Field.currentMapData?.isFixed;
+        // 固定ダンジョンでは「深淵の表示階+100」規則を使わない。
+        // その階の encounterRank を左右の基準Rankとし、中央だけ+5～+9Rankにする。
+        const fixedRank = Math.max(1, Number(effect.rank || Field.currentMapData?.encounterRank || Field.currentMapData?.rank || 1));
+        const displayFloor = fixedTrial
+            ? fixedRank
+            : Math.max(1, Number(Dungeon.floor || App.data?.progress?.floor || 1) + Number(master.targetFloorOffset || 15));
+        const targetFloor = fixedTrial ? fixedRank : Dungeon.getBalanceFloor(displayFloor);
         const elements = ['火', '水', '風', '雷', '光', '闇'];
         const resistElm = elements[Math.floor(Math.random() * elements.length)];
         const atkElm = elements[Math.floor(Math.random() * elements.length)];
@@ -3632,15 +3646,15 @@ const Dungeon = {
             isSpecialBoss:false,
             isEstark:false,
             fixedBossId:null,
-            abyssMode:Dungeon.getAbyssMode(),
-            abyssFloor:Number(Dungeon.floor || 1),
-            abyssBalanceFloor:Dungeon.getBalanceFloor(),
+            abyssMode:fixedTrial ? 'story' : Dungeon.getAbyssMode(),
+            abyssFloor:fixedTrial ? fixedRank : Number(Dungeon.floor || 1),
+            abyssBalanceFloor:fixedTrial ? fixedRank : Dungeon.getBalanceFloor(),
             angelTrial:{
-                id:effect.id || `trial-angel:${Dungeon.getAbyssMode()}:F${Number(Dungeon.floor || 1)}`,
+                id:effect.id || `trial-angel:${fixedTrial ? 'fixed' : Dungeon.getAbyssMode()}:F${Number(Dungeon.floor || 1)}`,
                 targetFloor,
                 displayFloor,
                 enemyCount:Math.max(1, Number(master.enemyCount || 3)),
-                statMultiplier:Math.max(1, Number(master.statMultiplier || 1.35)),
+                statMultiplier:fixedTrial ? 1 : Math.max(1, Number(master.statMultiplier || 1.35)),
                 rewardCount:Math.max(1, Number(master.rewardCount || 3)),
                 centerRankBonus:5 + Math.floor(Math.random() * 5),
                 enemyBoost:{
@@ -4050,7 +4064,10 @@ const Dungeon = {
         App.data.dungeon.trialAngel = null;
 
         const fixed = options.fixed ?? !!Field.currentMapData?.isFixed;
-        if (Dungeon.isBossFloor() || App.data.dungeon.isTreasureRoom) return null;
+        const fixedBossFloor = fixed && Array.isArray(Field.currentMapData?.bosses) && Field.currentMapData.bosses.length > 0;
+        // fixedダンジョンのボス階は通常の「10階ごと」判定に乗らないため、
+        // bosses[] を見て試練の天使などの特殊配置を抑止する。
+        if (fixedBossFloor || Dungeon.isBossFloor() || App.data.dungeon.isTreasureRoom) return null;
         if (fixed) {
             const rank = Number(Field.currentMapData?.encounterRank || Field.currentMapData?.rank || 0);
             if (rank < Dungeon.trialAngelMinEncounterRank) return null;
@@ -4075,7 +4092,7 @@ const Dungeon = {
             id: `trial-angel:${App.data.location.area}:F${Number(Dungeon.floor || 1)}:${Date.now()}`,
             rank,
             monsterIds: Dungeon.getTrialAngelMonsterIds(fixed),
-            statMultiplier: rank >= 100 ? 2.5 : 2.2,
+            statMultiplier: fixed ? 1 : (rank >= 100 ? 2.5 : 2.2),
             rewardCount: rank >= 100 ? 2 : 1,
             image: Dungeon.trialAngelImagePath,
             label: '試練の天使と話す',
