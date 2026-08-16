@@ -1,0 +1,8 @@
+AGENTS.md
+map.js
+map_story_editor.html
+docs/EDITOR_README.md
+docs/map-story-editor-guide.md
+development_notes/2026-08-16/reports/MAP_EDITOR_REBUILD_AND_RESTORE_20260816.md
+development_notes/2026-08-16/review/MAP_LOGIC_MANUAL_AUDIT_5PASS_20260816.md
+development_notes/2026-08-16/DELTA_MANIFEST_20260816_MAP_EDITOR_REBUILD.txt

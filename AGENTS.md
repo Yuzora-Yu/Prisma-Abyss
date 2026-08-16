@@ -23,6 +23,15 @@ Before editing scenario, dialogue, NPC text, story flags, map event text, or cha
 - `map.js`
 - `maps_logic.js`
 
+## Map editor / map source safety
+
+- `map.js` is a mixed data/source master. Do **not** regenerate the whole file from runtime JSON.
+- `map_story_editor.html` must preserve the current `map.js` source and patch only explicitly edited direct definitions.
+- The editor must never drop or rewrite protected registry/runtime-support blocks such as `MAP_MASTER`, `MAP_IDS`, `FIXED_AREA_MAP_KEYS`, `WORLD_MAPS`, `ABYSS_REGION_MASTER`, or derived-ID/export code unless that block is the explicit task.
+- Helper/spread-generated fixed dungeons are read-only in the editor unless their source generator itself is intentionally edited. Do not flatten generated runtime objects back into `map.js`.
+- Keep `WORLD` and `ABYSS_WORLD` separate in editor lists, markers, encounter data, and previews. A surface-world view must not mix abyss-world locations.
+- Map layout edits must be reviewed together with entry/exit coordinates, floor links, return points, impassable cells, blocking objects, save-position compatibility, and dungeon-cache migration.
+
 ## Scenario workflow
 
 Do not implement substantial new dialogue directly into JavaScript first.

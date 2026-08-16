@@ -1,80 +1,145 @@
-# マップ／ストーリーエディタ利用ガイド
+# マップ／ストーリーエディタ利用ガイド vNext
 
-更新日: 2026-07-16
+更新日: 2026-08-16
+
+## 最重要: `map.js` を丸ごと再生成しない
+
+現行の `map.js` には、単純な配置データだけでなく `MAP_MASTER`、MAP ID alias、section index、`WORLD_MAPS`、深淵地域の正本、生成式固定ダンジョン、互換コード、派生ID付与処理などが共存している。
+
+旧エディタのように「実行時オブジェクトを JSON 化して `map.js` 全体を作り直す」方式は禁止する。`map_story_editor.html` vNext は、現在の `map.js` ソースを保持し、編集した定数／直接定義だけを書き換える source-preserving 方式を採用する。
+
+出力時に次の保護定義が変化・欠落した場合は出力を停止する。
+
+- `MAP_MASTER`
+- `RETIRED_MAP_IDS`
+- `MAP_ID_ALIASES`
+- `MAP_IDS`
+- `FIXED_AREA_MAP_KEYS`
+- `FIXED_AREA_MAP_SECTION_INDEX`
+- `STORY_AREA_MAP_KEYS`
+- `WORLD_MAPS`
+- `DERIVED_PROGRESS_FLAGS`
+- `ABYSS_REGION_MASTER`
+- `decorateMapDefinitionsWithIds()` と window export 群
 
 ## 起動
 
-プロジェクトをローカルHTTPサーバーで配信し、`map_story_editor.html` を開く。
-`file://` 直開きでは、ブラウザの画像読み込み制限によりゲームと同じ表示にならない場合がある。
+推奨はプロジェクトをローカル HTTP サーバーで配信し、`map_story_editor.html` を開く方法。
 
-エディタは `assets.js`、`map.js`、`maps_logic.js` を直接読み込む。地形画像、固定オーバーレイ、壁面、床装飾、橋、小物はゲームと同じ登録キーを参照する。
+HTTP 経由では `map.js` / `story.js` の**現在のソース本文**を自動取得する。`file://` で開いて fetch が制限された場合は、上部の `map.jsを選択してください` / `story.jsを選択してください` をクリックし、現在のファイルを明示選択してから出力する。
 
-## 基本操作
+ソース本文を保持できていない状態では、安全な出力を行わない。
 
-1. 左側から対象マップ／対象階を選ぶ。
-2. 中央の「マップ直接配置」で作業種別を選ぶ。
-3. パレットから地形・敷物・小物・床効果を選ぶ。
-4. 右側マップの配置先をクリックする。
-5. 広い範囲は、右上の操作方式を「矩形配置」にして始点から終点までドラッグする。
-6. 「検証」でエラーがないことを確認してから `map.js` を出力する。
+## UI構成
 
-## 配置ツール
+### ワールド
 
-### 地形
+最上位で以下を完全に分離する。
 
-- 現在のテーマと `DEFAULT` テーマを合成した、ゲーム実行時と同じタイルセットを表示する。
-- 「1マス／ペン」はクリックまたはドラッグ、「矩形配置」は範囲一括変更。
+- 地上世界 (`WORLD`)
+- 深淵世界 (`ABYSS_WORLD`)
 
-### 敷物
+地上世界表示に深淵世界の拠点・ダンジョンを混在させない。逆も同様。
 
-- 赤カーペット（金縁）、青カーペット（銀縁）、ござを選択可能。
-- 1マス配置時は指定した標準幅・高さを使う。
-- 矩形配置時はドラッグ範囲を使う。
-- 壁、階段、宝箱などを含む範囲には配置できない。
-- 人物、ボス、操作盤は敷物より上のレイヤーに描画され、敷物を消さない。
-- 現在、火の里と風の集落にござの配置データはない。個別配置するまで未配置を維持する。
+ワールド画面には `STORY_DATA.areas` のうち、選択中の `worldKey` に属する拠点だけを表示する。固定MAP・固定DUNGEONは別タブで編集する。
 
-### 小物
+### 固定MAP
 
-- `assets/map/library/manifest.json` と `assets.js` に登録された90素材を使用する。
-- 系統、通行可否、文字列で絞り込み可能。
-- 「通行可能」は `floorDecorations`、「通行不能」は `blockingObjects` へ保存される。
-- 階段、宝箱、イベント、床効果の上には配置できない。
-- 通行不能小物はゲーム側の衝突判定と隣接調査処理をそのまま使う。
+町、邸宅、屋外区画など `FIXED_MAPS` を編集する。
 
-### 氷・毒
+- タイル直接編集
+- 入口座標
+- 名称 / themeKey
+- 配置オブジェクト単位編集
+- 詳細JSON
 
-- 氷床、毒床、氷・毒消去を選択可能。
-- 既存の矩形定義は壊さない。追加分は `editorManaged` の点配列へ分離する。
-- 既存矩形の一部を消す場合は `excludePoints` を追加するため、他の範囲を維持できる。
-- 壁、階段、宝箱、ボス、操作盤などの保護マスは配置対象外。
-- 氷と毒を同じマスへ重ねない。
+### 固定DUNGEON
 
-### 消去
+`FIXED_DUNGEON_MAPS` の階層を確認・編集する。
 
-- クリックしたマスにある手動小物または、そのマスを覆う敷物を削除する。
-- 地形、階段、イベント、宝箱、ボスは削除しない。
+**直接ソースに定義されているダンジョンのみ書き出し可能。** spread / helper / authored generator から作られる定義は読み取り専用とし、実行時オブジェクトを展開してソースへ逆輸出しない。
 
-## 描画順
+### ストーリー
 
-エディタとゲームは次の順序を共有する。
+`STORY_MANAGER_DATA.scripts` / `events` を個別JSONで編集する。既存台詞の変更はシナリオ承認ルールに従う。
 
-1. テーマ床
-2. 固定敷物／通行可能小物
-3. テーマ固有の決定的床装飾
-4. 壁・壁面・地形オブジェクト
-5. 固定オーバーレイ、人物、ボス、操作盤
-6. 氷・毒・ワープなどの床効果
-7. 通行不能小物、階段、宝箱などの編集用マーカー
+### データ
 
-`MAP_FLOOR_DECOR_THEMES`、`DUNGEON_WALL_FACE_THEMES`、`WORLD_BRIDGES` は `map.js` が正本であり、ゲームとエディタの双方が参照する。
+以下の独立データを編集できる。
 
-## 出力前の必須確認
+- `FIELD_ENCOUNTER_ZONES`
+- `WORLD_BRIDGES`
+- `STORY_MAP_MUTATIONS`
+- `AUTHORED_MAP_PROP_PLACEMENTS`
 
-```powershell
-node tools\validation\validate-map-editor.js
-node tools\validation\validate-minimap-hazard-safety.js
-node tools\validation\run-all.js
-```
+## 配置オブジェクト編集
 
-エディタから出力した `map.js` は、壁面・床装飾・橋・手動配置台帳を含む。既存ファイルへ置き換える前に差分を確認すること。
+固定MAP／直接定義の固定DUNGEONでは、「オブジェクト」タブから以下を1件ずつ編集できる。
+
+- `chests`
+- `bosses`
+- `floorLinks`
+- `mapActors`
+- `mapActions`
+- `tileEffects`
+- `healSprings`
+- `blockingObjects`
+- `floorDecorations`
+
+種類を選択 → 対象を選択 → X/Y またはその1件だけのJSONを編集する。追加・複製・削除にも対応する。
+
+「オブジェクト」タブを開いている時にキャンバス上の既存オブジェクトをクリックすると、その配置を選択する。MAP全体JSONを編集する必要はない。
+
+## 軽量化
+
+旧エディタの「全マップ／全画像を常時再描画」方式を避ける。
+
+- 一覧は現在タブ・現在世界だけ生成
+- キャンバスは現在選択中のMAPだけ描画
+- 標準はカラータイル表示
+- 画像表示は必要時だけON
+- 再描画は `requestAnimationFrame` へ集約
+- ドラッグ塗りのUndo snapshotは**1ストロークにつき1回**。1マスごとに全データをJSON化しない
+- 検索入力は短い debounce を使用
+
+## 出力方式
+
+`map.js 出力` は、読み込んだ現在ソースを土台に以下の**変更された範囲だけ**を書き換える。
+
+- `SURFACE_WORLD_MAP_DATA`
+- `ABYSS_WORLD_MAP_DATA`
+- `FIELD_ENCOUNTER_ZONES`
+- `WORLD_BRIDGES`
+- `STORY_MAP_MUTATIONS`
+- `AUTHORED_MAP_PROP_PLACEMENTS`
+- `STORY_DATA.areas.<areaKey>` の直接定義
+- `FIXED_MAPS.<areaKey>` の直接定義
+- `FIXED_DUNGEON_MAPS.<areaKey>` の直接定義
+
+未編集部分は元ソースをそのまま維持する。
+
+`story.js 出力` も同様に、現在ソース内の `STORY_MANAGER_DATA` だけを置換する。
+
+## 検証画面
+
+最低限、以下を確認する。
+
+- ワールド行幅の一致
+- 拠点座標が所属世界の範囲内か
+- 固定MAPの行幅、width / height
+- 配置オブジェクトの座標範囲
+- 保護定義が現在の `map.js` に存在するか
+- 地上・深淵の二世界定義が存在するか
+
+ただし、エディタ内検証は**runtimeの目視点検の代替ではない**。特に階段、帰還、可変ダンジョン、セーブ復帰、進行条件はコード経路を別途確認する。
+
+## MAP拡張時の注意
+
+今後、町・ダンジョン・ワールドを拡張／再レイアウトする前提なので、以下を守る。
+
+- 拠点は `worldKey` を正しく設定する。
+- 同じ探索物は座標を動かしても `lootId` を維持する。
+- 階段・入口・出口を動かしたら `entryPoint` / `entryPoints` / `floorLinks` / `exitPoint` を同時に確認する。
+- 地下へ進むダンジョンは `floorDirectionMode: "basement"` を明示する。
+- 可変生成ダンジョンの制約（例: 海底火山は迷路禁止）は、将来的にはダンジョン自身の定義へ持たせる。
+- 大規模変更後は、保存中座標が新MAPで通行不能になった場合の復帰も確認する。

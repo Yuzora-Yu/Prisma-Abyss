@@ -1,52 +1,45 @@
-# PRISMA ABYSS Map / Story Editor
+# PRISMA ABYSS Map / Story Editor vNext
 
-## 追加・変更したファイル
+更新日: 2026-08-16
 
-- `map_story_editor.html`  
-  `map.js` / `story.js` 編集用の統合エディタです。ゲーム本体と同じ順序でマスタJSを読み込み、右側にゲーム内風プレビューを表示します。
+`map_story_editor.html` は、現行 `map.js` / `story.js` の**ソース保持型**統合エディタです。
 
-- `maps_logic.js`  
-  旧 `map.js` から `MapRegistry` と座標正規化ロジックを分離した保護用ロジックです。
+## 旧版からの重要変更
 
-- `story_logic.js`  
-  旧 `story.js` から `StoryManager` 実行ロジックを分離した保護用ロジックです。
+旧版はruntimeオブジェクトを再シリアライズして `map.js` 全体を生成していたため、エディタが知らない新規定義を削除する危険がありました。vNextではこの方式を廃止しています。
 
-- `map.js`  
-  編集対象データ専用に整理しました。`STORY_MAP_MUTATIONS`, `TILE_THEMES`, `STORY_DATA`, `MAP_DATA`, `FIXED_MAPS`, `FIXED_DUNGEON_MAPS` などを保持します。
+- 現在の `map.js` ソースを保持
+- 編集したブロックだけ置換
+- MAP IDレジストリ、世界定義、派生関数、互換コード等は原文維持
+- 保護定義が変わった場合は出力停止
+- helper / spread 由来の固定ダンジョンは読み取り専用
 
-- `story.js`  
-  編集対象データ専用に整理しました。`STORY_MANAGER_DATA` の中に目的文、会話スクリプト、イベントを保持します。
+## 世界表示
 
-- `index.html`  
-  読み込み順を以下の形に変更しました。
+「地上世界」「深淵世界」を完全分離しています。
 
-```html
-<script src="map.js"></script>
-<script src="maps_logic.js"></script>
-<script src="phaser-field.js"></script>
-<script src="story.js"></script>
-<script src="story_logic.js"></script>
-```
+地上世界を選択中に `worldKey: "ABYSS_WORLD"` の拠点やダンジョンを表示しません。固定MAP / 固定DUNGEONもワールド拠点表示へ混在させず、それぞれ専用タブで扱います。
 
-## 使い方
+## 操作
 
-1. プロジェクトルートで `map_story_editor.html` を開きます。
-2. 左側からマップ、会話、イベントを選びます。
-3. マップ編集時は右側Canvasでゲーム内風プレビューを見ながら、選択・ペン・矩形塗りができます。
-4. 宝箱、ボス、階段、イベント/NPC、タイル効果、回復ポイントは「座標オブジェクト」から編集できます。
-5. 既存機能の細かいキーは各「詳細JSON」で編集できます。
-6. 「検証」で、タイル寸法、座標範囲、アイテムID、モンスターID、会話ID、イベントID、画像キーなどを確認できます。
-7. 「map.js出力」「story.js出力」から編集済みファイルをダウンロードします。
+- `ワールド`: 地上 / 深淵の地形と拠点位置
+- `固定MAP`: 町・屋外・建物など
+- `固定DUNGEON`: 階層ダンジョン
+- `ストーリー`: scripts / events
+- `データ`: encounter zone / bridge / mutation / prop ledger
 
-## プレビューについて
+固定MAP / 直接定義ダンジョンでは、配置オブジェクトを種類別に1件ずつ追加・複製・削除・編集できます。
 
-- `assets/` フォルダが実プロジェクト内に存在する場合、`PRISMA_ASSETS.graphics` の画像パスを使って描画します。
-- 画像が見つからない場合でも、`TILE_THEMES` の `color` を使って色付きタイルとして描画します。
-- ワールドマップでは `STORY_DATA.areas.*.fieldTile` を拠点アイコンとして表示します。
-- 固定マップ/固定ダンジョンでは、宝箱・ボス・階段・マップアクション・タイル効果・回復ポイントを重ね表示します。
+## 軽量化
 
-## 注意
+通常表示は画像ではなくカラータイルです。「画像」をONにした場合だけassetsを読み込みます。
 
-- 通常、エディタから出力するのは `map.js` と `story.js` のみです。
-- `maps_logic.js` と `story_logic.js` はロジック保護用なので、原則として手編集しない想定です。
-- ブラウザの制約により、HTML単体ではローカルの `assets/` フォルダを自動再帰スキャンできません。画像候補は `assets.js` の `PRISMA_ASSETS.graphics` を正本として参照します。
+また、ドラッグ塗りでは1マスごとに全データをUndo保存せず、1ストロークにつき1 snapshot としています。
+
+## 出力
+
+HTTPで開けば現在の `map.js` / `story.js` を自動取得します。`file://` などで取得できない場合は、上部のsource表示をクリックして現在ファイルを選択してください。
+
+source未読込のまま安全な出力はできません。
+
+詳細は `docs/map-story-editor-guide.md` を参照してください。
