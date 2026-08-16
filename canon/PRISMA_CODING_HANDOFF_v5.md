@@ -1050,8 +1050,8 @@ alanState.phase = 'dead'
 ### 水上都市事後～レクスノート邸地下B1～B5【2026-08-13 Phase3実装】
 
 - Phase1（水上都市暴動5戦／クロード・レオン初対面／聖女噂）とPhase2（禁忌の森／アリサ・ハイネ加入／古びた魔笛）の後続をruntime実装済み。
-- 水上都市の暴動後追加: 住民会話、錬金案内、復旧噴水、討伐依頼3件。噴水は `waterCityFountainLastDate` で1日1回、500G、アイテムまたはGEM。
-- 討伐依頼: `water_city_hunt_waterway`（Rank40相当+3武器）、`water_city_hunt_sanctum`（600410 魔泉の風）、`water_city_hunt_black_armor`（600100 鋼穿ち）。全てparty EXP付き。
+- 水上都市の暴動後追加: 住民会話、錬金案内、復旧噴水、水路番の固定依頼1件。依頼一覧UIはギルドだけで使用する。噴水は `waterCityFountainLastDate` で1日1回、500G、アイテムまたはGEM。
+- 現在配置する固定依頼: `water_city_hunt_waterway`（Rank40相当+3武器）。`water_city_hunt_sanctum` / `water_city_hunt_black_armor` はデータ定義のみ残し、ギルド外NPCから一覧提示しない。
 - 新固定ダンジョンmaster: `REXNOTE_BASEMENT / MAP000076`。B1～B4は既存fixed procedural基盤を再利用。通常敵は厳密にRank40～49、rare poolは `200201 メタルジェリー` のみ。
 - `Dungeon.startFixed()` の既存run管理を利用し、邸から入る時に新run、B1～B4の内部移動では同一runを維持。B1は `proceduralEntryReturnsOutside` で邸へ戻せる。
 - B5は25x17固定MAP「隠し書庫」。入口→301033→帰還陣を歩行可能。`rexnoteRegulusDefeated` 前は帰還陣を封鎖する。
@@ -1083,3 +1083,8 @@ alanState.phase = 'dead'
 - ストーリーイベントから固定装備を渡す共通命令 `EQUIP` を追加。`eid` / `plus` / `fixedOpts` / `fixedTraits` / `source` を指定できる。+3装備をくれるNPC等へ流用する。
 - Phase18 Batch2としてカザリアの綱直しの女（鋼のブーツ+3）とリヴァリアの老甲板員（はがねのたて+3）を段階NPCとして追加。既存台詞の改稿はしていない。
 - 現時点でゲーム性ロジック上の明示的な暫定箇所として、Lv101以降の必要経験値曲線と2026-08-15追加の3職の習得技配分が残る。前者はPhase21バランス、後者は職専用技追加と合わせて再調整する。
+
+
+### 2026-08-16 現行補正
+- 固定ダンジョンの試練の天使は、現在階Rankを基準に左右+10～+14Rank、中央+15～+19Rank。追加ステータス倍率あり。固定ボス階には配置しない。
+- 通常階の表示名は階数表記を基本とし、固有名は特殊階に限る。

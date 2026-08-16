@@ -25,9 +25,9 @@ check('undersea-cave-icon', underArea.fieldTile?.img === 'overlay_field_cave');
 const u = DUN.UNDERSEA_VOLCANO;
 check('undersea-five-floors', Array.isArray(u.floors) && u.floors.length === 5);
 const f1=u.floors[0], f2=u.floors[1], f3=u.floors[2], f4=u.floors[3], f5=u.floors[4];
-check('undersea-b1-label', f1.label === '地下1階・海底火道');
-check('undersea-b2-label', f2.label === '地下2階・圧熱回廊');
-check('undersea-b3-label', f3.label === '地下3階・火脈封鎖層');
+check('undersea-b1-label', f1.label === '地下1階');
+check('undersea-b2-label', f2.label === '地下2階');
+check('undersea-b3-label', f3.label === '地下3階');
 check('undersea-b4-label', f4.label === '地下4階・沈圧研究棟');
 check('undersea-b5-label', f5.label === '地下5階・深海調律炉');
 check('undersea-b3-cache-version', Number(f3.proceduralTemplateVersion) >= 3);
@@ -55,8 +55,8 @@ check('rees-bed-positions', beds.some(o=>o.x===7&&o.y===2)&&beds.some(o=>o.x===8
 const water=MAPS.WATER_CITY;
 const broker=water.mapActors?.find(a=>a.actorId==='water_city_post_riot_broker');
 const brokerAction=broker?.states?.[0]?.action;
-check('water-broker-direct-quest-list', brokerAction?.type==='questBoard');
-check('water-broker-three-quests', brokerAction?.questIds?.length===3);
+check('water-keeper-renamed', broker?.name==='水路番');
+check('water-keeper-fixed-quest', brokerAction?.type==='quest' && brokerAction?.questId==='water_city_hunt_waterway');
 check('water-old-board-action-removed', !(water.mapActions||[]).some(a=>a.type==='questBoard'));
 const fountain=(water.floorDecorations||[]).find(d=>d.authoredPlacementId==='water-city-restored-fountain');
 const fountainAction=(water.mapActions||[]).find(a=>a.type==='waterCityFountain');
@@ -79,19 +79,19 @@ check('undersea-boss-area-name-story', storySrc.includes('巨大な調律炉へ�
 const dungeonSrc=text('dungeon.js');
 check('undersea-can-enter-fixed-always', /case 'UNDERSEA_VOLCANO':[\s\S]{0,240}return ok\(\);/.test(dungeonSrc));
 check('procedural-next-link-contract-merged', dungeonSrc.includes('template.proceduralNextLink'));
-check('fixed-trial-uses-current-rank', dungeonSrc.includes("const targetFloor = fixedTrial ? fixedRank"));
-check('fixed-trial-no-extra-stat-multiplier', dungeonSrc.includes('statMultiplier:fixedTrial ? 1'));
+check('fixed-trial-side-rank-plus-10-14', dungeonSrc.includes('const fixedSideRankBonus = 10 + Math.floor(Math.random() * 5)'));
+check('fixed-trial-center-rank-plus-15-19', dungeonSrc.includes('const fixedCenterRankBonus = 15 + Math.floor(Math.random() * 5)'));
+check('fixed-trial-extra-stat-multiplier', dungeonSrc.includes('statMultiplier:Math.max(1, Number(master.statMultiplier || 1.35))'));
 check('fixed-boss-floor-blocks-trial-angel', dungeonSrc.includes('const fixedBossFloor = fixed && Array.isArray(Field.currentMapData?.bosses)'));
-check('trial-center-bonus-5-9', dungeonSrc.includes('centerRankBonus:5 + Math.floor(Math.random() * 5)'));
-
-const mainSrc=text('main.js');
-check('quest-board-custom-title', mainSrc.includes("action.boardTitle || '依頼掲示板'"));
-check('quest-board-custom-subtitle', mainSrc.includes("action.boardSubtitle || '討伐・素材交換依頼'"));
+check('fixed-trial-spawn-record-multiplier', dungeonSrc.includes('statMultiplier: fixed ? Math.max(1, Number(angelMaster.statMultiplier || 1.35))')); 
 
 check('generic-battle-area-name-removed-runtime', !mapSrc.includes('最奥・戦闘エリア') && !storySrc.includes('戦闘区画'));
 check('generic-research-area-name-removed-runtime', !mapSrc.includes('label: "研究区画"'));
-const pureLayerLabels = Object.entries(DUN).flatMap(([key, d]) => Array.isArray(d.floors) ? d.floors.map(f => [key, String(f.label || '')]) : []).filter(([,label]) => /^\d+層$/.test(label));
-check('generic-number-only-abyss-floor-names-removed', pureLayerLabels.length === 0, JSON.stringify(pureLayerLabels));
+const deepKeys=['BLACK_ROPE_PYRAMID','MAGIC_WIND_MAUSOLEUM','ICE_PENANCE_ROAD','SCORCHING_OLD_CASTLE','RIDPALM_DREAM_CORRIDOR','JAGOREA_ROOT','CHRONO_ABYSS'];
+for (const key of deepKeys) {
+  const floors=DUN[key]?.floors||[];
+  check(`simple-layer-labels-${key}`, floors.every((f,i)=>String(f.label||'')===`${i+1}層`), floors.map(f=>f.label).join(','));
+}
 
 console.log(`\nRESULT ${pass}/${pass+fail} PASS; ${fail} FAIL`);
 process.exitCode = fail ? 1 : 0;

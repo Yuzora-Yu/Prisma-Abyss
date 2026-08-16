@@ -139,7 +139,7 @@ const today = newsCtx.__NEWS.filter(row => row.date === '2026/08/16');
 ok('NEWS has one 2026/08/16 record', today.length === 1);
 ok('NEWS mentions reincarnation job-history return', today[0].body.includes('過去に経験した職業へ戻って転生'));
 ok('NEWS mentions east-world / undersea route update', today[0].body.includes('海底火山への航路'));
-ok('service-worker app-shell cache version bumped', swSource.includes('prisma-abyss-v68.20260816'));
+ok('service-worker app-shell cache version bumped', swSource.includes('prisma-abyss-v69.20260816'));
 
 console.log(`REINCARNATION_UNDERSEA_ROUTE_CHECK: ${checks.length}/${checks.length} PASS`);
 checks.forEach((name,i)=>console.log(`${String(i+1).padStart(2,'0')}. PASS ${name}`));

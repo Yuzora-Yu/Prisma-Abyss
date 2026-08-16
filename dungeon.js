@@ -3630,12 +3630,17 @@ const Dungeon = {
         const master = Dungeon.getPhase2IMaster().angelTrial || {};
         const fixedTrial = !!Field.currentMapData?.isFixed;
         // 固定ダンジョンでは「深淵の表示階+100」規則を使わない。
-        // その階の encounterRank を左右の基準Rankとし、中央だけ+5～+9Rankにする。
+        // その階の encounterRank を基準に、左右+10～14Rank、中央+15～19Rankとする。
         const fixedRank = Math.max(1, Number(effect.rank || Field.currentMapData?.encounterRank || Field.currentMapData?.rank || 1));
+        const fixedSideRankBonus = 10 + Math.floor(Math.random() * 5);
+        const fixedCenterRankBonus = 15 + Math.floor(Math.random() * 5);
         const displayFloor = fixedTrial
             ? fixedRank
             : Math.max(1, Number(Dungeon.floor || App.data?.progress?.floor || 1) + Number(master.targetFloorOffset || 15));
-        const targetFloor = fixedTrial ? fixedRank : Dungeon.getBalanceFloor(displayFloor);
+        // 固定ダンジョンの天使戦は、その階の基準Rankより明確に上の敵を選ぶ。
+        // 左右は+10～14Rank、中央は+15～19Rank。深淵ランダム側の+15階ルールとは分離する。
+        const targetFloor = fixedTrial ? fixedRank + fixedSideRankBonus : Dungeon.getBalanceFloor(displayFloor);
+        const centerTargetFloor = fixedTrial ? fixedRank + fixedCenterRankBonus : null;
         const elements = ['火', '水', '風', '雷', '光', '闇'];
         const resistElm = elements[Math.floor(Math.random() * elements.length)];
         const atkElm = elements[Math.floor(Math.random() * elements.length)];
@@ -3652,11 +3657,14 @@ const Dungeon = {
             angelTrial:{
                 id:effect.id || `trial-angel:${fixedTrial ? 'fixed' : Dungeon.getAbyssMode()}:F${Number(Dungeon.floor || 1)}`,
                 targetFloor,
+                centerTargetFloor,
                 displayFloor,
+                baseRank:fixedTrial ? fixedRank : null,
+                sideRankBonus:fixedTrial ? fixedSideRankBonus : null,
                 enemyCount:Math.max(1, Number(master.enemyCount || 3)),
-                statMultiplier:fixedTrial ? 1 : Math.max(1, Number(master.statMultiplier || 1.35)),
+                statMultiplier:Math.max(1, Number(master.statMultiplier || 1.35)),
                 rewardCount:Math.max(1, Number(master.rewardCount || 3)),
-                centerRankBonus:5 + Math.floor(Math.random() * 5),
+                centerRankBonus:fixedTrial ? fixedCenterRankBonus : (5 + Math.floor(Math.random() * 5)),
                 enemyBoost:{
                     nameSuffix:'・試練',
                     elmRes:{ [resistElm]:80 },
@@ -4083,6 +4091,7 @@ const Dungeon = {
         const rank = fixed
             ? Number(Field.currentMapData?.encounterRank || Field.currentMapData?.rank || 80)
             : Number(Dungeon.getBalanceFloor() || 80);
+        const angelMaster = Dungeon.getPhase2IMaster().angelTrial || {};
         const angel = {
             active: true,
             floor: Number(Dungeon.floor || App.data.progress?.floor || 1),
@@ -4092,8 +4101,8 @@ const Dungeon = {
             id: `trial-angel:${App.data.location.area}:F${Number(Dungeon.floor || 1)}:${Date.now()}`,
             rank,
             monsterIds: Dungeon.getTrialAngelMonsterIds(fixed),
-            statMultiplier: fixed ? 1 : (rank >= 100 ? 2.5 : 2.2),
-            rewardCount: rank >= 100 ? 2 : 1,
+            statMultiplier: fixed ? Math.max(1, Number(angelMaster.statMultiplier || 1.35)) : (rank >= 100 ? 2.5 : 2.2),
+            rewardCount: fixed ? Math.max(1, Number(angelMaster.rewardCount || 3)) : (rank >= 100 ? 2 : 1),
             image: Dungeon.trialAngelImagePath,
             label: '試練の天使と話す',
             log: '試練の天使が静かに待っている。'

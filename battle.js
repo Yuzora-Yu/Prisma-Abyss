@@ -3467,10 +3467,11 @@ const Battle = {
             const trial = battleData.angelTrial;
             const total = Math.max(1, Number(trial.enemyCount || 3));
             const targetFloor = Math.max(1, Number(trial.targetFloor || abyssBalanceFloor + 15));
-            const centerRankBonus = Math.max(5, Math.min(9, Math.floor(Number(trial.centerRankBonus) || (5 + Math.floor(Math.random() * 5)))));
+            const centerTargetFloor = Math.max(0, Number(trial.centerTargetFloor || 0));
+            const centerRankBonus = Math.max(5, Math.min(19, Math.floor(Number(trial.centerRankBonus) || (5 + Math.floor(Math.random() * 5)))));
             Battle.log('<span style="color:#fff3a6;font-weight:bold;">天使の試練を担う強敵が現れた！</span>');
             for (let i = 0; i < total; i++) {
-                const enemyFloor = i === 1 ? targetFloor + centerRankBonus : targetFloor;
+                const enemyFloor = i === 1 ? (centerTargetFloor || (targetFloor + centerRankBonus)) : targetFloor;
                 const enemy = Battle.createDeepNormalEnemy(enemyFloor, {
                     statMultiplier:Math.max(1, Number(trial.statMultiplier || 1.35)),
                     marker:'angelTrialStatMultiplier'

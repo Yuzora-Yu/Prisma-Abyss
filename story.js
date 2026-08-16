@@ -1773,17 +1773,26 @@ const STORY_MANAGER_DATA = {
                         "text": "錬金所も開け直したよ。素材があるなら寄っていきな。街が戻る時は、薬がいくらあっても困らない。"
                 }
         ],
-        "WATER_CITY_POST_RIOT_BROKER": [
+        "QUEST_WATER_CITY_WATERWAY_KEEPER_START": [
                 {
-                        "name": "依頼仲介人",
-                        "text": "兵が引いた分、今度は魔物が水路へ寄ってきた。命懸けの大仕事じゃなくても、放っておけば街の傷になる。"
+                        "name": "水路番",
+                        "text": "ちょうどよかった。修復船を出したいんだが、近海と神殿側にウィスプが残ってる。\n船頭が怖がって、櫂を持とうとしない。"
                 },
                 {
-                        "name": "依頼仲介人",
-                        "text": "必要な討伐は私が取り次いでる。手が空いた時に声をかけてくれ。急ぎと、そうでないのは分けてある。"
+                        "name": "水路番",
+                        "text": "十五体ほど減れば、まず一本は通せる。\n水路は俺たちで直す。魔物の方だけ、頼めないか。"
                 }
         ],
-
+        "QUEST_WATER_CITY_WATERWAY_KEEPER_REPORT": [
+                {
+                        "name": "水路番",
+                        "text": "戻ったか。さっき修復船を一本出した。\n久しぶりに、荷じゃなく工具を積んだ船だ。"
+                },
+                {
+                        "name": "水路番",
+                        "text": "助かった。これで水路は人の仕事に戻せる。\n魔物相手より、泥さらいの方が俺には向いてる。"
+                }
+        ],
         "WATER_CITY_AFTER_CLEAR": [
                 {
                         "name": "システム",
@@ -7071,8 +7080,12 @@ const STORY_MANAGER_DATA = {
                 "actions": [{ "type": "CONV", "value": "WATER_CITY_POST_RIOT_ALCHEMIST" }],
                 "winActions": []
         },
-        "town_water_post_riot_broker": {
-                "actions": [{ "type": "CONV", "value": "WATER_CITY_POST_RIOT_BROKER" }],
+        "quest_water_city_waterway_keeper_start": {
+                "actions": [{ "type": "CONV", "value": "QUEST_WATER_CITY_WATERWAY_KEEPER_START" }],
+                "winActions": []
+        },
+        "quest_water_city_waterway_keeper_report": {
+                "actions": [{ "type": "CONV", "value": "QUEST_WATER_CITY_WATERWAY_KEEPER_REPORT" }],
                 "winActions": []
         },
         "water_city_riot_wave_1": {

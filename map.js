@@ -6273,7 +6273,7 @@ const FIXED_MAPS = {
             {
                 "placementId": 99,
                 "actorId": "water_city_post_riot_broker",
-                "name": "依頼仲介人",
+                "name": "水路番",
                 "x": 25,
                 "y": 14,
                 "imageKey": "overlay_npc_villager",
@@ -6282,12 +6282,10 @@ const FIXED_MAPS = {
                     "priority": 0,
                     "when": { "requiredFlag": "waterCityRiotSuppressed" },
                     "action": {
-                        "label": "依頼仲介人に依頼を聞く",
-                        "type": "questBoard",
-                        "questIds": ["water_city_hunt_waterway", "water_city_hunt_sanctum", "water_city_hunt_black_armor"],
-                        "boardTitle": "依頼仲介人",
-                        "boardSubtitle": "水上都市で人手を求めている依頼",
-                        "log": "依頼仲介人が手元の帳面を開いた。"
+                        "label": "水路番と話す",
+                        "type": "quest",
+                        "questId": "water_city_hunt_waterway",
+                        "lockedText": "水路番は、まだ街の修復状況を見回している。"
                     }
                 }]
             }
@@ -9408,16 +9406,6 @@ const ABYSS_AUTHORED_DUNGEONS = Object.freeze((() => {
         JAGOREA_ROOT: { name: '災禍の根ジャゴレア', themeKey: 'DARK_SHRINE_RUINS', rank: 111, mapId: 'MAP000049', elementPenalty: { 光: -20, 闇: -20 } },
         CHRONO_ABYSS: { name: '次元牢獄クロノアビス', themeKey: 'DARK_CASTLE', rank: 116, mapId: 'MAP000050', elementPenalty: { 混沌: -20 } }
     };
-    const abyssFloorLabels = {
-        BLACK_ROPE_PYRAMID: ['黒砂玄門', '雷鎖回廊', '逆雷迷宮', '黒縄祭路', '落雷王廊', '黒縄天壇'],
-        MAGIC_WIND_MAUSOLEUM: ['亡風参道', '風葬回廊', '哭声迷廊', '鎮魂風路', '死風祭廊', '魔風霊座'],
-        ICE_PENANCE_ROAD: ['白罪門', '氷鏡回廊', '凍涙迷路', '刑氷参道', '浄罪氷廊', '極零刑座'],
-        SCORCHING_OLD_CASTLE: ['焦門', '灰燼回廊', '焼兵廊', '炎牢中庭', '焦王回廊', '灼熱玉座'],
-        RIDPALM_DREAM_CORRIDOR: ['夢入りの門', '映し身回廊', '迷夢の折路', '眠りの聖廊', '黒夢回廊', '夢幻王座'],
-        JAGOREA_ROOT: ['脈動根門', '血脈回廊', '腐蝕根路', '災禍心道', '妄執根核'],
-        CHRONO_ABYSS: ['時止門', '逆時回廊', '断刻迷路', '過去牢', '未来牢', '無刻回廊', '時獄最深部']
-    };
-    const floorLabel = (key, floor) => abyssFloorLabels[key]?.[Math.max(1, Number(floor || 1)) - 1] || `${floor}層`;
     const fixed = (key, grid, options) => makeAuthoredAbyssFloor({
         grid,
         rank: common[key].rank,
@@ -9426,7 +9414,7 @@ const ABYSS_AUTHORED_DUNGEONS = Object.freeze((() => {
         ...options
     });
     const procedural = (key, floor, options = {}) => makeAbyssProceduralFloor({
-        label: floorLabel(key, floor),
+        label: `${floor}層`,
         floor,
         rank: common[key].rank + (floor >= 4 ? 4 : 0),
         themeKey: common[key].themeKey,
@@ -9508,11 +9496,11 @@ const ABYSS_AUTHORED_DUNGEONS = Object.freeze((() => {
     ] });
 
     const sixFloor = (key, entryGrid, bossGrid, boss, options = {}) => makeAuthoredAbyssDungeon({ ...common[key], floors: [
-        fixed(key, entryGrid, { label: floorLabel(key, 1), floor: 1, entryMarker: 'S',
+        fixed(key, entryGrid, { label: '1層', floor: 1, entryMarker: 'S',
             floorLinks: [authoredAbyssLink(entryGrid, 'S', { to: 'EXIT', label: '外へ戻る' }), authoredAbyssLink(entryGrid, 'D', { toFloor: 2, label: '2層へ進む' })],
             chests: [authoredAbyssChest(3, 2, 14), authoredAbyssChest(27, 18, 7, true)] }),
         procedural(key, 2), procedural(key, 3, { forceMaze: options.forceMazeFloor3 === true }), procedural(key, 4), procedural(key, 5),
-        fixed(key, bossGrid, { label: floorLabel(key, 6), floor: 6, rank: common[key].rank + 4, entryMarker: 'U',
+        fixed(key, bossGrid, { label: '6層', floor: 6, rank: common[key].rank + 4, entryMarker: 'U',
             floorLinks: [
                 authoredAbyssLink(bossGrid, 'U', { toFloor: 5, label: '5層へ戻る' }),
                 ...(options.finalLink ? [authoredAbyssLink(bossGrid, options.finalLink.marker || 'D', options.finalLink.data)] : [])
@@ -9533,14 +9521,14 @@ const ABYSS_AUTHORED_DUNGEONS = Object.freeze((() => {
         { forceMazeFloor3: true, finalLink: { marker: 'D', data: { toDungeon: 'JAGOREA_ROOT', label: '災禍の根ジャゴレアへ進む', requiredFlag: 'abyssVeldDefeated', lockedLog: '黒騎士の力が道を塞いでいる。' } } });
 
     result.JAGOREA_ROOT = makeAuthoredAbyssDungeon({ ...common.JAGOREA_ROOT, floors: [
-        fixed('JAGOREA_ROOT', G.JAGOREA_ENTRY, { label: floorLabel('JAGOREA_ROOT', 1), floor: 1, entryMarker: 'S', floorLinks: [authoredAbyssLink(G.JAGOREA_ENTRY, 'S', { to: 'EXIT', label: 'リドパルムへ戻る' }), authoredAbyssLink(G.JAGOREA_ENTRY, 'D', { toFloor: 2, label: '2層へ進む' })], chests: [authoredAbyssChest(3, 2, 14), authoredAbyssChest(27, 18, 7, true)] }),
+        fixed('JAGOREA_ROOT', G.JAGOREA_ENTRY, { label: '1層', floor: 1, entryMarker: 'S', floorLinks: [authoredAbyssLink(G.JAGOREA_ENTRY, 'S', { to: 'EXIT', label: 'リドパルムへ戻る' }), authoredAbyssLink(G.JAGOREA_ENTRY, 'D', { toFloor: 2, label: '2層へ進む' })], chests: [authoredAbyssChest(3, 2, 14), authoredAbyssChest(27, 18, 7, true)] }),
         procedural('JAGOREA_ROOT', 2), procedural('JAGOREA_ROOT', 3), procedural('JAGOREA_ROOT', 4),
-        fixed('JAGOREA_ROOT', G.JAGOREA_BOSS, { label: floorLabel('JAGOREA_ROOT', 5), floor: 5, rank: 115, entryMarker: 'U', floorLinks: [authoredAbyssLink(G.JAGOREA_BOSS, 'U', { toFloor: 4, label: '4層へ戻る' })], bosses: [authoredAbyssBoss(G.JAGOREA_BOSS, 302060, 'abyssJasperDefeated', 'abyss_jasper_battle', 'abyss_jasper_clear', '妄執の神官ジャスパーに挑みますか？')], chests: [authoredAbyssChest(3, 2, 6), authoredAbyssChest(27, 18, 7, true)] })
+        fixed('JAGOREA_ROOT', G.JAGOREA_BOSS, { label: '5層', floor: 5, rank: 115, entryMarker: 'U', floorLinks: [authoredAbyssLink(G.JAGOREA_BOSS, 'U', { toFloor: 4, label: '4層へ戻る' })], bosses: [authoredAbyssBoss(G.JAGOREA_BOSS, 302060, 'abyssJasperDefeated', 'abyss_jasper_battle', 'abyss_jasper_clear', '妄執の神官ジャスパーに挑みますか？')], chests: [authoredAbyssChest(3, 2, 6), authoredAbyssChest(27, 18, 7, true)] })
     ] });
     result.CHRONO_ABYSS = makeAuthoredAbyssDungeon({ ...common.CHRONO_ABYSS, floors: [
-        fixed('CHRONO_ABYSS', G.CHRONO_ENTRY, { label: floorLabel('CHRONO_ABYSS', 1), floor: 1, entryMarker: 'S', floorLinks: [authoredAbyssLink(G.CHRONO_ENTRY, 'S', { to: 'EXIT', label: 'レガシオン地下神殿へ戻る' }), authoredAbyssLink(G.CHRONO_ENTRY, 'D', { toFloor: 2, label: '2層へ進む' })], chests: [authoredAbyssChest(3, 2, 14), authoredAbyssChest(27, 18, 7, true)] }),
+        fixed('CHRONO_ABYSS', G.CHRONO_ENTRY, { label: '1層', floor: 1, entryMarker: 'S', floorLinks: [authoredAbyssLink(G.CHRONO_ENTRY, 'S', { to: 'EXIT', label: 'レガシオン地下神殿へ戻る' }), authoredAbyssLink(G.CHRONO_ENTRY, 'D', { toFloor: 2, label: '2層へ進む' })], chests: [authoredAbyssChest(3, 2, 14), authoredAbyssChest(27, 18, 7, true)] }),
         procedural('CHRONO_ABYSS', 2), procedural('CHRONO_ABYSS', 3), procedural('CHRONO_ABYSS', 4), procedural('CHRONO_ABYSS', 5), procedural('CHRONO_ABYSS', 6),
-        fixed('CHRONO_ABYSS', G.CHRONO_BOSS, { label: floorLabel('CHRONO_ABYSS', 7), floor: 7, rank: 120, entryMarker: 'U', floorLinks: [authoredAbyssLink(G.CHRONO_BOSS, 'U', { toFloor: 6, label: '6層へ戻る' }), authoredAbyssLink(G.CHRONO_BOSS, 'D', { toDungeon: 'FINAL_ALTAR', label: '終焉の祭壇へ進む', requiredFlags: ['abyssIlluminaciaDefeated','abyssAllSpiritTrialsCleared','abyssCycleCrystalCreated'], lockedLog: '亀裂の縁で六色の光が散り、道はまだ形を保てない。' })], bosses: [authoredAbyssBoss(G.CHRONO_BOSS, 302070, 'abyssIlluminaciaDefeated', 'abyss_illuminacia_battle', 'abyss_illuminacia_clear', '混沌姫イルミナシアに挑みますか？')], chests: [authoredAbyssChest(3, 2, 6), authoredAbyssChest(27, 18, 7, true)] })
+        fixed('CHRONO_ABYSS', G.CHRONO_BOSS, { label: '7層', floor: 7, rank: 120, entryMarker: 'U', floorLinks: [authoredAbyssLink(G.CHRONO_BOSS, 'U', { toFloor: 6, label: '6層へ戻る' }), authoredAbyssLink(G.CHRONO_BOSS, 'D', { toDungeon: 'FINAL_ALTAR', label: '終焉の祭壇へ進む', requiredFlags: ['abyssIlluminaciaDefeated','abyssAllSpiritTrialsCleared','abyssCycleCrystalCreated'], lockedLog: '亀裂の縁で六色の光が散り、道はまだ形を保てない。' })], bosses: [authoredAbyssBoss(G.CHRONO_BOSS, 302070, 'abyssIlluminaciaDefeated', 'abyss_illuminacia_battle', 'abyss_illuminacia_clear', '混沌姫イルミナシアに挑みますか？')], chests: [authoredAbyssChest(3, 2, 6), authoredAbyssChest(27, 18, 7, true)] })
     ] });
     result.FINAL_ALTAR = { name: '終焉の祭壇', ...makeAuthoredAbyssFloor({
         grid: G.FINAL_ALTAR, label: '終焉の祭壇', floor: 1, rank: 120, themeKey: 'FINAL_ALTAR', mapId: 'MAP000057', entryMarker: 'S', disableRandomEncounters: true,
@@ -11484,7 +11472,7 @@ const FIXED_DUNGEON_MAPS = {
                 ]
             },
             {
-                label: "地下2階・蒼潮水門",
+                label: "地下2階・水門",
                 encounterRank: 37,
                 width: 23,
                 height: 23,
@@ -11579,7 +11567,7 @@ const FIXED_DUNGEON_MAPS = {
                 ]
             },
             {
-                label: "地下3階・潮祷殿",
+                label: "地下3階・祈祷の間",
                 encounterRank: 39,
                 width: 23,
                 height: 23,
@@ -12319,7 +12307,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "BIG_TOWER"
             },
             {
-                label: "4階・封光結界炉",
+                label: "4階・結界炉",
                 encounterRank: 34,
                 width: 23,
                 height: 24,
@@ -12473,7 +12461,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "BIG_TOWER"
             },
             {
-                label: "6階・風錆びの守衛詰所",
+                label: "6階・古い守衛室",
                 encounterRank: 36,
                 width: 23,
                 height: 24,
@@ -12629,7 +12617,7 @@ const FIXED_DUNGEON_MAPS = {
         entryEventConditions: { requiredFlag: "underseaVolcanoRouteOpened", missingFlag: "underseaVolcanoEntered" },
         floors: [
             {
-                label: "地下1階・海底火道",
+                label: "地下1階",
                 encounterRank: 52,
                 procedural: true,
                 proceduralTemplateVersion: 2,
@@ -12640,7 +12628,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "FIRE_VILLAGE"
             },
             {
-                label: "地下2階・圧熱回廊",
+                label: "地下2階",
                 encounterRank: 53,
                 procedural: true,
                 proceduralTemplateVersion: 2,
@@ -12648,7 +12636,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "FIRE_VILLAGE"
             },
             {
-                label: "地下3階・火脈封鎖層",
+                label: "地下3階",
                 encounterRank: 54,
                 procedural: true,
                 proceduralTemplateVersion: 3,
@@ -12685,8 +12673,8 @@ const FIXED_DUNGEON_MAPS = {
                     { x:9, y:7, type:"log", label:"研究記録を調べる", log:"火の力を長期間肉体へ馴染ませるための観測記録が残されている。海水圧と周囲の水属性を安全弁として利用していたようだ。", imageKey:"overlay_dungeon_event" }
                 ],
                 floorLinks: [
-                    { x:9, y:13, toFloor:3, label:"地下3階・火脈封鎖層へ戻る" },
-                    { x:9, y:1, toFloor:5, targetX:9, targetY:13, label:"地下5階・深海調律炉へ下りる" }
+                    { x:9, y:13, toFloor:3, label:"地下3階へ戻る" },
+                    { x:9, y:1, toFloor:5, targetX:9, targetY:13, label:"地下5階へ下りる" }
                 ],
                 entryPoint:{x:9,y:13}, themeKey:"THUNDER_FORT"
             },
@@ -12722,7 +12710,7 @@ const FIXED_DUNGEON_MAPS = {
                     }
                 ],
                 floorLinks: [
-                    { x:9, y:13, toFloor:4, targetX:9, targetY:1, label:"地下4階・沈圧研究棟へ戻る" }
+                    { x:9, y:13, toFloor:4, targetX:9, targetY:1, label:"地下4階へ戻る" }
                 ],
                 entryPoint:{x:9,y:13}, themeKey:"FIRE_VILLAGE"
             }
@@ -13563,7 +13551,7 @@ const FIXED_DUNGEON_MAPS = {
                 ]
             },
             {
-                label: "2階・雷圧機関室",
+                label: "2階・暴走機関室",
                 encounterRank: 44,
                 width: 33,
                 height: 28,
@@ -13740,7 +13728,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "THUNDER_FORT"
             },
             {
-                label: "4階・雷脈中枢",
+                label: "4階・雷の中枢",
                 encounterRank: 48,
                 width: 33,
                 height: 28,
@@ -14076,7 +14064,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "THUNDER_FORT"
             },
             {
-                label: "6階・雷脈制御核",
+                label: "6階・制御核区",
                 encounterRank: 81,
                 enemyBoost: {
                     statMultiplier: 1.1,
@@ -14526,7 +14514,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "LIGHT_PALACE"
             },
             {
-                label: "3階・白環聖廊",
+                label: "3階・結界の聖廊",
                 encounterRank: 66,
                 width: 35,
                 height: 30,
@@ -14615,7 +14603,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "LIGHT_PALACE"
             },
             {
-                label: "4階・天光祭壇",
+                label: "4階・光の祭壇",
                 encounterRank: 68,
                 width: 35,
                 height: 30,
@@ -16486,7 +16474,7 @@ const FIXED_DUNGEON_MAPS = {
         },
         floors: [
             {
-                label: "本館1階・黒曜大広間",
+                label: "本館1階・中央広間",
                 encounterRank: 66,
                 width: 33,
                 height: 30,
@@ -16757,7 +16745,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "DARK_CASTLE"
             },
             {
-                label: "西館3階・影鎖の封室",
+                label: "西館3階・結界の間",
                 encounterRank: 71,
                 width: 33,
                 height: 30,
@@ -16955,7 +16943,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "DARK_CASTLE"
             },
             {
-                label: "東館3階・風哭の封室",
+                label: "東館3階・結界の間",
                 encounterRank: 71,
                 width: 33,
                 height: 30,
@@ -18029,7 +18017,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "CRENA_CAVE"
             },
             {
-                label: "地下4階・封晶核座",
+                label: "地下4階・結界核",
                 encounterRank: 101,
                 enemyBoost: {
                     statMultiplier: 1.1,

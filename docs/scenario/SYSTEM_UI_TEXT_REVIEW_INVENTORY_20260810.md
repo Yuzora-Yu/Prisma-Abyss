@@ -1859,16 +1859,16 @@ Status: **inventory / no automatic replacement**
 |---:|---|---|---|---|---|---|
 |1800|map_locked|`map.js`|海底火山地下3階 / 深部隔壁|重い隔壁には古い錠が残っている。こちら側から壊せる造りではない。|（ユーザー指定ゲート）|new_copy_approved_20260816|
 |1801|map_action|`map.js`|海底火山地下3階 / 解禁後|破壊された隔壁の先へ|（バロンたちの先行後）|new_copy_approved_20260816|
-|1802|map_label|`map.js`|海底火山地下1階|地下1階・海底火道|（地下へ潜る構造の明示）|approved_applied_20260816|
-|1803|map_label|`map.js`|海底火山地下2階|地下2階・圧熱回廊|（同上）|approved_applied_20260816|
-|1804|map_label|`map.js`|海底火山地下3階|地下3階・火脈封鎖層|（深部ゲート位置の明示）|approved_applied_20260816|
+|1802|map_label|`map.js`|海底火山地下1階|地下1階・海底火道|（地下へ潜る構造の明示）|superseded_20260816|
+|1803|map_label|`map.js`|海底火山地下2階|地下2階・圧熱回廊|（同上）|superseded_20260816|
+|1804|map_label|`map.js`|海底火山地下3階|地下3階・火脈封鎖層|（深部ゲート位置の明示）|superseded_20260816|
 |1805|map_label|`map.js`|海底火山地下4階|地下4階・沈圧研究棟|旧「研究区画」を固有地名化|approved_applied_20260816|
 |1806|map_label|`map.js`|海底火山地下5階|地下5階・深海調律炉|旧「最奥・戦闘エリア」を固有地名化|approved_applied_20260816|
 |1807|story_text|`story.js`|海底火山地下5階初回|沈圧研究棟を抜けると、巨大な調律炉へ出た。海水の冷気を押し返すように、炉心の炎が一定の間隔で脈打っている。|旧「戦闘区画」表現を廃止|approved_applied_20260816|
-|1808|npc_action|`map.js`|水上都市 / 依頼仲介人|依頼仲介人に依頼を聞く|掲示板ではなく本人が仲介|approved_applied_20260816|
-|1809|ui_title|`main.js`|水上都市 / 依頼一覧|依頼仲介人|questBoard共通UIの個別タイトル|approved_applied_20260816|
-|1810|ui_subtitle|`main.js`|水上都市 / 依頼一覧|水上都市で人手を求めている依頼|同上|approved_applied_20260816|
-|1811|npc_text|`story.js`|水上都市 / 依頼仲介人|必要な討伐は私が取り次いでる。手が空いた時に声をかけてくれ。急ぎと、そうでないのは分けてある。|存在しない掲示板への言及を撤去|approved_applied_20260816|
+|1808|npc_action|`map.js`|水上都市 / 依頼仲介人|依頼仲介人に依頼を聞く|掲示板ではなく本人が仲介|superseded_20260816|
+|1809|ui_title|`main.js`|水上都市 / 依頼一覧|依頼仲介人|questBoard共通UIの個別タイトル|superseded_20260816|
+|1810|ui_subtitle|`main.js`|水上都市 / 依頼一覧|水上都市で人手を求めている依頼|同上|superseded_20260816|
+|1811|npc_text|`story.js`|水上都市 / 依頼仲介人|必要な討伐は私が取り次いでる。手が空いた時に声をかけてくれ。急ぎと、そうでないのは分けてある。|存在しない掲示板への言及を撤去|superseded_20260816|
 |1812|npc_text|`story.js`|リース / 旅立ち後休憩|疲れてるなら、寝台を使っていきな。旅に出たって、休みに戻ってくるくらいは構わないさ。|無料休憩導線|approved_applied_20260816|
 |1813|system_text|`story.js`|リース / 無料休憩|リースの山小屋で休み、仲間たちのHPとMPが全回復した。|無料休憩結果|approved_applied_20260816|
 
@@ -1876,23 +1876,35 @@ Status: **inventory / no automatic replacement**
 
 |ID|種別|参照|用途/条件|現行/新規文言|レビュー案|状態|
 |---:|---|---|---|---|---|---|
-|1814|map_label|`map.js`|海底神殿地下2階|地下2階・蒼潮水門|旧「水門」を地域固有化|approved_applied_20260816|
-|1815|map_label|`map.js`|海底神殿地下3階|地下3階・潮祷殿|旧「祈祷の間」を地域固有化|approved_applied_20260816|
-|1816|map_label|`map.js`|大灯台4階|4階・封光結界炉|旧「結界炉」を固有化|approved_applied_20260816|
-|1817|map_label|`map.js`|大灯台6階|6階・風錆びの守衛詰所|旧「古い守衛室」を固有化|approved_applied_20260816|
-|1818|map_label|`map.js`|ライザーク要塞2階|2階・雷圧機関室|旧「暴走機関室」を固有化|approved_applied_20260816|
-|1819|map_label|`map.js`|ライザーク要塞4階|4階・雷脈中枢|旧「雷の中枢」を固有化|approved_applied_20260816|
-|1820|map_label|`map.js`|ライザーク要塞6階|6階・雷脈制御核|旧「制御核区」を固有化|approved_applied_20260816|
-|1821|map_label|`map.js`|光の宮殿3階|3階・白環聖廊|旧「結界の聖廊」を固有化|approved_applied_20260816|
-|1822|map_label|`map.js`|光の宮殿4階|4階・天光祭壇|旧「光の祭壇」を固有化|approved_applied_20260816|
-|1823|map_label|`map.js`|魔王城本館1階|本館1階・黒曜大広間|旧「中央広間」を固有化|approved_applied_20260816|
-|1824|map_label|`map.js`|魔王城西館3階|西館3階・影鎖の封室|旧「結界の間」を固有化|approved_applied_20260816|
-|1825|map_label|`map.js`|魔王城東館3階|東館3階・風哭の封室|旧「結界の間」を固有化|approved_applied_20260816|
-|1826|map_label|`map.js`|クレナ鍾乳洞地下4階|地下4階・封晶核座|旧「結界核」を固有化|approved_applied_20260816|
-|1827|map_label_set|`map.js`|黒縄のピラミッド階層名|黒砂玄門 / 雷鎖回廊 / 逆雷迷宮 / 黒縄祭路 / 落雷王廊 / 黒縄天壇|旧「1層～6層」を固有化|approved_applied_20260816|
-|1828|map_label_set|`map.js`|魔風の霊廟階層名|亡風参道 / 風葬回廊 / 哭声迷廊 / 鎮魂風路 / 死風祭廊 / 魔風霊座|旧「1層～6層」を固有化|approved_applied_20260816|
-|1829|map_label_set|`map.js`|氷刻の浄罪路階層名|白罪門 / 氷鏡回廊 / 凍涙迷路 / 刑氷参道 / 浄罪氷廊 / 極零刑座|旧「1層～6層」を固有化|approved_applied_20260816|
-|1830|map_label_set|`map.js`|灼熱の古城階層名|焦門 / 灰燼回廊 / 焼兵廊 / 炎牢中庭 / 焦王回廊 / 灼熱玉座|旧「1層～6層」を固有化|approved_applied_20260816|
-|1831|map_label_set|`map.js`|夢幻回廊リドパルム階層名|夢入りの門 / 映し身回廊 / 迷夢の折路 / 眠りの聖廊 / 黒夢回廊 / 夢幻王座|旧「1層～6層」を固有化|approved_applied_20260816|
-|1832|map_label_set|`map.js`|災禍の根ジャゴレア階層名|脈動根門 / 血脈回廊 / 腐蝕根路 / 災禍心道 / 妄執根核|旧「1層～5層」を固有化|approved_applied_20260816|
-|1833|map_label_set|`map.js`|次元牢獄クロノアビス階層名|時止門 / 逆時回廊 / 断刻迷路 / 過去牢 / 未来牢 / 無刻回廊 / 時獄最深部|旧「1層～7層」を固有化|approved_applied_20260816|
+|1814|map_label|`map.js`|海底神殿地下2階|地下2階・蒼潮水門|旧「水門」を地域固有化|superseded_20260816|
+|1815|map_label|`map.js`|海底神殿地下3階|地下3階・潮祷殿|旧「祈祷の間」を地域固有化|superseded_20260816|
+|1816|map_label|`map.js`|大灯台4階|4階・封光結界炉|旧「結界炉」を固有化|superseded_20260816|
+|1817|map_label|`map.js`|大灯台6階|6階・風錆びの守衛詰所|旧「古い守衛室」を固有化|superseded_20260816|
+|1818|map_label|`map.js`|ライザーク要塞2階|2階・雷圧機関室|旧「暴走機関室」を固有化|superseded_20260816|
+|1819|map_label|`map.js`|ライザーク要塞4階|4階・雷脈中枢|旧「雷の中枢」を固有化|superseded_20260816|
+|1820|map_label|`map.js`|ライザーク要塞6階|6階・雷脈制御核|旧「制御核区」を固有化|superseded_20260816|
+|1821|map_label|`map.js`|光の宮殿3階|3階・白環聖廊|旧「結界の聖廊」を固有化|superseded_20260816|
+|1822|map_label|`map.js`|光の宮殿4階|4階・天光祭壇|旧「光の祭壇」を固有化|superseded_20260816|
+|1823|map_label|`map.js`|魔王城本館1階|本館1階・黒曜大広間|旧「中央広間」を固有化|superseded_20260816|
+|1824|map_label|`map.js`|魔王城西館3階|西館3階・影鎖の封室|旧「結界の間」を固有化|superseded_20260816|
+|1825|map_label|`map.js`|魔王城東館3階|東館3階・風哭の封室|旧「結界の間」を固有化|superseded_20260816|
+|1826|map_label|`map.js`|クレナ鍾乳洞地下4階|地下4階・封晶核座|旧「結界核」を固有化|superseded_20260816|
+|1827|map_label_set|`map.js`|黒縄のピラミッド階層名|黒砂玄門 / 雷鎖回廊 / 逆雷迷宮 / 黒縄祭路 / 落雷王廊 / 黒縄天壇|旧「1層～6層」を固有化|superseded_20260816|
+|1828|map_label_set|`map.js`|魔風の霊廟階層名|亡風参道 / 風葬回廊 / 哭声迷廊 / 鎮魂風路 / 死風祭廊 / 魔風霊座|旧「1層～6層」を固有化|superseded_20260816|
+|1829|map_label_set|`map.js`|氷刻の浄罪路階層名|白罪門 / 氷鏡回廊 / 凍涙迷路 / 刑氷参道 / 浄罪氷廊 / 極零刑座|旧「1層～6層」を固有化|superseded_20260816|
+|1830|map_label_set|`map.js`|灼熱の古城階層名|焦門 / 灰燼回廊 / 焼兵廊 / 炎牢中庭 / 焦王回廊 / 灼熱玉座|旧「1層～6層」を固有化|superseded_20260816|
+|1831|map_label_set|`map.js`|夢幻回廊リドパルム階層名|夢入りの門 / 映し身回廊 / 迷夢の折路 / 眠りの聖廊 / 黒夢回廊 / 夢幻王座|旧「1層～6層」を固有化|superseded_20260816|
+|1832|map_label_set|`map.js`|災禍の根ジャゴレア階層名|脈動根門 / 血脈回廊 / 腐蝕根路 / 災禍心道 / 妄執根核|旧「1層～5層」を固有化|superseded_20260816|
+|1833|map_label_set|`map.js`|次元牢獄クロノアビス階層名|時止門 / 逆時回廊 / 断刻迷路 / 過去牢 / 未来牢 / 無刻回廊 / 時獄最深部|旧「1層～7層」を固有化|superseded_20260816|
+
+### 2026-08-16 固定天使・水上都市固定依頼・階層表示 再補正
+
+|ID|種別|参照|用途/条件|現行/新規文言|レビュー案|状態|
+|---:|---|---|---|---|---|---|
+|1834|system_rule|`dungeon.js`|固定ダンジョン / 試練の天使|左右=基準Rank+10～14、中央=基準Rank+15～19、追加ステータス倍率あり|ユーザー訂正仕様|approved_applied_20260816|
+|1835|npc_action|`map.js`|水上都市 / 水路番|水路番と話す|依頼一覧ではなく固定クエスト1件|approved_applied_20260816|
+|1836|quest_name|`quests.js`|水上都市 / 水路番固定依頼|澄んだ水路の残火|ギルド外NPCの単発固定クエスト|approved_applied_20260816|
+|1837|quest_text|`story.js`|水路番 / 依頼開始|十五体ほど減れば、まず一本は通せる。水路は俺たちで直す。魔物の方だけ、頼めないか。|固定依頼開始会話|approved_applied_20260816|
+|1838|map_label_set|`map.js`|海底火山通常階|地下1階 / 地下2階 / 地下3階|通常階は階数表示へ戻す|approved_applied_20260816|
+|1839|map_label_set|`map.js`|深淵世界後半の通常階|1層 / 2層 / …|通常階は階数表示を基本とする|approved_applied_20260816|
+|1840|map_label_policy|`map.js`|固定ダンジョン全般|固有名は研究棟・祭壇・最奥など特殊階に限定|通常階の過剰な固有名化を撤回|approved_applied_20260816|

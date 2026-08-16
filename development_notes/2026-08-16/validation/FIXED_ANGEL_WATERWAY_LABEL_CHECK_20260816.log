@@ -1,0 +1,56 @@
+PASS undersea-world-entry-always-visible
+PASS undersea-world-entry-no-required-flag
+PASS undersea-world-position
+PASS undersea-cave-icon
+PASS undersea-five-floors
+PASS undersea-b1-label
+PASS undersea-b2-label
+PASS undersea-b3-label
+PASS undersea-b4-label
+PASS undersea-b5-label
+PASS undersea-b3-cache-version
+PASS undersea-b3-gate-flag
+PASS undersea-b3-gate-locked-text
+PASS undersea-b3-open-label
+PASS undersea-story-entry-gated-not-map-entry
+PASS undersea-b5-boss-tile :: tile=B
+PASS undersea-b5-grad-present
+PASS undersea-floor-4-row-widths :: width=19
+PASS undersea-floor-5-row-widths :: width=19
+PASS rees-world-entry-unlocked
+PASS rees-hut-exit-unlocked
+PASS rees-two-beds
+PASS rees-bed-positions
+PASS water-keeper-renamed
+PASS water-keeper-fixed-quest
+PASS water-old-board-action-removed
+PASS water-fountain-position-decoration
+PASS water-fountain-position-action
+PASS water-fountain-base-tile-walkable :: tile=T
+PASS water-fountain-sparkle
+PASS sophia-crystal_tree_main_route-moved-off-fountain
+PASS sophia-water_city_post_clear-moved-off-fountain
+PASS sophia-water_city_rexnote_route-moved-off-fountain
+PASS sophia-sophia_alan_seabed_depths-moved-off-fountain
+PASS rees-initial-talk-heals
+PASS rees-repeat-talk-heals
+PASS undersea-research-name-story
+PASS undersea-boss-area-name-story
+PASS undersea-can-enter-fixed-always
+PASS procedural-next-link-contract-merged
+PASS fixed-trial-side-rank-plus-10-14
+PASS fixed-trial-center-rank-plus-15-19
+PASS fixed-trial-extra-stat-multiplier
+PASS fixed-boss-floor-blocks-trial-angel
+PASS fixed-trial-spawn-record-multiplier
+PASS generic-battle-area-name-removed-runtime
+PASS generic-research-area-name-removed-runtime
+PASS simple-layer-labels-BLACK_ROPE_PYRAMID :: 1層,2層,3層,4層,5層,6層
+PASS simple-layer-labels-MAGIC_WIND_MAUSOLEUM :: 1層,2層,3層,4層,5層,6層
+PASS simple-layer-labels-ICE_PENANCE_ROAD :: 1層,2層,3層,4層,5層,6層
+PASS simple-layer-labels-SCORCHING_OLD_CASTLE :: 1層,2層,3層,4層,5層,6層
+PASS simple-layer-labels-RIDPALM_DREAM_CORRIDOR :: 1層,2層,3層,4層,5層,6層
+PASS simple-layer-labels-JAGOREA_ROOT :: 1層,2層,3層,4層,5層
+PASS simple-layer-labels-CHRONO_ABYSS :: 1層,2層,3層,4層,5層,6層,7層
+
+RESULT 54/54 PASS; 0 FAIL

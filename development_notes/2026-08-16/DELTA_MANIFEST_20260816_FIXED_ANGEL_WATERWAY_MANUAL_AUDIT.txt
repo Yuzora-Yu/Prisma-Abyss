@@ -1,0 +1,23 @@
+# PRISMA ABYSS delta manifest — 2026-08-16 fixed angel / waterway quest / manual audit v2
+# changed/new files only: 20
+
+battle.js
+canon/PRISMA_CODING_HANDOFF_v5.md
+canon/PRISMA_DEVELOPMENT_ROADMAP_v2.md
+development_notes/2026-08-16/reports/FIXED_ANGEL_WATERWAY_LABEL_CORRECTION_AND_MANUAL_AUDIT_20260816.md
+development_notes/2026-08-16/review/MAP_DUNGEON_LOGIC_MANUAL_AUDIT_5PASS_V2_20260816.md
+development_notes/2026-08-16/validation/FIXED_ANGEL_WATERWAY_LABEL_CHECK_20260816.log
+development_notes/2026-08-16/validation/FIXED_ANGEL_WATERWAY_LABEL_REGRESSION_20260816.log
+development_notes/2026-08-16/validation/REINCARNATION_UNDERSEA_ROUTE_CHECK_20260816.js
+development_notes/2026-08-16/validation/TOP_LEVEL_JS_NODE_CHECK_20260816_MANUAL_AUDIT_CORRECTION.log
+development_notes/2026-08-16/validation/UNDERSEA_VOLCANO_TOWN_QOL_CHECK_20260816.js
+docs/scenario/60_UNDERSEA_VOLCANO_DEEP_GATE_TOWN_QOL_20260816.md
+docs/scenario/61_FIXED_ANGEL_WATERWAY_QUEST_LABEL_CORRECTION_20260816.md
+docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+dungeon.js
+map.js
+news.js
+quests.js
+story.js
+sw.js
+development_notes/2026-08-16/DELTA_MANIFEST_20260816_FIXED_ANGEL_WATERWAY_MANUAL_AUDIT.txt
