@@ -133,7 +133,8 @@ ok(indexHtml.includes('<script src="job_traits.js"></script>'),'index.html loads
 ok(indexHtml.indexOf('<script src="job_traits.js"></script>') < indexHtml.indexOf('<script src="battle.js"></script>'),'job_traits.js is loaded before battle.js');
 const swJs=fs.readFileSync(path.join(root,'sw.js'),'utf8');
 ok(swJs.includes('job_traits.js'),'sw.js precaches job_traits.js');
-ok(swJs.includes('prisma-abyss-v65.20260816'),'sw.js cache version is bumped for job traits');
+const swCacheMatch=swJs.match(/prisma-abyss-v(\d+)\.20260816/);
+ok(Number(swCacheMatch?.[1] || 0) >= 65,'sw.js cache version remains at or above the job-traits cache generation');
 ok(battleJs.includes('jobTraitRuntime: {}'),'new battle initializes a fresh jobTraitRuntime');
 ok(battleJs.includes('d.battleStatus = p.battleStatus'),'battle save persists player job-trait status with battleStatus');
 ok(battleJs.includes('battleStatus: clone(enemy.battleStatus'),'enemy snapshots persist job-trait status');

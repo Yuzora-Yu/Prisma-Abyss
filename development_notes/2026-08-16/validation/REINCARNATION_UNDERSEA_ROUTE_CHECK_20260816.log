@@ -1,44 +1,51 @@
-REINCARNATION_UNDERSEA_ROUTE_CHECK: 43/43 PASS
+REINCARNATION_UNDERSEA_ROUTE_CHECK: 50/50 PASS
 01. PASS world has rows
 02. PASS world width expanded from 110 to 130
-03. PASS undersea volcano coordinate is sea tile
+03. PASS undersea volcano coordinate is a one-tile grass island
 04. PASS light palace coordinate canonical
 05. PASS big lighthouse coordinate canonical
 06. PASS undersea volcano coordinate exact
-07. PASS undersea volcano is point-symmetric opposite lighthouse around palace
-08. PASS undersea volcano world marker waits for route flag
-09. PASS undersea volcano hidden before route-open flag
-10. PASS undersea volcano resolves on world map after route-open flag
-11. PASS undersea volcano fixed dungeon uses world-entry event
-12. PASS undersea volcano first floor exits to sea
-13. PASS old lighthouse direct action removed
-14. PASS world route remains fixed dungeon route
-15. PASS story data exported
-16. PASS objective tells exact undersea volcano direction
-17. PASS new world entry event exists
-18. PASS thunder hint event exists
-19. PASS water-city hint event exists
-20. PASS world entry dialogue exists
-21. PASS thunder hint dialogue exists
-22. PASS water hint dialogue exists
-23. PASS thunder fort has route hint actor state
-24. PASS water city has route hint actor state
-25. PASS setup transfer to priest succeeds
-26. PASS fruit options include current priest
-27. PASS fruit options include past warrior
-28. PASS fruit options exclude unexperienced mage
-29. PASS fruit returns to previous job without book
-30. PASS fruit reincarnates at same time
-31. PASS fruit preserves prior learned skills
-32. PASS return records history source
-33. PASS return sets transfer override to chosen historical job
-34. PASS fruit cannot jump to unexperienced job
-35. PASS fruit UI intercepts item 107 before generic growth handling
-36. PASS fruit item description mentions past jobs
-37. PASS all current all-MP skills are magic
-38. PASS holy-fist trait only applies extra HP cost to physical skills
-39. PASS full-MP skills have dedicated cost handling
-40. PASS NEWS has one 2026/08/16 record
-41. PASS NEWS mentions reincarnation job-history return
-42. PASS NEWS mentions east-world / undersea route update
-43. PASS service-worker app-shell cache version bumped
+07. PASS undersea volcano world marker uses cave icon over the grass base tile
+08. PASS undersea volcano remains at the planned northeast coordinate
+09. PASS undersea volcano world marker waits for route flag
+10. PASS undersea volcano hidden before route-open flag
+11. PASS undersea volcano resolves on world map after route-open flag
+12. PASS undersea volcano fixed dungeon uses world-entry event
+13. PASS undersea volcano uses basement stair semantics
+14. PASS undersea volcano first floor exits to world entrance
+15. PASS undersea volcano procedural floors no longer force maze generation
+16. PASS undersea volcano does not retain a fixed base entry coordinate
+17. PASS Sky Prism places undersea volcano immediately below big lighthouse
+18. PASS fixed dungeon entry prefers resolved floor entry point
+19. PASS procedural generation restores world location after temporary spawn generation
+20. PASS old lighthouse direct action removed
+21. PASS world route remains fixed dungeon route
+22. PASS story data exported
+23. PASS objective uses Kazaria as the practical landmark
+24. PASS new world entry event exists
+25. PASS thunder hint event exists
+26. PASS water-city hint event exists
+27. PASS world entry dialogue exists
+28. PASS thunder hint dialogue exists
+29. PASS water hint dialogue exists
+30. PASS thunder fort has route hint actor state
+31. PASS water city has route hint actor state
+32. PASS setup transfer to priest succeeds
+33. PASS fruit options include current priest
+34. PASS fruit options include past warrior
+35. PASS fruit options exclude unexperienced mage
+36. PASS fruit returns to previous job without book
+37. PASS fruit reincarnates at same time
+38. PASS fruit preserves prior learned skills
+39. PASS return records history source
+40. PASS return sets transfer override to chosen historical job
+41. PASS fruit cannot jump to unexperienced job
+42. PASS fruit UI intercepts item 107 before generic growth handling
+43. PASS fruit item description mentions past jobs
+44. PASS all current all-MP skills are magic
+45. PASS holy-fist trait only applies extra HP cost to physical skills
+46. PASS full-MP skills have dedicated cost handling
+47. PASS NEWS has one 2026/08/16 record
+48. PASS NEWS mentions reincarnation job-history return
+49. PASS NEWS mentions east-world / undersea route update
+50. PASS service-worker app-shell cache version bumped

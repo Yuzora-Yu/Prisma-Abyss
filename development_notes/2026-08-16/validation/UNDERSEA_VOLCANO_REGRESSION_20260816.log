@@ -1,0 +1,427 @@
+===== development_notes/2026-08-13/targeted_map_section_volcano_check_20260813.js =====
+{
+  "mapGrouping": "ok",
+  "reesExterior": "ok",
+  "underseaVolcano": "ok",
+  "proceduralTerrain": "ok",
+  "generatedFloorIntegration": "ok"
+}
+PASS development_notes/2026-08-13/targeted_map_section_volcano_check_20260813.js
+===== development_notes/2026-08-15/validation/REXNOTE_BASEMENT_ROUTE_TARGETED_CHECK_20260815.js =====
+{
+  "floorDirection": "ok",
+  "hiddenArchiveExit": "ok",
+  "fixedMapReturnResolution": "ok",
+  "regulusBossChain": "ok",
+  "news": "ok"
+}
+PASS development_notes/2026-08-15/validation/REXNOTE_BASEMENT_ROUTE_TARGETED_CHECK_20260815.js
+===== development_notes/2026-08-15/validation/PHASE17_OPTIONAL_ALLY_SPIRIT_JOB_CHECK_20260815.js =====
+PASS Legacion proposal, optional ally branches, six spirit conversations, and pre-battle confirmations
+PASS IF_ALLY reusable condition semantics
+PASS Six spirit map gates use abyssSpiritPilgrimageStarted
+PASS Renamed jobs, three provisional jobs, skill IDs, and character job labels
+PASS Save compatibility hooks for job rename and pilgrimage progression
+PASS Canon and roadmap corrected to five-wedge Vegnasis / no final Jasper
+ALL TARGETED CHECKS PASSED
+PASS development_notes/2026-08-15/validation/PHASE17_OPTIONAL_ALLY_SPIRIT_JOB_CHECK_20260815.js
+===== development_notes/2026-08-15/validation/ALAN_PHASE17_MAINLINE_CHECK_20260815.js =====
+PASS: Alan awakening exact system text exists
+PASS: Immediate Jasper rejoin order = ALLY -> awakening -> SET_JOB -> EXP
+PASS: Deferred Legacion rejoin order = ALLY -> awakening -> SET_JOB -> EXP
+PASS: Generic SET_JOB story action exists
+PASS: Persistent story job override exists
+PASS: Startup job repair respects story override
+PASS: Old-save Alan awakening migration exists and is invoked
+PASS: Old-save migration does not reference awakening conversation
+PASS: Light Magic Knight job table exists
+PASS: Light Magic Knight provisional skill table has skills
+PASS: Every Light Magic Knight skill ID exists
+PASS: Roadmap fixes Alan awakening before +1m EXP
+PASS: Canon no longer marks Alan Light Magic Knight timing undecided
+PASS: Fixed dungeon links support requiredFlags
+PASS: Final altar route requires Illuminacia, all six spirit trials, and the Cycle Crystal
+PASS: Final altar event itself guards all spirit trials and the Cycle Crystal
+PASS: Vegnasis remains five wedges
+PASS: Veld remains the dark fifth wedge
+PASS: Jasper is not a Vegnasis wedge
+PASS: 2026/08/15 NEWS_DATA remains one record
+TOTAL=20 FAIL=0
+PASS development_notes/2026-08-15/validation/ALAN_PHASE17_MAINLINE_CHECK_20260815.js
+===== development_notes/2026-08-15/validation/CYCLE_CRYSTAL_PHASE17_CHECK_20260815.js =====
+PASS Six-spirit completion no longer grants completed item immediately
+PASS Legacy grant event is retained only as return-to-Crystal-Tree compatibility route
+PASS Crystal Tree ritual script exists with Minerva-led circulation and Lycion witness
+PASS Crystal Tree ritual event commits Cycle Crystal creation exactly through dedicated action
+PASS Story runtime has dedicated Cycle Crystal create action and keeps legacy action as non-grant compatibility path
+PASS Create API requires six blessings and prior Crystal Tree clear
+PASS Create API transforms pendant, grants Item 701008, and commits created flag
+PASS Legacy API alias is retained for code compatibility
+PASS One-time Cycle Crystal migration exists
+PASS Migration preserves old Item 701008 owners without ritual replay
+PASS Migration backfills only already-past-final-gate legacy saves when Item 701008 is missing
+PASS Crystal Tree Minerva actor exposes ritual state before repeat state
+PASS Final Altar map gate requires Illuminacia + six spirits + Cycle Crystal
+PASS Final Altar event itself guards Illuminacia + six spirits + Cycle Crystal
+PASS Vegnasis remains five wedges
+PASS Vegnasis clear now shows Cycle Crystal counter-scene before Azelgarag
+PASS Item 701008 player-facing identity is Cycle Crystal
+PASS Abyss content exposes canonical Cycle Crystal names plus legacy aliases
+PASS Battle logs are Cycle Crystal-facing while octaprism battle state remains compatible
+PASS Item runtime message uses Cycle Crystal terminology
+PASS Abyss objective routes completed trials back to Crystal Tree
+PASS Active runtime has no player-facing old Octaprism Japanese name
+PASS Canon §47 is definitive and uses established pendant/Lycion terminology
+PASS Roadmap Phase17 gate includes Cycle Crystal generation
+PASS news.js keeps exactly one 2026/08/15 record
+PASS 2026/08/15 news mentions Cycle Crystal mainline event
+
+RESULT 26/26 PASS
+PASS development_notes/2026-08-15/validation/CYCLE_CRYSTAL_PHASE17_CHECK_20260815.js
+===== development_notes/2026-08-15/validation/PHASE18_NPC_STAGE_BATCH1_CHECK_20260815.js =====
+PASS START_VILLAGE nextActorPlacementId
+PASS FIRE_VILLAGE nextActorPlacementId
+PASS lumina_baker_01 exists with stable profile/placement IDs
+PASS lumina_baker_01 coordinate remains on intended walkable base tile — 4,9
+PASS lumina_baker_01 does not share its placement cell with another actor
+PASS lumina_baker_01 does not cover an existing mapAction cell
+PASS lumina_goat_boy_01 exists with stable profile/placement IDs
+PASS lumina_goat_boy_01 coordinate remains on intended walkable base tile — 12,7
+PASS lumina_goat_boy_01 does not share its placement cell with another actor
+PASS lumina_goat_boy_01 does not cover an existing mapAction cell
+PASS ignisia_communal_kitchen_01 exists with stable profile/placement IDs
+PASS ignisia_communal_kitchen_01 coordinate remains on intended walkable base tile — 17,16
+PASS ignisia_communal_kitchen_01 does not share its placement cell with another actor
+PASS ignisia_communal_kitchen_01 does not cover an existing mapAction cell
+PASS ignisia_bath_elder_01 exists with stable profile/placement IDs
+PASS ignisia_bath_elder_01 coordinate remains on intended walkable base tile — 9,10
+PASS ignisia_bath_elder_01 does not share its placement cell with another actor
+PASS ignisia_bath_elder_01 does not cover an existing mapAction cell
+PASS lumina baker before cave resolves correct state — before_cave / before_cave
+PASS lumina baker after cave resolves correct state — after_cave / after_cave
+PASS lumina baker later revisit resolves correct state — later_revisit / later_revisit
+PASS lumina goat boy before cave resolves correct state — before_cave / before_cave
+PASS lumina goat boy after cave resolves correct state — after_cave / after_cave
+PASS ignisia kitchen crisis resolves correct state — fire_unstable / fire_unstable
+PASS ignisia kitchen restored resolves correct state — fire_restored / fire_restored
+PASS ignisia kitchen late resolves correct state — later_revisit / later_revisit
+PASS ignisia bath crisis resolves correct state — during_crisis / during_crisis
+PASS ignisia bath after resolves correct state — after_clear / after_clear
+PASS all Phase18 Batch1 conversation scripts exist
+PASS goat-boy revisit reuses common optional-party branch logic
+PASS Sara branch remains optional rather than blocking dialogue
+PASS map actor state runtime supports step/sub min/max gates
+PASS Phase18 Batch1 implementation source exists and preserves legacy dialogue boundary
+PASS NEWS_DATA still has exactly one 2026/08/15 record — 1
+PASS NEWS_DATA mentions first staged-town-dialogue batch
+RESULT 35/35 PASS
+PASS development_notes/2026-08-15/validation/PHASE18_NPC_STAGE_BATCH1_CHECK_20260815.js
+===== development_notes/2026-08-15/validation/SYSTEM_FIX_JOB_CHANGE_BOOK_CHECK_20260815.js =====
+SYSTEM_FIX_JOB_CHANGE_BOOK_CHECK: 62/62 PASS
+01. PASS Rexnote B1 has explicit estate exit point
+02. PASS procedural cached exit gets template exit point
+03. PASS new procedural exit link embeds exit point
+04. PASS dead ally 50 percent result text removed
+05. PASS reserve ally 25 percent result text removed
+06. PASS reward rate logic remains
+07. PASS reincarnation fruit random chest opt-out
+08. PASS dungeon chest filter honors randomChestDrop
+09. PASS catalog chest filter honors randomChestDrop
+10. PASS angel trial label HP
+11. PASS angel trial label MP
+12. PASS angel trial label 攻撃力
+13. PASS angel trial label 防御力
+14. PASS angel trial label 魔力
+15. PASS angel trial label 魔法防御
+16. PASS angel trial label 素早さ
+17. PASS angel trial stores 5-9 center rank bonus
+18. PASS rift stores 5-9 center rank bonus
+19. PASS angel second enemy gets center bonus
+20. PASS rift second enemy gets center bonus
+21. PASS slime island zone exists
+22. PASS slime island is exact 3-tile rect
+23. PASS slime island normal rank range 1-140
+24. PASS slime island race limited to slime
+25. PASS slime island metal rares exact
+26. PASS slime island has normal slime candidates
+27. PASS all normal island candidates are slime
+28. PASS all normal island candidates are rank <=140
+29. PASS Prism King excluded from island rares
+30. PASS world encounter profile carries race filters
+31. PASS battle encounter generation consumes race filters
+32. PASS 23 stable job definitions
+33. PASS job IDs unique
+34. PASS job names unique
+35. PASS 23 transfer books
+36. PASS transfer book IDs unique
+37. PASS all item IDs remain globally unique
+38. PASS transfer books link by jobId
+39. PASS database refreshes job book metadata after masters load
+40. PASS transfer books have no acquisition route yet
+41. PASS transfer books are consumable field items
+42. PASS job trait layer remains unimplemented
+43. PASS future trait check can use current job only
+44. PASS career baseline current job is warrior
+45. PASS career baseline records history
+46. PASS transfer book rejects below Lv100
+47. PASS transfer book rejects same job
+48. PASS transfer book changes job
+49. PASS transfer book reincarnates at same time
+50. PASS old job skill persists after transfer
+51. PASS new job Lv1 skill learned
+52. PASS new job high-level skill not auto-learned
+53. PASS job history appends transfer
+54. PASS new job progress starts at Lv1
+55. PASS effective level formula still gives multiple of 100 before transfer rule
+56. PASS player transfer overrides story/master job on reload correction
+57. PASS Player reconstruction keeps previous-job skill
+58. PASS Player reconstruction keeps new-job Lv1 skill
+59. PASS Player reconstruction does not grant new-job Lv100 skill
+60. PASS transfer books are growth-tab items
+61. PASS transfer confirmation warns reincarnation
+62. PASS transfer failure message explains Lv100
+PASS development_notes/2026-08-15/validation/SYSTEM_FIX_JOB_CHANGE_BOOK_CHECK_20260815.js
+===== development_notes/2026-08-16/validation/JOB_TRAIT_SYSTEM_CHECK_20260816.js =====
+PASS 23職すべてに職業特性定義がある
+PASS jobId 1 戦士 に特性定義がある
+PASS 戦士: 現在jobIdを正しく参照
+PASS jobId 2 僧侶 に特性定義がある
+PASS 僧侶: 現在jobIdを正しく参照
+PASS jobId 3 魔法使い に特性定義がある
+PASS 魔法使い: 現在jobIdを正しく参照
+PASS jobId 4 武闘家 に特性定義がある
+PASS 武闘家: 現在jobIdを正しく参照
+PASS jobId 5 斥候 に特性定義がある
+PASS 斥候: 現在jobIdを正しく参照
+PASS jobId 6 踊り子 に特性定義がある
+PASS 踊り子: 現在jobIdを正しく参照
+PASS jobId 7 魔法剣士 に特性定義がある
+PASS 魔法剣士: 現在jobIdを正しく参照
+PASS jobId 8 賢者 に特性定義がある
+PASS 賢者: 現在jobIdを正しく参照
+PASS jobId 9 侍 に特性定義がある
+PASS 侍: 現在jobIdを正しく参照
+PASS jobId 10 剣闘士 に特性定義がある
+PASS 剣闘士: 現在jobIdを正しく参照
+PASS jobId 11 エンターテイナー に特性定義がある
+PASS エンターテイナー: 現在jobIdを正しく参照
+PASS jobId 12 星詠師 に特性定義がある
+PASS 星詠師: 現在jobIdを正しく参照
+PASS jobId 13 聖拳士 に特性定義がある
+PASS 聖拳士: 現在jobIdを正しく参照
+PASS jobId 14 聖騎士 に特性定義がある
+PASS 聖騎士: 現在jobIdを正しく参照
+PASS jobId 15 狩人 に特性定義がある
+PASS 狩人: 現在jobIdを正しく参照
+PASS jobId 16 魔弓使い に特性定義がある
+PASS 魔弓使い: 現在jobIdを正しく参照
+PASS jobId 17 光魔剣士 に特性定義がある
+PASS 光魔剣士: 現在jobIdを正しく参照
+PASS jobId 18 忍者 に特性定義がある
+PASS 忍者: 現在jobIdを正しく参照
+PASS jobId 19 竜騎士 に特性定義がある
+PASS 竜騎士: 現在jobIdを正しく参照
+PASS jobId 20 聖女 に特性定義がある
+PASS 聖女: 現在jobIdを正しく参照
+PASS jobId 21 魔王 に特性定義がある
+PASS 魔王: 現在jobIdを正しく参照
+PASS jobId 22 神 に特性定義がある
+PASS 神: 現在jobIdを正しく参照
+PASS jobId 23 勇者 に特性定義がある
+PASS 勇者: 現在jobIdを正しく参照
+PASS 職歴ではなく現在職だけが特性判定に使われる
+PASS 実質Lv=表示Lv+転生回数×100を使用
+PASS 戦士Lv100: 防御次ターンは+200%=3倍 (3 ~= 3)
+PASS 戦士: 最大+300%=4倍 (4 ~= 4)
+PASS 僧侶Lv100: 回復MP30%減 (0.7 ~= 0.7)
+PASS 僧侶: 強化効果+1ターン
+PASS 僧侶: 強化技の代償デバフは延長しない
+PASS 魔法使い: MP0で与ダメ+50% (1.5 ~= 1.5)
+PASS 魔法使い: MP満タンでは低MP補正なし (1 ~= 1)
+PASS 魔法使いLv100: 討伐で最大MP10%回復
+PASS 武闘家: 8連続ヒットで会心率+16%
+PASS 武闘家: 8連続ヒットで会心ダメ+32% (1.32 ~= 1.32)
+PASS 武闘家: ミスで連続ヒット解除
+PASS 斥候: 敵攻撃回避時に通常反撃
+PASS 斥候: 反撃後に4ターン状態異常を付与
+PASS 踊り子: 最大20%抽選成功時に習得可能な全体強化/弱体を追加発動
+PASS 魔法剣士: 物理→魔法で+5%蓄積 (1.05 ~= 1.05)
+PASS 賢者Lv100: 全スキルMP30%減 (0.7 ~= 0.7)
+PASS 賢者: MP満タンで与ダメ+50% (1.5 ~= 1.5)
+PASS 侍: 頭体足すべて未装備で与ダメ+75% (1.75 ~= 1.75)
+PASS 侍: 回避+45%
+PASS 侍: 会心+30%
+PASS 剣闘士: 50被ダメージで+100%上限 (2 ~= 2)
+PASS エンターテイナー: 3生存ターンで味方与ダメ+15% (1.15 ~= 1.15)
+PASS 星詠師: 偶数ターン終了時にHP/MP/バフのいずれかが必ず発動
+PASS 聖拳士: HPが消費MPより多ければ使用可能
+PASS 聖拳士: 物理特技で消費MPと同量HP消費
+PASS 聖拳士: HP100消費で与ダメ+50% (1.5 ~= 1.5)
+PASS 聖騎士: 味方被ダメ30%減上限 (0.7 ~= 0.7)
+PASS 狩人: 防御次ターンは物理攻撃が強制会心
+PASS 狩人: 魔法攻撃は必殺の強制会心対象外
+PASS 狩人Lv100: 会心ダメ+75% (1.75 ~= 1.75)
+PASS 魔弓使い: 攻撃力の半分を魔力へ加算
+PASS 光魔剣士: 同対象へ交互に命中で被ダメ+5% (1.05 ~= 1.05)
+PASS 忍者Lv100: 道具効果+150%=2.5倍 (2.5 ~= 2.5)
+PASS 忍者: 他仲間生存時は敵の単体指定対象外
+PASS 忍者: 最後の生存者なら単体指定対象になる
+PASS 竜騎士: HP100%で全体与ダメ+50% (1.5 ~= 1.5)
+PASS 竜騎士: HP100%で単体補正0% (1 ~= 1)
+PASS 竜騎士: HP10%で単体補正が大幅上昇
+PASS 聖女: 防御時に既存バフと別枠の慈愛強化を付与
+PASS 聖女: 各能力/全属性耐性を独立50%判定
+PASS 魔王: 発動率抽選成功で敵行動を停止
+PASS 魔王: 行動不能対象の被ダメ+20% (1.2 ~= 1.2)
+PASS 魔王: 発動ラウンド末を越えて1ターン分維持できる内部値
+PASS 神: 味方死亡時にHPMP全回復蘇生
+PASS 神: 光以外の耐性は上書きしない
+PASS 神: 攻撃時の光耐性を-100%として計算
+PASS 勇者: 自分以外の味方ステータス+30%上限
+PASS 勇者: 仲間死亡1回で自身ステータス+10%
+PASS battle.js integration: JobTraits.adjustFinalDamage
+PASS battle.js integration: JobTraits.onEvadedAttack
+PASS battle.js integration: JobTraits.tryDemonKingSuppress
+PASS battle.js integration: JobTraits.onEndOfRound
+PASS battle.js integration: JobTraits.getCritBonus
+PASS battle.js integration: JobTraits.forceCritical
+PASS battle.js integration: JobTraits.onActionStart
+PASS battle.js integration: JobTraits.onActionComplete
+PASS battle.js integration: JobTraits.filterEnemySingleTargetCandidates
+PASS index.html loads job_traits.js
+PASS job_traits.js is loaded before battle.js
+PASS sw.js precaches job_traits.js
+PASS sw.js cache version remains at or above the job-traits cache generation
+PASS new battle initializes a fresh jobTraitRuntime
+PASS battle save persists player job-trait status with battleStatus
+PASS enemy snapshots persist job-trait status
+PASS item_runtime.js applies Ninja item multiplier
+PASS 忍者: 戦闘中のHP回復道具100が2.5倍の250回復になる
+RESULT 115/115 PASS
+PASS development_notes/2026-08-16/validation/JOB_TRAIT_SYSTEM_CHECK_20260816.js
+===== development_notes/2026-08-16/validation/REINCARNATION_UNDERSEA_ROUTE_CHECK_20260816.js =====
+REINCARNATION_UNDERSEA_ROUTE_CHECK: 50/50 PASS
+01. PASS world has rows
+02. PASS world width expanded from 110 to 130
+03. PASS undersea volcano coordinate is a one-tile grass island
+04. PASS light palace coordinate canonical
+05. PASS big lighthouse coordinate canonical
+06. PASS undersea volcano coordinate exact
+07. PASS undersea volcano world marker uses cave icon over the grass base tile
+08. PASS undersea volcano remains at the planned northeast coordinate
+09. PASS undersea volcano world marker waits for route flag
+10. PASS undersea volcano hidden before route-open flag
+11. PASS undersea volcano resolves on world map after route-open flag
+12. PASS undersea volcano fixed dungeon uses world-entry event
+13. PASS undersea volcano uses basement stair semantics
+14. PASS undersea volcano first floor exits to world entrance
+15. PASS undersea volcano procedural floors no longer force maze generation
+16. PASS undersea volcano does not retain a fixed base entry coordinate
+17. PASS Sky Prism places undersea volcano immediately below big lighthouse
+18. PASS fixed dungeon entry prefers resolved floor entry point
+19. PASS procedural generation restores world location after temporary spawn generation
+20. PASS old lighthouse direct action removed
+21. PASS world route remains fixed dungeon route
+22. PASS story data exported
+23. PASS objective uses Kazaria as the practical landmark
+24. PASS new world entry event exists
+25. PASS thunder hint event exists
+26. PASS water-city hint event exists
+27. PASS world entry dialogue exists
+28. PASS thunder hint dialogue exists
+29. PASS water hint dialogue exists
+30. PASS thunder fort has route hint actor state
+31. PASS water city has route hint actor state
+32. PASS setup transfer to priest succeeds
+33. PASS fruit options include current priest
+34. PASS fruit options include past warrior
+35. PASS fruit options exclude unexperienced mage
+36. PASS fruit returns to previous job without book
+37. PASS fruit reincarnates at same time
+38. PASS fruit preserves prior learned skills
+39. PASS return records history source
+40. PASS return sets transfer override to chosen historical job
+41. PASS fruit cannot jump to unexperienced job
+42. PASS fruit UI intercepts item 107 before generic growth handling
+43. PASS fruit item description mentions past jobs
+44. PASS all current all-MP skills are magic
+45. PASS holy-fist trait only applies extra HP cost to physical skills
+46. PASS full-MP skills have dedicated cost handling
+47. PASS NEWS has one 2026/08/16 record
+48. PASS NEWS mentions reincarnation job-history return
+49. PASS NEWS mentions east-world / undersea route update
+50. PASS service-worker app-shell cache version bumped
+PASS development_notes/2026-08-16/validation/REINCARNATION_UNDERSEA_ROUTE_CHECK_20260816.js
+===== development_notes/2026-08-16/validation/UNDERSEA_VOLCANO_STABILITY_CHECK_20260816.js =====
+UNDERSEA_VOLCANO_STABILITY_CHECK: 69/69 PASS
+01. PASS world entrance is grass
+02. PASS world entrance remains one-tile island
+03. PASS run 1: fixed dungeon starts
+04. PASS run 1: spawn is generated entry stair
+05. PASS run 1: return point preserves volcano world coordinate
+06. PASS run 1: first floor has explicit stable world exit
+07. PASS run 1: deeper link is down staircase
+08. PASS run 1: escape returns to volcano entrance
+09. PASS run 1: escape does not trigger unstable fallback
+10. PASS run 2: fixed dungeon starts
+11. PASS run 2: spawn is generated entry stair
+12. PASS run 2: return point preserves volcano world coordinate
+13. PASS run 2: first floor has explicit stable world exit
+14. PASS run 2: deeper link is down staircase
+15. PASS run 2: escape returns to volcano entrance
+16. PASS run 2: escape does not trigger unstable fallback
+17. PASS run 3: fixed dungeon starts
+18. PASS run 3: spawn is generated entry stair
+19. PASS run 3: return point preserves volcano world coordinate
+20. PASS run 3: first floor has explicit stable world exit
+21. PASS run 3: deeper link is down staircase
+22. PASS run 3: escape returns to volcano entrance
+23. PASS run 3: escape does not trigger unstable fallback
+24. PASS run 4: fixed dungeon starts
+25. PASS run 4: spawn is generated entry stair
+26. PASS run 4: return point preserves volcano world coordinate
+27. PASS run 4: first floor has explicit stable world exit
+28. PASS run 4: deeper link is down staircase
+29. PASS run 4: escape returns to volcano entrance
+30. PASS run 4: escape does not trigger unstable fallback
+31. PASS run 5: fixed dungeon starts
+32. PASS run 5: spawn is generated entry stair
+33. PASS run 5: return point preserves volcano world coordinate
+34. PASS run 5: first floor has explicit stable world exit
+35. PASS run 5: deeper link is down staircase
+36. PASS run 5: escape returns to volcano entrance
+37. PASS run 5: escape does not trigger unstable fallback
+38. PASS run 6: fixed dungeon starts
+39. PASS run 6: spawn is generated entry stair
+40. PASS run 6: return point preserves volcano world coordinate
+41. PASS run 6: first floor has explicit stable world exit
+42. PASS run 6: deeper link is down staircase
+43. PASS run 6: escape returns to volcano entrance
+44. PASS run 6: escape does not trigger unstable fallback
+45. PASS run 7: fixed dungeon starts
+46. PASS run 7: spawn is generated entry stair
+47. PASS run 7: return point preserves volcano world coordinate
+48. PASS run 7: first floor has explicit stable world exit
+49. PASS run 7: deeper link is down staircase
+50. PASS run 7: escape returns to volcano entrance
+51. PASS run 7: escape does not trigger unstable fallback
+52. PASS run 8: fixed dungeon starts
+53. PASS run 8: spawn is generated entry stair
+54. PASS run 8: return point preserves volcano world coordinate
+55. PASS run 8: first floor has explicit stable world exit
+56. PASS run 8: deeper link is down staircase
+57. PASS run 8: escape returns to volcano entrance
+58. PASS run 8: escape does not trigger unstable fallback
+59. PASS first-floor exit link is an up-stair exit
+60. PASS using first-floor up staircase returns to volcano island
+61. PASS random fixed-floor type chooser never returns maze type
+62. PASS all procedural volcano floors opt into template version 2
+63. PASS all procedural volcano floors leave forceMaze disabled
+64. PASS volcano dungeon uses basement direction mode
+65. PASS old maze-profile cache regenerates with template version 2
+66. PASS old cache migration snaps player to regenerated entry stair
+67. PASS research floor back link is up staircase
+68. PASS research floor deeper link is down staircase
+69. PASS boss floor return link is up staircase
+PASS development_notes/2026-08-16/validation/UNDERSEA_VOLCANO_STABILITY_CHECK_20260816.js
+REGRESSION 10/10 PASS

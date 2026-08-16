@@ -1704,7 +1704,7 @@ const Dungeon = {
         return { impassableTiles: [...impassableTiles], applied };
     },
 
-    isValidFixedProceduralFloor: (floorDef) => {
+    isValidFixedProceduralFloor: (floorDef, template = null) => {
         if (!floorDef || !Array.isArray(floorDef.tiles) || floorDef.tiles.length < 3) return false;
         const width = Number(floorDef.width || floorDef.tiles[0]?.length || 0);
         const height = Number(floorDef.height || floorDef.tiles.length);
@@ -1713,6 +1713,7 @@ const Dungeon = {
         if (!rectangular) return false;
         if (!floorDef.generatedFromAbyssLogic || !Array.isArray(floorDef.chests)) return true;
         if (Number(floorDef.proceduralGenerationVersion || 0) !== Number(Dungeon.fixedProceduralGenerationVersion)) return false;
+        if (template && Number(floorDef.proceduralTemplateVersion || 0) !== Number(template.proceduralTemplateVersion || 0)) return false;
 
         // Cached procedural floors are accepted only when all generated anchors are still reachable
         // under the authored impassable-terrain contract. This also makes future terrain additions
@@ -1749,7 +1750,8 @@ const Dungeon = {
         const runId = Math.max(1, Number(progress.fixedProceduralRunIds[areaKey]));
         const cacheKey = `${areaKey}:R${runId}:F${Number(floorNo)}`;
         const cached = progress.fixedProceduralFloors[cacheKey];
-        if (Dungeon.isValidFixedProceduralFloor(cached)) {
+        const hadInvalidCachedFloor = !!cached && !Dungeon.isValidFixedProceduralFloor(cached, template);
+        if (cached && !hadInvalidCachedFloor) {
             const restored = JSON.parse(JSON.stringify(cached));
             if (template.proceduralEntryReturnsOutside === true && template.proceduralExitPoint) {
                 const exitLink = Array.isArray(restored.floorLinks) ? restored.floorLinks.find(link => link?.to === 'EXIT') : null;
@@ -1767,6 +1769,7 @@ const Dungeon = {
             lastGenVariant: Dungeon.lastGenVariant
         };
         const previousFieldState = { x: Field.x, y: Field.y, currentMapData: Field.currentMapData };
+        const previousLocationState = { x: App.data?.location?.x, y: App.data?.location?.y };
         let generated = [];
         let generatedAnchor = null;
         try {
@@ -1798,6 +1801,10 @@ const Dungeon = {
             Field.x = previousFieldState.x;
             Field.y = previousFieldState.y;
             Field.currentMapData = previousFieldState.currentMapData;
+            if (App.data?.location) {
+                App.data.location.x = previousLocationState.x;
+                App.data.location.y = previousLocationState.y;
+            }
         }
 
         if (!generated.length || !generated[0]?.length) {
@@ -1891,6 +1898,7 @@ const Dungeon = {
             procedural: false,
             generatedFromAbyssLogic: true,
             proceduralGenerationVersion: Dungeon.fixedProceduralGenerationVersion,
+            proceduralTemplateVersion: Number(template.proceduralTemplateVersion || 0),
             proceduralRunId: runId,
             proceduralTerrainApplied: terrain.applied,
             impassableTiles: terrain.impassableTiles,
@@ -1910,7 +1918,9 @@ const Dungeon = {
             ]
         };
         progress.fixedProceduralFloors[cacheKey] = result;
-        return JSON.parse(JSON.stringify(result));
+        const returned = JSON.parse(JSON.stringify(result));
+        if (hadInvalidCachedFloor) returned.proceduralEntryRepairRequired = true;
+        return returned;
     },
 
     startFixed: (mapKey, options = {}) => {
@@ -1975,7 +1985,7 @@ const Dungeon = {
         const selectedEntry = entryFromKey
             || ((options.entryKey && areaDef.entryPoints && areaDef.entryPoints[options.entryKey])
                 ? areaDef.entryPoints[options.entryKey]
-                : ((Number(baseDef?.entryFloor || 1) === startFloor && baseDef?.entryPoint) ? baseDef.entryPoint : areaDef.entryPoint));
+                : (areaDef.entryPoint || ((Number(baseDef?.entryFloor || 1) === startFloor && baseDef?.entryPoint) ? baseDef.entryPoint : null)));
         Field.x = selectedEntry ? selectedEntry.x : 1;
         Field.y = selectedEntry ? selectedEntry.y : 1;
         App.data.location.x = Field.x;
@@ -2041,6 +2051,19 @@ const Dungeon = {
         if (typeof FIXED_DUNGEON_MAPS !== 'undefined' && FIXED_DUNGEON_MAPS[areaKey]) {
             Dungeon.floor = App.data.progress.floor || 1;
             Field.currentMapData = Dungeon.getFixedFloorDef(areaKey, Dungeon.floor);
+            const restoredX = Number(App.data?.location?.x);
+            const restoredY = Number(App.data?.location?.y);
+            const restoredTile = String(Field.currentMapData?.tiles?.[restoredY]?.[restoredX] || 'W').toUpperCase();
+            const blockedTiles = new Set(['W', ...(Array.isArray(Field.currentMapData?.impassableTiles) ? Field.currentMapData.impassableTiles : [])]
+                .map(tile => String(tile || '').toUpperCase()));
+            if (Field.currentMapData?.generatedFromAbyssLogic && (Field.currentMapData.proceduralEntryRepairRequired === true || blockedTiles.has(restoredTile))) {
+                const safeEntry = Field.currentMapData.entryPoint || { x: 1, y: 1 };
+                Field.x = Number(safeEntry.x);
+                Field.y = Number(safeEntry.y);
+                App.data.location.x = Field.x;
+                App.data.location.y = Field.y;
+                App.save();
+            }
             if (typeof Dungeon.resetFixedHunterStateForCurrentMap === 'function') Dungeon.resetFixedHunterStateForCurrentMap();
             App.changeScene('field');
             return;

@@ -1,0 +1,70 @@
+UNDERSEA_VOLCANO_STABILITY_CHECK: 69/69 PASS
+01. PASS world entrance is grass
+02. PASS world entrance remains one-tile island
+03. PASS run 1: fixed dungeon starts
+04. PASS run 1: spawn is generated entry stair
+05. PASS run 1: return point preserves volcano world coordinate
+06. PASS run 1: first floor has explicit stable world exit
+07. PASS run 1: deeper link is down staircase
+08. PASS run 1: escape returns to volcano entrance
+09. PASS run 1: escape does not trigger unstable fallback
+10. PASS run 2: fixed dungeon starts
+11. PASS run 2: spawn is generated entry stair
+12. PASS run 2: return point preserves volcano world coordinate
+13. PASS run 2: first floor has explicit stable world exit
+14. PASS run 2: deeper link is down staircase
+15. PASS run 2: escape returns to volcano entrance
+16. PASS run 2: escape does not trigger unstable fallback
+17. PASS run 3: fixed dungeon starts
+18. PASS run 3: spawn is generated entry stair
+19. PASS run 3: return point preserves volcano world coordinate
+20. PASS run 3: first floor has explicit stable world exit
+21. PASS run 3: deeper link is down staircase
+22. PASS run 3: escape returns to volcano entrance
+23. PASS run 3: escape does not trigger unstable fallback
+24. PASS run 4: fixed dungeon starts
+25. PASS run 4: spawn is generated entry stair
+26. PASS run 4: return point preserves volcano world coordinate
+27. PASS run 4: first floor has explicit stable world exit
+28. PASS run 4: deeper link is down staircase
+29. PASS run 4: escape returns to volcano entrance
+30. PASS run 4: escape does not trigger unstable fallback
+31. PASS run 5: fixed dungeon starts
+32. PASS run 5: spawn is generated entry stair
+33. PASS run 5: return point preserves volcano world coordinate
+34. PASS run 5: first floor has explicit stable world exit
+35. PASS run 5: deeper link is down staircase
+36. PASS run 5: escape returns to volcano entrance
+37. PASS run 5: escape does not trigger unstable fallback
+38. PASS run 6: fixed dungeon starts
+39. PASS run 6: spawn is generated entry stair
+40. PASS run 6: return point preserves volcano world coordinate
+41. PASS run 6: first floor has explicit stable world exit
+42. PASS run 6: deeper link is down staircase
+43. PASS run 6: escape returns to volcano entrance
+44. PASS run 6: escape does not trigger unstable fallback
+45. PASS run 7: fixed dungeon starts
+46. PASS run 7: spawn is generated entry stair
+47. PASS run 7: return point preserves volcano world coordinate
+48. PASS run 7: first floor has explicit stable world exit
+49. PASS run 7: deeper link is down staircase
+50. PASS run 7: escape returns to volcano entrance
+51. PASS run 7: escape does not trigger unstable fallback
+52. PASS run 8: fixed dungeon starts
+53. PASS run 8: spawn is generated entry stair
+54. PASS run 8: return point preserves volcano world coordinate
+55. PASS run 8: first floor has explicit stable world exit
+56. PASS run 8: deeper link is down staircase
+57. PASS run 8: escape returns to volcano entrance
+58. PASS run 8: escape does not trigger unstable fallback
+59. PASS first-floor exit link is an up-stair exit
+60. PASS using first-floor up staircase returns to volcano island
+61. PASS random fixed-floor type chooser never returns maze type
+62. PASS all procedural volcano floors opt into template version 2
+63. PASS all procedural volcano floors leave forceMaze disabled
+64. PASS volcano dungeon uses basement direction mode
+65. PASS old maze-profile cache regenerates with template version 2
+66. PASS old cache migration snaps player to regenerated entry stair
+67. PASS research floor back link is up staircase
+68. PASS research floor deeper link is down staircase
+69. PASS boss floor return link is up staircase

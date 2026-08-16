@@ -3654,6 +3654,7 @@ const App = {
             'SEABED_TEMPLE',
             'THUNDER_FORT',
             'BIG_TOWER',
+            'UNDERSEA_VOLCANO',
             'LIGHT_PALACE',
             'DARK_SHRINE_RUINS',
             'GALVANIA_GORGE',

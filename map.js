@@ -2087,7 +2087,7 @@ const SURFACE_WORLD_MAP_DATA = [
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWGGGGGGGWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWGGGGGGGGGGGGWWWWWWWTFFFFFWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWGGGGGGGGGGGGGGGWWWWWWWGGGGFFFFFFWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWGGGGGWWWWWWWWWWGGGGGGGGGGGGGGGGGGWWWWWWWWWWGGGGFFFFFFWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWGGGGGWWWWWWWWWWGGGGGGGGGGGGGGGGGGWWWWWWWWWWGGGGFFFFFFWWWWWWWWWWWWWWWWWWWWWWWWWWWWGWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWGGEGGGWWWGGGGGGGGGGGGGGGGGGGGGGGWWWWWWWWWWWWWWGGGGGGFFFFGWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWGGGGGGGWWGGGGGGGGGGGGGGGGGGGGGGGWWWWWWWWWWWWWWWWWWWWGGGGGGGGWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWGGGGGGGGGGGGGGWWWWWWWGGGWWWWWWWWWWWWGGGGGGGWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
@@ -12594,11 +12594,11 @@ const FIXED_DUNGEON_MAPS = {
     },
     UNDERSEA_VOLCANO: {
         name: "海底火山",
+        floorDirectionMode: "basement",
         themeKey: "FIRE_VILLAGE",
         rank: 52,
         encounterRank: 52,
         battleBg: "battle_bg_fire",
-        entryPoint: { x: 9, y: 13 },
         entryEventId: "undersea_volcano_world_entry",
         entryEventConditions: { missingFlag: "underseaVolcanoEntered" },
         floors: [
@@ -12606,9 +12606,10 @@ const FIXED_DUNGEON_MAPS = {
                 label: "第1層・海底火道",
                 encounterRank: 52,
                 procedural: true,
-                forceMaze: true,
+                proceduralTemplateVersion: 2,
                 proceduralEntryReturnsOutside: true,
                 proceduralExitLabel: "海上へ戻る",
+                proceduralExitPoint: { areaKey: "WORLD", worldKey: "WORLD", x: 113, y: 17 },
                 proceduralTerrain: { tile: "M", density: 0.08, mode: "impassable" },
                 themeKey: "FIRE_VILLAGE"
             },
@@ -12616,7 +12617,7 @@ const FIXED_DUNGEON_MAPS = {
                 label: "第2層・圧熱回廊",
                 encounterRank: 53,
                 procedural: true,
-                forceMaze: true,
+                proceduralTemplateVersion: 2,
                 proceduralTerrain: { tile: "M", density: 0.10, mode: "damage" },
                 themeKey: "FIRE_VILLAGE"
             },
@@ -12624,7 +12625,7 @@ const FIXED_DUNGEON_MAPS = {
                 label: "第3層・火脈深部",
                 encounterRank: 54,
                 procedural: true,
-                forceMaze: true,
+                proceduralTemplateVersion: 2,
                 proceduralTerrain: { tile: "M", density: 0.12, mode: "impassable" },
                 themeKey: "FIRE_VILLAGE"
             },

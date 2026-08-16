@@ -1847,7 +1847,7 @@ Status: **inventory / no automatic replacement**
 |1792|ui_confirm|`menus_items.js`|転生の実 / 職業確認|${target.name}を${label}状態で転生させますか？ / Lv1に戻り、転生回数が1増えます。|（2026-08-16新規）|new_copy_inventory|
 |1793|ui_success|`menus_items.js`|転生の実 / 過去職復帰|${target.name}は ${result.job}へ戻り、そのまま転生した！ / レベル1に戻った！|（2026-08-16新規）|new_copy_inventory|
 |1794|ui_error|`menus_items.js`|転生の実 / 職歴外|その職業へ戻った履歴を確認できません。|（安全ガード）|new_copy_inventory|
-|1795|story_objective|`story.js`|6-2 / 海底火山への航路|バロンたちを追い、光の宮殿の北東――大灯台と反対側の外海にある海底火山へ向かおう|（2026-08-16ユーザー指定導線修正）|approved_applied_20260816|
+|1795|story_objective|`story.js`|6-2 / 海底火山への航路|バロンたちを追い、カザリアよりさらに北東の海にある海底火山へ向かおう|（2026-08-16ユーザー指定の地理表現補正）|approved_applied_20260816|
 |1796|map_action|`map.js`|雷の要塞・水上都市 / 航路ヒント|海底火山の場所を聞く|（2026-08-16新規）|new_copy_approved_20260816|
 |1797|map_exit|`map.js`|海底火山第1層 / 退出|海上へ戻る|（大灯台直通廃止に伴う修正）|approved_applied_20260816|
 |1798|map_locked|`map.js`|海底火山 / 航路未解禁|海底火山への航路はまだ特定できていない。|（2026-08-16新規）|new_copy_inventory|
