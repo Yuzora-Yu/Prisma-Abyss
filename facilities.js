@@ -75,7 +75,7 @@ const Facilities = {
             <div style="background:#000; border-top:4px double #fff; padding:12px; flex-shrink:0; z-index:100;">
                 <div id="${sceneId}-cmd-row" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; max-width:400px; margin:0 auto;">
                     ${commandsHtml}
-                    <button id="${sceneId}-bottom-exit-btn" class="menu-btn" style="background:#000; border:1px solid #777; height:40px; font-size:13px; color:#aaa;" 
+                    <button id="${sceneId}-bottom-exit-btn" class="menu-btn" style="background:#000; border:1px solid #777; height:40px; font-size:13px; color:#aaa;${options.bottomExitFullWidth ? ' grid-column:1 / -1; width:100%;' : ''}" 
                         onclick="${isLocked ? '' : bottomExitFn}" ${isLocked ? 'disabled' : ''}>${bottomExitLabel}</button>
                 </div>
             </div>
@@ -260,10 +260,10 @@ const Facilities = {
         const exitFn = "App.changeScene('field')";
         // コマンドボタンの構成
         const cmds = `
-            <button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff; grid-column: span 2;" onclick="Facilities.openMedalMenu()">ふるびたコインを交換する</button>
-            <button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff; grid-column: span 2;" onclick="Facilities.openCoinSpendingRewards()">累計報酬</button>
+            <button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff;" onclick="Facilities.openMedalMenu()">交換する</button>
+            <button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff;" onclick="Facilities.openCoinSpendingRewards()">累計報酬</button>
         `;
-        Facilities.setupBaseLayout('medal-scene', 'ふるびたコイン交換所', 'facility_bg_medal', cmds, exitFn);
+        Facilities.setupBaseLayout('medal-scene', 'ふるびたコイン交換所', 'facility_bg_medal', cmds, exitFn, false, { bottomExitFullWidth: true });
         const medals = App.data.items[99] || 0;
         const spent = Number(App.ensureLifetimeStats?.()?.totalCoinsSpent || App.data.stats?.totalCoinsSpent || 0);
         document.getElementById('medal-scene-msg-content').innerHTML = `
