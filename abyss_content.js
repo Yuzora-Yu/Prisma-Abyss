@@ -66,7 +66,7 @@
         { id:'buff_element', skillIds:[503,504] },
         { id:'buff_magic_self', skillIds:[506] },
         { id:'buff_physical_self', skillIds:[507] },
-        { id:'buff_dark_self', skillIds:[510,700101] },
+        { id:'buff_dark_self', skillIds:[510,511] },
         { id:'debuff_defense', skillIds:[600,602] },
         { id:'debuff_speed', skillIds:[601] },
         { id:'debuff_attack', skillIds:[603,604] },
@@ -233,7 +233,7 @@
     globalThis.ABYSS_REGION_CONTENT = Object.freeze({
         regularMonsterIds: REGULAR_MONSTER_IDS,
         bossMonsterIds: BOSS_MONSTER_IDS,
-        skillIds: Object.freeze([700101]),
+        skillIds: Object.freeze([511]),
         itemIds: Object.freeze([701001,701002,701003,701004,701005,701006,701007,701008,701009,701010]),
         spiritItemByElement: Object.freeze({ 火:701001, 水:701002, 風:701003, 雷:701004, 光:701005, 闇:701006 }),
         spiritBossByElement: Object.freeze({ 火:502001, 水:502002, 風:502003, 雷:502004, 光:502005, 闇:502006 }),

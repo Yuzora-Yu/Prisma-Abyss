@@ -9600,6 +9600,97 @@ load: () => {
         return data;
     },
 
+    migrateLegacySkillIdsV1: (data) => {
+        if (!data || typeof data !== 'object') return data;
+        const legacySkillIdMap = Object.freeze({
+            716: 249,   // フラッシュボム -> 魔法帯
+            700101: 511, // 混沌の外套 -> 強化帯
+            700201: 104, // 旧グラド仮技 -> 焔斬り
+            700202: 141, // 旧グラド仮技 -> 紅蓮の輪舞
+            700203: 216, // 旧グラド仮技 -> フラマリス
+            700204: 500, // 旧グラド仮技 -> ヴァルガ
+            700205: 213  // 旧グラド仮技 -> イグナリス
+        });
+        const migrateSkillId = value => {
+            const id = Number(value);
+            return Number.isFinite(id) && legacySkillIdMap[id] ? legacySkillIdMap[id] : value;
+        };
+        const migrateIdArray = values => Array.isArray(values)
+            ? Array.from(new Set(values.map(migrateSkillId).map(Number).filter(id => Number.isFinite(id) && id > 0)))
+            : values;
+        const migrateActs = acts => {
+            if (!Array.isArray(acts)) return acts;
+            return acts.map(entry => {
+                if (entry && typeof entry === 'object') return { ...entry, id:migrateSkillId(entry.id ?? entry.skillId) };
+                return migrateSkillId(entry);
+            });
+        };
+
+        (Array.isArray(data.characters) ? data.characters : []).forEach(character => {
+            if (!character || typeof character !== 'object') return;
+            character.skills = migrateIdArray(character.skills);
+            character.skillBookSkills = migrateIdArray(character.skillBookSkills);
+            if (character.config && typeof character.config === 'object') {
+                character.config.hiddenSkills = migrateIdArray(character.config.hiddenSkills);
+                character.config.autoDisabledSkills = migrateIdArray(character.config.autoDisabledSkills);
+            }
+        });
+
+        const battle = data.battle;
+        if (battle && typeof battle === 'object' && !Array.isArray(battle)) {
+            if (Array.isArray(battle.enemies)) {
+                battle.enemies.forEach(enemy => {
+                    if (!enemy || typeof enemy !== 'object') return;
+                    enemy.acts = migrateActs(enemy.acts);
+                    enemy.abyssSealedSkillIds = migrateIdArray(enemy.abyssSealedSkillIds);
+                });
+            }
+            battle.abyssSealedSkillIds = migrateIdArray(battle.abyssSealedSkillIds);
+        }
+
+        if (!data.system || typeof data.system !== 'object' || Array.isArray(data.system)) data.system = {};
+        data.system.skillIdSchemaVersion = Math.max(1, Number(data.system.skillIdSchemaVersion || 0));
+        return data;
+    },
+
+    migrateBossBalance20260817V1: (data) => {
+        if (!data || typeof data !== 'object') return data;
+        if (!data.system || typeof data.system !== 'object' || Array.isArray(data.system)) data.system = {};
+        if (Number(data.system.bossBalancePatch20260817 || 0) >= 1) return data;
+        const battle = data?.battle;
+        const updateSnapshot = (enemy, spec) => {
+            if (!enemy || Number(enemy.baseId ?? enemy.id) !== spec.id) return;
+            const oldMaxHp = Math.max(1, Number(enemy.maxHp || enemy.hp || spec.hp));
+            const oldHp = Math.max(0, Number(enemy.hp || 0));
+            const oldMaxMp = Math.max(0, Number(enemy.maxMp || enemy.mp || spec.mp));
+            const oldMp = Math.max(0, Number(enemy.mp || 0));
+            const hpRatio = Math.max(0, Math.min(1, oldHp / oldMaxHp));
+            const mpRatio = oldMaxMp > 0 ? Math.max(0, Math.min(1, oldMp / oldMaxMp)) : 0;
+            enemy.maxHp = spec.hp;
+            enemy.hp = oldHp <= 0 ? 0 : Math.max(1, Math.min(spec.hp, Math.floor(spec.hp * hpRatio)));
+            enemy.maxMp = spec.mp;
+            enemy.mp = Math.max(0, Math.min(spec.mp, Math.floor(spec.mp * mpRatio)));
+            ['atk','def','spd','mag','mdef'].forEach(key => { enemy[key] = spec[key]; });
+            enemy.acts = spec.acts.map(([id, rate, condition = 0]) => ({ id, rate, condition }));
+            enemy.traits = spec.traits.map(([id, level]) => ({ id, level }));
+            enemy.imageId = spec.imageId;
+        };
+        (Array.isArray(battle?.enemies) ? battle.enemies : []).forEach(enemy => {
+            updateSnapshot(enemy, {
+                id:301063, hp:6500, mp:980, atk:185, def:135, spd:140, mag:185, mdef:150, imageId:301063,
+                traits:[[62,1]],
+                acts:[[104,20],[141,18],[213,22],[216,18],[300,12],[500,10]]
+            });
+            updateSnapshot(enemy, {
+                id:301033, hp:3600, mp:820, atk:82, def:100, spd:86, mag:150, mdef:126, imageId:406,
+                traits:[[52,2],[53,4]],
+                acts:[[1,10],[208,20],[210,15],[217,20],[503,15],[601,20]]
+            });
+        });
+        data.system.bossBalancePatch20260817 = 1;
+        return data;
+    },
+
     migrateImportedSaveData: (loadedData) => {
         if (!loadedData || typeof loadedData !== 'object' || Array.isArray(loadedData)) return loadedData;
 
@@ -9613,6 +9704,7 @@ load: () => {
         App.migrateJobNamesV1(data);
         App.migrateAlanLightMagicKnightAwakeningV1(data);
         App.migrateJobCareerV1(data);
+        App.migrateLegacySkillIdsV1(data);
 
         // 旧開発版では焼け焦げたペンダントがNEW GAME初期所持に混入していた。
         // 崩落前のプロローグ途中データだけを対象に除去し、5年後へ進行済みのセーブは保持する。
@@ -9676,6 +9768,7 @@ load: () => {
         App.reconcileCarmenaGateProgress(data);
 
         if (!data.battle || typeof data.battle !== 'object' || Array.isArray(data.battle)) data.battle = { active: false };
+        App.migrateBossBalance20260817V1(data);
 
         if (!data.stats || typeof data.stats !== 'object' || Array.isArray(data.stats)) {
             data.stats = {

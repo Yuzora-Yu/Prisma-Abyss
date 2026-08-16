@@ -82,8 +82,6 @@ const PassiveSkill = {
 			  desc: '即死成功率をスキル+10%上昇、クリティカル率がスキル×2%上昇'
 			},
         62: { id: 62, name: '炎楔同化', type: 'ボス専用', bossOnly: true, params: { fire_pierce_pct: 5, physical_dmg_pct: 2, magic_dmg_pct: 2, breath_dmg_pct: 2 }, effect: '火の力を肉体そのものへ同化させる', desc: '火属性耐性を無視しつつ、物理・魔法・ブレスの与ダメージが上昇する（ボス専用）' },
-        63: { id: 63, name: '灼熱循環', type: 'ボス専用', bossOnly: true, params: { turn_hp_regen_pct: 0.6, turn_mp_regen_pct: 1.5 }, effect: '体内の炎を循環させ、毎ターン生命力と魔力を回復する', desc: '毎ターンHPとMPを回復する（ボス専用）' },
-        64: { id: 64, name: '深海耐圧', type: 'ボス専用', bossOnly: true, params: { physical_reduce_pct: 1.5, magic_reduce_pct: 1.5, breath_reduce_pct: 1.5 }, effect: '海底研究で得た耐圧適応により被害を抑える', desc: '物理・魔法・ブレスの被ダメージを軽減する（ボス専用）' }
     }
 };
 

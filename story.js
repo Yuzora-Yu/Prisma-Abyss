@@ -7738,7 +7738,7 @@ const STORY_MANAGER_DATA = {
         "light_palace_flashback_veld1_after": {
                 "actions": [
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_VELD1_AFTER" },
-                        { "type": "SCENE_PARTY", "party": [ {"charId":204}, {"charId":305,"initialLevel":46}, {"charId":304,"initialLevel":47,"skills":[716]} ] },
+                        { "type": "SCENE_PARTY", "party": [ {"charId":204}, {"charId":305,"initialLevel":46}, {"charId":304,"initialLevel":47,"skills":[249]} ] },
                         { "type": "HEAL" },
                         { "type": "SCENE_CHECKPOINT", "id": "post_veld", "wipeoutEventId": "light_palace_flashback_retry_post_veld" }
                 ],

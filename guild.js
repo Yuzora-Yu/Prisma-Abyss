@@ -378,6 +378,7 @@
 
         getChallengeThemeSkillIds(theme, count = 5) {
             const pool = ((typeof DB !== 'undefined' && Array.isArray(DB.SKILLS)) ? DB.SKILLS : []).filter(skill => Number(skill?.id) >= 100
+                && skill.randomPoolExcluded !== true
                 && skill.elm === theme?.element && !['回復', '特殊'].includes(String(skill.type || '')));
             return pool.sort((a, b) => Number(a.id) - Number(b.id)).slice(-Math.max(1, count)).map(skill => Number(skill.id));
         },

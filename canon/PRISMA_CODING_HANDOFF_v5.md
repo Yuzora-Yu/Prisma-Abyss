@@ -913,7 +913,7 @@ alanState.phase = 'dead'
 3. partyをレイラ単独へ変更。
 4. ヴェルド301064。`forceAutoOff / forcedLoss / endAfterTurns:5`。
 5. レオン305／クロード304合流。
-6. クロードへskill716「フラッシュボム」。
+6. クロードへskill249「フラッシュボム」。
 7. レイラを再戦可能状態まで回復。
 8. `post_veld` checkpoint。
 

@@ -599,7 +599,7 @@ const Battle = {
 
     abyssVegnasisIds: Object.freeze([302080, 302081, 302082, 302083, 302084]),
     abyssAzelgaragIds: Object.freeze([302100, 302101]),
-    abyssSealedSkillIds: Object.freeze([166, 245, 700101]),
+    abyssSealedSkillIds: Object.freeze([166, 245, 511]),
 
     makeBattleUnitId: () => `enemy-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`,
 
@@ -3919,6 +3919,7 @@ const Battle = {
         return (DB.SKILLS || []).filter(skill => {
             const id = Number(skill?.id);
             if (!Number.isFinite(id) || id < 100 || id >= 700000) return false;
+            if (skill.randomPoolExcluded === true) return false;
             if (!['物理','魔法','特殊','強化'].includes(String(skill.type || ''))) return false;
             if (skill.instantDeath || skill.escape || skill.revive || skill.fullRestore) return false;
             const target = String(skill.target || '');
@@ -4329,7 +4330,7 @@ const Battle = {
                 else m.elmRes[element] = -50 + Math.floor(Math.random() * 101);
             });
             m.acts = JSON.parse(JSON.stringify(base.acts || [{ id:1, rate:100, condition:0 }]));
-            const candidates = DB.SKILLS.filter(skill => skill.mp >= 150 && ['物理','魔法','特殊'].includes(skill.type));
+            const candidates = DB.SKILLS.filter(skill => skill.randomPoolExcluded !== true && skill.mp >= 150 && ['物理','魔法','特殊'].includes(skill.type));
             for (let i = 0; i < 2; i++) {
                 const skill = candidates[Math.floor(Math.random() * candidates.length)];
                 if (skill && !m.acts.some(act => Number(act.id) === Number(skill.id))) m.acts.push({ id:skill.id, rate:20, condition:0 });
