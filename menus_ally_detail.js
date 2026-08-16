@@ -7,6 +7,7 @@ const MenuAllyDetail = {
     currentMainTab: 'archive', 
     currentArchive: 'base',
     currentPortraitExpression: 'normal',
+    _suppressPortraitClickUntil: 0,
 
 	init: (char) => {
 		if (!char) return;
@@ -57,6 +58,8 @@ const MenuAllyDetail = {
 			</div>
 		`;
 
+        MenuAllyDetail.bindArchiveInteractions(detailContent);
+
         // ガチャカード側のCSS枠線除去処理を、仲間詳細の静的カードにも適用する。
         // 既存のガチャ演出/位置調整CSSはそのまま利用し、ここでは表示後の保険だけ行う。
         requestAnimationFrame(() => {
@@ -64,6 +67,120 @@ const MenuAllyDetail = {
                 Gacha.removePremiumCssFrame(detailContent);
             }
         });
+    },
+
+    bindArchiveInteractions: (root) => {
+        if (!root) return;
+        const now = () => (typeof performance !== 'undefined' && typeof performance.now === 'function')
+            ? performance.now()
+            : Date.now();
+
+        root.querySelectorAll('.ally-archive-nav[data-ally-nav-dir]').forEach(button => {
+            let press = null;
+            const dir = Number(button.dataset.allyNavDir || 0);
+            if (!dir) return;
+
+            const clearPress = () => { press = null; };
+            button.addEventListener('pointerdown', event => {
+                if (event.isPrimary === false) return;
+                if (typeof event.button === 'number' && event.button !== 0) return;
+                event.preventDefault();
+                event.stopPropagation();
+                press = {
+                    pointerId: event.pointerId,
+                    startedAt: now(),
+                    x: Number(event.clientX || 0),
+                    y: Number(event.clientY || 0)
+                };
+                try { button.setPointerCapture?.(event.pointerId); } catch (_) {}
+            });
+            button.addEventListener('pointerup', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                const current = press;
+                clearPress();
+                if (!current || current.pointerId !== event.pointerId) return;
+
+                const elapsed = now() - current.startedAt;
+                const dx = Number(event.clientX || 0) - current.x;
+                const dy = Number(event.clientY || 0) - current.y;
+                const moved = Math.hypot(dx, dy);
+                // 長押しは無反応。短いタップだけをキャラ切り替えとして扱う。
+                if (elapsed <= 550 && moved <= 14) MenuAllyDetail.switchChar(dir);
+            });
+            button.addEventListener('pointercancel', clearPress);
+            button.addEventListener('lostpointercapture', clearPress);
+            button.addEventListener('contextmenu', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                clearPress();
+            });
+            button.addEventListener('dragstart', event => event.preventDefault());
+            button.addEventListener('click', event => {
+                // PointerEvent経由のクリックはpointerupで処理済み。キーボード操作だけ補完する。
+                event.preventDefault();
+                event.stopPropagation();
+                if (event.detail === 0) MenuAllyDetail.switchChar(dir);
+            });
+        });
+
+        const card = root.querySelector('.ally-detail-premium-card[data-ally-swipe-card="true"]');
+        if (!card) return;
+
+        let gesture = null;
+        card.addEventListener('pointerdown', event => {
+            if (event.isPrimary === false) return;
+            if (typeof event.button === 'number' && event.button !== 0) return;
+            gesture = {
+                pointerId: event.pointerId,
+                startedAt: now(),
+                x: Number(event.clientX || 0),
+                y: Number(event.clientY || 0),
+                moved: false
+            };
+        });
+        card.addEventListener('pointermove', event => {
+            if (!gesture || gesture.pointerId !== event.pointerId) return;
+            const dx = Number(event.clientX || 0) - gesture.x;
+            const dy = Number(event.clientY || 0) - gesture.y;
+            if (Math.hypot(dx, dy) >= 12) {
+                gesture.moved = true;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    MenuAllyDetail._suppressPortraitClickUntil = Date.now() + 500;
+                }
+            }
+        });
+        card.addEventListener('pointercancel', () => { gesture = null; });
+        card.addEventListener('pointerup', event => {
+            const current = gesture;
+            gesture = null;
+            if (!current || current.pointerId !== event.pointerId) return;
+
+            const dx = Number(event.clientX || 0) - current.x;
+            const dy = Number(event.clientY || 0) - current.y;
+            const absX = Math.abs(dx);
+            const absY = Math.abs(dy);
+            const elapsed = now() - current.startedAt;
+            const isHorizontalFlick = elapsed <= 850 && absX >= 42 && absX > absY * 1.2;
+
+            if (isHorizontalFlick) {
+                event.preventDefault();
+                event.stopPropagation();
+                MenuAllyDetail._suppressPortraitClickUntil = Date.now() + 500;
+                // 左へ払うと次、右へ払うと前のキャラクターへ移動する。
+                MenuAllyDetail.switchChar(dx < 0 ? 1 : -1);
+                return;
+            }
+
+            // 従来どおり、カードを短くタップした場合だけ表情を切り替える。
+            const isTap = elapsed <= 500 && Math.hypot(dx, dy) <= 10;
+            const c = MenuAllyDetail.selectedChar;
+            if (isTap && Date.now() >= MenuAllyDetail._suppressPortraitClickUntil && !App.isMonsterAlly?.(c)) {
+                MenuAllyDetail.randomizePortrait(event);
+            }
+        });
+        card.addEventListener('contextmenu', event => event.preventDefault());
+        card.addEventListener('dragstart', event => event.preventDefault());
     },
 
     renderMainTabs: () => {
@@ -199,13 +316,13 @@ const MenuAllyDetail = {
 
         const cardHtml = `
             <div class="ally-archive-card-stage">
-                <button type="button" class="ally-archive-nav prev" onclick="MenuAllyDetail.switchChar(-1)">◀</button>
+                <button type="button" class="ally-archive-nav prev" data-ally-nav-dir="-1" aria-label="前の仲間">◀</button>
 
-                <div class="gacha-card-scene premium-card premium-card-static ally-detail-premium-card ${rarityClass}" ${isMonsterAlly ? '' : 'onclick="MenuAllyDetail.randomizePortrait(event)"'} style="width:clamp(205px, min(66vw, 36svh), 265px) !important; height:auto !important; aspect-ratio:2/3 !important; flex-shrink:0; animation:none !important; ${isMonsterAlly ? '' : 'cursor:pointer;'}">
+                <div class="gacha-card-scene premium-card premium-card-static ally-detail-premium-card ${rarityClass}" data-ally-swipe-card="true" style="width:clamp(205px, min(66vw, 36svh), 265px) !important; height:auto !important; aspect-ratio:2/3 !important; flex-shrink:0; animation:none !important; ${isMonsterAlly ? '' : 'cursor:pointer;'}">
                     ${premiumFrontHtml}
                 </div>
 
-                <button type="button" class="ally-archive-nav next" onclick="MenuAllyDetail.switchChar(1)">▶</button>
+                <button type="button" class="ally-archive-nav next" data-ally-nav-dir="1" aria-label="次の仲間">▶</button>
             </div>
         `;
 

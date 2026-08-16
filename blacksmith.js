@@ -136,7 +136,7 @@ const MenuBlacksmith = {
             <button class="menu-btn" style="background:#2b160f;border:1px solid #ff8a55;height:40px;color:#fff;" onclick="MenuBlacksmith.openFacilityMode('synthesis')">装備合成 ＋3～＋4</button>
             <button class="menu-btn" style="background:#111a32;border:1px solid #87a8ff;height:40px;color:#fff;" onclick="MenuBlacksmith.openFacilityMode('refine')">オプション精錬</button>
             <button class="menu-btn" style="background:#102619;border:1px solid #79d99a;height:40px;color:#fff;" onclick="MenuBlacksmith.openFacilityMode('enhance')">オプション強化</button>`;
-        Facilities.setupBaseLayout('blacksmith-scene', '炎の里イグニシア 鍛冶屋', 'facility_bg_blacksmith', commands, "App.changeScene('field')");
+        Facilities.setupBaseLayout('blacksmith-scene', '炎の里イグニシア 鍛冶屋', 'facility_bg_blacksmith', commands, "App.changeScene('field')", false, { bottomExitFullWidth: true });
         MenuBlacksmith.renderFacilityHome();
     },
 

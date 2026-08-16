@@ -44,6 +44,7 @@ const Facilities = {
         const bottomExitFn = options.bottomExitFn || exitFn;
         const topExitLabel = options.topExitLabel || (isLocked ? '勝負中' : '外へ出る');
         const bottomExitLabel = options.bottomExitLabel || '出る';
+        const modalMaxWidth = options.modalMaxWidth || (sceneId === 'casino-scene' ? '320px' : '380px');
         const bgImageHtml = bgUrl ? `
                 <img src="${Facilities.escapeAttr(bgUrl)}" data-fallback-src="${Facilities.escapeAttr(bgFallbackUrl)}" alt="" aria-hidden="true"
                     style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block;"
@@ -81,7 +82,7 @@ const Facilities = {
             </div>
 
             <div id="${sceneId}-modal-layer" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; justify-content:center; align-items:center; padding:10px;">
-                <div id="${sceneId}-modal-window" style="background:#000; border:3px double #fff; width:100%; max-width:320px; max-height:calc(100% - 20px); padding:15px; box-sizing:border-box; display:flex; flex-direction:column;">
+                <div id="${sceneId}-modal-window" data-default-max-width="${Facilities.escapeAttr(modalMaxWidth)}" style="background:#000; border:3px double #fff; width:100%; max-width:${Facilities.escapeAttr(modalMaxWidth)}; max-height:calc(100% - 20px); padding:15px; box-sizing:border-box; display:flex; flex-direction:column;">
                     <div id="${sceneId}-modal-title" style="color:#ffd700; font-size:14px; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px; font-weight:bold; flex-shrink:0;"></div>
                     <div id="${sceneId}-modal-body" class="scroll-area" style="min-height:0; max-height:50vh; overflow-y:auto; color:#fff;"></div>
                     <button id="${sceneId}-modal-close" class="btn" style="width:100%; margin-top:15px; background:#444; border:1px solid #fff; height:40px; flex-shrink:0;" onclick="Facilities.closeModal('${sceneId}')">閉じる</button>
@@ -112,7 +113,7 @@ const Facilities = {
         layer.style.padding = options.layerPadding || '10px';
         layer.style.alignItems = options.layerAlignItems || 'center';
         modalWindow.style.width = options.modalWidth || '100%';
-        modalWindow.style.maxWidth = options.modalMaxWidth || '320px';
+        modalWindow.style.maxWidth = options.modalMaxWidth || modalWindow.dataset.defaultMaxWidth || '380px';
         modalWindow.style.height = options.modalHeight || '';
         modalWindow.style.maxHeight = options.modalMaxHeight || 'calc(100% - 20px)';
         body.style.flex = options.bodyFlex ? '1 1 auto' : '0 1 auto';
@@ -147,11 +148,12 @@ const Facilities = {
         const teleportButton = teleportOpen
             ? `<button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff;" onclick="Facilities.openTeleport()">転送の扉</button>`
             : '';
+        const stayButtonLayout = teleportOpen ? '' : ' grid-column:1 / -1; width:100%;';
         const cmds = `
-            <button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff;" onclick="Facilities.stayInn(50)">泊まる (50Gold)</button>
+            <button class="menu-btn" style="background:#000; border:1px solid #fff; height:40px; color:#fff;${stayButtonLayout}" onclick="Facilities.stayInn(50)">泊まる (50Gold)</button>
             ${teleportButton}
         `;
-        Facilities.setupBaseLayout('inn-scene', '宿屋', 'facility_bg_inn', cmds, exitFn);
+        Facilities.setupBaseLayout('inn-scene', '宿屋', 'facility_bg_inn', cmds, exitFn, false, { bottomExitFullWidth: true });
         
         const gold = App.data.gold || 0;
         document.getElementById('inn-scene-msg-content').innerHTML = `
@@ -202,12 +204,12 @@ const Facilities = {
             <div style="text-align:center;">
                 <div style="font-size:13px;color:#fff;margin-bottom:8px;">深淵の亀裂</div>
                 <div id="inn-tele-cost" style="font-size:12px;color:#ffd700;margin-bottom:15px;">必要額: ${Facilities.getAbyssTeleportCost(Facilities.teleportFloor).toLocaleString()} Gold</div>
-                <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:20px;">
-                    <button class="btn" style="width:40px;height:35px;" onclick="Facilities.updateTele(-10)">-10</button>
-                    <button class="btn" style="width:40px;height:35px;" onclick="Facilities.updateTele(-1)">-1</button>
-                    <span id="inn-tele-disp-val" style="font-size:28px;font-weight:bold;min-width:70px;color:#fff;">${Facilities.teleportFloor}F</span>
-                    <button class="btn" style="width:40px;height:35px;" onclick="Facilities.updateTele(1)">+1</button>
-                    <button class="btn" style="width:40px;height:35px;" onclick="Facilities.updateTele(10)">+10</button>
+                <div style="display:grid;grid-template-columns:minmax(44px,1fr) minmax(44px,1fr) minmax(72px,1.35fr) minmax(44px,1fr) minmax(44px,1fr);align-items:center;gap:6px;margin-bottom:20px;width:100%;">
+                    <button class="btn" style="width:100%;min-width:0;height:42px;touch-action:manipulation;" onclick="Facilities.updateTele(-10)">-10</button>
+                    <button class="btn" style="width:100%;min-width:0;height:42px;touch-action:manipulation;" onclick="Facilities.updateTele(-1)">-1</button>
+                    <span id="inn-tele-disp-val" style="font-size:26px;font-weight:bold;min-width:0;color:#fff;white-space:nowrap;">${Facilities.teleportFloor}F</span>
+                    <button class="btn" style="width:100%;min-width:0;height:42px;touch-action:manipulation;" onclick="Facilities.updateTele(1)">+1</button>
+                    <button class="btn" style="width:100%;min-width:0;height:42px;touch-action:manipulation;" onclick="Facilities.updateTele(10)">+10</button>
                 </div>
                 <button class="menu-btn" style="width:100%;height:50px;background:#440;border:2px solid #ff0;color:#fff;" onclick="Facilities.execTele()">転送を実行する</button>
             </div>
@@ -286,9 +288,9 @@ const Facilities = {
             html += `<div style="border: 1px solid #444; margin-bottom: 8px; padding: 10px; opacity:${can?1:0.5}; background:rgba(255,255,255,0.05);">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:5px;">
                     <div style="font-weight:bold;font-size:14px;color:#fff;display:flex;align-items:center;gap:7px;min-width:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name}</span>${equipMaster ? `<small style="color:#aaa;white-space:nowrap;">Rank ${Number(equipMaster.rank || 0)}</small>` : ''}</div>
-                    <button class="btn" style="min-width:75px; height:30px;" ${can?'':'disabled'} onclick="Facilities.execMedal(${JSON.stringify(r).replace(/"/g, '&quot;')})">${owned ? '入手済み' : `${r.medals}枚`}</button>
+                    <button class="btn" style="min-width:84px; height:36px; font-size:12px; flex-shrink:0;" ${can?'':'disabled'} onclick="Facilities.execMedal(${JSON.stringify(r).replace(/"/g, '&quot;')})">${owned ? '入手済み' : `${r.medals}枚`}</button>
                 </div>
-                <div style="font-size:10px; color:#aaa; line-height:1.4;">${detail}</div>
+                <div style="font-size:12px; color:#aaa; line-height:1.5;">${detail}</div>
             </div>`;
         });
         Facilities.showModal('medal-scene', "ふるびたコイン景品リスト", html);
@@ -356,9 +358,9 @@ const Facilities = {
             : 'すべての累計報酬を受取済みです';
         let html = `
             <div style="border:1px solid #666; background:rgba(0,0,0,0.72); padding:12px; margin-bottom:10px; text-align:center;">
-                <div style="font-size:11px; color:#aaa;">ふるびたコイン 累計消費枚数</div>
+                <div style="font-size:12px; color:#aaa;">ふるびたコイン 累計消費枚数</div>
                 <div style="font-size:24px; color:#ffd700; font-weight:bold; margin-top:4px;">${spent.toLocaleString()} 枚</div>
-                <div style="font-size:10px; color:#8fd; margin-top:5px;">${nextText}</div>
+                <div style="font-size:11px; color:#8fd; margin-top:5px;">${nextText}</div>
             </div>
         `;
         rewardMaster.forEach(entry => {
@@ -372,9 +374,9 @@ const Facilities = {
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
                         <div style="min-width:0;">
                             <div style="font-size:14px; color:${achieved ? '#fff' : '#aaa'}; font-weight:bold;">累計 ${milestone.toLocaleString()} 枚</div>
-                            <div style="font-size:10px; color:#00cccc; margin-top:4px; line-height:1.4;">報酬: ${rewardText}</div>
+                            <div style="font-size:12px; color:#00cccc; margin-top:4px; line-height:1.5;">報酬: ${rewardText}</div>
                         </div>
-                        <button class="btn" style="width:82px; flex-shrink:0; background:${canClaim ? '#8a1930' : '#333'};"
+                        <button class="btn" style="min-width:92px; height:36px; flex-shrink:0; background:${canClaim ? '#8a1930' : '#333'};"
                             onclick="Facilities.claimCoinSpendingReward(${milestone})" ${canClaim ? '' : 'disabled'}>
                             ${isClaimed ? '受取済' : (achieved ? '受領' : '未達成')}
                         </button>
@@ -1040,7 +1042,7 @@ const Facilities = {
         `;
 
         // 宿屋・カジノと同じベースレイアウトを使い、入店直後の枠線・余白・背景比率を完全に揃える。
-        Facilities.setupBaseLayout('shop-scene', title, 'facility_bg_inn', cmds, exitFn);
+        Facilities.setupBaseLayout('shop-scene', title, 'facility_bg_inn', cmds, exitFn, false, { bottomExitFullWidth: true });
 
         const container = document.getElementById('shop-scene');
         if (!container) return;
@@ -1193,7 +1195,7 @@ const Facilities = {
             cmd.innerHTML = `
                 <button class="menu-btn shop-cmd-btn ${cfg.mode === 'buy' ? 'is-active' : ''}" style="background:#000; border:1px solid #fff; height:40px; color:#fff;" onclick="Facilities.openShopBuy()">買いにきた</button>
                 <button class="menu-btn shop-cmd-btn ${cfg.mode === 'sell' ? 'is-active' : ''}" style="background:#000; border:1px solid #fff; height:40px; color:#fff;" onclick="Facilities.openShopSell()">売りにきた</button>
-                <button class="menu-btn" style="background:#000; border:1px solid #777; height:40px; font-size:13px; color:#aaa;" onclick="App.changeScene('field')">出る</button>
+                <button class="menu-btn" style="background:#000; border:1px solid #777; height:40px; font-size:13px; color:#aaa; grid-column:1 / -1; width:100%;" onclick="App.changeScene('field')">出る</button>
             `;
         }
         Facilities.updateShopGoldDisplay();

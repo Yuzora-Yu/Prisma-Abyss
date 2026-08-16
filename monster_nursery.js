@@ -58,7 +58,9 @@ const MonsterNursery = {
             '混沌魔城レガシオン モンスター育成所',
             'facility_bg_inn',
             commands,
-            'MonsterNursery.exitToField()'
+            'MonsterNursery.exitToField()',
+            false,
+            { bottomExitFullWidth: true }
         );
         MonsterNursery.renderHome();
     },

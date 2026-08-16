@@ -5720,6 +5720,22 @@ body.game-page .ally-archive-nav.next {
   right: 4px;
 }
 
+/* Ally archive card: horizontal flick navigation + tap-only arrow controls. */
+body.game-page .ally-detail-premium-card {
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body.game-page .ally-archive-nav {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body.game-page #field-info-box {
   top: 10px !important;
   border: 1px solid rgba(255, 255, 255, 0.46) !important;
