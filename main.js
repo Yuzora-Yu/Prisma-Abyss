@@ -1356,12 +1356,8 @@ const App = {
             if (ally.equips[slot] && options.force !== true) return;
             const equip = App.createEquipById(Number(eid), 3);
             if (!equip) return;
-            // 回想開始時に支給した装備は「回想中に拾った戦利品」ではない。
-            // 外してscene inventoryへ入れても、現在時間側へ即時統合しないための識別子を付ける。
-            equip.sceneContextSeedToken = context.token;
-            equip.sceneContextSeed = true;
-            equip.sceneContextSeedCharId = Number(ally.charId);
-            equip.sceneContextSeedSlot = slot;
+            // 回想用の初期装備も通常装備と同じ扱いにする。
+            // 終了時に装備していれば本人へcarryoverし、外してinventoryにあれば現在側へ渡る。
             ally.equips[slot] = equip;
             changed = true;
         });
@@ -1448,59 +1444,22 @@ const App = {
     collectSceneContextCarryover: (context, options = {}) => {
         const ids = Array.isArray(options.carryoverCharacterIds) ? options.carryoverCharacterIds : (context?.carryoverCharacterIds || []);
         const out = {};
-
-        // 回想開始時の支給装備を人物・部位単位で控える。
-        // 回想中に拾った装備を着用して終了しても、その戦利品は現在側へ返し、
-        // 後の正式加入用carryoverには支給装備を残す。
-        const seedByOwnerSlot = {};
-        const noteSeed = (equip) => {
-            if (!equip || typeof equip !== 'object' || equip.sceneContextSeed !== true) return;
-            if (String(equip.sceneContextSeedToken || '') !== String(context?.token || '')) return;
-            const ownerId = Number(equip.sceneContextSeedCharId);
-            const slot = String(equip.sceneContextSeedSlot || '');
-            if (!Number.isFinite(ownerId) || !slot) return;
-            const ownerKey = String(ownerId);
-            if (!seedByOwnerSlot[ownerKey]) seedByOwnerSlot[ownerKey] = {};
-            seedByOwnerSlot[ownerKey][slot] = App.cloneSceneContextValue(equip);
-        };
-        (Array.isArray(App.data?.inventory) ? App.data.inventory : []).forEach(noteSeed);
-        (Array.isArray(App.data?.characters) ? App.data.characters : []).forEach(char => {
-            Object.values(char?.equips || {}).forEach(noteSeed);
-        });
-
         ids.map(Number).filter(Number.isFinite).forEach(id => {
             const char = App.getStoryAllyCharacter(id);
             if (!char) return;
-            const currentEquips = char.equips || {};
-            const carryoverEquips = {};
-            const slots = new Set(['武器','盾','頭','体','足', ...Object.keys(currentEquips)]);
-            slots.forEach(slot => {
-                const currentEquip = currentEquips?.[slot] || null;
-                const currentIsSceneSeed = !!(currentEquip && currentEquip.sceneContextSeed === true
-                    && String(currentEquip.sceneContextSeedToken || '') === String(context?.token || ''));
-                let selected = currentEquip;
-                if (context?.isolatedInventory === true && !currentIsSceneSeed) {
-                    selected = seedByOwnerSlot[String(id)]?.[slot] || null;
-                }
-                carryoverEquips[slot] = App.cloneSceneContextValue(selected);
-                const equip = carryoverEquips[slot];
-                if (!equip || typeof equip !== 'object') return;
-                delete equip.sceneContextSeed;
-                delete equip.sceneContextSeedToken;
-                delete equip.sceneContextSeedCharId;
-                delete equip.sceneContextSeedSlot;
-            });
             out[String(id)] = {
                 level: Math.max(1, Number(char.level || 1)),
                 exp: Math.max(0, Number(char.exp || 0)),
-                equips: carryoverEquips,
+                // 回想終了時に本人が装備している物は、そのまま本人の装備として持ち越す。
+                // 外してscene inventoryへ入れた装備はmergeSceneContextLoot()側で現在時間の所持品へ渡す。
+                equips: App.cloneSceneContextValue(char.equips || {}),
                 skillBookSkills: App.cloneSceneContextValue(char.skillBookSkills || [])
             };
         });
         return out;
     },
 
-    mergeSceneContextLoot: (sceneItems, sceneInventory, context, sceneProgress = null, sceneEquippedLoot = []) => {
+    mergeSceneContextLoot: (sceneItems, sceneInventory, context, sceneProgress = null) => {
         if (!context?.mergeLoot) return;
         if (!App.data.items || typeof App.data.items !== 'object') App.data.items = {};
 
@@ -1518,9 +1477,8 @@ const App = {
         const baselineInventory = Array.isArray(context.isolatedBaseline?.inventory) ? context.isolatedBaseline.inventory : [];
         const baselineIds = new Set(baselineInventory.map(equip => String(equip?.id || '')).filter(Boolean));
         const mergedIds = new Set();
-        [...(Array.isArray(sceneInventory) ? sceneInventory : []), ...(Array.isArray(sceneEquippedLoot) ? sceneEquippedLoot : [])].forEach(equip => {
+        (Array.isArray(sceneInventory) ? sceneInventory : []).forEach(equip => {
             if (!equip || typeof equip !== 'object') return;
-            if (equip.sceneContextSeed === true || String(equip.sceneContextSeedToken || '') === String(context.token || '')) return;
             const id = String(equip.id || '');
             if (id && (baselineIds.has(id) || mergedIds.has(id))) return;
             if (id) mergedIds.add(id);
@@ -1543,24 +1501,13 @@ const App = {
         const carryover = App.collectSceneContextCarryover(context, options);
         const sceneItems = context.isolatedInventory ? App.cloneSceneContextValue(App.data.items || {}) : {};
         const sceneInventory = context.isolatedInventory ? App.cloneSceneContextValue(App.data.inventory || []) : [];
-        const sceneEquippedLoot = [];
-        if (context.isolatedInventory) {
-            (Array.isArray(App.data.characters) ? App.data.characters : []).forEach(char => {
-                Object.values(char?.equips || {}).forEach(equip => {
-                    if (!equip || typeof equip !== 'object') return;
-                    const isSeed = equip.sceneContextSeed === true
-                        && String(equip.sceneContextSeedToken || '') === String(context.token || '');
-                    if (!isSeed) sceneEquippedLoot.push(App.cloneSceneContextValue(equip));
-                });
-            });
-        }
         const sceneProgress = context.isolatedInventory ? { openedChests: App.cloneSceneContextValue(App.data.progress?.openedChests || {}) } : null;
         App.sceneContextStack.pop();
         if (!App.restoreSceneContextSnapshot(context.snapshot)) return false;
         if (!App.data.progress || typeof App.data.progress !== 'object') App.data.progress = {};
         if (!App.data.progress.storyCharacterCarryover || typeof App.data.progress.storyCharacterCarryover !== 'object') App.data.progress.storyCharacterCarryover = {};
         Object.entries(carryover).forEach(([id, value]) => { App.data.progress.storyCharacterCarryover[id] = value; });
-        App.mergeSceneContextLoot(sceneItems, sceneInventory, context, sceneProgress, sceneEquippedLoot);
+        App.mergeSceneContextLoot(sceneItems, sceneInventory, context, sceneProgress);
         if (options.changeScene !== false && typeof App.changeScene === 'function') {
             App.changeScene(options.sceneId || context.snapshot?.sourceSceneId || 'field');
         }

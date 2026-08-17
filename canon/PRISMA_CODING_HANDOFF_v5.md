@@ -895,10 +895,10 @@ alanState.phase = 'dead'
 - 回想中の通常saveは抑止。
 - `isolateCharacters:true` とし、現在時間の仲間名簿を回想中の `App.data.characters` から完全に外す。アルス達を編成画面から回想パーティへ加入させない。
 - `lockPartyComposition:true` とし、回想中のメンバー入替はStory側 `SCENE_PARTY` だけが行う。
-- 回想専用 `items` / `inventory` を使用し、アルス側所持品を参照禁止。初期支給分はbaselineとして扱い、現在側へ増殖させない。
+- 回想専用 `items` / `inventory` を使用し、アルス側所持品を参照禁止。回復薬等の初期支給消耗品は開始数をbaselineとして扱い、現在側へ増殖させない。
 - 光の宮殿回想中は宝箱開封を禁止する。`Dungeon.openChest()` の副作用へ入る前に止め、開封済みフラグ・報酬・罠戦闘を発生させない。
-- 回想で戦闘ドロップ／イベント等により新規に増えたアイテム・装備は、終了時に装備中でも未装備でも現在側へ統合。回想開始時支給品はbaseline扱いとし、支給装備は外してinventoryへ移しても持ち帰り品にしない。
-- 人物carryoverはLv、現在Lv内EXP、追加習得技、および回想開始時の支給装備を基準とする。回想中に新規取得した装備をcarryoverと現在側所持品へ二重計上しない。
+- 装備は入手経路を問わず通常どおり扱う。回想終了時に人物が装備している物はその人物のcarryover装備とし、外して回想側inventoryにある物は現在のアルス側inventoryへ渡す。回想開始時支給装備も例外にしない。
+- 人物carryoverはLv、現在Lv内EXP、追加習得技、および回想終了時点で本人が装備している装備を保持する。装備中の物を現在側inventoryへ重複コピーしない。
 - 後の `addStoryAlly()` 時にcarryoverを適用。
 
 ## 15.2 チェックポイント
