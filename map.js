@@ -12730,11 +12730,11 @@ const FIXED_DUNGEON_MAPS = {
                     "HWWWWWWWWWWWWWWWTWWWWWWWWWWWWWWWH",
                     "HWWWWWWWWWWWTTTTTTTTTWWWWWWWWWWWH",
                     "HWWWWWWWWWWTTTTTTTTTTTWWWWWWWWWWH",
-                    "FWWWWWWWWWWTTTTTTTTTTTWWWWWWWWWWF",
+                    "FWTTTTTTTWWTTTTTTTTTTTWWTTTTTTTWF",
                     "FWTTTTTTTWWTTTTTTTTTTTWWTTTTTTTWF",
                     "FSTTTTTTTTTTTTTTBTTTTTTTTTTTTTTSF",
                     "FWTTTTTTTWWTTTTTTTTTTTWWTTTTTTTWF",
-                    "FWWWWWWWWWWTTTTTTTTTTTWWWWWWWWWWF",
+                    "FWTTTTTTTWWTTTTTTTTTTTWWTTTTTTTWF",
                     "HWWWWWWWWWWTTTTTTTTTTTWWWWWWWWWWH",
                     "HWWWWWWWWWWWTTTTTTTTTWWWWWWWWWWWH",
                     "HWWWWWWWWWWWWWWWZWWWWWWWWWWWWWWWH",
@@ -12931,7 +12931,7 @@ const FIXED_DUNGEON_MAPS = {
                         "actorId": "rin_thunder_fort",
                         "name": "リン",
                         "x": 5,
-                        "y": 13,
+                        "y": 12,
                         "imageKey": "overlay_companion_rin",
                         "states": [
                             {
@@ -13056,7 +13056,7 @@ const FIXED_DUNGEON_MAPS = {
                         "actorId": "npc_villager",
                         "name": "補給品を買う",
                         "x": 25,
-                        "y": 13,
+                        "y": 12,
                         "imageKey": "overlay_npc_villager",
                         "states": [
                             {
@@ -13082,7 +13082,7 @@ const FIXED_DUNGEON_MAPS = {
                         "actorId": "npc_villager_2",
                         "name": "武器",
                         "x": 27,
-                        "y": 13,
+                        "y": 12,
                         "imageKey": "overlay_npc_villager",
                         "states": [
                             {
@@ -13108,7 +13108,7 @@ const FIXED_DUNGEON_MAPS = {
                         "actorId": "npc_villager_3",
                         "name": "防具",
                         "x": 29,
-                        "y": 13,
+                        "y": 12,
                         "imageKey": "overlay_npc_villager",
                         "states": [
                             {
