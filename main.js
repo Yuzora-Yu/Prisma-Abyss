@@ -10174,6 +10174,50 @@ load: () => {
 			return false;
 		}
 
+        const worldSurface = !Field.currentMapData && typeof MapRegistry !== 'undefined' && MapRegistry.getWorldSurfaceAt
+            ? MapRegistry.getWorldSurfaceAt(Field.x, Field.y)
+            : null;
+		const isSeaEncounter = !Field.currentMapData && (worldSurface
+            ? worldSurface.isSea
+            : (typeof App.getWorldTileAt === 'function' && App.getWorldTileAt(Field.x, Field.y) === 'W'));
+        const worldEncounter = isSeaEncounter ? null : App.getWorldEncounterProfile();
+
+        // ワールド陸上は progress.floor へフォールバックしない。
+        // ゾーン解決失敗をRank1帯の通常生成へ変換すると、光の宮殿周辺などで
+        // 「設定はあるのにRank1が出る」症状を再発させるため、設定不備は戦闘を開始せず診断する。
+        if (!Field.currentMapData && !isSeaEncounter && !worldEncounter) {
+            console.warn('[FIELD ENCOUNTER] ワールド遭遇ゾーンを解決できません。', {
+                worldKey: App.data?.location?.worldKey || App.data?.location?.area || 'WORLD',
+                x: Field.x,
+                y: Field.y
+            });
+            return false;
+        }
+
+        // ワールドフィールドは monsters.js の habitat 正本を開始前に確認する。
+        // mapId があるのに候補0件なら、近いRankの別敵へ黙って差し替えず、その歩では遭遇させない。
+        if (!Field.currentMapData && worldEncounter?.mapId && window.MonsterData?.getEncounterCandidates) {
+            const candidates = window.MonsterData.getEncounterCandidates({
+                mapId: worldEncounter.mapId,
+                floor: 0,
+                section: null,
+                rank: worldEncounter.rank,
+                rankMin: worldEncounter.encounterRankMin,
+                rankMax: worldEncounter.encounterRankMax,
+                races: worldEncounter.encounterRaces
+            });
+            if (!Array.isArray(candidates) || candidates.length === 0) {
+                console.warn('[FIELD ENCOUNTER] habitat候補が0件のため遭遇を中止します。', {
+                    zoneId: worldEncounter.id,
+                    mapId: worldEncounter.mapId,
+                    rank: worldEncounter.rank,
+                    x: Field.x,
+                    y: Field.y
+                });
+                return false;
+            }
+        }
+
 		App.encounterTransitioning = true;
 		Field.stopMove();
 		if (typeof Field.stopIdleStep === 'function') Field.stopIdleStep();
@@ -10185,13 +10229,6 @@ load: () => {
 		App.log("敵だ！");
 
 		const flags = App.getEncounterFlags();
-        const worldSurface = !Field.currentMapData && typeof MapRegistry !== 'undefined' && MapRegistry.getWorldSurfaceAt
-            ? MapRegistry.getWorldSurfaceAt(Field.x, Field.y)
-            : null;
-		const isSeaEncounter = !Field.currentMapData && (worldSurface
-            ? worldSurface.isSea
-            : (typeof App.getWorldTileAt === 'function' && App.getWorldTileAt(Field.x, Field.y) === 'W'));
-        const worldEncounter = isSeaEncounter ? null : App.getWorldEncounterProfile();
         // 「ダンジョンかどうか」と「ローカルMAPでエンカウントするか」は別概念。
         // 村・街などでも useHabitatEncounters:true なら、そのMAP固有の生息域遭遇を使う。
         const mapEncounter = Field.currentMapData && (Field.currentMapData.isDungeon || Field.currentMapData.useHabitatEncounters === true)
