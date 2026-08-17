@@ -2732,8 +2732,8 @@ const STORY_MANAGER_DATA = {
                         "type": "FIELD_CUTSCENE",
                         "commands": [
                                 { "op": "MOVE_PLAYER", "x": 29, "y": 14 },
-                                { "op": "SHOW_SPRITE", "id": "claude-east-gate-arrival", "src": "assets/map/overlays/overlay_companion_claude.png", "x": 32, "y": 14, "size": 2 },
-                                { "op": "MOVE_SPRITE", "id": "claude-east-gate-arrival", "src": "assets/map/overlays/overlay_companion_claude.png", "x": 30, "y": 14, "size": 2, "duration": 260 }
+                                { "op": "SHOW_SPRITE", "id": "claude-east-gate-arrival", "characterId": 304, "direction": "left", "step": 1, "x": 32, "y": 14, "size": 1 },
+                                { "op": "MOVE_SPRITE", "id": "claude-east-gate-arrival", "characterId": 304, "direction": "left", "walk": true, "x": 30, "y": 14, "size": 1, "duration": 320 }
                         ]
                 },
                 { "name": "システム", "text": "東門を抜け、光の宮殿へ向かおうとした――その時。門の外から、誰かが駆け込んできた。" },
@@ -7780,7 +7780,7 @@ const STORY_MANAGER_DATA = {
                 "actions": [
                         { "type": "SCENE_BEGIN", "visualPreset": "sepia", "restartOnWipeout": true, "wipeoutEventId": "light_palace_flashback_retry_start", "isolateInventory": true, "mergeLoot": true, "carryoverCharacterIds": [204,305,304,401], "temporaryParty": [ {"charId":204,"initialLevel":40,"expMultiplierPct":100}, {"charId":401,"initialLevel":52,"expMultiplierPct":100} ], "exitTrigger": {"areaKey":"LIGHT_PALACE","floor":1,"eventId":"light_palace_flashback_exit_veld"} },
                         { "type": "FLAG", "key": "lightPalaceFlashbackActive" },
-                        { "type": "START_FIXED_DUNGEON", "value": "LIGHT_PALACE", "floor": 6 },
+                        { "type": "START_FIXED_DUNGEON", "value": "LIGHT_PALACE", "floor": 6, "sceneContextEntry": true },
                         { "type": "SCENE_CHECKPOINT", "id": "saint_room", "wipeoutEventId": "light_palace_flashback_retry_start" },
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_SAINT_ROOM" }
                 ],

@@ -37,6 +37,7 @@
         pendingField: null,
         worldObjects: [],
         actorObjects: [],
+        storyObjects: new Map(),
         waterObjects: [],
         waterWaveGraphics: null,
         animatedDecorObjects: [],
@@ -113,6 +114,7 @@
 
     const activateLegacyFallback = (error) => {
         stopDecorAnimation();
+        clearStoryCharacterSprites();
         state.failed = true;
         state.ready = false;
         state.lastStaticSignature = null;
@@ -176,6 +178,12 @@
                 if (key) activeKeys.add(key);
             });
         });
+        state.storyObjects.forEach(entry => {
+            [entry?.image, entry?.shadow].forEach(object => {
+                const key = getObjectTextureKey(object);
+                if (key) activeKeys.add(key);
+            });
+        });
         [...state.textureKeys].forEach(key => {
             if (activeKeys.has(key)) return;
             if (scene.textures.exists(key)) scene.textures.remove(key);
@@ -223,6 +231,171 @@
         shadow.setDepth(depth);
         target.push(shadow);
         return shadow;
+    };
+
+    const removeStoryCharacterSprite = (id) => {
+        const key = String(id || '');
+        if (!key) return false;
+        const entry = state.storyObjects.get(key);
+        if (!entry) return false;
+        entry.frameTimer?.remove?.();
+        if (state.scene?.tweens) {
+            state.scene.tweens.killTweensOf?.(entry.image);
+            state.scene.tweens.killTweensOf?.(entry.shadow);
+        }
+        entry.image?.destroy?.();
+        entry.shadow?.destroy?.();
+        state.storyObjects.delete(key);
+        return true;
+    };
+
+    const clearStoryCharacterSprites = () => {
+        [...state.storyObjects.keys()].forEach(removeStoryCharacterSprite);
+    };
+
+    const getStoryCharacterGraphic = (characterId, direction = 'down', step = 1) => {
+        const app = getApp();
+        return app?.getCharacterWalkGraphicPresentation?.(characterId, direction, step) || null;
+    };
+
+    const showStoryCharacterSprite = (id, options = {}) => {
+        const scene = state.scene;
+        if (!state.ready || state.failed || !scene) return false;
+        const key = String(id || '');
+        if (!key) return false;
+        const x = Number(options.x);
+        const y = Number(options.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+        const direction = ['down', 'left', 'right', 'up'].includes(options.direction) ? options.direction : 'down';
+        const step = Number(options.step) === 2 ? 2 : 1;
+        const graphic = getStoryCharacterGraphic(options.characterId, direction, step);
+        if (!graphic?.key) return false;
+        window.GRAPHICS?.get?.(graphic.key);
+        if (!ensureTexture(scene, graphic.key)) return false;
+
+        removeStoryCharacterSprite(key);
+        const px = x * TILE_SIZE + TILE_SIZE / 2;
+        const py = y * TILE_SIZE + TILE_SIZE;
+        const sizeTiles = Math.max(0.5, Number(options.size || 1));
+        const width = Math.max(1, Number(graphic.width || TILE_SIZE) * sizeTiles);
+        const height = Math.max(1, Number(graphic.height || TILE_SIZE) * sizeTiles);
+        const baseDepth = y * 100;
+        const shadow = scene.add.ellipse(px, py - 2, Math.max(12, 16 * sizeTiles), Math.max(4, 4 * sizeTiles), 0x000000, 0.34);
+        shadow.setDepth(baseDepth + 82);
+        const image = scene.add.image(px, py, graphic.key);
+        image.setOrigin(0.5, 1);
+        image.setDisplaySize(width, height);
+        image.setDepth(baseDepth + 90);
+        if (options.opacity !== undefined && Number.isFinite(Number(options.opacity))) image.setAlpha(Number(options.opacity));
+        state.storyObjects.set(key, {
+            image,
+            shadow,
+            characterId: options.characterId,
+            direction,
+            step,
+            sizeTiles,
+            x,
+            y,
+            frameTimer: null
+        });
+        return true;
+    };
+
+    const moveStoryCharacterSprite = (id, options = {}) => {
+        const scene = state.scene;
+        if (!state.ready || state.failed || !scene) return Promise.resolve(false);
+        const key = String(id || '');
+        if (!key) return Promise.resolve(false);
+        let entry = state.storyObjects.get(key);
+        if (!entry) {
+            const shown = showStoryCharacterSprite(key, options);
+            entry = state.storyObjects.get(key);
+            if (!shown || !entry) return Promise.resolve(false);
+        }
+
+        const x = Number(options.x);
+        const y = Number(options.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return Promise.resolve(false);
+        const duration = Math.max(0, Number(options.duration || 0));
+        const direction = ['down', 'left', 'right', 'up'].includes(options.direction)
+            ? options.direction
+            : entry.direction;
+        const targetPx = x * TILE_SIZE + TILE_SIZE / 2;
+        const targetPy = y * TILE_SIZE + TILE_SIZE;
+        const finalDepth = y * 100;
+        const shouldWalk = options.walk === true && duration > 0;
+
+        entry.frameTimer?.remove?.();
+        entry.frameTimer = null;
+        const setFrame = step => {
+            const graphic = getStoryCharacterGraphic(options.characterId ?? entry.characterId, direction, step);
+            if (!graphic?.key) return;
+            window.GRAPHICS?.get?.(graphic.key);
+            if (ensureTexture(scene, graphic.key) && entry.image?.active) entry.image.setTexture(graphic.key);
+        };
+
+        if (duration <= 0) {
+            entry.image?.setPosition(targetPx, targetPy);
+            entry.shadow?.setPosition(targetPx, targetPy - 2);
+            entry.image?.setDepth(finalDepth + 90);
+            entry.shadow?.setDepth(finalDepth + 82);
+            entry.x = x;
+            entry.y = y;
+            entry.direction = direction;
+            entry.characterId = options.characterId ?? entry.characterId;
+            setFrame(Number(options.step) === 2 ? 2 : 1);
+            return Promise.resolve(true);
+        }
+
+        if (shouldWalk && scene.time) {
+            let frame = 1;
+            entry.frameTimer = scene.time.addEvent({
+                delay: 90,
+                loop: true,
+                callback: () => {
+                    frame = frame === 1 ? 2 : 1;
+                    setFrame(frame);
+                }
+            });
+        } else {
+            setFrame(Number(options.step) === 2 ? 2 : 1);
+        }
+
+        return new Promise(resolve => {
+            let remaining = entry.shadow?.active ? 2 : 1;
+            const finishOne = () => {
+                remaining -= 1;
+                if (remaining > 0) return;
+                entry.frameTimer?.remove?.();
+                entry.frameTimer = null;
+                entry.x = x;
+                entry.y = y;
+                entry.direction = direction;
+                entry.characterId = options.characterId ?? entry.characterId;
+                entry.image?.setDepth(finalDepth + 90);
+                entry.shadow?.setDepth(finalDepth + 82);
+                setFrame(Number(options.step) === 2 ? 2 : 1);
+                resolve(true);
+            };
+            scene.tweens.add({
+                targets: entry.image,
+                x: targetPx,
+                y: targetPy,
+                duration,
+                ease: 'Linear',
+                onComplete: finishOne
+            });
+            if (entry.shadow?.active) {
+                scene.tweens.add({
+                    targets: entry.shadow,
+                    x: targetPx,
+                    y: targetPy - 2,
+                    duration,
+                    ease: 'Linear',
+                    onComplete: finishOne
+                });
+            }
+        });
     };
 
     const destroyAtmosphere = (scene) => {
@@ -1783,6 +1956,19 @@
                 refreshVisibleField();
                 window.requestAnimationFrame(refreshVisibleField);
             });
+        },
+        showStoryCharacterSprite(id, options = {}) {
+            return showStoryCharacterSprite(id, options);
+        },
+        moveStoryCharacterSprite(id, options = {}) {
+            return moveStoryCharacterSprite(id, options);
+        },
+        removeStoryCharacterSprite(id) {
+            return removeStoryCharacterSprite(id);
+        },
+        clearStoryCharacterSprites() {
+            clearStoryCharacterSprites();
+            return true;
         },
         isReady() {
             return state.ready && !state.failed;

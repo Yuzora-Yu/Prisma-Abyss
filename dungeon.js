@@ -1272,6 +1272,35 @@ const Dungeon = {
         return requiredFlags.every(flag => !!flags[flag]) && missingFlags.every(flag => !flags[flag]);
     },
 
+    applyBlockedExitPushback: (link) => {
+        const pushback = link?.exitBlockedPushback;
+        if (!pushback || typeof pushback !== 'object') return false;
+        const dx = Number(pushback.dx || 0);
+        const dy = Number(pushback.dy || 0);
+        const targetX = Number(Field.x) + dx;
+        const targetY = Number(Field.y) + dy;
+        if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return false;
+        const mapDef = Field.currentMapData;
+        const safe = typeof Field.isSafeLocalSpawnCell === 'function'
+            ? Field.isSafeLocalSpawnCell(targetX, targetY, mapDef)
+            : true;
+        if (!safe) return false;
+
+        Field.x = targetX;
+        Field.y = targetY;
+        if (Number.isFinite(Number(pushback.dir))) Field.dir = Number(pushback.dir);
+        if (App.data?.location) {
+            App.data.location.x = targetX;
+            App.data.location.y = targetY;
+        }
+        Field.resetPartyTrail?.();
+        App.save();
+        if (typeof Field.refreshVisualState === 'function') Field.refreshVisualState();
+        else Field.render?.();
+        Field.refreshCurrentAction?.({ silent: true });
+        return true;
+    },
+
     tryFixedAutoFloorLink: (tile, x, y) => {
         if (!Field.currentMapData?.isFixed || !Field.currentMapData?.isDungeon) return false;
         const upper = String(tile || '').toUpperCase();
@@ -1338,6 +1367,7 @@ const Dungeon = {
                 }
                 if (exitBlocked) {
                     App.clearAction();
+                    Dungeon.applyBlockedExitPushback(link);
                     if (link.exitBlockedEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
                         StoryManager.executeEvent(link.exitBlockedEventId);
                     } else {
@@ -1605,7 +1635,15 @@ const Dungeon = {
                 // 海底火山そのものはいつでも探索可能。
                 // 本編ゲートは第3層の隔壁に置き、雷の要塞でのブリーフィング後だけ深部へ進める。
                 return ok();
-            case 'LIGHT_PALACE':
+            case 'LIGHT_PALACE': {
+                const activeSceneContext = typeof App.getActiveSceneContext === 'function'
+                    ? App.getActiveSceneContext()
+                    : null;
+                const flashbackInternalEntry = options.sceneContextEntry === true
+                    && flags.lightPalaceFlashbackActive === true
+                    && activeSceneContext?.type === 'story'
+                    && String(activeSceneContext?.exitTrigger?.areaKey || '') === 'LIGHT_PALACE';
+                if (flashbackInternalEntry) return ok();
                 if (!flags.lighthouseCleared) {
                     return block('光の神殿は、触れる前から肌を刺すような結界に包まれている。', 'locked_light_palace');
                 }
@@ -1616,6 +1654,7 @@ const Dungeon = {
                     return block('結界は消えている。それでも、クロードの言葉が引っかかる。先に雷の要塞へ戻ろう。', 'locked_light_palace_recall');
                 }
                 return ok();
+            }
             case 'GALVANIA_CAVE': {
                 const entryKey = options.entryKey || 'entrance';
                 const altarSide = entryKey === 'altarSide' || entryKey === 'south';
@@ -1997,6 +2036,11 @@ const Dungeon = {
         const startFloor = Math.max(1, Number(options.floor || entryFromKey?.floor || baseDef?.entryFloor || 1) || 1);
         const areaDef = Dungeon.getFixedFloorDef(mapKey, startFloor);
         if (!areaDef) return false;
+        // Scene Contextは現在側ダンジョン状態を意図的に捨てるため、
+        // 回想内で最初の固定ダンジョンへ入る時だけ空の作業領域を再生成する。
+        if (!App.data.dungeon || typeof App.data.dungeon !== 'object' || Array.isArray(App.data.dungeon)) {
+            App.data.dungeon = {};
+        }
 
         // 帰還地点の保存。
         // 固定ダンジョン内から別の固定ダンジョンへ入る場合は、元の帰還地点をスタックへ退避する。

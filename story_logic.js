@@ -434,6 +434,20 @@ const StoryManager = {
     resolveStoryFieldVisualSrc: function(cmd) {
         if (!cmd) return '';
         if (cmd.src) return cmd.src;
+        if (cmd.characterId !== undefined || cmd.charId !== undefined) {
+            const characterId = cmd.characterId ?? cmd.charId;
+            const direction = ['down', 'left', 'right', 'up'].includes(cmd.direction) ? cmd.direction : 'down';
+            const step = Number(cmd.step) === 2 ? 2 : 1;
+            const graphic = typeof App !== 'undefined' && typeof App.getCharacterWalkGraphicPresentation === 'function'
+                ? App.getCharacterWalkGraphicPresentation(characterId, direction, step)
+                : null;
+            if (graphic?.key) {
+                return globalThis.PRISMA_ASSETS?.graphics?.[graphic.key]
+                    || globalThis.GRAPHICS?.data?.[graphic.key]
+                    || globalThis.GRAPHICS?.images?.[graphic.key]?.src
+                    || '';
+            }
+        }
         if (cmd.monsterId !== undefined && typeof Field !== 'undefined' && typeof Field.getMonsterMapSpriteSrc === 'function') {
             return Field.getMonsterMapSpriteSrc(cmd.monsterId);
         }
@@ -475,6 +489,59 @@ const StoryManager = {
         return Field.putFieldVisualSprite(cmd.id || `field-visual-story-${Date.now()}`, src, tile, cmd.size || 2, css);
     },
 
+    showStoryCharacterVisual: function(cmd, anchor) {
+        if (!cmd || (cmd.characterId === undefined && cmd.charId === undefined)) return false;
+        const renderer = globalThis.PhaserFieldRenderer;
+        if (!renderer?.isReady?.() || typeof renderer.showStoryCharacterSprite !== 'function') return false;
+        const tile = this.resolveStoryFieldVisualTile(cmd, anchor);
+        const id = cmd.id || `field-story-char-${Date.now()}`;
+        const shown = renderer.showStoryCharacterSprite(id, {
+            characterId: cmd.characterId ?? cmd.charId,
+            direction: cmd.direction || 'down',
+            step: cmd.step,
+            size: cmd.size || 1,
+            opacity: cmd.opacity,
+            x: tile.x,
+            y: tile.y
+        }) === true;
+        if (shown && typeof document !== 'undefined') document.getElementById(id)?.remove();
+        return shown;
+    },
+
+    moveStoryCharacterVisual: async function(cmd, anchor) {
+        if (!cmd || (cmd.characterId === undefined && cmd.charId === undefined)) return false;
+        const renderer = globalThis.PhaserFieldRenderer;
+        if (!renderer?.isReady?.() || typeof renderer.moveStoryCharacterSprite !== 'function') return false;
+        const tile = this.resolveStoryFieldVisualTile(cmd, anchor);
+        const id = cmd.id || '';
+        const result = await renderer.moveStoryCharacterSprite(id, {
+            characterId: cmd.characterId ?? cmd.charId,
+            direction: cmd.direction || 'down',
+            step: cmd.step,
+            walk: cmd.walk === true,
+            size: cmd.size || 1,
+            opacity: cmd.opacity,
+            x: tile.x,
+            y: tile.y,
+            duration: Math.max(0, Number(cmd.duration || 160))
+        });
+        if (result === true && id && typeof document !== 'undefined') document.getElementById(id)?.remove();
+        return result === true;
+    },
+
+    removeStoryCharacterVisual: function(id) {
+        if (!id) return false;
+        const renderer = globalThis.PhaserFieldRenderer;
+        return typeof renderer?.removeStoryCharacterSprite === 'function'
+            ? renderer.removeStoryCharacterSprite(id) === true
+            : false;
+    },
+
+    clearStoryCharacterVisuals: function() {
+        const renderer = globalThis.PhaserFieldRenderer;
+        if (typeof renderer?.clearStoryCharacterSprites === 'function') renderer.clearStoryCharacterSprites();
+    },
+
     setStoryUiCutsceneHidden: function(hidden) {
         if (typeof Field !== 'undefined' && typeof Field.setStoryUiCutsceneHidden === 'function') {
             Field.setStoryUiCutsceneHidden(!!hidden);
@@ -504,11 +571,13 @@ const StoryManager = {
         if (Array.isArray(cmd.removeIds)) removeIds.push(...cmd.removeIds.filter(Boolean));
 
         removeIds.forEach(id => {
+            this.removeStoryCharacterVisual(id);
             const img = document.getElementById(id);
             if (img) img.remove();
         });
 
         if (cmd.cleanupLayer) {
+            this.clearStoryCharacterVisuals();
             const currentLayer = document.getElementById('field-visual-cutscene-layer');
             if (currentLayer) currentLayer.remove();
             if (typeof Field !== 'undefined') Field._visualCutsceneActive = false;
@@ -581,6 +650,7 @@ const StoryManager = {
                     case 'CLEAR_LAYER': {
                         const currentLayer = typeof Field.ensureFieldVisualLayer === 'function' ? Field.ensureFieldVisualLayer() : layer;
                         if (currentLayer) currentLayer.innerHTML = '';
+                        this.clearStoryCharacterVisuals();
                         break;
                     }
                     case 'BLACKOUT':
@@ -597,11 +667,14 @@ const StoryManager = {
                         this.setStoryUiCutsceneHidden(!!cmd.hidden);
                         break;
                     case 'SHOW_SPRITE':
-                        this.putStoryFieldVisualSprite(cmd, anchor);
+                        if (!this.showStoryCharacterVisual(cmd, anchor)) {
+                            this.putStoryFieldVisualSprite(cmd, anchor);
+                        }
                         break;
                     case 'MOVE_SPRITE': {
+                        if (await this.moveStoryCharacterVisual(cmd, anchor)) break;
                         let img = cmd.id ? document.getElementById(cmd.id) : null;
-                        if (!img && (cmd.monsterId !== undefined || cmd.src)) {
+                        if (!img && (cmd.monsterId !== undefined || cmd.src || cmd.characterId !== undefined || cmd.charId !== undefined)) {
                             img = this.putStoryFieldVisualSprite({ ...cmd, dx: cmd.fromDx ?? cmd.dx ?? 0, dy: cmd.fromDy ?? cmd.dy ?? 0 }, anchor);
                         }
                         if (!img || typeof Field.getFieldVisualTileStyle !== 'function') break;
@@ -657,12 +730,14 @@ const StoryManager = {
                         break;
                     }
                     case 'REMOVE_SPRITE': {
+                        if (cmd.id) this.removeStoryCharacterVisual(cmd.id);
                         const img = cmd.id ? document.getElementById(cmd.id) : null;
                         if (img) img.remove();
                         break;
                     }
                     case 'CLEANUP': {
                         this.setStoryUiCutsceneHidden(false);
+                        this.clearStoryCharacterVisuals();
                         const currentLayer = document.getElementById('field-visual-cutscene-layer');
                         if (currentLayer) currentLayer.remove();
                         Field._visualCutsceneActive = false;
@@ -778,11 +853,27 @@ const StoryManager = {
                 case 'CLEAR_LAYER':
                     layer = typeof Field.ensureFieldVisualLayer === 'function' ? Field.ensureFieldVisualLayer() : layer;
                     if (layer) layer.innerHTML = '';
+                    this.clearStoryCharacterVisuals();
                     break;
                 case 'SHOW_SPRITE':
-                    this.putStoryFieldVisualSprite(cmd, anchor);
+                    if (!this.showStoryCharacterVisual(cmd, anchor)) this.putStoryFieldVisualSprite(cmd, anchor);
                     break;
                 case 'MOVE_SPRITE': {
+                    if ((cmd.characterId !== undefined || cmd.charId !== undefined) && globalThis.PhaserFieldRenderer?.isReady?.()) {
+                        const tile = this.resolveStoryFieldVisualTile(cmd, anchor);
+                        globalThis.PhaserFieldRenderer.moveStoryCharacterSprite?.(cmd.id || '', {
+                            characterId: cmd.characterId ?? cmd.charId,
+                            direction: cmd.direction || 'down',
+                            step: cmd.step,
+                            walk: false,
+                            size: cmd.size || 1,
+                            opacity: cmd.opacity,
+                            x: tile.x,
+                            y: tile.y,
+                            duration: 0
+                        });
+                        break;
+                    }
                     let img = cmd.id ? document.getElementById(cmd.id) : null;
                     if (!img) img = this.putStoryFieldVisualSprite(cmd, anchor);
                     if (!img || typeof Field.getFieldVisualTileStyle !== 'function') break;
@@ -795,12 +886,14 @@ const StoryManager = {
                     break;
                 }
                 case 'REMOVE_SPRITE': {
+                    if (cmd.id) this.removeStoryCharacterVisual(cmd.id);
                     const img = cmd.id ? document.getElementById(cmd.id) : null;
                     if (img) img.remove();
                     break;
                 }
                 case 'CLEANUP': {
                     this.setStoryUiCutsceneHidden(false);
+                    this.clearStoryCharacterVisuals();
                     const currentLayer = document.getElementById('field-visual-cutscene-layer');
                     if (currentLayer) currentLayer.remove();
                     break;
@@ -1454,24 +1547,39 @@ const StoryManager = {
             pending.status = 'arrived';
             pending.arrivedAt = Date.now();
             pending.arrival = arrival;
+            let eventToResume = null;
             if (active && pending.sourceEventToken === active.token) {
                 const key = this.getEventPathKey(pending.actionPath || active.currentPath || []);
                 if (key) active.completedActions[key] = true;
+                active.status = 'running';
+                active.currentPath = null;
+                journal.active = active;
+                progress.activeEvent = active;
                 delete progress.pendingMapTransfer;
-                this.completeEventExecution(active);
+                App.save();
+                eventToResume = active;
             } else if (!active && pending.sourceEventSnapshot?.eventId) {
                 // 遷移自体は成功したが、旧版の削除先行処理などでactiveだけ失われた場合も
-                // 保存済みスナップショットから完了処理を復元する。
+                // 保存済みスナップショットから同じ命令列を復元し、遷移より後ろの命令を続行する。
                 const restored = this.normalizeActiveEventJournal(pending.sourceEventSnapshot);
                 const key = this.getEventPathKey(pending.actionPath || restored.currentPath || []);
                 if (key) restored.completedActions[key] = true;
+                restored.status = 'running';
+                restored.currentPath = null;
                 journal.active = restored;
                 progress.activeEvent = restored;
                 delete progress.pendingMapTransfer;
-                this.completeEventExecution(restored);
+                App.save();
+                eventToResume = restored;
             } else {
                 delete progress.pendingMapTransfer;
                 App.save();
+            }
+            // MAP遷移はイベント全体の終了点とは限らない。
+            // 到着を確認した後は、その命令だけを完了済みにして残りの命令列を次tickで再開する。
+            // 同期再入するとField.init / Scene Context初期化中のランナーと競合するため非同期にする。
+            if (eventToResume) {
+                setTimeout(() => StoryManager.resumeActiveConversation?.(), 0);
             }
             return true;
         }
@@ -2489,7 +2597,8 @@ const StoryManager = {
             this.performMapTransfer('fixedDungeon', action.value, {
                 entryKey: action.entryKey || null,
                 floor: action.floor || null,
-                nestedReturn: action.nestedReturn === true
+                nestedReturn: action.nestedReturn === true,
+                sceneContextEntry: action.sceneContextEntry === true
             }, context);
             return 'BREAK_TRANSFER';
         }

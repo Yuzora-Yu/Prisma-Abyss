@@ -12778,6 +12778,7 @@ const FIXED_DUNGEON_MAPS = {
                         },
                         exitBlockedEventId: "locked_light_palace_recall",
                         exitBlockedLog: "宮殿へ向けた足が止まる。クロードは、まだ話していないことがあると言っていた。",
+                        exitBlockedPushback: { dx: -1, dy: 0, dir: 1 },
                         lockedLabel: "東門を調べる",
                         lockedLog: "東門は雷の結界で閉ざされている…",
                         exitPoint: {
@@ -14263,7 +14264,8 @@ const FIXED_DUNGEON_MAPS = {
                         toFloor: 5,
                         targetX: 13,
                         targetY: 16,
-                        label: "地下牢へ下りる"
+                        label: "地下牢へ下りる",
+                        missingFlag: "lightPalaceFlashbackActive"
                     },
                     {
                         x: 16,
