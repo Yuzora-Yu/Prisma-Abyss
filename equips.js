@@ -2029,7 +2029,7 @@ const EQUIP_MASTER = [
         "eid": 181,
         "noRandom": false,
         "rank": 90,
-        "name": "真魔剛竜剣",
+        "name": "雷霆の剣",
         "type": "武器",
         "baseName": "剣",
         "data": {
