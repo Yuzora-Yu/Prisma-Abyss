@@ -5814,30 +5814,6 @@ const FIXED_MAPS = {
                 ]
             },
             {
-                "placementId": 9,
-                "actorId": "marie_water_city",
-                "name": "マリー",
-                "x": 8,
-                "y": 20,
-                "imageKey": "overlay_companion_marie",
-                "states": [
-                    {
-                        "stateId": "marie_water_city",
-                        "priority": 0,
-                        "when": {
-                            "requiredFlag": "underseaVolcanoCleared"
-                        },
-                        "action": {
-                            "label": "マリーと話す",
-                            "log": "白いローブの女性が、避難民の無事を祈っている。",
-                            "type": "quest",
-                            "questId": "marie_water_city",
-                            "lockedText": "マリーはまだ街の混乱を鎮めることで手一杯のようだ。"
-                        }
-                    }
-                ]
-            },
-            {
                 "placementId": 10,
                 "actorId": "hayate_water_city",
                 "name": "ハヤテ",
@@ -12006,12 +11982,12 @@ const FIXED_DUNGEON_MAPS = {
                             303208,
                             303202
                         ],
-                        questId: "sophia_alan_seabed_depths",
-                        startEventId: "quest_sophia_alan_encounter",
-                        storyEventId: "quest_sophia_alan_clear",
+                        questId: "marie_water_city",
+                        startEventId: "quest_marie_seabed_encounter",
+                        storyEventId: "quest_marie_seabed_clear",
                         bossStatMultiplier: 1.35,
-                        actionLabel: "逆潮祭壇を鎮める",
-                        inspectLog: "ソフィアとアランが、祭壇を縛る逆潮の核を睨んでいる。"
+                        actionLabel: "逆潮祭壇の主を討つ",
+                        inspectLog: "マリーが、逆巻く水の向こうにいる強敵を見据えている。"
                     }
                 ],
                 entryPoint: {
@@ -12991,14 +12967,17 @@ const FIXED_DUNGEON_MAPS = {
                                 "stateId": "frieda_baron_thunder_depths",
                                 "priority": 0,
                                 "when": {
-                                    "requiredFlag": "underseaVolcanoCleared"
+                                    "requiredFlags": [
+                                        "lightPalaceCleared",
+                                        "thunderFortDemonAssaultCleared"
+                                    ]
                                 },
                                 "action": {
                                     "label": "フリーダと話す",
-                                    "log": "フリーダが、高圧電流の先を見据えている。",
+                                    "log": "フリーダが、襲撃後も唸り続ける要塞深部を見据えている。",
                                     "type": "quest",
                                     "questId": "frieda_baron_thunder_depths",
-                                    "lockedText": "今はまだ、要塞深部の電流を越える加護が足りない。"
+                                    "lockedText": "要塞奥では、まだ機械の暴走が収まっていない。"
                                 }
                             }
                         ]
@@ -13047,14 +13026,17 @@ const FIXED_DUNGEON_MAPS = {
                                 "stateId": "frieda_baron_thunder_depths",
                                 "priority": 0,
                                 "when": {
-                                    "requiredFlag": "underseaVolcanoCleared"
+                                    "requiredFlags": [
+                                        "lightPalaceCleared",
+                                        "thunderFortDemonAssaultCleared"
+                                    ]
                                 },
                                 "action": {
                                     "label": "バロンと話す",
-                                    "log": "バロンが、雷の制御核へ向けて武器を握り直している。",
+                                    "log": "バロンが、暴走した制御系を止めるため武器を握り直している。",
                                     "type": "quest",
                                     "questId": "frieda_baron_thunder_depths",
-                                    "lockedText": "今はまだ、要塞深部の電流を越える加護が足りない。"
+                                    "lockedText": "要塞奥では、まだ機械の暴走が収まっていない。"
                                 }
                             }
                         ]
@@ -13269,6 +13251,20 @@ const FIXED_DUNGEON_MAPS = {
                                     "log": "マリーは海底火山へ向かう覚悟を決めている。",
                                     "type": "storyEvent",
                                     "eventId": "thunder_guild_undersea_volcano_briefing"
+                                }
+                            },
+                            {
+                                "stateId": "marie_seabed_depths",
+                                "priority": 20,
+                                "when": {
+                                    "requiredFlag": "underseaVolcanoCleared"
+                                },
+                                "action": {
+                                    "label": "マリーと話す",
+                                    "log": "マリーは負傷した二人の様子を気にしながら、海底神殿の異変について話そうとしている。",
+                                    "type": "quest",
+                                    "questId": "marie_water_city",
+                                    "lockedText": "バロンとフリーダの手当てが続いている。"
                                 }
                             }
                         ]
@@ -14134,15 +14130,18 @@ const FIXED_DUNGEON_MAPS = {
                         y: 8,
                         monsterId: [
                             303204,
-                            901
+                            301031
                         ],
                         questId: "frieda_baron_thunder_depths",
-                        requiredFlag: "underseaVolcanoCleared",
+                        requiredFlags: [
+                            "lightPalaceCleared",
+                            "thunderFortDemonAssaultCleared"
+                        ],
                         startEventId: "quest_frieda_baron_encounter",
                         storyEventId: "quest_frieda_baron_clear",
                         bossStatMultiplier: 1.35,
-                        actionLabel: "制御核を止める",
-                        inspectLog: "フリーダとバロンが、雷の核へ同時に武器を構えている。"
+                        actionLabel: "暴走した制御核を止める",
+                        inspectLog: "フリーダとバロンが、暴走した機械群の中枢へ武器を構えている。"
                     }
                 ],
                 chests: [

@@ -1908,34 +1908,44 @@ const STORY_MANAGER_DATA = {
         "QUEST_MARIE_START": [
                 {
                         "name": "マリー",
-                        "text": "避難してきた子たちが、夜になると眠れないんです。\n水音に混じって、外から爪の音がするから。"
+                        "text": "バロンとフリーダは、まだ動かせません。\nグラド相手に無茶をしすぎました。"
                 },
                 {
                         "name": "マリー",
-                        "text": "水上都市近海に、アクアウィスプとウィスプナイト。\n合わせて五体ほど、船路に居ついています。"
+                        "text": "二人の手当てをしている間に、海底神殿の深部から妙な水音が続いていると連絡が来ました。"
                 },
                 {
                         "name": "マリー",
-                        "text": "祈るだけでは、あの子たちの朝を守れません。\nお願いです。あの魔物を退けてください。"
+                        "text": "あの二人を連れていく気はありません。\nでも、放ってもおけない。私も行きます。手を貸してください。"
                 },
                 {
-                        "name": "主人公",
-                        "text": "わかった。水上都市近海を見てくる。",
+                        "name": "アルス",
+                        "text": "わかった。海底神殿の奥を見に行こう。",
                         "charId": 301
-                },
-                {
-                        "name": "マリー",
-                        "text": "ありがとうございます。\n私はここで、戻ってくる船の灯りを消さずに待ちます。"
                 }
         ],
-        "QUEST_MARIE_REPORT": [
+        "QUEST_MARIE_SEABED_ENCOUNTER": [
                 {
-                        "name": "マリー",
-                        "text": "子どもたちが、久しぶりに\n外の風を嗅いで笑いました。"
+                        "name": "システム",
+                        "text": "逆潮祭壇の水が大きくうねり、奥から二つの影が這い出してくる。"
                 },
                 {
                         "name": "マリー",
-                        "text": "次は私が、あなたの道を\n照らす番ですね。"
+                        "text": "……あれが水流を塞いでる。\nバロンたちが起きる頃まで、この騒ぎを残したくない。行きましょう。"
+                }
+        ],
+        "QUEST_MARIE_SEABED_CLEAR": [
+                {
+                        "name": "マリー",
+                        "text": "終わった……。これで、あの二人にはもう少し大人しく寝ていろって言えます。"
+                },
+                {
+                        "name": "マリー",
+                        "text": "私も、誰かの背中を追うだけじゃなく、自分で決めて動きたい。"
+                },
+                {
+                        "name": "マリー",
+                        "text": "アルス。次からは依頼じゃなく、仲間として連れていってください。"
                 }
         ],
         "WATER_CITY_WIND_MESSENGER": [
@@ -2715,7 +2725,7 @@ const STORY_MANAGER_DATA = {
                 { "name": "システム", "text": "炎楔が砕け、研究炉を満たしていた火の流れが急速に弱まっていく。" },
                 { "name": "炎楔のグラド", "text": "……これで終わりだと思うな。俺をここまで作った連中は、まだ先にいる。" },
                 { "name": "システム", "text": "グラドは崩れた研究炉の奥へ退いた。光の宮殿を支えていた第二結界源は沈黙した。" },
-                { "name": "マリー", "charId": 102, "text": "追うより先に要塞へ戻りましょう。負傷者もいるし、結界が消えたことを伝えないと。" }
+                { "name": "マリー", "charId": 102, "text": "追うより先に要塞へ戻りましょう。バロンとフリーダの傷がひどい。結界が消えたことも伝えないと。" }
         ],
         "THUNDER_FORT_CLAUDE_LUNA_ARRIVAL": [
                 {
@@ -4177,6 +4187,24 @@ const STORY_MANAGER_DATA = {
                         "charId": 1003
                 }
         ],
+        "QUEST_FRIEDA_BARON_START": [
+                {
+                        "name": "フリーダ",
+                        "text": "やっと寝台から追い出されたと思ったら、今度は要塞の奥が騒がしい。"
+                },
+                {
+                        "name": "バロン",
+                        "text": "魔王軍の襲撃で制御系がやられた。撤退時に壊したのか、何か仕掛けたのかは分からん。"
+                },
+                {
+                        "name": "フリーダ",
+                        "text": "どっちでも同じさ。機械が勝手に動き回ってる。\nこのままじゃ要塞の雷まで巻き込むよ。"
+                },
+                {
+                        "name": "バロン",
+                        "text": "怪我はもう言い訳にしない。今度は俺たちも最後まで付き合う。"
+                }
+        ],
         "QUEST_FRIEDA_BARON_ENCOUNTER": [
                 {
                         "name": "フリーダ",
@@ -4184,7 +4212,7 @@ const STORY_MANAGER_DATA = {
                 },
                 {
                         "name": "バロン",
-                        "text": "退路は確保した。\n放電が収まる前に叩くぞ。"
+                        "text": "退路は確保した。\n周りの機械ごと、放電が収まる前に叩くぞ。"
                 }
         ],
         "QUEST_FRIEDA_BARON_CLEAR": [
@@ -6458,16 +6486,39 @@ const STORY_MANAGER_DATA = {
                 ],
                 "winActions": []
         },
+        "quest_marie_seabed_encounter": {
+                "actions": [
+                        { "type": "CONV", "value": "QUEST_MARIE_SEABED_ENCOUNTER" },
+                        { "type": "BOSS", "value": [303208, 303202], "winEventId": "quest_marie_seabed_clear" }
+                ],
+                "winActions": []
+        },
+        "quest_marie_seabed_clear": {
+                "actions": [
+                        { "type": "CONV", "value": "QUEST_MARIE_SEABED_CLEAR" },
+                        { "type": "QUEST_COMPLETE", "value": "marie_water_city" },
+                        { "type": "LOG", "value": "マリーが仲間に加わった。" }
+                ],
+                "winActions": []
+        },
+        "quest_frieda_baron_start": {
+                "actions": [
+                        { "type": "CONV", "value": "QUEST_FRIEDA_BARON_START" }
+                ],
+                "winActions": []
+        },
         "quest_frieda_baron_encounter": {
                 "actions": [
                         { "type": "CONV", "value": "QUEST_FRIEDA_BARON_ENCOUNTER" },
-                        { "type": "BOSS", "value": [303204, 902], "winEventId": "quest_frieda_baron_clear" }
+                        { "type": "BOSS", "value": [303204, 301031], "winEventId": "quest_frieda_baron_clear" }
                 ],
                 "winActions": []
         },
         "quest_frieda_baron_clear": {
                 "actions": [
-                        { "type": "CONV", "value": "QUEST_FRIEDA_BARON_CLEAR" }
+                        { "type": "CONV", "value": "QUEST_FRIEDA_BARON_CLEAR" },
+                        { "type": "QUEST_COMPLETE", "value": "frieda_baron_thunder_depths" },
+                        { "type": "LOG", "value": "フリーダとバロンが仲間に加わった。" }
                 ],
                 "winActions": []
         },
@@ -7599,10 +7650,6 @@ const STORY_MANAGER_DATA = {
         },
         "quest_marie_start": {
                 "actions": [{ "type": "CONV", "value": "QUEST_MARIE_START" }],
-                "winActions": []
-        },
-        "quest_marie_report": {
-                "actions": [{ "type": "CONV", "value": "QUEST_MARIE_REPORT" }],
                 "winActions": []
         },
         "quest_sylvia_start": {

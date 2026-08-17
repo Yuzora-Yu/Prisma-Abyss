@@ -69,14 +69,16 @@
         "name": "雷光の封鎖線",
         "area": "雷の要塞 深部",
         "kind": "boss",
-        "postUnderseaVolcanoJoin": true,
+        "postThunderFortDemonAssaultJoin": true,
         "unlockFlags": [
-            "underseaVolcanoCleared"
+            "lightPalaceCleared",
+            "thunderFortDemonAssaultCleared"
         ],
-        "objective": "光の加護で高圧電流が弱まった雷の要塞深部を攻略する。",
-        "startText": "フリーダとバロンは、要塞の奥に残る雷の制御核を止める決意を示した。",
-        "progressText": "雷の要塞深部へ進み、制御核を守る魔物を倒そう。",
-        "completeText": "雷の制御核は沈黙し、フリーダとバロンが仲間に加わった。",
+        "objective": "魔王軍襲撃の影響で暴走した雷の要塞深部の機械群を停止させる。",
+        "startText": "光の宮殿解放後の魔王軍襲撃で要塞奥の制御系が損傷し、機械群が暴走している。回復したフリーダとバロンと深部へ向かおう。",
+        "startEventId": "quest_frieda_baron_start",
+        "progressText": "雷の要塞深部へ進み、暴走した制御核と機械を止めよう。",
+        "completeText": "要塞深部の機械群は沈黙し、フリーダとバロンが仲間に加わった。",
         "rewardAllies": [
             302,
             205
@@ -193,30 +195,25 @@
         "rewardPartyExp": 3500,
         "travelTarget": { "areaKey": "SEABED_TEMPLE" }
     },
+    // 旧IDはセーブ互換のため維持。内容は海底神殿深部の加入クエストへ移行済み。
     "marie_water_city": {
-        "name": "祈り手マリーの討伐依頼",
-        "area": "水上都市",
-        "kind": "hunt",
+        "name": "逆潮祭壇の異変",
+        "area": "海底神殿 深部",
+        "kind": "boss",
         "postUnderseaVolcanoJoin": true,
         "unlockFlags": [
             "underseaVolcanoCleared"
         ],
-        "objective": "水上都市近海に現れるアクアウィスプとウィスプナイトを合計5体討伐する。",
-        "startText": "マリーは、水上都市近海で避難船を脅かすアクアウィスプとウィスプナイトの討伐を依頼した。",
-        "progressText": "水上都市近海でアクアウィスプとウィスプナイトを討伐し、マリーへ報告しよう。",
+        "objective": "海底神殿深部の逆潮祭壇へ向かい、奥に居座る強敵を討伐する。",
+        "startText": "グラド戦で重傷を負ったバロンとフリーダが休養する一方、海底神殿深部では水流の異常が続いている。マリーと祭壇の奥を調べよう。",
+        "progressText": "海底神殿深部の逆潮祭壇へ進み、奥に居座る強敵を倒そう。",
         "startEventId": "quest_marie_start",
-        "reportEventId": "quest_marie_report",
-        "targetMonsterIds": [
-            351,
-            357
-        ],
-        "targetCount": 5,
-        "completeText": "マリーは祈りだけでなく、杖を手にして旅に同行することを決めた。",
+        "completeText": "逆潮祭壇の異変は収まり、マリーが仲間に加わった。",
         "rewardAllies": [
             102
         ],
         "travelTarget": {
-            "areaKey": "WATER_CITY"
+            "areaKey": "SEABED_TEMPLE"
         }
     },
     "arel_kagetora_appeal": {

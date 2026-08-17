@@ -641,7 +641,7 @@ const App = {
         //サブクエスト加入キャラクター
         210: 20,  // カリン（禁忌の森クリア後⇒火山深部）
         
-        102: 27,  // マリー（海底神殿クリア後）
+        102: 27,  // マリー（海底火山後⇒海底神殿深部）
         108: 20,  // アリサ（海底神殿クリア後⇒禁忌の森深部）
         207: 35,  // ハイネ（海底神殿クリア後⇒禁忌の森深部）
         209: 28,  // シルビア（ジョセフ加入後⇒水上都市）
@@ -9699,6 +9699,53 @@ load: () => {
         return data;
     },
 
+    // 2026-08-17: 海底火山直後に受注できた旧バロン／フリーダ加入クエストを、
+    // 光の宮殿解放後・雷の要塞防衛後の機械暴走クエストへ移した。
+    // 旧版で完了済みの仲間加入は巻き戻さず、未完了の受注状態だけを新しい開始地点へ戻す。
+    migrateAllyQuestTiming20260817V1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260817_allyQuestTimingV1',
+        () => {
+            let count = 0;
+            if (!data.progress || typeof data.progress !== 'object' || Array.isArray(data.progress)) data.progress = {};
+            if (!data.progress.flags || typeof data.progress.flags !== 'object' || Array.isArray(data.progress.flags)) data.progress.flags = {};
+            const flags = data.progress.flags;
+            const worldState = data.progress.worldState || {};
+
+            // 旧saveで防衛完了の上位状態だけ残っている場合も、新クエストの解禁条件へ正規化する。
+            if (flags.lunaAwakenedAtThunderFort === true && flags.thunderFortDemonAssaultCleared !== true) {
+                flags.thunderFortDemonAssaultCleared = true;
+                count++;
+            }
+            if ((flags.thunderFortDemonAssaultCleared === true || Number(worldState.thunderFortState || 0) >= 7)
+                && flags.lightPalaceCleared !== true
+                && Number(worldState.lightPalaceState || 0) >= 5) {
+                flags.lightPalaceCleared = true;
+                count++;
+            }
+
+            const quests = data.progress.quests;
+            if (quests && typeof quests === 'object' && !Array.isArray(quests)) {
+                const state = quests.frieda_baron_thunder_depths;
+                if (state && typeof state === 'object' && state.state !== 'completed') {
+                    const hadProgress = state.state !== 'available'
+                        || Number(state.stage || 0) > 0
+                        || (state.progress && Object.keys(state.progress).length > 0)
+                        || !!state.introSeen;
+                    if (hadProgress) {
+                        quests.frieda_baron_thunder_depths = {
+                            state: 'available',
+                            stage: 0,
+                            progress: {}
+                        };
+                        count++;
+                    }
+                }
+            }
+            return { changed:count > 0, count };
+        }
+    ),
+
     migrateImportedSaveData: (loadedData) => {
         if (!loadedData || typeof loadedData !== 'object' || Array.isArray(loadedData)) return loadedData;
 
@@ -9777,6 +9824,7 @@ load: () => {
 
         if (!data.battle || typeof data.battle !== 'object' || Array.isArray(data.battle)) data.battle = { active: false };
         App.migrateBossBalance20260817V1(data);
+        App.migrateAllyQuestTiming20260817V1(data);
 
         if (!data.stats || typeof data.stats !== 'object' || Array.isArray(data.stats)) {
             data.stats = {
