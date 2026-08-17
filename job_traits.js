@@ -1,4 +1,4 @@
-/* job_traits.js - current-job-only battle traits (approved draft 2026-08-16) */
+/* job_traits.js - current-job traits: persistent derived stats + battle effects (approved draft 2026-08-16) */
 (() => {
     'use strict';
 
@@ -52,7 +52,7 @@
         6:{id:6,name:'舞の余韻',summary:'行動時、一定確率で味方全体強化か敵全体弱体が追加発動する。'},
         7:{id:7,name:'魔装剣',summary:'物理攻撃と魔法攻撃を交互に使うほど与ダメージが上昇する。'},
         8:{id:8,name:'深慮',summary:'全スキルのMP消費を減らし、MPが高いほど与ダメージが上昇する。'},
-        9:{id:9,name:'残心',summary:'頭・体・足の未装備数に応じて与ダメージ・回避率・会心率が上昇する。'},
+        9:{id:9,name:'残心',summary:'頭・体・足の未装備数に応じて与ダメージ・回避率・会心率が常時上昇する。'},
         10:{id:10,name:'闘争心',summary:'ダメージを受けるたびに与ダメージが上昇する。'},
         11:{id:11,name:'ボルテージ',summary:'生存ターン数に応じて味方全体の与ダメージが上昇する。'},
         12:{id:12,name:'星巡り',summary:'毎ターン終了時、偶数ターンは味方支援、奇数ターンは敵妨害が必ず発生する。'},
@@ -91,7 +91,25 @@
     const getMissingSamuraiArmorSlots = actor => {
         if (!isJob(actor, 9)) return 0;
         const equips = sourceOf(actor)?.equips || actor?.equips || {};
-        return ['頭','体','足'].reduce((sum, key) => sum + (equips[key] ? 0 : 1), 0);
+        const slotAliases = [
+            ['頭','兜','帽子','head'],
+            ['体','鎧','ローブ','body','Armor'],
+            ['足','ブーツ','くつ','legs','Feet']
+        ];
+        return slotAliases.reduce((sum, aliases) => sum + (aliases.some(key => equips[key]) ? 0 : 1), 0);
+    };
+
+    // 戦闘外でも常に成立する職業特性は、App.calcStats() からこの入口を通す。
+    // 戦闘インスタンス側で同じ補正を重ねないこと。
+    const adjustPersistentStat = (actor, key, value) => {
+        if (!actor || typeof value === 'undefined' || value === null) return value;
+        let val = value;
+        if (typeof val === 'number' && isJob(actor, 9)) {
+            const missing = getMissingSamuraiArmorSlots(actor);
+            if (key === 'eva') val += missing * 15;
+            if (key === 'cri') val += missing * 10;
+        }
+        return val;
     };
 
     const strongestAliveTraitSource = (Battle, jobId, exclude = null) => {
@@ -104,11 +122,6 @@
         if (!actor || typeof value === 'undefined' || value === null) return value;
         let val = value;
         if (typeof val === 'number') {
-            if (isJob(actor, 9)) {
-                const missing = getMissingSamuraiArmorSlots(actor);
-                if (key === 'eva') val += missing * 15;
-                if (key === 'cri') val += missing * 10;
-            }
             if (isJob(actor, 16) && key === 'mag') {
                 const battleAtk = Number(Battle?.getBattleStat?.(actor, 'atk') ?? actor.atk ?? sourceOf(actor)?.atk ?? 0);
                 val += Math.floor(battleAtk * 0.5);
@@ -532,7 +545,7 @@
     window.JOB_TRAIT_DATA = DEFINITIONS;
     window.JobTraits = Object.freeze({
         definitions:DEFINITIONS, getDefinition, jobIdOf, isJob, effectiveLevel,
-        getMpCostMultiplier, adjustEffectTurns, adjustBattleStat,
+        getMpCostMultiplier, adjustEffectTurns, adjustPersistentStat, adjustBattleStat,
         outgoingMultiplier, incomingMultiplier, adjustFinalDamage, overrideElementResistance,
         getCritBonus, forceCritical, criticalDamageMultiplier,
         onActionStart, onDefend, chooseAutoAction, canPayHolyFistCost, spendHolyFistHp,

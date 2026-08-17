@@ -611,12 +611,6 @@ const MenuAllies = {
             
             const ailmentLabels = { Poison:'毒', ToxicPoison:'猛毒', Shock:'感電', Fear:'怯え', Debuff:'弱体', InstantDeath:'即死', SkillSeal:'技封', SpellSeal:'魔封', HealSeal:'癒封' };
             const environmentalElmRes = s.environmentalElmRes || {};
-            const environmentEntries = CONST.ELEMENTS
-                .map(element => [element, Number(environmentalElmRes[element] || 0)])
-                .filter(([, value]) => value !== 0);
-            const environmentSummary = environmentEntries.length
-                ? `<div style="margin-bottom:7px; padding:6px; border:1px solid #8a5a79; border-radius:4px; background:#2a1825; font-size:10px; color:#f0c7e5;">環境補正：${environmentEntries.map(([element,value]) => `${element}${value > 0 ? '+' : ''}${value}%`).join(' / ')}</div>`
-                : '';
             const resistanceDisplay = element => {
                 const total = Number(s.elmRes?.[element] || 0);
                 const modifier = Number(environmentalElmRes[element] || 0);
@@ -627,7 +621,6 @@ const MenuAllies = {
             };
 
             contentHtml = `
-                ${environmentSummary}
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom:8px;">
                     <div style="background:#332222; border:1px solid #554444; border-radius:4px; padding:4px; text-align:center; font-size:11px;">
                         <div style="color:#aaa; font-size:9px;">与ダメージ</div><div style="color:#f88; font-weight:bold;">+${s.finDmg}%</div>
@@ -644,7 +637,7 @@ const MenuAllies = {
                         </div>
                     </div>
                     <div style="background:#222; border:1px solid #444; border-radius:4px; padding:4px;">
-                        <div style="font-size:9px; color:#88f; margin-bottom:3px; text-align:center; border-bottom:1px solid #333;">属性耐性（環境込み）</div>
+                        <div style="font-size:9px; color:#88f; margin-bottom:3px; text-align:center; border-bottom:1px solid #333;">属性耐性（環境補正込み）</div>
                         <div style="display:flex; flex-direction:column; gap:1px;">
                             ${CONST.ELEMENTS.map(e => `<div style="display:flex; justify-content:space-between; background:#2a2a2a; padding:1px 3px; border-radius:2px; font-size:9px;"><span style="color:#aaa;">${e}</span><span>${resistanceDisplay(e)}</span></div>`).join('')}
                         </div>
@@ -1570,7 +1563,7 @@ const MenuAllies = {
                 </div>
                 <div style="font-size:11px; color:#d8c49a; line-height:1.45;">正方形の範囲に合わせて、拡大率と位置を調整してください。</div>
                 <div style="display:flex; justify-content:center;">
-                    <canvas id="ally-image-editor-canvas" width="240" height="240" style="width:240px; height:240px; background:#000; border:1px solid #806020; border-radius:6px;"></canvas>
+                    <canvas id="ally-image-editor-canvas" width="240" height="240" style="width:240px; height:240px; background-color:#292929; background-image:linear-gradient(45deg,#444 25%,transparent 25%),linear-gradient(-45deg,#444 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#444 75%),linear-gradient(-45deg,transparent 75%,#444 75%); background-size:20px 20px; background-position:0 0,0 10px,10px -10px,-10px 0px; border:1px solid #806020; border-radius:6px;"></canvas>
                 </div>
                 <div style="display:grid; gap:8px; font-size:12px;">
                     <label>拡大率 <input id="ally-image-editor-scale" type="range" min="60" max="300" value="100" style="width:100%;" oninput="MenuAllies.updateImageEditorPreview()"></label>
@@ -1662,9 +1655,8 @@ const MenuAllies = {
         const size = outputSize || canvas.width || 240;
         canvas.width = size;
         canvas.height = size;
+        // 透明素材は加工後もalphaを維持する。背景色はcanvasへ焼き込まない。
         ctx.clearRect(0, 0, size, size);
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, size, size);
 
         const scaleEl = document.getElementById('ally-image-editor-scale');
         const xEl = document.getElementById('ally-image-editor-x');
@@ -1736,8 +1728,10 @@ const MenuAllies = {
             return;
         }
         try {
+            // WebPはalphaを保持できる。未対応環境ではJPEGではなくPNGへフォールバックし、
+            // 透過素材の背景を不透明化しない。
             let dataUrl = canvas.toDataURL('image/webp', 0.9);
-            if (!/^data:image\/webp/i.test(dataUrl)) dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            if (!/^data:image\/webp/i.test(dataUrl)) dataUrl = canvas.toDataURL('image/png');
             char.img = dataUrl;
             char.image = dataUrl;
             delete char.imageEdit;

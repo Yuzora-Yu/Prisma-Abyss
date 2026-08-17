@@ -8279,6 +8279,14 @@ load: () => {
     s.hit += pctMods.hit;
     s.eva += pctMods.eva;
     s.cri += pctMods.cri;
+
+    // 戦闘外でも成立する現職の常時補正をここで確定する。
+    // 侍「残心」の回避・会心は装備変更直後の詳細/比較画面にも即時反映する。
+    if (typeof JobTraits !== 'undefined' && typeof JobTraits.adjustPersistentStat === 'function') {
+        s.hit = JobTraits.adjustPersistentStat(char, 'hit', s.hit);
+        s.eva = JobTraits.adjustPersistentStat(char, 'eva', s.eva);
+        s.cri = JobTraits.adjustPersistentStat(char, 'cri', s.cri);
+    }
 	
 	// ★新規追加：習得スキルの書き戻し
     s.skills = Array.from(allSkillIds);
