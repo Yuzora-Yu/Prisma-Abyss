@@ -5225,7 +5225,6 @@ const STORY_MANAGER_DATA = {
                                 "value": 802001,
                                 "winEventId": "prologue_first_boss_win",
                                 "lossEventId": "prologue_first_boss_loss",
-                                "forceAutoOff": true,
                                 "bestiaryExcluded": true,
                                 "noDrops": true,
                                 "noExp": true,
@@ -5261,7 +5260,6 @@ const STORY_MANAGER_DATA = {
                                 "value": 802002,
                                 "lossEventId": "prologue_illuminacia_loss",
                                 "winEventId": "prologue_hidden_route_pending",
-                                "forceAutoOff": true,
                                 "bestiaryExcluded": true,
                                 "noDrops": true,
                                 "noExp": true,
@@ -5307,7 +5305,6 @@ const STORY_MANAGER_DATA = {
                                 "bossStatMultiplier": 0.5,
                                 "winEventId": "prologue_hidden_special_end_win",
                                 "lossEventId": "prologue_hidden_special_end_loss",
-                                "forceAutoOff": true,
                                 "bestiaryExcluded": true,
                                 "noDrops": true,
                                 "noExp": true,
@@ -7599,7 +7596,7 @@ const STORY_MANAGER_DATA = {
                                 "count": 1,
                                 "then": [
                                         { "type": "CONV", "value": "ALAN_ALTAR_WITH_APPEAL_PHASE8E" },
-                                        { "type": "BOSS", "value": 301110, "winEventId": "integration_altar_alan_clear_phase8e", "noDrops": true, "noRecruit": true, "forceAutoOff": true }
+                                        { "type": "BOSS", "value": 301110, "winEventId": "integration_altar_alan_clear_phase8e", "noDrops": true, "noRecruit": true }
                                 ],
                                 "else": [
                                         { "type": "CONV", "value": "ALAN_ALTAR_NO_APPEAL_WARNING_PHASE8E" },
@@ -7610,7 +7607,7 @@ const STORY_MANAGER_DATA = {
                                                 "noLabel": "引き返す",
                                                 "yes": [
                                                         { "type": "FLAG", "key": "alanAltarIrreversibleAccepted" },
-                                                        { "type": "BOSS", "value": 301110, "winEventId": "integration_altar_alan_clear_phase8e", "noDrops": true, "noRecruit": true, "forceAutoOff": true }
+                                                        { "type": "BOSS", "value": 301110, "winEventId": "integration_altar_alan_clear_phase8e", "noDrops": true, "noRecruit": true }
                                                 ],
                                                 "no": [
                                                         { "type": "CONV", "value": "ALAN_ALTAR_RETREAT_PHASE8E" }
@@ -7811,7 +7808,7 @@ const STORY_MANAGER_DATA = {
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_HEXAGRAM_TRAP" },
                         { "type": "FLAG", "key": "lightPalaceFlashbackHexagramResolved" },
                         { "type": "SCENE_PARTY", "party": [ {"charId":204} ] },
-                        { "type": "BOSS", "value": 301064, "forceAutoOff": true, "forcedLoss": true, "endAfterTurns": 5, "bestiaryExcluded": true, "noDrops": true, "noExp": true, "noGold": true, "noQuestProgress": true, "noRecruit": true, "lossEventId": "light_palace_flashback_veld1_after" }
+                        { "type": "BOSS", "value": 301064, "forcedLoss": true, "endAfterTurns": 5, "bestiaryExcluded": true, "noDrops": true, "noExp": true, "noGold": true, "noQuestProgress": true, "noRecruit": true, "lossEventId": "light_palace_flashback_veld1_after" }
                 ],
                 "winActions": []
         },
@@ -7839,7 +7836,7 @@ const STORY_MANAGER_DATA = {
         "light_palace_flashback_exit_veld": {
                 "actions": [
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_EXIT_VELD" },
-                        { "type": "BOSS", "value": 301064, "forceAutoOff": true, "forcedLoss": true, "endAfterTurns": 5, "bestiaryExcluded": true, "noDrops": true, "noExp": true, "noGold": true, "noQuestProgress": true, "noRecruit": true, "lossEventId": "light_palace_flashback_escape_end" }
+                        { "type": "BOSS", "value": 301064, "forcedLoss": true, "endAfterTurns": 5, "bestiaryExcluded": true, "noDrops": true, "noExp": true, "noGold": true, "noQuestProgress": true, "noRecruit": true, "lossEventId": "light_palace_flashback_escape_end" }
                 ],
                 "winActions": []
         },
@@ -9004,7 +9001,7 @@ const STORY_MANAGER_DATA = {
                     then:[
                         {type:'CONV',value:'ABYSS_JASPER_ALAN_ENTRY_PHASE8F'},
                         {
-                            type:'BOSS', value:302060, winEventId:'abyss_jasper_clear', forceAutoOff:true,
+                            type:'BOSS', value:302060, winEventId:'abyss_jasper_clear',
                             externalTurnSupports:[{
                                 supportId:'alan_jagorea_phase8f',
                                 name:'アラン',
@@ -9018,7 +9015,7 @@ const STORY_MANAGER_DATA = {
                     ],
                     else:[
                         {
-                            type:'BOSS', value:302060, winEventId:'abyss_jasper_clear', ambush:true, forceAutoOff:true,
+                            type:'BOSS', value:302060, winEventId:'abyss_jasper_clear', ambush:true,
                             openingPartyStatDebuff:{
                                 id:'chaos_bind_jagorea',
                                 label:'混沌呪縛',

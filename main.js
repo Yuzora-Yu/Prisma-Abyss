@@ -9767,6 +9767,27 @@ load: () => {
         return data;
     },
 
+    // 2026-08-17: 既存ボスのAUTOロックを全面廃止。
+    // ロック機構自体は将来の特殊戦用に保持するが、この版以前から継続中のボス戦に
+    // forceAutoOff が保存されている場合だけ一度解除する。レア遭遇など非ボス用途は触らない。
+    migrateExistingBossAutoLockRemoval20260817V1: (data = App.data) => App.runOneTimeCompatibilityMigration(
+        data,
+        '20260817_existingBossAutoLockRemovalV1',
+        () => {
+            const battle = data?.battle;
+            if (!battle || typeof battle !== 'object' || Array.isArray(battle)) return { changed:false, count:0 };
+            const fixedIds = (Array.isArray(battle.fixedBossId) ? battle.fixedBossId : [battle.fixedBossId])
+                .map(Number).filter(Number.isFinite);
+            const isBossBattle = battle.isBossBattle === true
+                || battle.isSpecialBoss === true
+                || battle.isEstark === true
+                || fixedIds.length > 0;
+            if (!isBossBattle || battle.forceAutoOff !== true) return { changed:false, count:0 };
+            delete battle.forceAutoOff;
+            return { changed:true, count:1 };
+        }
+    ),
+
     // 2026-08-17: 海底火山直後に受注できた旧バロン／フリーダ加入クエストを、
     // 光の宮殿解放後・雷の要塞防衛後の機械暴走クエストへ移した。
     // 旧版で完了済みの仲間加入は巻き戻さず、未完了の受注状態だけを新しい開始地点へ戻す。
@@ -9892,6 +9913,7 @@ load: () => {
 
         if (!data.battle || typeof data.battle !== 'object' || Array.isArray(data.battle)) data.battle = { active: false };
         App.migrateBossBalance20260817V1(data);
+        App.migrateExistingBossAutoLockRemoval20260817V1(data);
         App.migrateAllyQuestTiming20260817V1(data);
 
         if (!data.stats || typeof data.stats !== 'object' || Array.isArray(data.stats)) {

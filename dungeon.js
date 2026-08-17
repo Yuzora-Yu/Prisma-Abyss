@@ -2950,8 +2950,29 @@ const Dungeon = {
                     return;
                 }
 
+                const hasEquipReward = chestDef.equipEid !== undefined && chestDef.equipEid !== null;
                 const hasItemReward = chestDef.itemId !== undefined && chestDef.itemId !== null;
-                if (hasItemReward) {
+                if (hasEquipReward) {
+                    const equip = (typeof App.createEquipById === 'function')
+                        ? App.createEquipById(Number(chestDef.equipEid), Number(chestDef.equipPlus ?? 0))
+                        : null;
+                    if (!equip) {
+                        console.error('[FixedContainer] equipment definition not found', {
+                            areaKey, progressKey, x, y, equipEid: chestDef.equipEid, chestDef
+                        });
+                        App.log('中身を取得できなかった。宝箱はまだ開いていない。');
+                        Field.render();
+                        return;
+                    }
+                    equip.source = chestDef.equipSource || 'fixedChest';
+                    if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
+                    App.data.inventory.push(equip);
+                    markOpened();
+                    Dungeon.noteFixedContainerOpened(chestDef);
+                    App.log(container.inspect);
+                    App.log(`<span style="color:#ffd700;">${equip.name}</span> を手に入れた！`);
+                    window.EquipAcquisitionCard?.enqueue?.(equip, { source:'fixedChest' });
+                } else if (hasItemReward) {
                     const item = Dungeon.grantContainerItem(chestDef.itemId, chestDef.count || 1);
                     if (!item) {
                         // 中身の定義が解決できない場合は開封済みにしない。

@@ -2125,12 +2125,12 @@ const SURFACE_WORLD_MAP_DATA = [
     "WWMMMMGGGGGGGGGGMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMGGGGFFFFGGGGGGGGGMMMMMMMMMWWWMMGGGGGGGGGGGGGGGGGGMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWMMMLLGGGGGGMMMMMMMMMWWWWWMMMMMMMMMMMMMMMMMMMMMMMMMMGGGGGGGGGGGMMMMMMMMFMMMMWWMGGGGGGGGGGGGGGGGGllMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WMMMMMLLLGGGWWMMMMMWWWWWWWWWWWWWWGGGMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMFFFFFFMMWWGGGGGGGGGGGGGGGGlllMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WMMMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWGGGGLLLLMMMMMMMMMMMMMMMMMMMMMMMFFFFFFFFFFFWWWGGGGGGGGGGGGGGlllMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WMMMMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWGGGGLLLLLLLLLLMMMMMMMMMMMMMMGGGGFFMMMFFFFFWWGGGGGGGGGGGGlllllMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WMMMWMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWGGGGGGGLLLLLGGGdMMMMMMMMGGGGGGGMMMMMMFFFFFWWGGGGGGGGGGllllllMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WMMMWTTMMMMMMWWWWWWWWWWWWWWWWWWWWWWWGGMMMGGGGLLGGMMMMMMMMMGGGGGGMMMMMMMFFFFFGGWWGGGGGGGGlllllllMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WMMMWTTTMMMMMMWWWWWWWWWWWWWWWWWWWWWWMMMMMMMGGGGGMMMMMMMMMMMMMMMMMMMMFFFFFFGGGGWWGGGGGGlllllllMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WMMWWWTTTMMMMMMWWWWWWWWWWWWWWWWWWWWWGMMMMMMMMMGMMMMMMMMWMMMMMMMMMMFFFFFFGGGGGGWWGGGGllllllMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WMMMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWGGMMMMMMMMMMMMMMMMMMMMMMMMMMMMMFFFFFFFFFFFWWWGGGGGGGGGGGGGGlllMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WMMMMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWGGMMMMMLLLLLLLMMMMMMMMMMMMMMGGGGFFMMMFFFFFWWGGGGGGGGGGGGlllllMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WMMMWMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWGGGMMMGLLLLLGGGdMMMMMMMMGGGGGGGMMMMMMFFFFFWWGGGGGGGGGGllllllMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WMMMWTTMMMMMMWWWWWWWWWWWWWWWWWWWWWWWGGMMMMMGGLLGGMMMMMMMMMGGGGGGMMMMMMMFFFFFGGWWGGGGGGGGlllllllMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WMMMWTTTMMMMMMWWWWWWWWWWWWWWWWWWWWWWMMMMMMMMGGGGMMMMMMMMMMMMMMMMMMMMFFFFFFGGGGWWGGGGGGlllllllMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WMMWWWTTTMMMMMMWWWWWWWWWWWWWWWWWWWWWGMMMMMMMMMMMMMMMMMMWMMMMMMMMMMFFFFFFGGGGGGWWGGGGllllllMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWMWWWWTTTMMMMMMMMWWWWWWWWWWWWWWWWWGGGGMMMMMMMMMMMMMMMMWMMMMMMMFFFFFFFFGGGGGGGWWGlllllllMMMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWMMWWWTTMMMMMMMMMMWWWWWWWWWWWWWWWTLLLMMMMMMMMMMMMMMMMMWMMMMFFFFFFFFFFFGGGGGGFWWllllllMMMMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWMMWWWWMMMMMMMMMWWWWWWWWWWWWWWWWMMMMMMMMMMMMMMMMMMMMMWWWFFFFFFFFFFGGGGGGGGGFFWWllMMMMMMMMMMWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
@@ -14610,7 +14610,7 @@ const FIXED_DUNGEON_MAPS = {
                     "^WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW^",
                     "^WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW^",
                     "^WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW^",
-                    "^WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW^",
+                    "^WWWWWWWWWWUWWWWWWWWWWWUWWWWWWWWWW^",
                     "^WWWWWWWWWTTTWWWWWWWWWTTTWWWWWWWWW^",
                     "^WWWWWWWWTTTWWWWWWWWWWWTTTWWWWWWWW^",
                     "^WWWWWWWTTTWWWWWTTTWWWWWTTTWWWWWWW^",
@@ -14644,6 +14644,25 @@ const FIXED_DUNGEON_MAPS = {
                         targetX: 28,
                         targetY: 6,
                         label: "3階へ下りる"
+                    },
+                    {
+                        x: 11,
+                        y: 5,
+                        toFloor: 6,
+                        targetX: 7,
+                        targetY: 8,
+                        label: "聖女の部屋へ入る"
+                    },
+                    {
+                        x: 23,
+                        y: 5,
+                        toFloor: 7,
+                        targetX: 7,
+                        targetY: 8,
+                        label: "宝物保管庫へ入る",
+                        requiredFlag: "lightPalaceCleared",
+                        lockedLabel: "扉を調べる",
+                        lockedLog: "扉には鍵がかかっている。"
                     }
                 ],
                 chests: [
@@ -15086,7 +15105,7 @@ const FIXED_DUNGEON_MAPS = {
                 themeKey: "LIGHT_PALACE"
             },
             {
-                label: "聖女の部屋・回想",
+                label: "聖女の部屋",
                 encounterRank: 0,
                 width: 17,
                 height: 13,
@@ -15107,7 +15126,75 @@ const FIXED_DUNGEON_MAPS = {
                     "^^^^^^^^^^^^^^^^^"
                 ],
                 floorLinks: [
-                    { x: 7, y: 9, toFloor: 4, targetX: 17, targetY: 24, label: "聖女の部屋を出る" }
+                    { x: 7, y: 9, toFloor: 4, targetX: 11, targetY: 6, label: "聖女の部屋を出る" }
+                ],
+                entryPoint: { x: 7, y: 7 },
+                healSprings: [
+                    { x: 7, y: 5 }
+                ],
+                mapActions: [],
+                name: "",
+                themeKey: "LIGHT_PALACE"
+            },
+            {
+                label: "宝物保管庫",
+                encounterRank: 0,
+                width: 17,
+                height: 13,
+                disableRandomEncounters: true,
+                tiles: [
+                    "^^^^^^^^^^^^^^^^^",
+                    "^WWWWWWWWWWWWWWW^",
+                    "^WWWWTTTTTWWWWWW^",
+                    "^WWWTTTTTTTWWWWW^",
+                    "^WWWTRTTTRTWWWWW^",
+                    "^WWWTTTTTTTWWWWW^",
+                    "^WWWTTTTTTTWWWWW^",
+                    "^WWWTRTTTRTWWWWW^",
+                    "^WWWWTTTTTWWWWWW^",
+                    "^WWWWTTDTTWWWWWW^",
+                    "^WWWWWWWWWWWWWWW^",
+                    "^WWWWWWWWWWWWWWW^",
+                    "^^^^^^^^^^^^^^^^^"
+                ],
+                floorLinks: [
+                    { x: 7, y: 9, toFloor: 4, targetX: 23, targetY: 6, label: "宝物保管庫を出る" }
+                ],
+                chests: [
+                    {
+                        x: 5,
+                        y: 4,
+                        itemId: 99,
+                        type: "item",
+                        rare: true,
+                        lootId: "light_palace_treasure_coin"
+                    },
+                    {
+                        x: 9,
+                        y: 4,
+                        equipEid: 181,
+                        equipPlus: 3,
+                        type: "equip",
+                        rare: true,
+                        lootId: "light_palace_treasure_rank90_sword"
+                    },
+                    {
+                        x: 5,
+                        y: 7,
+                        equipEid: 184,
+                        equipPlus: 3,
+                        type: "equip",
+                        rare: true,
+                        lootId: "light_palace_treasure_rank90_staff"
+                    },
+                    {
+                        x: 9,
+                        y: 7,
+                        itemId: 5127,
+                        type: "item",
+                        rare: true,
+                        lootId: "light_palace_treasure_light_trait_book"
+                    }
                 ],
                 entryPoint: { x: 7, y: 7 },
                 mapActions: [],

@@ -12,11 +12,11 @@ Status: **inventory / no automatic replacement**
 
 ## 集計
 
-- total entries: **1840**
+- total entries: **1845**
 - story system narration: **179**
 - story objective text: **58**
-- other UI/map/menu candidates: **1603**
-- status breakdown: **inventory_only 1627 / reviewed-or-new 213**
+- other UI/map/menu candidates: **1608**
+- status breakdown: **inventory_only 1627 / reviewed-or-new 218**
 
 > 2026-08-17再集計。表の追記に対して集計欄が更新されていなかったため、master inventoryの実行数から再計算した。以後は表追記時にこの集計も同時更新する。
 
@@ -1911,6 +1911,11 @@ Status: **inventory / no automatic replacement**
 |1838|map_label_set|`map.js`|海底火山通常階|地下1階 / 地下2階 / 地下3階|通常階は階数表示へ戻す|approved_applied_20260816|
 |1839|map_label_set|`map.js`|深淵世界後半の通常階|1層 / 2層 / …|通常階は階数表示を基本とする|approved_applied_20260816|
 |1840|map_label_policy|`map.js`|固定ダンジョン全般|固有名は研究棟・祭壇・最奥など特殊階に限定|通常階の過剰な固有名化を撤回|approved_applied_20260816|
+|1841|map_action_new|`map.js`|光の宮殿4階 `(11,5)`|聖女の部屋へ入る|新規導線として承認済み|approved_applied_20260817|
+|1842|map_label_new|`map.js`|光の宮殿付属室|宝物保管庫|新規付属室名として承認済み|approved_applied_20260817|
+|1843|map_action_new|`map.js`|光の宮殿4階 `(23,5)`|宝物保管庫へ入る|新規導線として承認済み|approved_applied_20260817|
+|1844|map_action_new|`map.js`|宝物保管庫・クリア前|扉を調べる|施錠中の操作語として承認済み|approved_applied_20260817|
+|1845|map_log_new|`map.js`|宝物保管庫・クリア前|扉には鍵がかかっている。|クリア前の施錠表示として承認済み|approved_applied_20260817|
 
 ### 2026-08-17 共通UI表記・エラー表現の承認済み判断
 
