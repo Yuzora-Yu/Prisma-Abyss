@@ -1322,6 +1322,30 @@ const Dungeon = {
                     return true;
                 }
             }
+            if (link?.exitBlockConditions) {
+                const exitBlockConditions = link.exitBlockConditions || {};
+                let exitBlocked = false;
+                if (typeof App.evaluateGameConditions === 'function') {
+                    exitBlocked = App.evaluateGameConditions(exitBlockConditions);
+                } else {
+                    const requiredFlags = Array.isArray(exitBlockConditions.requiredFlags)
+                        ? exitBlockConditions.requiredFlags
+                        : (exitBlockConditions.requiredFlag ? [exitBlockConditions.requiredFlag] : []);
+                    const missingFlags = Array.isArray(exitBlockConditions.missingFlags)
+                        ? exitBlockConditions.missingFlags
+                        : (exitBlockConditions.missingFlag ? [exitBlockConditions.missingFlag] : []);
+                    exitBlocked = requiredFlags.every(flag => !!flags[flag]) && missingFlags.every(flag => !flags[flag]);
+                }
+                if (exitBlocked) {
+                    App.clearAction();
+                    if (link.exitBlockedEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
+                        StoryManager.executeEvent(link.exitBlockedEventId);
+                    } else {
+                        App.log(link.exitBlockedLog || '今はこの出口を通れない。');
+                    }
+                    return true;
+                }
+            }
             if (link) return Dungeon.followFixedFloorLink(link, Field.currentMapData);
             const exitPoint = Field.currentMapData.exitPoint;
             const forced = exitPoint ? {

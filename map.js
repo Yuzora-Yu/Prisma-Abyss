@@ -12787,6 +12787,12 @@ const FIXED_DUNGEON_MAPS = {
                             requiredFlags: ["lighthouseCleared", "underseaVolcanoCleared"],
                             missingFlag: "lunaSurvivalRevealed"
                         },
+                        exitBlockConditions: {
+                            requiredFlag: "lunaSurvivalRevealed",
+                            missingFlag: "lightPalaceFlashbackCompleted"
+                        },
+                        exitBlockedEventId: "locked_light_palace_recall",
+                        exitBlockedLog: "宮殿へ向けた足が止まる。クロードは、まだ話していないことがあると言っていた。",
                         lockedLabel: "東門を調べる",
                         lockedLog: "東門は雷の結界で閉ざされている…",
                         exitPoint: {
