@@ -2895,6 +2895,13 @@ const Dungeon = {
 	
     /* dungeon.js: Dungeon.openChest 関数 */
     openChest: async (x, y, type) => {
+        // 光の宮殿回想は脱出が最優先。宝箱は開封済みにせず、中身にも触れない。
+        const sceneContext = (typeof App.getActiveSceneContext === 'function') ? App.getActiveSceneContext() : null;
+        if (sceneContext && App.data?.progress?.flags?.lightPalaceFlashbackActive === true) {
+            App.log('今はそんなことをしている余裕はない……！');
+            return;
+        }
+
         const isFixed = Field.currentMapData && Field.currentMapData.isFixed;
         const areaKey = Field.getCurrentAreaKey();
 

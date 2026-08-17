@@ -496,6 +496,11 @@ const MenuParty = {
 
     // キャラクタ変更画面を開くためのヘルパー
     openChangeMember: (slotIndex) => {
+        const sceneContext = (typeof App !== 'undefined' && typeof App.getActiveSceneContext === 'function') ? App.getActiveSceneContext() : null;
+        if (sceneContext?.lockPartyComposition === true) {
+            Menu.msg('回想中は仲間編成を変更できません。');
+            return;
+        }
 		MenuParty.targetSlot = slotIndex;
 		const tabs = document.getElementById('party-screen-tabs');
 		if (tabs) tabs.style.display = 'none';
@@ -581,6 +586,11 @@ const MenuParty = {
     },
     
 	setMember: (uid) => {
+        const sceneContext = (typeof App !== 'undefined' && typeof App.getActiveSceneContext === 'function') ? App.getActiveSceneContext() : null;
+        if (sceneContext?.lockPartyComposition === true) {
+            Menu.msg('回想中は仲間編成を変更できません。');
+            return;
+        }
 		if (uid === null) {
 			const currentCount = App.data.party.filter(id => id !== null).length;
 			if (App.data.party[MenuParty.targetSlot] !== null && currentCount <= 1) {

@@ -1264,6 +1264,8 @@ const App = {
             mergeLoot: options.mergeLoot === true,
             exitTrigger: options.exitTrigger && typeof options.exitTrigger === 'object' ? App.cloneSceneContextValue(options.exitTrigger) : null,
             isolatedInventory: options.isolateInventory === true,
+            isolateCharacters: options.isolateCharacters === true,
+            lockPartyComposition: options.lockPartyComposition === true,
             isolatedBaseline: null
         };
         if (!Array.isArray(App.sceneContextStack)) App.sceneContextStack = [];
@@ -1291,6 +1293,13 @@ const App = {
                 gems: App.data.gems,
                 globalOpenedChests
             };
+        }
+
+        // 回想用の仲間名簿を現在時間の名簿から完全に分離する。
+        // snapshotには現在側characters/partyが保持されているため、SCENE_ENDでそのまま復元できる。
+        if (context.isolateCharacters) {
+            App.data.characters = [];
+            App.data.party = [null, null, null, null];
         }
 
         const targetLocation = options.location && typeof options.location === 'object'
@@ -1326,6 +1335,44 @@ const App = {
         return context;
     },
 
+    getSceneContextEquipmentPreset: (preset) => {
+        const key = String(preset || '').trim().toLowerCase();
+        if (key === 'rank60magic' || key === 'rank60_magic') {
+            return { '武器':124, '盾':128, '頭':130, '体':132, '足':134 };
+        }
+        if (key === 'rank60physical' || key === 'rank60_physical') {
+            return { '武器':121, '盾':127, '頭':129, '体':131, '足':133 };
+        }
+        return null;
+    },
+
+    applySceneContextEquipmentPreset: (ally, preset, options = {}) => {
+        const context = App.getActiveSceneContext();
+        const mapping = App.getSceneContextEquipmentPreset(preset);
+        if (!context || !ally || !mapping || typeof App.createEquipById !== 'function') return false;
+        if (!ally.equips || typeof ally.equips !== 'object') ally.equips = { '武器':null, '盾':null, '頭':null, '体':null, '足':null };
+        let changed = false;
+        Object.entries(mapping).forEach(([slot, eid]) => {
+            if (ally.equips[slot] && options.force !== true) return;
+            const equip = App.createEquipById(Number(eid), 3);
+            if (!equip) return;
+            // 回想開始時に支給した装備は「回想中に拾った戦利品」ではない。
+            // 外してscene inventoryへ入れても、現在時間側へ即時統合しないための識別子を付ける。
+            equip.sceneContextSeedToken = context.token;
+            equip.sceneContextSeed = true;
+            equip.sceneContextSeedCharId = Number(ally.charId);
+            equip.sceneContextSeedSlot = slot;
+            ally.equips[slot] = equip;
+            changed = true;
+        });
+        if (changed && typeof App.calcStats === 'function') {
+            const stats = App.calcStats(ally);
+            ally.currentHp = stats.maxHp;
+            ally.currentMp = stats.maxMp;
+        }
+        return changed;
+    },
+
     setSceneContextParty: (partySpecs = [], options = {}) => {
         const context = App.getActiveSceneContext();
         if (!context || !Array.isArray(partySpecs)) return false;
@@ -1343,6 +1390,7 @@ const App = {
                     joinParty: false,
                     temporary: true,
                     allowPermanentReturn: true,
+                    ignoreCarryover: context.isolateCharacters === true,
                     silent: true,
                     save: false
                 });
@@ -1356,6 +1404,7 @@ const App = {
                 if (!Array.isArray(ally.skillBookSkills)) ally.skillBookSkills = [];
                 spec.skills.map(Number).filter(Number.isFinite).forEach(id => { if (!ally.skillBookSkills.includes(id)) ally.skillBookSkills.push(id); });
             }
+            if (spec.equipmentPreset) App.applySceneContextEquipmentPreset(ally, spec.equipmentPreset, { force: spec.forceEquipment === true });
             if (ally.uid) App.data.party[index] = ally.uid;
         });
         if (typeof Menu !== 'undefined') Menu.renderPartyBar?.();
@@ -1399,28 +1448,85 @@ const App = {
     collectSceneContextCarryover: (context, options = {}) => {
         const ids = Array.isArray(options.carryoverCharacterIds) ? options.carryoverCharacterIds : (context?.carryoverCharacterIds || []);
         const out = {};
+
+        // 回想開始時の支給装備を人物・部位単位で控える。
+        // 回想中に拾った装備を着用して終了しても、その戦利品は現在側へ返し、
+        // 後の正式加入用carryoverには支給装備を残す。
+        const seedByOwnerSlot = {};
+        const noteSeed = (equip) => {
+            if (!equip || typeof equip !== 'object' || equip.sceneContextSeed !== true) return;
+            if (String(equip.sceneContextSeedToken || '') !== String(context?.token || '')) return;
+            const ownerId = Number(equip.sceneContextSeedCharId);
+            const slot = String(equip.sceneContextSeedSlot || '');
+            if (!Number.isFinite(ownerId) || !slot) return;
+            const ownerKey = String(ownerId);
+            if (!seedByOwnerSlot[ownerKey]) seedByOwnerSlot[ownerKey] = {};
+            seedByOwnerSlot[ownerKey][slot] = App.cloneSceneContextValue(equip);
+        };
+        (Array.isArray(App.data?.inventory) ? App.data.inventory : []).forEach(noteSeed);
+        (Array.isArray(App.data?.characters) ? App.data.characters : []).forEach(char => {
+            Object.values(char?.equips || {}).forEach(noteSeed);
+        });
+
         ids.map(Number).filter(Number.isFinite).forEach(id => {
             const char = App.getStoryAllyCharacter(id);
             if (!char) return;
+            const currentEquips = char.equips || {};
+            const carryoverEquips = {};
+            const slots = new Set(['武器','盾','頭','体','足', ...Object.keys(currentEquips)]);
+            slots.forEach(slot => {
+                const currentEquip = currentEquips?.[slot] || null;
+                const currentIsSceneSeed = !!(currentEquip && currentEquip.sceneContextSeed === true
+                    && String(currentEquip.sceneContextSeedToken || '') === String(context?.token || ''));
+                let selected = currentEquip;
+                if (context?.isolatedInventory === true && !currentIsSceneSeed) {
+                    selected = seedByOwnerSlot[String(id)]?.[slot] || null;
+                }
+                carryoverEquips[slot] = App.cloneSceneContextValue(selected);
+                const equip = carryoverEquips[slot];
+                if (!equip || typeof equip !== 'object') return;
+                delete equip.sceneContextSeed;
+                delete equip.sceneContextSeedToken;
+                delete equip.sceneContextSeedCharId;
+                delete equip.sceneContextSeedSlot;
+            });
             out[String(id)] = {
                 level: Math.max(1, Number(char.level || 1)),
                 exp: Math.max(0, Number(char.exp || 0)),
-                equips: App.cloneSceneContextValue(char.equips || {}),
+                equips: carryoverEquips,
                 skillBookSkills: App.cloneSceneContextValue(char.skillBookSkills || [])
             };
         });
         return out;
     },
 
-    mergeSceneContextLoot: (sceneItems, sceneInventory, context, sceneProgress = null) => {
+    mergeSceneContextLoot: (sceneItems, sceneInventory, context, sceneProgress = null, sceneEquippedLoot = []) => {
         if (!context?.mergeLoot) return;
         if (!App.data.items || typeof App.data.items !== 'object') App.data.items = {};
+
+        // Scene開始時に支給した消耗品そのものは現在時間へ持ち帰らない。
+        // baselineを超えて増えた分だけを「回想中に新規取得した物」として統合する。
+        const baselineItems = context.isolatedBaseline?.items || {};
         Object.entries(sceneItems || {}).forEach(([id, count]) => {
-            const amount = Math.max(0, Math.floor(Number(count || 0)));
-            if (amount > 0) App.data.items[id] = Number(App.data.items[id] || 0) + amount;
+            const currentAmount = Math.max(0, Math.floor(Number(count || 0)));
+            const baselineAmount = Math.max(0, Math.floor(Number(baselineItems?.[id] || 0)));
+            const gained = Math.max(0, currentAmount - baselineAmount);
+            if (gained > 0) App.data.items[id] = Number(App.data.items[id] || 0) + gained;
         });
+
         if (!Array.isArray(App.data.inventory)) App.data.inventory = [];
-        (Array.isArray(sceneInventory) ? sceneInventory : []).forEach(equip => App.data.inventory.push(App.cloneSceneContextValue(equip)));
+        const baselineInventory = Array.isArray(context.isolatedBaseline?.inventory) ? context.isolatedBaseline.inventory : [];
+        const baselineIds = new Set(baselineInventory.map(equip => String(equip?.id || '')).filter(Boolean));
+        const mergedIds = new Set();
+        [...(Array.isArray(sceneInventory) ? sceneInventory : []), ...(Array.isArray(sceneEquippedLoot) ? sceneEquippedLoot : [])].forEach(equip => {
+            if (!equip || typeof equip !== 'object') return;
+            if (equip.sceneContextSeed === true || String(equip.sceneContextSeedToken || '') === String(context.token || '')) return;
+            const id = String(equip.id || '');
+            if (id && (baselineIds.has(id) || mergedIds.has(id))) return;
+            if (id) mergedIds.add(id);
+            App.data.inventory.push(App.cloneSceneContextValue(equip));
+        });
+
         // 回想で開けた宝箱は現在でも開封済みにする。これにより同一宝箱の二重取得を防ぐ。
         if (!App.data.progress) App.data.progress = {};
         if (!App.data.progress.openedChests || typeof App.data.progress.openedChests !== 'object') App.data.progress.openedChests = {};
@@ -1437,13 +1543,24 @@ const App = {
         const carryover = App.collectSceneContextCarryover(context, options);
         const sceneItems = context.isolatedInventory ? App.cloneSceneContextValue(App.data.items || {}) : {};
         const sceneInventory = context.isolatedInventory ? App.cloneSceneContextValue(App.data.inventory || []) : [];
+        const sceneEquippedLoot = [];
+        if (context.isolatedInventory) {
+            (Array.isArray(App.data.characters) ? App.data.characters : []).forEach(char => {
+                Object.values(char?.equips || {}).forEach(equip => {
+                    if (!equip || typeof equip !== 'object') return;
+                    const isSeed = equip.sceneContextSeed === true
+                        && String(equip.sceneContextSeedToken || '') === String(context.token || '');
+                    if (!isSeed) sceneEquippedLoot.push(App.cloneSceneContextValue(equip));
+                });
+            });
+        }
         const sceneProgress = context.isolatedInventory ? { openedChests: App.cloneSceneContextValue(App.data.progress?.openedChests || {}) } : null;
         App.sceneContextStack.pop();
         if (!App.restoreSceneContextSnapshot(context.snapshot)) return false;
         if (!App.data.progress || typeof App.data.progress !== 'object') App.data.progress = {};
         if (!App.data.progress.storyCharacterCarryover || typeof App.data.progress.storyCharacterCarryover !== 'object') App.data.progress.storyCharacterCarryover = {};
         Object.entries(carryover).forEach(([id, value]) => { App.data.progress.storyCharacterCarryover[id] = value; });
-        App.mergeSceneContextLoot(sceneItems, sceneInventory, context, sceneProgress);
+        App.mergeSceneContextLoot(sceneItems, sceneInventory, context, sceneProgress, sceneEquippedLoot);
         if (options.changeScene !== false && typeof App.changeScene === 'function') {
             App.changeScene(options.sceneId || context.snapshot?.sourceSceneId || 'field');
         }
@@ -4883,7 +5000,9 @@ const App = {
             if (!options.silent) App.log(`${master.name}は現在、仲間へ戻ることができない。`);
             return null;
         }
-        const carryover = App.data?.progress?.storyCharacterCarryover?.[String(charId)] || null;
+        const carryover = options.ignoreCarryover === true
+            ? null
+            : (App.data?.progress?.storyCharacterCarryover?.[String(charId)] || null);
         const requestedInitialLevel = options.initialLevel !== undefined ? Math.floor(Number(options.initialLevel)) : App.getStoryAllyInitialLevel(charId);
         const inheritedLevel = Math.max(1, Math.floor(Number(carryover?.level || 1)));
         const initialLevel = Math.max(1, Math.min(100, Math.max(Number.isFinite(requestedInitialLevel) ? requestedInitialLevel : 1, inheritedLevel)));
@@ -4937,7 +5056,9 @@ const App = {
                 }
             }
             applyCarryover(existing);
-            const lbCarryover = App.applyStoryCharacterLimitBreakCarryover?.(existing, { save:false });
+            const lbCarryover = options.ignoreCarryover === true
+                ? null
+                : App.applyStoryCharacterLimitBreakCarryover?.(existing, { save:false });
             if (lbCarryover?.changed) changed = true;
             if (changed && options.save !== false) App.save();
             return existing;
@@ -4995,7 +5116,7 @@ const App = {
             }
         }
         applyCarryover(saveAlly);
-        App.applyStoryCharacterLimitBreakCarryover?.(saveAlly, { save:false });
+        if (options.ignoreCarryover !== true) App.applyStoryCharacterLimitBreakCarryover?.(saveAlly, { save:false });
         if (options.save !== false) App.save();
         if (!options.silent) App.log(`なんと ${saveAlly.name}が仲間に加わった！`);
         return saveAlly;

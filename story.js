@@ -2758,6 +2758,10 @@ const STORY_MANAGER_DATA = {
                 { "name": "レイラ", "charId": 204, "text": "聖女様、ここも長くは持ちません。正面入口まで下がります。私から離れないでください。" },
                 { "name": "ルーナ", "charId": 401, "text": "うん。……傷ついた人がいたら、置いてはいけないよ。私も戦えるから。" },
         ],
+        "LIGHT_PALACE_FLASHBACK_LUNA_PRAYER_RECOVERY": [
+                { "name": "システム", "text": "二人の意識が沈みかけた、その時。ルーナの祈りが淡い光となって広がり、傷も魔力も一息に満たしていく。" },
+                { "name": "ルーナ", "charId": 401, "text": "まだ、ここで終わるわけにはいかないよ。……レイラ、一緒に帰ろう。" }
+        ],
         "LIGHT_PALACE_FLASHBACK_HEXAGRAM_TRAP": [
                 { "name": "システム", "text": "六芒星の間へ踏み込んだ瞬間、床の光条が閉じ、ルーナの足元へ六つの楔が走った。" },
                 { "name": "ジャスパー", "text": "ようやく器が来た。聖女の力は、王国のために正しく使わせてもらう。" },
@@ -2786,6 +2790,18 @@ const STORY_MANAGER_DATA = {
                 { "name": "システム", "text": "レオンは、ルーナを抱えたクロードごと結界の外へ投げ飛ばした。" },
                 { "name": "クロード", "charId": 304, "text": "レオン――！" },
                 { "name": "システム", "text": "クロードの記憶はそこで途切れる。彼が確かに覚えているのは、ルーナを抱えたまま宮殿の外へ転がり出たことだけだった。" }
+        ],
+        "LIGHT_PALACE_FLASHBACK_RETURN_AFTERMATH": [
+                { "name": "クロード", "charId": 304, "text": "……手も足も出なかった。騎士団長のあんな目も、あんな剣も……俺は、初めて見た……。" },
+                { "name": "ジョセフ", "charId": 101, "text": "待て。ヴェルドが……そこまでやったってのか。あいつが、本気でお前たちへ剣を向けたのか……？" },
+                { "name": "システム", "text": "ジョセフは息を呑んだ。ゼリードは何も言わず、目を伏せたまま何かを思案している。" },
+                { "name": "クロード", "charId": 304, "text": "ルーナ様も、まだ目を覚まさない。レイラも……レオンも、宮殿に残ったままだ。" },
+                { "name": "クロード", "charId": 304, "text": "頼む。二人を……助けてくれ。俺じゃ、もう……。" },
+                { "name": "システム", "text": "アルスはクロードをまっすぐ見て、静かにうなずいた。" },
+                { "name": "クロード", "charId": 304, "text": "……そうか。なら……よかった……。" },
+                { "name": "システム", "text": "張り詰めていた糸が切れたように、クロードの身体から力が抜ける。" },
+                { "name": "ジョセフ", "charId": 101, "text": "おい、クロード！　……無茶しやがって。" },
+                { "name": "システム", "text": "アルスたちは救護所の職員にクロードと眠ったままのルーナを託した。レイラとレオンを救うため、光の宮殿へ向かう。" }
         ],
         "LOCKED_LIGHT_PALACE_RECALL": [
                 { "name": "システム", "text": "宮殿へ向けた足が止まる。クロードは、まだ話していないことがあると言っていた。" }
@@ -7778,7 +7794,7 @@ const STORY_MANAGER_DATA = {
         },
         "light_palace_flashback_start": {
                 "actions": [
-                        { "type": "SCENE_BEGIN", "visualPreset": "sepia", "restartOnWipeout": true, "wipeoutEventId": "light_palace_flashback_retry_start", "isolateInventory": true, "mergeLoot": true, "carryoverCharacterIds": [204,305,304,401], "temporaryParty": [ {"charId":204,"initialLevel":40,"expMultiplierPct":100}, {"charId":401,"initialLevel":52,"expMultiplierPct":100} ], "exitTrigger": {"areaKey":"LIGHT_PALACE","floor":1,"eventId":"light_palace_flashback_exit_veld"} },
+                        { "type": "SCENE_BEGIN", "visualPreset": "sepia", "restartOnWipeout": true, "wipeoutEventId": "light_palace_flashback_retry_start", "isolateInventory": true, "mergeLoot": true, "carryoverCharacterIds": [204,305,304,401], "options": { "isolateCharacters": true, "lockPartyComposition": true, "sceneItems": { "13": 6, "14": 4, "5": 2 } }, "temporaryParty": [ {"charId":204,"initialLevel":50,"expMultiplierPct":100,"equipmentPreset":"rank60Physical"}, {"charId":401,"initialLevel":80,"expMultiplierPct":100,"equipmentPreset":"rank60Magic"} ], "exitTrigger": {"areaKey":"LIGHT_PALACE","floor":1,"eventId":"light_palace_flashback_exit_veld"} },
                         { "type": "FLAG", "key": "lightPalaceFlashbackActive" },
                         { "type": "START_FIXED_DUNGEON", "value": "LIGHT_PALACE", "floor": 6, "sceneContextEntry": true },
                         { "type": "SCENE_CHECKPOINT", "id": "saint_room", "wipeoutEventId": "light_palace_flashback_retry_start" },
@@ -7802,14 +7818,18 @@ const STORY_MANAGER_DATA = {
         "light_palace_flashback_veld1_after": {
                 "actions": [
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_VELD1_AFTER" },
-                        { "type": "SCENE_PARTY", "party": [ {"charId":204}, {"charId":305,"initialLevel":46}, {"charId":304,"initialLevel":47,"skills":[249]} ] },
+                        { "type": "SCENE_PARTY", "party": [ {"charId":204,"initialLevel":50,"equipmentPreset":"rank60Physical"}, {"charId":305,"initialLevel":60,"equipmentPreset":"rank60Physical"}, {"charId":304,"initialLevel":60,"equipmentPreset":"rank60Physical","skills":[249]} ] },
                         { "type": "HEAL" },
                         { "type": "SCENE_CHECKPOINT", "id": "post_veld", "wipeoutEventId": "light_palace_flashback_retry_post_veld" }
                 ],
                 "winActions": []
         },
         "light_palace_flashback_retry_start": {
-                "actions": [ {"type":"SCENE_RESTORE","id":"saint_room"} ],
+                "actions": [
+                        { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_LUNA_PRAYER_RECOVERY" },
+                        { "type": "HEAL", "silent": true },
+                        { "type": "LOG", "value": "ルーナの祈りが二人を包み、HPとMPが全回復した。" }
+                ],
                 "winActions": []
         },
         "light_palace_flashback_retry_post_veld": {
@@ -7827,6 +7847,7 @@ const STORY_MANAGER_DATA = {
                 "actions": [
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_ESCAPE_END" },
                         { "type": "SCENE_END", "carryoverCharacterIds": [204,305,304,401] },
+                        { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_RETURN_AFTERMATH" },
                         { "type": "FLAG", "key": "lightPalaceFlashbackCompleted" },
                         { "type": "STEP", "value": 7 },
                         { "type": "SUB", "value": 0 },

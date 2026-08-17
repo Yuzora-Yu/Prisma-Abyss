@@ -893,16 +893,19 @@ alanState.phase = 'dead'
 - 現在のMAP／座標／向き／パーティ／キャラクター／所持品／装備袋／所持金／図鑑等をsnapshot。
 - `visualPreset: sepia`。
 - 回想中の通常saveは抑止。
-- 回想専用 `items` / `inventory` を使用し、アルス側所持品を参照禁止。
-- 回想中に開けた宝箱は終了時に現在側へ開封済みとして統合し、二重取得を避ける。
-- 回想で拾った消耗品・未装備品は現在側へ統合。
-- 装備中のもの、Lv、現在Lv内EXP、追加習得技は人物carryoverへ格納。
+- `isolateCharacters:true` とし、現在時間の仲間名簿を回想中の `App.data.characters` から完全に外す。アルス達を編成画面から回想パーティへ加入させない。
+- `lockPartyComposition:true` とし、回想中のメンバー入替はStory側 `SCENE_PARTY` だけが行う。
+- 回想専用 `items` / `inventory` を使用し、アルス側所持品を参照禁止。初期支給分はbaselineとして扱い、現在側へ増殖させない。
+- 光の宮殿回想中は宝箱開封を禁止する。`Dungeon.openChest()` の副作用へ入る前に止め、開封済みフラグ・報酬・罠戦闘を発生させない。
+- 回想で戦闘ドロップ／イベント等により新規に増えたアイテム・装備は、終了時に装備中でも未装備でも現在側へ統合。回想開始時支給品はbaseline扱いとし、支給装備は外してinventoryへ移しても持ち帰り品にしない。
+- 人物carryoverはLv、現在Lv内EXP、追加習得技、および回想開始時の支給装備を基準とする。回想中に新規取得した装備をcarryoverと現在側所持品へ二重計上しない。
 - 後の `addStoryAlly()` 時にcarryoverを適用。
 
 ## 15.2 チェックポイント
-- checkpoint `saint_room`: レイラ＋ルーナ、聖女の部屋。第一逃走区間全滅時に復帰。
-- checkpoint `post_veld`: レイラ＋レオン＋クロード、フラッシュボム直後。第二逃走区間全滅時に復帰。
-- 通常エンカウント全滅でも通常GAME OVERのワールド復帰処理を行わず、該当checkpointへ戻す。
+- 回想開始時: レイラLv50＋ルーナLv80。両名ともRank60相当+3全身装備。回想専用所持品は超やくそう6、賢者の聖水4、蘇生用の葉2を基準とする。
+- 第一逃走区間の通常全滅: `saint_room` へ巻き戻さず、ルーナの祈りイベントでレイラ＋ルーナのHP/MPを全回復し、その地点から続行する。
+- checkpoint `post_veld`: レイラ＋レオンLv60＋クロードLv60、フラッシュボム直後。レオン／クロードはRank60相当+3物理系全身装備。第二逃走区間全滅時に復帰。
+- 通常GAME OVERのワールド復帰処理は行わない。ヴェルド強制敗北は `lossEventId` を優先し、祈り／checkpoint復帰とは分離する。
 
 ## 15.3 六芒星の罠
 仮MAPでは3階の必須通過座標へ非表示 `storyEvent` tile effectを置く。最終図面反映時に六芒星の間の正式座標へ移設する。
@@ -924,14 +927,16 @@ alanState.phase = 'dead'
 - AUTO不可。
 - 敗北または5ターン生存。
 - 結界消失→レオンがクロード＋ルーナを外へ投げる。
-- `SCENE_END` 後に `lightPalaceFlashbackCompleted`。
+- `SCENE_END` で現代の雷の要塞へ戻す。
+- 現代側でクロードの追加会話（ヴェルドへの恐怖／ルーナ未覚醒／レイラ・レオン救援依頼／アルス了承／クロード失神／救護所へ引き渡し）を最後まで実行する。
+- その後に `lightPalaceFlashbackCompleted` を立てる。
 - 現在側 `storyStep=7/subStep=0` へ進み、光宮殿実攻略を解禁。
 
 **実装不変条件（2026-08-17追記）:**
 - 回想用の `LIGHT_PALACE` 入場だけは `sceneContextEntry:true` を明示し、`lightPalaceFlashbackActive` かつ当該Scene Context内のときだけ通常進行ゲートを迂回する。現在時間の光宮殿入場条件は迂回しない。
 - `SCENE_BEGIN` は現在側の `dungeon` 作業領域を破棄するため、回想内で固定ダンジョンを開始するときは `Dungeon.startFixed()` 側で作業領域を再生成してから状態を書き込む。
 - StoryのMAP遷移は到着した時点で**遷移命令だけ**を完了扱いにし、イベント全体を完了扱いにしない。到着後のcheckpoint・会話等を同じイベントjournalから再開する。
-- `saint_room` checkpointは光宮殿6階への到着確認後に作成する。通常戦闘での全滅はcheckpointへ戻し、ヴェルド301064の強制敗北では `lossEventId` を優先して物語を前進させる。
+- `saint_room` checkpointは光宮殿6階への到着確認後に作成するが、第一逃走区間の通常全滅復帰先には使わない。通常全滅はルーナ祈りイベントでその場全回復、ヴェルド301064の強制敗北では `lossEventId` を優先して物語を前進させる。
 - 回想中は1階→地下牢（5階）の現在時間用導線を封鎖し、現在時間のNPC・囚人・ボス状態へ侵入させない。
 
 ## 15.5 ルーナEXP注意
