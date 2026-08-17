@@ -2718,10 +2718,27 @@ const STORY_MANAGER_DATA = {
                 { "name": "マリー", "charId": 102, "text": "追うより先に要塞へ戻りましょう。負傷者もいるし、結界が消えたことを伝えないと。" }
         ],
         "THUNDER_FORT_CLAUDE_LUNA_ARRIVAL": [
-                { "name": "システム", "text": "雷の要塞へ戻ると、救護所の前が騒然としていた。クロードが、意識を失った一人の少女を抱えて駆け込んでくる。" },
+                {
+                        "type": "FIELD_CUTSCENE",
+                        "commands": [
+                                { "op": "MOVE_PLAYER", "x": 29, "y": 14 },
+                                { "op": "SHOW_SPRITE", "id": "claude-east-gate-arrival", "src": "assets/map/overlays/overlay_companion_claude.png", "x": 32, "y": 14, "size": 2 },
+                                { "op": "MOVE_SPRITE", "id": "claude-east-gate-arrival", "src": "assets/map/overlays/overlay_companion_claude.png", "x": 30, "y": 14, "size": 2, "duration": 260 }
+                        ]
+                },
+                { "name": "システム", "text": "東門を抜け、光の宮殿へ向かおうとした――その時。門の外から、誰かが駆け込んできた。" },
+                { "name": "アルス", "charId": 301, "text": "……クロード？" },
+                { "name": "システム", "text": "クロードの腕には、意識を失った一人の少女が抱かれている。" },
                 { "name": "アルス", "charId": 301, "text": "……ルーナ？" },
                 { "name": "システム", "text": "あの日に失ったはずの面影が、そこにあった。生きている。だが、目を覚まさない。" },
-                { "name": "クロード", "charId": 304, "text": "説明はする。まず彼女を寝かせる。……そのあと、ギルド区画へ来てくれ。宮殿で何が起きたか、最初から話す。" }
+                { "name": "クロード", "charId": 304, "text": "生きてる。けど、意識が戻らない。説明はあとだ。まず彼女を寝かせる。……そのあと、ギルド区画へ来てくれ。宮殿で何が起きたか、最初から話す。" },
+                {
+                        "type": "FIELD_CUTSCENE",
+                        "commands": [
+                                { "op": "REMOVE_SPRITE", "id": "claude-east-gate-arrival" },
+                                { "op": "CLEANUP" }
+                        ]
+                }
         ],
         "LIGHT_PALACE_FLASHBACK_BRIEFING": [
                 { "name": "クロード", "charId": 304, "text": "ルーナは救護所で眠っている。……ここから先は、俺が宮殿で見たことを順に話す。最初に動いていたのはレイラだった。" },

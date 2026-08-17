@@ -12782,6 +12782,11 @@ const FIXED_DUNGEON_MAPS = {
                         label: "東門から外に出る",
                         log: "門の向こうに、うっすらと光の神殿が見える。",
                         requiredFlag: "thunderFortCleared",
+                        beforeExitEventId: "thunder_fort_claude_luna_arrival",
+                        beforeExitEventConditions: {
+                            requiredFlags: ["lighthouseCleared", "underseaVolcanoCleared"],
+                            missingFlag: "lunaSurvivalRevealed"
+                        },
                         lockedLabel: "東門を調べる",
                         lockedLog: "東門は雷の結界で閉ざされている…",
                         exitPoint: {
@@ -13270,20 +13275,6 @@ const FIXED_DUNGEON_MAPS = {
                         "y": 21,
                         "imageKey": "overlay_companion_claude",
                         "states": [
-                            {
-                                "stateId": "claude_luna_arrival",
-                                "priority": 50,
-                                "when": {
-                                    "requiredFlag": "underseaVolcanoCleared",
-                                    "missingFlag": "lunaSurvivalRevealed"
-                                },
-                                "action": {
-                                    "label": "騒ぎを確かめる",
-                                    "log": "救護所の前に人が集まっている。",
-                                    "type": "storyEvent",
-                                    "eventId": "thunder_fort_claude_luna_arrival"
-                                }
-                            },
                             {
                                 "stateId": "claude_flashback_briefing",
                                 "priority": 40,

@@ -1302,6 +1302,26 @@ const Dungeon = {
                 }
                 return true;
             }
+            if (link?.beforeExitEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
+                const beforeExitConditions = link.beforeExitEventConditions || {};
+                let beforeExitReady = true;
+                if (typeof App.evaluateGameConditions === 'function') {
+                    beforeExitReady = App.evaluateGameConditions(beforeExitConditions);
+                } else {
+                    const requiredFlags = Array.isArray(beforeExitConditions.requiredFlags)
+                        ? beforeExitConditions.requiredFlags
+                        : (beforeExitConditions.requiredFlag ? [beforeExitConditions.requiredFlag] : []);
+                    const missingFlags = Array.isArray(beforeExitConditions.missingFlags)
+                        ? beforeExitConditions.missingFlags
+                        : (beforeExitConditions.missingFlag ? [beforeExitConditions.missingFlag] : []);
+                    beforeExitReady = requiredFlags.every(flag => !!flags[flag]) && missingFlags.every(flag => !flags[flag]);
+                }
+                if (beforeExitReady) {
+                    App.clearAction();
+                    StoryManager.executeEvent(link.beforeExitEventId);
+                    return true;
+                }
+            }
             if (link) return Dungeon.followFixedFloorLink(link, Field.currentMapData);
             const exitPoint = Field.currentMapData.exitPoint;
             const forced = exitPoint ? {
