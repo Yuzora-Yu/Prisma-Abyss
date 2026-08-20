@@ -1,0 +1,15 @@
+PRISMA ABYSS — Light Palace Phase 12 delta
+Base: Phase 11 + trap-range hotfix
+Date: 2026-08-19
+
+1. battle.js
+2. main.js
+3. news.js
+4. story.js
+5. story_logic.js
+6. sw.js
+7. assets/effect/fx-abyss-vortex-ai.png
+8. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+9. development_notes/2026-08-19/validation/validate-light-palace-phase12.js
+10. development_notes/2026-08-19/reports/LIGHT_PALACE_PHASE12_20260819.md
+11. development_notes/2026-08-19/DELTA_MANIFEST_20260819_LIGHT_PALACE_PHASE12.txt

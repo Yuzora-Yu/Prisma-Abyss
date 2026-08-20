@@ -17,17 +17,16 @@ const MenuStatus = {
         div.className = 'sub-screen';
         div.style.display = 'none';
         div.style.flexDirection = 'column';
-        div.style.background = '#101010';
 		div.innerHTML = `
 			<div class="header-bar">
 				<span>⚔️ 冒険の記録</span>
 				<button class="btn" onclick="Menu.closeSubScreen('status')">もどる</button>
 			</div>
 
-            <div style="display:flex; margin:10px 12px 0; border-radius:6px; overflow:hidden; border:1px solid #444; background:#222; flex-shrink:0;">
-                <button id="status-tab-record" style="flex:1; min-width:0; padding:10px 4px; border:none; font-weight:bold; font-size:11px; font-family:inherit;" onclick="MenuStatus.setTab('record')">記録</button>
-                <button id="status-tab-quests" style="flex:1; min-width:0; padding:10px 4px; border:none; font-weight:bold; font-size:11px; font-family:inherit;" onclick="MenuStatus.setTab('quests')">クエスト</button>
-                <button id="status-tab-guild" style="flex:1; min-width:0; padding:10px 4px; border:none; font-weight:bold; font-size:11px; font-family:inherit;" onclick="MenuStatus.setTab('guild')">ギルド</button>
+            <div class="menu-tab-rail" role="tablist" style="margin:10px 12px 0;">
+                <button id="status-tab-record" class="menu-tab-button" type="button" role="tab" style="font-size:11px;" onclick="MenuStatus.setTab('record')">記録</button>
+                <button id="status-tab-quests" class="menu-tab-button" type="button" role="tab" style="font-size:11px;" onclick="MenuStatus.setTab('quests')">クエスト</button>
+                <button id="status-tab-guild" class="menu-tab-button" type="button" role="tab" style="font-size:11px;" onclick="MenuStatus.setTab('guild')">ギルド</button>
             </div>
 
 			<div
@@ -69,8 +68,8 @@ const MenuStatus = {
         const tabGuild = document.getElementById('status-tab-guild');
         const styleTab = (button, active) => {
             if (!button) return;
-            button.style.background = active ? '#ffd700' : '#111';
-            button.style.color = active ? '#000' : '#777';
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-selected', active ? 'true' : 'false');
         };
         styleTab(tabRecord, MenuStatus.activeTab === 'record');
         styleTab(tabQuests, MenuStatus.activeTab === 'quests');
@@ -296,8 +295,8 @@ const MenuStatus = {
             return `<div style="padding:9px 10px; margin-bottom:6px; border:1px solid ${ready ? '#5f8d52' : '#4b4435'}; border-radius:5px; background:rgba(255,255,255,.045);">
                 <div style="display:flex; justify-content:space-between; gap:8px; align-items:center;"><strong style="font-size:12px; color:#fff; display:flex; align-items:center; min-width:0;">${Guild.rarityBadgeHtml?.(def) || ''}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(def.name)}</span></strong><span style="font-size:10px; color:${ready ? '#8cff9d' : '#ffd56b'};">${ready ? '報告可能' : '進行中'}</span></div>
                 <div style="font-size:10px; color:#aaa; margin-top:5px; white-space:pre-wrap;">${escapeHtml(Guild.targetSummary(id))}</div>
-                ${canStartDungeon ? `<button class="btn" style="width:100%; margin-top:7px; padding:7px; border-color:#7ca4ff; color:#e6eeff; background:#15284b;" onclick="MenuStatus.startGuildQuestChallenge('${escapeHtml(id)}')">依頼迷宮へ挑戦</button>` : ''}
-                ${travelAreaKey ? `<button class="btn" style="width:100%; margin-top:7px; padding:6px; border-color:#5c96b5; color:#dff4ff; background:#183445;" onclick="MenuStatus.travelToGuildQuest('${escapeHtml(id)}')">対象エリア入口へ移動</button>` : ''}
+                ${canStartDungeon ? `<button class="btn menu-tone-action" style="width:100%; margin-top:7px; padding:7px;" onclick="MenuStatus.startGuildQuestChallenge('${escapeHtml(id)}')">依頼迷宮へ挑戦</button>` : ''}
+                ${travelAreaKey ? `<button class="btn menu-tone-action" style="width:100%; margin-top:7px; padding:6px;" onclick="MenuStatus.travelToGuildQuest('${escapeHtml(id)}')">対象エリア入口へ移動</button>` : ''}
             </div>`;
         }).join('');
 
@@ -313,7 +312,7 @@ const MenuStatus = {
             </div>
             <div style="font-size:10px; color:#ffd56b; margin:0 0 7px 2px;">受注中のギルド依頼 (${acceptedIds.length}/5)</div>
             <div style="border:1px solid #3d3425; border-radius:7px; padding:8px; background:rgba(0,0,0,.18);">${rows || '<div style="color:#888; font-size:12px; padding:12px;">受注中のギルド依頼はありません。</div>'}</div>
-            <button class="menu-btn" ${canGuildTravel ? '' : 'disabled'} style="width:100%; min-height:42px; margin-top:10px; border-color:${canGuildTravel ? '#8bbcff' : '#444'}; color:${canGuildTravel ? '#dcecff' : '#666'}; background:${canGuildTravel ? '#183445' : '#171717'};" onclick="MenuStatus.travelToGuildReception()">ギルドへ移動</button>
+            <button class="menu-state-button guild-travel-button ${canGuildTravel ? 'is-available' : 'is-unavailable'}" ${canGuildTravel ? '' : 'disabled'} style="width:100%; min-height:42px; margin-top:10px;" onclick="MenuStatus.travelToGuildReception()">ギルドへ移動</button>
         `;
     },
 

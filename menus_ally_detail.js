@@ -50,10 +50,10 @@ const MenuAllyDetail = {
 		detailContent.style.minHeight = '0';
 
 		detailContent.innerHTML = `
-			<div style="padding:15px 15px 0 15px; background:#050505; flex-shrink:0;">
+			<div class="menu-surface-deep" style="padding:15px 15px 0 15px; flex-shrink:0;">
 				${tabs}
 			</div>
-			<div id="ally-detail-body" class="scroll-area" style="padding:0 15px 15px 15px; background:#050505; flex:1; overflow-y:auto;">
+			<div id="ally-detail-body" class="scroll-area menu-surface-deep" style="padding:0 15px 15px 15px; flex:1; overflow-y:auto;">
 				${MenuAllyDetail.renderCurrentMainTab()}
 			</div>
 		`;
@@ -191,10 +191,10 @@ const MenuAllyDetail = {
         ];
 
         return `
-            <div style="display:flex; background:#222; margin-bottom:12px; border-radius:6px; overflow:hidden; border:1px solid #444; flex-shrink:0;">
+            <div class="menu-tab-rail" role="tablist" style="margin-bottom:12px;">
                 ${items.map(item => {
                     const active = MenuAllyDetail.currentMainTab === item.id;
-                    return `<button onclick="MenuAllyDetail.changeMainTab('${item.id}')" style="flex:1; min-width:0; padding:10px 4px; border:none; background:${active ? '#ffd700' : '#111'}; color:${active ? '#000' : '#777'}; font-weight:bold; font-size:11px; white-space:nowrap;">${item.label}</button>`;
+                    return `<button class="menu-tab-button ${active ? 'is-active' : ''}" type="button" role="tab" aria-selected="${active ? 'true' : 'false'}" onclick="MenuAllyDetail.changeMainTab('${item.id}')" style="font-size:11px; white-space:nowrap;">${item.label}</button>`;
                 }).join('')}
             </div>
         `;
@@ -306,7 +306,7 @@ const MenuAllyDetail = {
 		premiumFrontHtml = premiumFrontHtml
 			.replace(
 				'class="gacha-card-character"',
-				`class="gacha-card-character ally-detail-card-character" style="animation:none !important; -webkit-animation:none !important; opacity:1 !important;" onerror="this.onerror=null;this.removeAttribute('src');this.style.display='none';"`
+				`class="gacha-card-character ally-detail-card-character" onerror="this.onerror=null;this.removeAttribute('src');this.style.display='none';"`
 			)
 			.replace(
 				'class="card-face card-front premium-card-front',
@@ -318,7 +318,7 @@ const MenuAllyDetail = {
             <div class="ally-archive-card-stage">
                 <button type="button" class="ally-archive-nav prev" data-ally-nav-dir="-1" aria-label="前の仲間">◀</button>
 
-                <div class="gacha-card-scene premium-card premium-card-static ally-detail-premium-card ${rarityClass}" data-ally-swipe-card="true" style="width:clamp(205px, min(66vw, 36svh), 265px) !important; height:auto !important; aspect-ratio:2/3 !important; flex-shrink:0; animation:none !important; ${isMonsterAlly ? '' : 'cursor:pointer;'}">
+                <div class="gacha-card-scene premium-card premium-card-static ally-detail-premium-card ${rarityClass}${isMonsterAlly ? '' : ' is-portrait-interactive'}" data-ally-swipe-card="true">
                     ${premiumFrontHtml}
                 </div>
 
@@ -337,9 +337,9 @@ const MenuAllyDetail = {
         const archiveBtns = milestones.map(m => {
             const unlocked = m.cond();
             const active = MenuAllyDetail.currentArchive === m.id;
-            const style = active ? 'background:#ffd700; color:#000; font-weight:bold;' : 'background:#222; color:#555;';
-            return `<div onclick="${unlocked ? `MenuAllyDetail.changeArchive('${m.id}')` : ''}" 
-                         style="flex:1; text-align:center; font-size:10px; padding:6px 0; cursor:pointer; border-right:1px solid #000; ${style}">
+            const stateClass = active ? 'is-active' : 'menu-surface-card';
+            return `<div class="ally-archive-milestone ${stateClass}" onclick="${unlocked ? `MenuAllyDetail.changeArchive('${m.id}')` : ''}" 
+                         style="flex:1; text-align:center; font-size:10px; padding:6px 0; cursor:pointer; border-right:1px solid #000;">
                          ${unlocked ? m.label : '🔒'}
                     </div>`;
         }).join('');

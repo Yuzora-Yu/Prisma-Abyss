@@ -19,6 +19,7 @@
 
 <link rel="stylesheet" href="modern-polish.css">
 <link rel="stylesheet" href="opening.css">
+<link rel="stylesheet" href="runtime-components.css">
 
 	<script>
 if ('serviceWorker' in navigator) {
@@ -170,14 +171,14 @@ if ('serviceWorker' in navigator) {
     <div id="sub-screen-party" class="sub-screen">
         <div class="header-bar"><span>⚔️ 仲間編成</span> <button class="btn" onclick="Menu.closeSubScreen('party')">もどる</button></div>
         <div id="party-screen-slots" class="flex-col-container"><div style="padding:5px; text-align:center; font-size:12px; color:#aaa;">スロットを選択</div><div id="party-slot-list" class="scroll-area"></div></div>
-        <div id="party-screen-chars" class="flex-col-container" style="display:none;"><div style="padding:5px; background:#333; text-align:center; font-size:12px;">メンバーを選択</div><div id="party-char-list" class="scroll-area"></div></div>
+        <div id="party-screen-chars" class="flex-col-container" style="display:none;"><div class="menu-surface-card" style="padding:5px; text-align:center; font-size:12px;">メンバーを選択</div><div id="party-char-list" class="scroll-area"></div></div>
     </div>
 
     <div id="sub-screen-equip" class="sub-screen">
         <div class="header-bar"><span>🗡️ 装備変更</span> <button class="btn" onclick="Menu.closeSubScreen('equip')">もどる</button></div>
         <div id="equip-screen-char" class="flex-col-container"><div style="padding:5px; text-align:center; font-size:12px;">キャラを選択</div><div id="equip-char-list" class="scroll-area"></div></div>
-        <div id="equip-screen-part" class="flex-col-container" style="display:none;"><div id="char-status" style="padding:10px; border-bottom:1px solid #444; font-size:12px;"></div><div style="padding:5px; text-align:center; font-size:12px; background:#333;">部位を選択</div><div id="equip-slot-list" class="scroll-area"></div><button class="btn" style="margin:10px;" onclick="MenuEquip.changeScreen('char')">もどる</button></div>
-        <div id="equip-screen-item" class="flex-col-container" style="display:none;"><div style="padding:5px; background:#333; text-align:center; font-size:12px;" id="equip-item-header"></div><div id="equip-list" class="scroll-area"></div><div id="equip-footer" class="footer-info"></div><button class="btn" style="margin:10px;" onclick="MenuEquip.changeScreen('part')">もどる</button></div>
+        <div id="equip-screen-part" class="flex-col-container" style="display:none;"><div id="char-status" style="padding:10px; border-bottom:1px solid #444; font-size:12px;"></div><div class="menu-surface-card" style="padding:5px; text-align:center; font-size:12px;">部位を選択</div><div id="equip-slot-list" class="scroll-area"></div><button class="btn" style="margin:10px;" onclick="MenuEquip.changeScreen('char')">もどる</button></div>
+        <div id="equip-screen-item" class="flex-col-container" style="display:none;"><div class="menu-surface-card" style="padding:5px; text-align:center; font-size:12px;" id="equip-item-header"></div><div id="equip-list" class="scroll-area"></div><div id="equip-footer" class="footer-info"></div><button class="btn" style="margin:10px;" onclick="MenuEquip.changeScreen('part')">もどる</button></div>
     </div>
 
 
@@ -202,8 +203,10 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div id="item-screen-list" class="flex-col-container">
-        <div id="item-tabs" class="item-tab-bar" role="tablist" aria-label="道具カテゴリ"></div>
-        <div id="list-items" class="scroll-area"></div>
+        <div class="item-tab-page">
+            <div id="item-tabs" class="item-tab-bar" role="tablist" aria-label="道具カテゴリ"></div>
+            <div id="list-items" class="scroll-area"></div>
+        </div>
 
         <div class="sub-screen-bottom-panel">
             <button class="btn sub-screen-back-btn" onclick="Menu.closeSubScreen('items')">もどる</button>
@@ -211,7 +214,7 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div id="item-screen-target" class="flex-col-container" style="display:none;">
-        <div style="padding:5px; background:#333; text-align:center; font-size:12px;">使用対象を選択</div>
+        <div class="menu-surface-card" style="padding:5px; text-align:center; font-size:12px;">使用対象を選択</div>
         <div id="list-item-targets" class="scroll-area"></div>
 
         <div class="sub-screen-bottom-panel">
@@ -230,7 +233,7 @@ if ('serviceWorker' in navigator) {
         <div id="allies-list" class="scroll-area"></div>
     </div>
 
-    <div id="allies-detail-view" class="flex-col-container" style="display:none; background:#1a1a1a;">
+    <div id="allies-detail-view" class="flex-col-container menu-surface-deep" style="display:none;">
         <div id="allies-detail-content" class="scroll-area" style="display:flex; flex-direction:column; min-height:0;"></div>
     </div>
 
@@ -265,7 +268,7 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div id="skill-screen-target" class="flex-col-container" style="display:none;">
-        <div style="padding:5px; background:#333; text-align:center; font-size:12px;">対象を選択</div>
+        <div class="menu-surface-card" style="padding:5px; text-align:center; font-size:12px;">対象を選択</div>
         <div id="skill-target-list" class="scroll-area"></div>
 
         <div class="sub-screen-bottom-panel">

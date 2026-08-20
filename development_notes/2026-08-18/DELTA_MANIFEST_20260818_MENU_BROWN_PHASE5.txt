@@ -1,0 +1,16 @@
+PRISMA ABYSS Phase 5 delta
+Base: Phase 4 + skill toggle hotfix applied environment
+
+変更・作成したファイルは下記の11件です。
+
+modern-polish-base.css
+modern-polish-menu.css
+menus_allies.js
+news.js
+sw.js
+development_notes/2026-08-18/validation/validate-menu-cascade-states.py
+development_notes/2026-08-18/validation/validate-menu-state-ownership.js
+development_notes/2026-08-18/validation/runtime-style-source-audit.json
+development_notes/2026-08-18/validation/static-style-boundary-audit.json
+development_notes/2026-08-18/reports/CSS_MENU_BROWN_FOUNDATION_PHASE5_20260818.md
+development_notes/2026-08-18/DELTA_MANIFEST_20260818_MENU_BROWN_PHASE5.txt

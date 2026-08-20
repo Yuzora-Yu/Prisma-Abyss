@@ -167,7 +167,10 @@ const MenuExchange = {
                 <button
                     id="exchange-tab-tutorials"
                     type="button"
-                    style="flex:1; min-width:0; padding:10px 4px; border:none; font-weight:bold; font-size:11px; font-family:inherit; background:${isNews ? '#111' : '#ffd700'}; color:${isNews ? '#777' : '#000'};"
+                    class="menu-tab-button ${isNews ? '' : 'is-active'}"
+                    role="tab"
+                    aria-selected="${isNews ? 'false' : 'true'}"
+                    style="font-size:11px;"
                     onclick="MenuExchange.setTab('tutorials')"
                 >チュートリアル</button>` : '';
         container.innerHTML = `
@@ -175,11 +178,14 @@ const MenuExchange = {
                 <span>📢 お知らせ</span>
                 <button class="btn" onclick="Menu.closeSubScreen('exchange')">もどる</button>
             </div>
-            <div style="display:flex; margin:10px 12px 0; border-radius:6px; overflow:hidden; border:1px solid #444; background:#222; flex-shrink:0;">
+            <div class="menu-tab-rail" role="tablist" style="margin:10px 12px 0;">
                 <button
                     id="exchange-tab-news"
                     type="button"
-                    style="flex:1; min-width:0; padding:10px 4px; border:none; font-weight:bold; font-size:11px; font-family:inherit; background:${isNews ? '#ffd700' : '#111'}; color:${isNews ? '#000' : '#777'};"
+                    class="menu-tab-button ${isNews ? 'is-active' : ''}"
+                    role="tab"
+                    aria-selected="${isNews ? 'true' : 'false'}"
+                    style="font-size:11px;"
                     onclick="MenuExchange.setTab('news')"
                 >お知らせ</button>
                 ${tutorialTab}
@@ -213,11 +219,11 @@ const MenuExchange = {
             <div style="margin-bottom:20px;">
                 <div style="font-size:12px; color:#ffd700; margin-bottom:10px; border-left:3px solid #ffd700; padding-left:8px;">デイリー報酬</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <button class="btn" style="height:60px; background:${gemClaimed ? '#333' : '#404'};" onclick="MenuExchange.claimDaily('GEM')" ${gemClaimed ? 'disabled' : ''}>
+                    <button class="menu-state-button daily-reward-button ${gemClaimed ? 'is-claimed' : 'is-available'}" style="height:60px;" onclick="MenuExchange.claimDaily('GEM')" ${gemClaimed ? 'disabled' : ''}>
                         <div style="font-size:10px;">毎日1000 GEM</div>
                         <div style="font-weight:bold;">${gemClaimed ? '取得済み' : 'GEMを受け取る'}</div>
                     </button>
-                    <button class="btn" style="height:60px; background:${goldClaimed ? '#333' : '#440'};" onclick="MenuExchange.claimDaily('GOLD')" ${goldClaimed ? 'disabled' : ''}>
+                    <button class="menu-state-button daily-reward-button ${goldClaimed ? 'is-claimed' : 'is-available'}" style="height:60px;" onclick="MenuExchange.claimDaily('GOLD')" ${goldClaimed ? 'disabled' : ''}>
                         <div style="font-size:10px;">毎日10000 Gold</div>
                         <div style="font-weight:bold;">${goldClaimed ? '取得済み' : 'Goldを受け取る'}</div>
                     </button>

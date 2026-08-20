@@ -96,7 +96,7 @@ const MenuParty = {
 		const root = slots.parentNode || MenuParty.getRoot();
 		const tabs = document.createElement('div');
 		tabs.id = 'party-screen-tabs';
-		tabs.style.cssText = 'display:flex; background:#222; margin:8px 8px 0; border-radius:6px; overflow:hidden; border:1px solid #444; flex-shrink:0;';
+		tabs.style.cssText = 'display:flex; margin:8px 8px 0; overflow:hidden; flex-shrink:0;';
 		tabs.innerHTML = `
 			<button id="party-tab-members" onclick="MenuParty.switchTab('members')">仲間</button>
 			<button id="party-tab-strategy" onclick="MenuParty.switchTab('strategy')">さくせん</button>
@@ -111,7 +111,10 @@ const MenuParty = {
 		if (!button) return;
 		button.classList.toggle('active', !!active);
 		button.classList.toggle('is-active', !!active);
-		button.style.cssText = `flex:1; min-width:0; padding:10px 4px; border:none; background:${active ? '#ffd700' : '#111'}; color:${active ? '#000' : '#777'}; font-weight:bold; font-size:11px; white-space:nowrap; font-family:inherit;`;
+		button.setAttribute('aria-selected', active ? 'true' : 'false');
+		// Color is owned by modern-polish.css. Keep only stable layout inline until
+		// this generated tab bar is migrated to a shared menu component.
+		button.style.cssText = 'flex:1; min-width:0; padding:10px 4px; font-weight:bold; font-size:11px; white-space:nowrap; font-family:inherit;';
 	},
 
 	ensureStrategyPanel: () => {
@@ -195,7 +198,7 @@ const MenuParty = {
 			const imgUrl = App.getCharacterDisplayImage ? App.getCharacterDisplayImage(c) : c.img || '';
 			const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(c) : '';
 			div.innerHTML = `
-				<div style="width:46px; height:46px; flex:0 0 auto; border:1px solid #555; border-radius:6px; overflow:hidden; background:#222; display:flex; align-items:center; justify-content:center;">
+				<div class="menu-surface-card" style="width:46px; height:46px; flex:0 0 auto; border:1px solid #555; border-radius:6px; overflow:hidden; background:#222; display:flex; align-items:center; justify-content:center;">
 					${imgUrl ? `<img src="${imgUrl}"${imageFallbackAttr} style="width:100%; height:100%; object-fit:cover;">` : '<span style="font-size:10px; color:#555;">IMG</span>'}
 				</div>
 				<div style="flex:1; min-width:0;">
@@ -233,7 +236,7 @@ const MenuParty = {
 		modal.innerHTML = `
 			<div onclick="event.stopPropagation()" style="width:min(360px, 100%); max-height:100%; overflow:auto; background:#151515; border:1px solid #777; border-radius:8px; box-shadow:0 18px 48px rgba(0,0,0,0.65); box-sizing:border-box;">
 				<div style="display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid #333;">
-					<div style="width:52px; height:52px; flex:0 0 auto; border:1px solid #555; border-radius:6px; overflow:hidden; background:#222; display:flex; align-items:center; justify-content:center;">
+					<div class="menu-surface-card" style="width:52px; height:52px; flex:0 0 auto; border:1px solid #555; border-radius:6px; overflow:hidden; background:#222; display:flex; align-items:center; justify-content:center;">
 						${imgUrl ? `<img src="${imgUrl}"${imageFallbackAttr} style="width:100%; height:100%; object-fit:cover;">` : '<span style="font-size:10px; color:#555;">IMG</span>'}
 					</div>
 					<div style="flex:1; min-width:0;">
@@ -243,11 +246,13 @@ const MenuParty = {
 					</div>
 				</div>
 				<div style="display:flex; flex-direction:column; gap:6px; padding:12px;">
-					${Object.keys(strategies).map(key => `
-						<button class="btn" style="width:100%; text-align:left; padding:10px 12px; background:${key === current ? '#064' : '#333'};" onclick="MenuParty.setStrategy('${uid}', '${key}')">
+					${Object.keys(strategies).map(key => {
+						const selected = key === current;
+						return `
+						<button class="menu-state-button menu-choice-button ${selected ? 'is-active' : ''}" aria-pressed="${selected ? 'true' : 'false'}" style="width:100%; text-align:left; padding:10px 12px;" onclick="MenuParty.setStrategy('${uid}', '${key}')">
 							${MenuParty.escapeHtml(strategies[key].label || key)}
-						</button>
-					`).join('')}
+						</button>`;
+					}).join('')}
 				</div>
 				<div style="padding:0 12px 12px;">
 					<button class="btn" style="width:100%; background:#555;" onclick="MenuParty.closeStrategyModal()">閉じる</button>
@@ -289,7 +294,7 @@ const MenuParty = {
 			const equips = c.equips || {};
 			const summary = ['武器', '盾', '頭', '体', '足'].map(part => equips[part] ? `${part}:${equips[part].name}` : `${part}:なし`).join(' / ');
 			div.innerHTML = `
-				<div style="width:46px; height:46px; flex:0 0 auto; border:1px solid #555; border-radius:6px; overflow:hidden; background:#222; display:flex; align-items:center; justify-content:center;">
+				<div class="menu-surface-card" style="width:46px; height:46px; flex:0 0 auto; border:1px solid #555; border-radius:6px; overflow:hidden; background:#222; display:flex; align-items:center; justify-content:center;">
 					${imgUrl ? `<img src="${imgUrl}"${imageFallbackAttr} style="width:100%; height:100%; object-fit:cover;">` : '<span style="font-size:10px; color:#555;">IMG</span>'}
 				</div>
 				<div style="flex:1; min-width:0;">
@@ -354,7 +359,7 @@ const MenuParty = {
 		const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(c) : '';
 		header.innerHTML = `
 			<div style="display:flex; align-items:center; gap:9px; min-width:0;">
-				<div style="width:42px; height:42px; flex:0 0 auto; border:1px solid #555; border-radius:6px; overflow:hidden; background:#222;">
+				<div class="menu-surface-card" style="width:42px; height:42px; flex:0 0 auto; border:1px solid #555; border-radius:6px; overflow:hidden; background:#222;">
 					${imgUrl ? `<img src="${imgUrl}"${imageFallbackAttr} style="width:100%; height:100%; object-fit:cover;">` : ''}
 				</div>
 				<div style="min-width:0;">
@@ -557,7 +562,7 @@ const MenuParty = {
             
             const imgUrl = App.getCharacterDisplayImage ? App.getCharacterDisplayImage(c) : c.img;
             const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(c) : '';
-            const imgHtml = imgUrl ? `<img src="${imgUrl}"${imageFallbackAttr} style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #555;">` : `<div style="width:40px; height:40px; background:#333; display:flex; align-items:center; justify-content:center; color:#555; font-size:9px; border-radius:4px; border:1px solid #555;">IMG</div>`;
+            const imgHtml = imgUrl ? `<img src="${imgUrl}"${imageFallbackAttr} style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #555;">` : `<div class="menu-surface-card" style="width:40px; height:40px; background:#333; display:flex; align-items:center; justify-content:center; color:#555; font-size:9px; border-radius:4px; border:1px solid #555;">IMG</div>`;
 
             div.innerHTML = `
                 <div style="display:flex; align-items:center; width:100%;">

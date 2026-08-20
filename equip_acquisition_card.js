@@ -395,59 +395,8 @@
         },
 
         injectStyle() {
-            if (document.getElementById('equip-acquisition-card-style')) return;
-            const style = document.createElement('style');
-            style.id = 'equip-acquisition-card-style';
-            style.textContent = `
-                #equip-acquisition-card-overlay{position:fixed;inset:0;z-index:2147483600;background:transparent;display:flex;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));box-sizing:border-box;font-family:'DotGothic16',sans-serif;color:#fff;touch-action:none;overscroll-behavior:contain;-webkit-tap-highlight-color:transparent}
-                .equip-acquisition-card-shell{width:min(calc(100vw - 20px),550px);position:relative;isolation:isolate;overflow:visible}
-                .equip-acquisition-card-shell::before,.equip-acquisition-card-shell::after{content:"";position:absolute;pointer-events:none;opacity:0;z-index:-1}
-                .equip-acquisition-card-shell::before{inset:-14px;border-radius:0;background:radial-gradient(ellipse at 18% 45%,rgba(102,246,255,.82),transparent 46%),radial-gradient(ellipse at 78% 38%,rgba(180,92,255,.76),transparent 49%),radial-gradient(ellipse at 52% 82%,rgba(72,255,176,.55),transparent 56%);background-size:180% 180%;filter:blur(13px);transform:scale(.88)}
-                .equip-acquisition-card-shell::after{display:none;inset:-4px;border-radius:0;padding:2px;background:linear-gradient(120deg,rgba(102,246,255,.96),rgba(180,92,255,.94),rgba(72,255,176,.9),rgba(255,112,210,.86),rgba(102,246,255,.96));background-size:300% 300%;filter:blur(1.5px);transform:scale(.96);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
-                .equip-acquisition-card-shell.is-synergy::before{animation:equipAcquisitionAuraBloom .42s cubic-bezier(.2,.9,.24,1) both,equipAcquisitionAuraDrift 2.6s ease-in-out .42s infinite alternate}
-                .equip-acquisition-card-shell.is-synergy::after{animation:equipAcquisitionAuraRing .42s cubic-bezier(.2,.9,.24,1) both,equipAcquisitionAuraBorderShift 2.8s ease-in-out .42s infinite alternate}
-                .equip-acquisition-card{width:100%;max-height:min(70svh,338px);overflow-y:auto;box-sizing:border-box;padding:10px 11px 10px;border:0;border-radius:0;background:rgba(7,7,9,.91);box-shadow:0 6px 18px rgba(0,0,0,.65);position:relative;z-index:1;transition:opacity .12s ease,transform .12s ease}
-                #equip-acquisition-card-overlay.is-closing .equip-acquisition-card{opacity:.01;transform:scale(.985)}
-                .equip-acquisition-main{display:grid;grid-template-columns:60px minmax(0,1fr);gap:9px;align-items:start}
-                .equip-acquisition-image{width:60px;height:60px;background:#050505;border:0;border-radius:0;overflow:hidden;position:relative;box-sizing:border-box;align-self:center}
-                .equip-acquisition-image img{display:none;width:100%;height:100%;object-fit:cover}
-                .equip-acquisition-image-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;color:#fff;font-weight:bold;font-size:11px;line-height:1.2;box-sizing:border-box}
-                .equip-acquisition-summary{min-width:0;padding-top:1px}
-                .equip-acquisition-name-line{display:flex;align-items:center;gap:6px;min-width:0}
-                .equip-acquisition-name{font-size:18px;line-height:1.25;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-                .equip-acquisition-rank{font-size:11px;line-height:1;color:#aaa;white-space:nowrap;margin-left:auto;flex-shrink:0}
-                .equip-acquisition-base-stats{margin-top:6px;font-size:11px;line-height:1.35;color:#ccc;white-space:normal;overflow-wrap:anywhere}
-                .equip-acquisition-base-stats .equip-acquisition-grant-skill{color:#ffff00}
-                .equip-acquisition-reveal-list{display:flex;flex-wrap:wrap;gap:3px 9px;margin-top:6px;min-height:1px;line-height:1.3}
-                .equip-acquisition-reveal-row{display:none;position:relative;font-size:11px;max-width:100%;overflow:visible;overflow-wrap:anywhere;transform-origin:left center}
-                .equip-acquisition-reveal-row.is-present{display:inline-flex;align-items:baseline}
-                .equip-acquisition-section-break{flex-basis:100%;width:100%;height:0;margin:0;padding:0}.equip-acquisition-reveal-row.trait.section-start{margin-top:2px}
-                .equip-acquisition-reveal-row.synergy{width:100%}.equip-acquisition-reveal-row.synergy strong{margin-right:3px}.equip-acquisition-reveal-row.synergy span{color:#ddd}
-                .equip-acquisition-reveal-row.option::before{content:"";position:absolute;left:0;top:50%;width:0;height:1px;background:var(--reveal-color,#fff);box-shadow:0 0 4px var(--reveal-color,#fff),0 0 9px var(--reveal-color,#fff);opacity:0;transform:translateY(-50%);z-index:2}
-                .equip-acquisition-reveal-row.option.is-line-active::before{animation:equipAcquisitionOptionLine ${OPTION_LINE_MS}ms ease-out both}
-                .equip-acquisition-option-text{display:inline-block;opacity:0;transform:scale(1.34);transform-origin:left center;filter:brightness(1.7)}
-                .equip-acquisition-reveal-row.option.is-text-visible .equip-acquisition-option-text{animation:equipAcquisitionOptionPop ${OPTION_SETTLE_MS}ms cubic-bezier(.12,.84,.22,1.18) both}
-                .equip-acquisition-trait-name,.equip-acquisition-trait-level{display:inline-block;color:#ffd27a;opacity:0;transform-origin:left center}
-                .equip-acquisition-reveal-row.trait.is-name-visible .equip-acquisition-trait-name{animation:equipAcquisitionTraitName .18s ease-out both}
-                .equip-acquisition-trait-level{margin-left:2px;transform:scale(1.9)}
-                .equip-acquisition-reveal-row.trait.is-level-visible .equip-acquisition-trait-level{animation:equipAcquisitionTraitLevel ${TRAIT_LEVEL_SETTLE_MS}ms cubic-bezier(.12,.88,.2,1.25) both}
-                .equip-acquisition-reveal-row.synergy .equip-acquisition-reveal-value{opacity:0;transform:scale(1.2);transform-origin:left center}
-                .equip-acquisition-reveal-row.synergy.is-text-visible .equip-acquisition-reveal-value{animation:equipAcquisitionSynergyPop ${SYNERGY_SETTLE_MS}ms cubic-bezier(.12,.82,.2,1.12) both}
-                .equip-acquisition-base-traits{font-size:11px;color:#ffd27a;line-height:1.35;margin-top:4px}
-                .equip-acquisition-tap-hint{margin-top:8px;padding-top:5px;border-top:1px solid rgba(210,181,95,.32);font-size:10px;line-height:1.25;color:#aaa;text-align:right}
-                @keyframes equipAcquisitionOptionLine{0%{width:0;opacity:0}24%{opacity:1}72%{width:100%;opacity:1}100%{width:100%;opacity:0}}
-                @keyframes equipAcquisitionOptionPop{0%{opacity:0;transform:scale(1.34);filter:brightness(2)}44%{opacity:1;transform:scale(1.16);filter:brightness(1.65)}100%{opacity:1;transform:scale(1);filter:brightness(1)}}
-                @keyframes equipAcquisitionTraitName{0%{opacity:0;transform:translateX(-5px) scale(1.12)}100%{opacity:1;transform:translateX(0) scale(1)}}
-                @keyframes equipAcquisitionTraitLevel{0%{opacity:0;transform:scale(1.9);text-shadow:0 0 12px #fff,0 0 18px #ffd27a}45%{opacity:1;transform:scale(1.28);text-shadow:0 0 8px #ffd27a}100%{opacity:1;transform:scale(1);text-shadow:none}}
-                @keyframes equipAcquisitionSynergyPop{0%{opacity:0;transform:scale(1.2);filter:brightness(2)}100%{opacity:1;transform:scale(1);filter:brightness(1)}}
-                @keyframes equipAcquisitionAuraBloom{0%{opacity:0;transform:scale(.86)}58%{opacity:1;transform:scale(1.05)}100%{opacity:.88;transform:scale(1)}}
-                @keyframes equipAcquisitionAuraRing{0%{opacity:0;transform:scale(.9)}100%{opacity:.72;transform:scale(1)}}
-                @keyframes equipAcquisitionAuraDrift{0%{background-position:0% 35%;filter:blur(13px) hue-rotate(0deg)}100%{background-position:100% 65%;filter:blur(16px) hue-rotate(38deg)}}
-                @keyframes equipAcquisitionAuraBorderShift{0%{background-position:0% 50%;filter:blur(1.5px) hue-rotate(0deg)}100%{background-position:100% 50%;filter:blur(2.2px) hue-rotate(45deg)}}
-                @media(max-width:340px){.equip-acquisition-card-shell{width:calc(100vw - 20px)}.equip-acquisition-card{padding:8px}.equip-acquisition-main{grid-template-columns:55px minmax(0,1fr);gap:7px}.equip-acquisition-image{width:55px;height:55px}.equip-acquisition-name{font-size:16px}.equip-acquisition-rank,.equip-acquisition-base-stats,.equip-acquisition-reveal-row,.equip-acquisition-base-traits{font-size:10px}}
-                @media(prefers-reduced-motion:reduce){.equip-acquisition-card-shell::before,.equip-acquisition-card-shell::after,.equip-acquisition-reveal-row *{animation-duration:1ms!important;animation-iteration-count:1!important}}
-            `;
-            document.head.appendChild(style);
+            // Component CSS is loaded statically from runtime-components.css.
+            return true;
         },
 
         createOverlay(entry, equip) {
@@ -456,6 +405,10 @@
             overlay.setAttribute('role', 'dialog');
             overlay.setAttribute('aria-modal', 'true');
             overlay.setAttribute('aria-label', '+3装備取得');
+            overlay.style.setProperty('--equip-option-line-ms', `${OPTION_LINE_MS}ms`);
+            overlay.style.setProperty('--equip-option-settle-ms', `${OPTION_SETTLE_MS}ms`);
+            overlay.style.setProperty('--equip-trait-level-settle-ms', `${TRAIT_LEVEL_SETTLE_MS}ms`);
+            overlay.style.setProperty('--equip-synergy-settle-ms', `${SYNERGY_SETTLE_MS}ms`);
             const nameColor = Manager.getRarityColor(equip?.rarity || 'N');
             const rows = Manager.buildRows(equip);
             const baseStatsHtml = Manager.getBaseStats(equip).map(text => {

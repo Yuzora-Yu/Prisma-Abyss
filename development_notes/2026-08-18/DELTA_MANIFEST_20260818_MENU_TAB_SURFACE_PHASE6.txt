@@ -1,0 +1,13 @@
+PRISMA ABYSS Phase 6 delta manifest
+Base: Phase 5 (PRISMA_ABYSS_menu_brown_phase5_DELTA_20260818.zip applied)
+
+変更・作成したファイルは下記の8件です。
+
+1. modern-polish-menu.css
+2. modern-polish-items.css
+3. modern-polish-config-save.css
+4. news.js
+5. sw.js
+6. development_notes/2026-08-18/validation/validate-menu-cascade-states.py
+7. development_notes/2026-08-18/reports/CSS_MENU_TAB_SURFACE_PHASE6_20260818.md
+8. development_notes/2026-08-18/DELTA_MANIFEST_20260818_MENU_TAB_SURFACE_PHASE6.txt

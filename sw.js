@@ -23,7 +23,7 @@ try {
 
 // 表示用語・お知らせUI更新ではApp Shellだけ更新し、画像の全量キャッシュは再取得しない。
 // RUNTIME_CACHE_NAMEはmain.jsのfullDataCacheNameと同じ値を維持する。
-const CACHE_NAME = "prisma-abyss-v71.20260817";
+const CACHE_NAME = "prisma-abyss-v99.20260820";
 const ASSET_WARMUP = (self.PRISMA_ASSETS && self.PRISMA_ASSETS.cacheWarmup) || {};
 const RUNTIME_CACHE_NAME = ASSET_WARMUP.runtimeCacheName || "prisma-abyss-v47.20260817-runtime";
 const WARM_CACHE_META_KEY = "__prisma_abyss_warm_cache_complete__";
@@ -37,7 +37,15 @@ const PRECACHE_FILES = [
   "index.html",
   "manifest.json",
   "modern-polish.css",
+  "modern-polish-base.css",
+  "modern-polish-menu.css",
+  "modern-polish-field.css",
+  "modern-polish-items.css",
+  "modern-polish-battle-late.css",
+  "modern-polish-config-save.css",
+  "modern-polish-final.css",
   "opening.css",
+  "runtime-components.css",
   "assets.js",
   "vendor/phaser/phaser.min.js",
   "phaser-field.js",
@@ -173,7 +181,11 @@ const networkFirst = async (request) => {
     }
     return response;
   } catch (error) {
-    const cached = await caches.match(request);
+    // App Shellは現在世代のキャッシュだけをfallbackに使う。
+    // 複数世代を横断して検索すると、更新途中に旧story_logic.js等だけが復活し、
+    // 新旧スクリプトが混在した状態でイベントを実行する危険がある。
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
     if (cached) return cached;
     throw error;
   }

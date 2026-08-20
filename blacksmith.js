@@ -110,7 +110,8 @@ const MenuBlacksmith = {
         if(!document.getElementById('smith-ctrls')) {
             const ctrlDiv = document.createElement('div');
             ctrlDiv.id = 'smith-ctrls';
-            ctrlDiv.style.cssText = 'flex-shrink:0; background:#1a1a1a; border-bottom:1px solid #444; display:none;';
+            ctrlDiv.className = 'menu-surface-deep';
+            ctrlDiv.style.cssText = 'flex-shrink:0; border-bottom:1px solid #444; display:none;';
             const header = sub.querySelector('.header-bar');
             sub.insertBefore(ctrlDiv, header.nextSibling);
         }
@@ -322,7 +323,7 @@ const MenuBlacksmith = {
                     <div style="font-size:10px; color:#888; letter-spacing:2px; margin-bottom:2px;">MASTER BLACKSMITH</div>
                     <div style="display:flex; align-items:center; justify-content:center; gap:12px;">
                         <span style="font-size:26px; font-weight:bold; color:#ffd700; text-shadow:0 0 10px rgba(255,215,0,0.4);">Lv.${smith.level}</span>
-                        <button class="btn" style="font-size:10px; padding:4px 12px; background:#333; border:1px solid #555; border-radius:15px; height:24px;" onclick="MenuBlacksmith.showLevelInfo()">上昇効果を確認</button>
+                        <button class="btn menu-surface-card" style="font-size:10px; padding:4px 12px; background:#333; border:1px solid #555; border-radius:15px; height:24px;" onclick="MenuBlacksmith.showLevelInfo()">上昇効果を確認</button>
                     </div>
                 </div>
                 <div style="margin: 0 auto 30px auto; width: 100%; max-width:280px; text-align:center;">
@@ -334,10 +335,10 @@ const MenuBlacksmith = {
                     </div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:12px; width: 100%; max-width:320px; margin:0 auto;">
-                    ${MenuBlacksmith.renderMenuBtn('materialUpgrade', '素材鍛造 ＋1～＋3', '部位・Rank帯に対応する正式素材で装備本体を段階強化します', 'linear-gradient(135deg, #543510, #211000)', '#ffb347')}
-                    ${MenuBlacksmith.renderMenuBtn('synthesis', '上位合成 ＋3→＋4', '＋3装備同士を合成し、新たな能力を継承します', 'linear-gradient(135deg, #411, #200)', '#f44')}
-                    ${MenuBlacksmith.renderMenuBtn('refine', 'オプション精錬', 'オプションのレアリティを上昇させます (GEM消費)', 'linear-gradient(135deg, #114, #002)', '#44f')}
-                    ${MenuBlacksmith.renderMenuBtn('enhance', 'オプション強化', 'オプションの数値を装備素材で上昇させます', 'linear-gradient(135deg, #131, #020)', '#4f4')}
+                    ${MenuBlacksmith.renderMenuBtn('materialUpgrade', '素材鍛造 ＋1～＋3', '部位・Rank帯に対応する正式素材で装備本体を段階強化します')}
+                    ${MenuBlacksmith.renderMenuBtn('synthesis', '上位合成 ＋3→＋4', '＋3装備同士を合成し、新たな能力を継承します')}
+                    ${MenuBlacksmith.renderMenuBtn('refine', 'オプション精錬', 'オプションのレアリティを上昇させます (GEM消費)')}
+                    ${MenuBlacksmith.renderMenuBtn('enhance', 'オプション強化', 'オプションの数値を装備素材で上昇させます')}
                 </div>
             </div>
 			<div class="sub-screen-bottom-panel">
@@ -346,8 +347,8 @@ const MenuBlacksmith = {
         `;
     },
 
-    renderMenuBtn: (mode, title, desc, bg, border) => `
-        <button class="menu-btn" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; padding:10px 15px; height:auto; background:${bg}; border-left:4px solid ${border}; border-right:none; border-top:none; border-bottom:none;" onclick="MenuBlacksmith.selectMode('${mode}')">
+    renderMenuBtn: (mode, title, desc) => `
+        <button class="smith-mode-button smith-mode-button--${mode}" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; padding:10px 15px; height:auto;" onclick="MenuBlacksmith.selectMode('${mode}')">
             <div style="font-size:14px; font-weight:bold; color:#fff; margin-bottom:2px;">${title}</div>
             <div style="font-size:9px; color:rgba(255,255,255,0.5); line-height:1.2;">${desc}</div>
         </button>
@@ -384,15 +385,15 @@ const MenuBlacksmith = {
         const ctrl = document.getElementById('smith-ctrls');
         const rules = DB.OPT_RULES;
         ctrl.innerHTML = `
-            <div style="padding:6px; display:flex; gap:5px; overflow-x:auto; background:#111; border-bottom:1px solid #333;">
+            <div class="menu-filter-rail smith-category-filter" style="padding:6px; gap:5px; overflow-x:auto; border-bottom:1px solid #333;">
                 ${['ALL', '武器', '盾', '頭', '体', '足'].map(c => {
                     const isActive = MenuBlacksmith.filter.category === c;
-                    return `<button class="btn" style="padding:4px 10px; font-size:10px; flex-shrink:0; border-radius:12px; background:${isActive ? 'linear-gradient(#088, #044)' : '#333'}; border:${isActive ? '1px solid #0ff' : '1px solid #444'}; color:${isActive ? '#fff' : '#aaa'};" onclick="MenuBlacksmith.updateFilter('category', '${c}')">${c === 'ALL' ? '全て' : c}</button>`
+                    return `<button class="menu-filter-button ${isActive ? 'is-active' : ''}" aria-pressed="${isActive ? 'true' : 'false'}" style="padding:4px 10px; font-size:10px; flex-shrink:0; border-radius:12px;" onclick="MenuBlacksmith.updateFilter('category', '${c}')">${c === 'ALL' ? '全て' : c}</button>`
                 }).join('')}
             </div>
-            <div style="padding:6px; background:#1a1a1a; display:flex; align-items:center; gap:8px;">
-                <div style="flex:1; display:flex; align-items:center; gap:4px;"><span style="font-size:9px; color:#888;">効果:</span><select style="background:#222; color:#fff; font-size:10px; border:1px solid #444; flex:1; height:24px; border-radius:4px; touch-action:auto; user-select:auto; -webkit-user-select:auto; pointer-events:auto;" ${typeof Menu !== 'undefined' && Menu.selectTouchAttrs ? Menu.selectTouchAttrs() : ''} onchange="MenuBlacksmith.updateFilter('option', this.value)"><option value="ALL">全ての効果</option>${rules.map(opt => `<option value="${opt.key}${opt.elm ? '_' + opt.elm : ''}" ${MenuBlacksmith.filter.option === (opt.key + (opt.elm ? '_' + opt.elm : '')) ? 'selected' : ''}>${opt.name}</option>`).join('')}</select></div>
-                <div style="flex:1; display:flex; align-items:center; gap:4px;"><span style="font-size:9px; color:#888;">並替:</span><select style="background:#222; color:#fff; font-size:10px; border:1px solid #444; flex:1; height:24px; border-radius:4px; touch-action:auto; user-select:auto; -webkit-user-select:auto; pointer-events:auto;" ${typeof Menu !== 'undefined' && Menu.selectTouchAttrs ? Menu.selectTouchAttrs() : ''} onchange="MenuBlacksmith.updateFilter('sortMode', this.value)"><option value="NEWEST" ${MenuBlacksmith.sortMode === 'NEWEST' ? 'selected' : ''}>取得順</option><option value="RANK" ${MenuBlacksmith.sortMode === 'RANK' ? 'selected' : ''}>Rank順</option></select></div>
+            <div class="menu-surface-deep" style="padding:6px; background:#1a1a1a; display:flex; align-items:center; gap:8px;">
+                <div style="flex:1; display:flex; align-items:center; gap:4px;"><span style="font-size:9px; color:#888;">効果:</span><select class="menu-surface-card" style="background:#222; color:#fff; font-size:10px; border:1px solid #444; flex:1; height:24px; border-radius:4px; touch-action:auto; user-select:auto; -webkit-user-select:auto; pointer-events:auto;" ${typeof Menu !== 'undefined' && Menu.selectTouchAttrs ? Menu.selectTouchAttrs() : ''} onchange="MenuBlacksmith.updateFilter('option', this.value)"><option value="ALL">全ての効果</option>${rules.map(opt => `<option value="${opt.key}${opt.elm ? '_' + opt.elm : ''}" ${MenuBlacksmith.filter.option === (opt.key + (opt.elm ? '_' + opt.elm : '')) ? 'selected' : ''}>${opt.name}</option>`).join('')}</select></div>
+                <div style="flex:1; display:flex; align-items:center; gap:4px;"><span style="font-size:9px; color:#888;">並替:</span><select class="menu-surface-card" style="background:#222; color:#fff; font-size:10px; border:1px solid #444; flex:1; height:24px; border-radius:4px; touch-action:auto; user-select:auto; -webkit-user-select:auto; pointer-events:auto;" ${typeof Menu !== 'undefined' && Menu.selectTouchAttrs ? Menu.selectTouchAttrs() : ''} onchange="MenuBlacksmith.updateFilter('sortMode', this.value)"><option value="NEWEST" ${MenuBlacksmith.sortMode === 'NEWEST' ? 'selected' : ''}>取得順</option><option value="RANK" ${MenuBlacksmith.sortMode === 'RANK' ? 'selected' : ''}>Rank順</option></select></div>
             </div>
         `;
         if (typeof Menu !== 'undefined' && Menu.makeSelectTouchSafe) Menu.makeSelectTouchSafe(ctrl);
@@ -500,7 +501,7 @@ const MenuBlacksmith = {
                     <div style="color:#ffd86a;font-weight:bold;margin-bottom:5px;">必要素材（${preview.recipe.grade}帯）</div>
                     ${requirements.map(entry => `<div style="display:flex;justify-content:space-between;color:${entry.enough ? '#ddd' : '#f66'};font-size:11px;"><span>${entry.item?.name || `Item ${entry.itemId}`}</span><span>${entry.owned} / ${entry.count}</span></div>`).join('')}
                 </div>
-                <button class="btn" style="width:100%;background:${enough ? 'linear-gradient(#875318,#4c2c0d)' : '#333'};border:1px solid ${enough ? '#ffb347' : '#555'};" ${enough ? '' : 'disabled'} onclick="MenuBlacksmith.confirmMaterialUpgrade()">内容を確認して鍛造する</button>
+                <button class="menu-state-button smith-material-confirm ${enough ? 'is-ready' : 'is-unavailable'}" style="width:100%;" ${enough ? '' : 'disabled'} onclick="MenuBlacksmith.confirmMaterialUpgrade()">内容を確認して鍛造する</button>
             </div>`;
     },
 
@@ -594,7 +595,7 @@ const MenuBlacksmith = {
 
             const div = document.createElement('div'); div.className = 'list-item';
             div.style.cssText = 'flex-direction:column; align-items:flex-start;';
-            if (isLevelInsufficient) { div.style.opacity = '0.5'; div.style.background = '#222'; }
+            if (isLevelInsufficient) div.style.opacity = '0.5';
 
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; width:100%;">
@@ -792,15 +793,15 @@ ${outcome.name} が完成しました。
         const sorted = MenuBlacksmith.applySortAndFilter(materials);
         const updateFooter = () => {
             const cur = MenuBlacksmith.state.materials.length;
-            footer.innerHTML = `<div style="text-align:center; font-size:12px; font-weight:bold; margin-bottom:5px;">選択素材: <span style="color:${cur===req?'#0ff':'#fff'}">${cur} / ${req}</span></div>${cur === req ? `<button class="btn" style="width:100%; background:linear-gradient(#088, #044); border:1px solid #0ff;" onclick="MenuBlacksmith.confirmEnhance()">強化実行</button>` : ''}`;
+            footer.innerHTML = `<div style="text-align:center; font-size:12px; font-weight:bold; margin-bottom:5px;">選択素材: <span style="color:${cur===req?'#0ff':'#fff'}">${cur} / ${req}</span></div>${cur === req ? `<button class="menu-state-button smith-enhance-confirm is-ready" style="width:100%;" onclick="MenuBlacksmith.confirmEnhance()">強化実行</button>` : ''}`;
         };
         updateFooter();
         list.innerHTML = '';
         if (sorted.length < req) list.innerHTML = `<div style="padding:40px; text-align:center; color:#f44;">素材が不足しています</div>`; 
         else {
             sorted.forEach(item => {
-                const div = document.createElement('div'); div.className = 'list-item'; div.style.cssText = 'flex-direction:column; align-items:flex-start;';
-                const refresh = () => { div.style.background = MenuBlacksmith.state.materials.includes(item.id) ? 'rgba(0,255,255,0.1)' : 'transparent'; div.style.border = MenuBlacksmith.state.materials.includes(item.id) ? '1px solid #0ff' : '1px solid #333'; };
+                const div = document.createElement('div'); div.className = 'smith-material-item'; div.style.cssText = 'flex-direction:column; align-items:flex-start;';
+                const refresh = () => { div.classList.toggle('is-selected', MenuBlacksmith.state.materials.includes(item.id)); };
                 refresh();
 
                 div.innerHTML = `

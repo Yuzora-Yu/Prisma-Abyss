@@ -1,0 +1,14 @@
+Phase 19 DELTA — base: Phase 18 applied project
+
+変更・作成したファイルは下記の11件です。
+1. story.js
+2. story_logic.js
+3. sw.js
+4. news.js
+5. assets/effect/fx_ultimate_244_genesis_magic.png
+6. assets/effect/fx-neutral-slash-ai.png
+7. docs/implemented-story-flow-20260608.md
+8. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+9. development_notes/2026-08-20/validation/validate-light-palace-phase19.js
+10. development_notes/2026-08-20/reports/LIGHT_PALACE_PHASE19_20260820.md
+11. development_notes/2026-08-20/DELTA_MANIFEST_20260820_LIGHT_PALACE_PHASE19.txt

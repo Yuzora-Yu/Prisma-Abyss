@@ -1,0 +1,27 @@
+{
+  "sheets": {
+    "modernPolish": {
+      "lines": 14,
+      "declarations": 0,
+      "important": 0
+    },
+    "runtimeComponents": {
+      "lines": 955,
+      "declarations": 955,
+      "important": 6
+    }
+  },
+  "exactSelectorPropertyOverlapCount": 0,
+  "exactSelectorPropertyOverlaps": [],
+  "loadOrder": {
+    "modernPolishFound": true,
+    "openingFound": true,
+    "runtimeComponentsFound": true,
+    "runtimeComponentsAfterModernPolish": true,
+    "runtimeComponentsAfterOpening": true
+  },
+  "serviceWorker": {
+    "runtimeComponentsPrecached": true,
+    "cacheName": "prisma-abyss-v77.20260818"
+  }
+}

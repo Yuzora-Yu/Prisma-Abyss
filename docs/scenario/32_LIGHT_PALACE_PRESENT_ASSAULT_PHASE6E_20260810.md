@@ -100,3 +100,16 @@ Phase 6E〜雷要塞防衛までは `storyStep 7` 内の subStep を拡張して
 
 これにより、雷要塞防衛前に旧 `8-0: 魔王城へ` の目標が表示される矛盾を防ぐ。
 Step 8へ進めるタイミングは雷要塞防衛〜ルーナ覚醒の接続工程で改めて確定する。
+
+## 2026-08-19 Phase 10 user override
+
+2026-08-10時点の「旧強制敗北ルートを新ルートから参照しない」は、2026-08-19のユーザー直接指示で次のように更新する。
+
+- `LIGHT_PALACE_FINAL_ENCOUNTER` を祭壇戦へ再接続する。
+- 初戦は `bossStatMultiplier: 3` の強敵戦だが、`forcedLoss` にはしない。
+- 初戦敗北時は `LIGHT_PALACE_BLESSING_RETRY` と全回復を経て再戦する。
+- 初戦勝利／再戦勝利はいずれも現行 `light_palace_alan_betrayal` へ接続する。
+- `LIGHT_PALACE_OVERPOWER_CLEAR` / `LIGHT_PALACE_CLEAR` はアラン裏切り導線と衝突するため、legacy source として保持して現行導線からは呼ばない。
+
+この追補を本書内の2026-08-10時点の記述より優先する。詳細は `62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md` を参照。
+

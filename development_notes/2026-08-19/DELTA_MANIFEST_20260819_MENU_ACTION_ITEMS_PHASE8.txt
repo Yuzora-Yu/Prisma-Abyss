@@ -1,0 +1,15 @@
+Phase 7適用済み環境への上書き用差分です。
+このZIPにはPhase 8で更新・作成したファイルだけを含めます。
+
+index.html
+menus_allies.js
+menus_items.js
+modern-polish-base.css
+modern-polish-menu.css
+modern-polish-items.css
+news.js
+sw.js
+development_notes/2026-08-18/validation/validate-menu-cascade-states.py
+development_notes/2026-08-18/validation/validate-menu-phase8.py
+development_notes/2026-08-19/reports/CSS_MENU_ACTION_ITEMS_PHASE8_20260819.md
+development_notes/2026-08-19/DELTA_MANIFEST_20260819_MENU_ACTION_ITEMS_PHASE8.txt

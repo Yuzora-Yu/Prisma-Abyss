@@ -489,8 +489,11 @@ const Menu = {
 
         if(grid) {
             // 通知バッジ（赤丸）の判定
-            // 1. 実績: 「達成済み」かつ「未受取」のものが1つでもあるか
-            const hasUnclaimedAchievement = Object.values(App.data.achievements || {}).some(a => a.completed && !a.claimed);
+            // 1. 実績: 現行マスタの「達成済み」かつ「未受取」のものが1つでもあるか
+            // 廃止済み実績IDがセーブに残っていても通知対象にはしない。
+            const hasUnclaimedAchievement = (typeof AchievementManager !== 'undefined' && AchievementManager.hasUnclaimed)
+                ? AchievementManager.hasUnclaimed()
+                : false;
             
             // 2. 取引所: 本日の日付と保存されている最後受取日が一致しない（＝未受取）か
             const today = (typeof MenuExchange !== 'undefined' && MenuExchange.getTodayStr)
@@ -498,8 +501,8 @@ const Menu = {
                 : (typeof App !== 'undefined' && typeof App.getLocalDateKey === 'function' ? App.getLocalDateKey() : '');
             const hasUnclaimedDaily = (App.data.flags?.lastGemClaimDate !== today) || (App.data.flags?.lastGoldClaimDate !== today);
             
-            // バッジ用HTMLパーツ
-            const badge = '<span style="display:inline-block; width:10px; height:10px; background:#ff4444; border-radius:50%; margin-left:5px; vertical-align:middle; box-shadow:0 0 5px #f00; border:1px solid #fff;"></span>';
+            // バッジの見た目はCSS側で管理する。
+            const badge = '<span class="menu-notification-dot" aria-hidden="true"></span>';
 
             grid.innerHTML = `
                 <button class="menu-btn" onclick="Menu.openSubScreen('party')">パーティ編成</button>
@@ -1037,13 +1040,13 @@ const Menu = {
         };
         const makeButton = (label, onClick, opts = {}) => {
             const btn = document.createElement('button');
-            btn.className = 'btn';
+            const variant = String(opts.variant || 'default').replace(/[^a-z0-9_-]/gi, '');
+            btn.className = `btn sky-prism-button sky-prism-button--${variant}`;
             btn.style.width = opts.width || '100%';
             btn.style.padding = opts.padding || '10px';
-            if (opts.background) btn.style.background = opts.background;
             if (opts.disabled) {
                 btn.disabled = true;
-                btn.style.opacity = '0.45';
+                btn.classList.add('is-unavailable');
             }
             btn.innerText = label;
             btn.onclick = onClick;
@@ -1162,8 +1165,8 @@ const Menu = {
             actions.appendChild(makeButton('はい', () => {
                 stopBlink();
                 if (choice.callback) choice.callback();
-            }, { width: '80px' }));
-            actions.appendChild(makeButton('いいえ', closeConfirmation, { width: '80px', background: '#555' }));
+            }, { width: '80px', variant: 'confirm' }));
+            actions.appendChild(makeButton('いいえ', closeConfirmation, { width: '80px', variant: 'secondary' }));
             panel.appendChild(message);
             panel.appendChild(actions);
             layer.appendChild(panel);
@@ -1188,7 +1191,7 @@ const Menu = {
             pageChoices.forEach(choice => {
                 list.appendChild(makeButton(choice.label, () => showConfirmation(choice), {
                     disabled: !!choice.disabled,
-                    background: choice.background,
+                    variant: choice.disabled ? 'unavailable' : 'destination',
                     padding: choice.padding
                 }));
             });
@@ -1217,7 +1220,7 @@ const Menu = {
             nav.appendChild(makeButton('◀', () => {
                 page = (page - 1 + getTotalPages()) % getTotalPages();
                 renderPage();
-            }, { width: '48px', padding: '8px' }));
+            }, { width: '48px', padding: '8px', variant: 'nav' }));
             const indicator = document.createElement('div');
             indicator.className = 'sky-prism-page-indicator';
             indicator.innerText = `${page + 1}/${totalPages}`;
@@ -1225,13 +1228,13 @@ const Menu = {
             nav.appendChild(makeButton('▶', () => {
                 page = (page + 1) % getTotalPages();
                 renderPage();
-            }, { width: '48px', padding: '8px' }));
+            }, { width: '48px', padding: '8px', variant: 'nav' }));
             footer.appendChild(nav);
             footer.appendChild(makeButton('キャンセル', () => {
                 cleanup();
                 Menu.closeDialog();
                 if (options.onCancel) options.onCancel();
-            }, { background: '#444' }));
+            }, { variant: 'secondary' }));
             btnEl.appendChild(footer);
             drawMap();
         };

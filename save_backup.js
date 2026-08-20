@@ -462,7 +462,7 @@
             layer.innerHTML = `
                 <div class="save-slot-prompt" role="dialog" aria-modal="true">
                     <div class="save-slot-prompt-message"></div>
-                    <div class="save-slot-prompt-actions"><button type="button" class="btn">OK</button></div>
+                    <div class="save-slot-prompt-actions"><button type="button" class="btn save-ui-button">OK</button></div>
                 </div>`;
             layer.querySelector('.save-slot-prompt-message').textContent = String(message || '');
             layer.querySelector('button').onclick = () => { layer.remove(); resolve(true); };
@@ -479,8 +479,8 @@
                 <div class="save-slot-prompt" role="alertdialog" aria-modal="true">
                     <div class="save-slot-prompt-message"></div>
                     <div class="save-slot-prompt-actions">
-                        <button type="button" class="btn save-data-confirm-cancel">いいえ</button>
-                        <button type="button" class="btn save-data-confirm-accept">はい</button>
+                        <button type="button" class="btn save-ui-button save-data-confirm-cancel">いいえ</button>
+                        <button type="button" class="btn save-ui-button save-data-confirm-accept">はい</button>
                     </div>
                 </div>`;
             layer.querySelector('.save-slot-prompt-message').textContent = String(message || '');
@@ -492,7 +492,7 @@
         }),
 
         actionButton: (title, description, action, options = {}) => `
-            <button class="btn save-data-action${options.unavailable ? ' save-data-google-unavailable' : ''}" type="button"
+            <button class="btn save-ui-button save-data-action${options.unavailable ? ' save-data-google-unavailable' : ''}" type="button"
                 ${options.disabled ? 'disabled' : ''} onclick="SaveDataUI.run('${action}')">
                 <span class="save-data-action-title">${title}</span>
                 ${description ? `<span class="save-data-action-desc">${description}</span>` : ''}
@@ -503,30 +503,29 @@
             SaveDataUI.mode = mode === 'import' ? 'import' : 'export';
             const context = isGamePage() ? 'game' : 'title';
             const host = context === 'game' ? (document.getElementById('game-container') || document.body) : document.body;
-            const googleConfigured = GoogleDriveBackup.isConfigured();
+            // Google Drive連携ロジックは将来再開できるよう保持するが、
+            // 現時点ではプレイヤー向け導線を出さない。
             const overlay = document.createElement('div');
             overlay.className = `save-slot-overlay save-data-overlay is-${context}`;
             const title = SaveDataUI.mode === 'export' ? 'データ出力' : 'データ読込';
             const actions = SaveDataUI.mode === 'export'
                 ? [
                     SaveDataUI.actionButton('オートセーブ出力', '現在のオートセーブ1件をファイルへ保存', 'exportAuto'),
-                    SaveDataUI.actionButton('全セーブデータ出力', 'オートセーブと手動セーブNo.1～20を一括保存', 'exportAll'),
-                    SaveDataUI.actionButton('Googleドライブへ出力', googleConfigured ? '全セーブデータを専用フォルダへ保存' : '＜有効化が必要です＞', 'exportGoogle', { disabled: !googleConfigured, unavailable: !googleConfigured })
+                    SaveDataUI.actionButton('全セーブデータ出力', 'オートセーブと手動セーブNo.1～20を一括保存', 'exportAll')
                 ]
                 : [
                     SaveDataUI.actionButton('オートセーブ読込', '1件のバックアップをオートセーブへ復元', 'importAuto'),
-                    SaveDataUI.actionButton('全セーブデータ読込', 'オートセーブと手動セーブNo.1～20を一括復元', 'importAll'),
-                    SaveDataUI.actionButton('Googleドライブから読込', googleConfigured ? 'Googleドライブ上の全セーブデータを復元' : '＜有効化が必要です＞', 'importGoogle', { disabled: !googleConfigured, unavailable: !googleConfigured })
+                    SaveDataUI.actionButton('全セーブデータ読込', 'オートセーブと手動セーブNo.1～20を一括復元', 'importAll')
                 ];
             overlay.innerHTML = `
                 <div class="save-slot-dialog save-data-dialog" role="dialog" aria-modal="true" aria-labelledby="save-data-title">
                     <div class="save-slot-header">
                         <div id="save-data-title" class="save-slot-title">${title}</div>
-                        <button type="button" class="btn" onclick="SaveDataUI.close()">もどる</button>
+                        <button type="button" class="btn save-ui-button" onclick="SaveDataUI.close()">もどる</button>
                     </div>
                     <div class="save-data-body">${actions.join('')}</div>
                     <div class="save-data-status" aria-live="polite"></div>
-                    <div class="save-slot-footer"><button type="button" class="btn sub-screen-back-btn" onclick="SaveDataUI.close()">もどる</button></div>
+                    <div class="save-slot-footer"><button type="button" class="btn save-ui-button sub-screen-back-btn" onclick="SaveDataUI.close()">もどる</button></div>
                 </div>`;
             overlay.addEventListener('click', event => {
                 if (event.target === overlay && !SaveDataUI.busy) SaveDataUI.close();

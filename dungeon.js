@@ -1272,6 +1272,33 @@ const Dungeon = {
         return requiredFlags.every(flag => !!flags[flag]) && missingFlags.every(flag => !flags[flag]);
     },
 
+    isFixedFloorLinkBlocked: (link, flags = App.data?.progress?.flags || {}) => {
+        const conditions = link?.blockConditions || link?.blockedConditions || null;
+        if (!conditions) return false;
+        if (typeof App.evaluateGameConditions === 'function') return App.evaluateGameConditions(conditions);
+        const requiredFlags = [
+            ...(Array.isArray(conditions.requiredFlags) ? conditions.requiredFlags : []),
+            ...(conditions.requiredFlag ? [conditions.requiredFlag] : [])
+        ].filter(Boolean);
+        const missingFlags = [
+            ...(Array.isArray(conditions.missingFlags) ? conditions.missingFlags : []),
+            ...(conditions.missingFlag ? [conditions.missingFlag] : [])
+        ].filter(Boolean);
+        return requiredFlags.every(flag => !!flags[flag]) && missingFlags.every(flag => !flags[flag]);
+    },
+
+    runFixedFloorLinkBlockedFeedback: (link) => {
+        if (!link) return false;
+        App.clearAction?.();
+        const eventId = String(link.blockedEventId || '').trim();
+        if (eventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
+            StoryManager.executeEvent(eventId);
+            return true;
+        }
+        App.log(link.blockedLog || '今はこの階段を戻れない。');
+        return true;
+    },
+
     applyBlockedExitPushback: (link) => {
         const pushback = link?.exitBlockedPushback;
         if (!pushback || typeof pushback !== 'object') return false;
@@ -1308,6 +1335,11 @@ const Dungeon = {
         const link = (typeof MapRegistry !== 'undefined' && MapRegistry.findFloorLink)
             ? MapRegistry.findFloorLink(Field.currentMapData, x, y)
             : null;
+        const flags = App.data?.progress?.flags || {};
+        if (link && Dungeon.isFixedFloorLinkBlocked(link, flags)) {
+            // 踏んだだけでは警告ログ／会話を出さない。アクション押下時に理由を伝える。
+            return false;
+        }
 
         // Every fixed-dungeon exit is contact-driven. S tiles that lead to another
         // floor remain governed by their explicit floor-link auto setting.
@@ -1321,15 +1353,9 @@ const Dungeon = {
                 StoryManager.executeEvent(sceneExitEventId);
                 return true;
             }
-            const flags = App.data?.progress?.flags || {};
             if (link && !Dungeon.isFixedFloorLinkUnlocked(link, flags)) {
-                App.clearAction();
-                if (link.lockedEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
-                    StoryManager.executeEvent(link.lockedEventId);
-                } else {
-                    App.log(link.lockedLog || '封じられていて、今は外へ出られない。');
-                }
-                return true;
+                // ロック中の出口も自動で説明しない。prepareFixedTileAction() が押下導線を作る。
+                return false;
             }
             if (link?.beforeExitEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
                 const beforeExitConditions = link.beforeExitEventConditions || {};
@@ -1388,7 +1414,6 @@ const Dungeon = {
             return true;
         }
         if (!link || !link.auto) return false;
-        const flags = App.data?.progress?.flags || {};
         if (!Dungeon.isFixedFloorLinkUnlocked(link, flags)) {
             return false;
         }
@@ -1406,21 +1431,25 @@ const Dungeon = {
                 ? MapRegistry.findFloorLink(mapDef, x, y)
                 : null;
 
-            // Exit S tiles are activated only after the player steps onto them.
-            // Do not expose an adjacent/on-tile action button for these cells.
-            if (Dungeon.isFixedExitStepTile(tile, link)) {
-                App.clearAction();
-                return false;
-            }
+            const flags = App.data?.progress?.flags || {};
+            const exitStepTile = Dungeon.isFixedExitStepTile(tile, link);
 
             if (link) {
-                const flags = App.data?.progress?.flags || {};
+                if (Dungeon.isFixedFloorLinkBlocked(link, flags)) {
+                    const label = link.blockedLabel || link.label || '戻る';
+                    App.setAction(label, () => Dungeon.runFixedFloorLinkBlockedFeedback(link));
+                    return true;
+                }
                 const linkUnlocked = Dungeon.isFixedFloorLinkUnlocked(link, flags);
+                // 通行可能なS出口だけは従来どおり接触で遷移する。ロック中はアクションを残す。
+                if (exitStepTile && linkUnlocked) {
+                    App.clearAction();
+                    return false;
+                }
                 if (link.auto && linkUnlocked) {
                     return false;
                 }
                 if (!linkUnlocked) {
-                    logIfNeeded(link.lockedLog || '封印されていて、今は通れない。');
                     App.setAction(link.lockedLabel || '調べる', () => {
                         if (link.lockedEventId && typeof StoryManager !== 'undefined' && typeof StoryManager.executeEvent === 'function') {
                             StoryManager.executeEvent(link.lockedEventId);
@@ -2835,7 +2864,6 @@ const Dungeon = {
                 if (Dungeon.tryFixedAutoFloorLink(tile, x, y)) return;
                 if (Dungeon.prepareFixedTileAction(tile, x, y, { silent: false })) return;
             } else if (tile === 'S') {
-                App.log("階段がある。");
                 App.setAction("次の階へ", Dungeon.nextFloor);
             }
         } 
@@ -3939,13 +3967,19 @@ const Dungeon = {
             }
         }
         if (effect.type === 'storyEvent') {
-            const flags = App.data?.progress?.flags || {};
+            if (!App.data.progress || typeof App.data.progress !== 'object') App.data.progress = {};
+            const flags = App.data.progress.flags || (App.data.progress.flags = {});
             const flagKey = String(effect.eventFlag || effect.flag || '').trim();
             if (flagKey && flags[flagKey]) return false;
             if (effect.conditions && typeof App.evaluateGameConditions === 'function' && !App.evaluateGameConditions(effect.conditions)) return false;
             const eventId = String(effect.eventId || '').trim();
             if (!eventId || typeof StoryManager === 'undefined' || typeof StoryManager.executeEvent !== 'function') return false;
-            if (flagKey) flags[flagKey] = true;
+            if (flagKey) {
+                flags[flagKey] = true;
+                // 接触イベントの一度きりフラグは、非同期イベント本文より先に永続化する。
+                // 会話開始直後の再読込で同じ床イベントが再着火する競合を防ぐ。
+                App.save?.();
+            }
             StoryManager.executeEvent(eventId);
             return true;
         }

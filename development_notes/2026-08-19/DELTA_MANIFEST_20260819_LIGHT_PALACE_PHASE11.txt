@@ -1,0 +1,24 @@
+PRISMA ABYSS Phase 11 DELTA
+Baseline: Phase 10 + LIGHT_PALACE trap range X16-18/Y20 hotfix applied tree
+Date: 2026-08-19
+Apply: overwrite files with matching relative paths.
+
+This archive intentionally contains only files updated or created for Phase 11.
+
+Changed/new files only: 15
+
+1. achievements.js
+2. battle.js
+3. main.js
+4. map.js
+5. save_slots.js
+6. story.js
+7. story_logic.js
+8. news.js
+9. sw.js
+10. docs/implemented-story-flow-20260608.md
+11. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+12. development_notes/2026-08-19/validation/validate-light-palace-phase10.js
+13. development_notes/2026-08-19/validation/validate-light-palace-phase11.js
+14. development_notes/2026-08-19/reports/LIGHT_PALACE_FLASHBACK_RESUME_PHASE11_20260819.md
+15. development_notes/2026-08-19/DELTA_MANIFEST_20260819_LIGHT_PALACE_PHASE11.txt

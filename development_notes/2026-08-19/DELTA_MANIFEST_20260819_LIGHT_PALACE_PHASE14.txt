@@ -1,0 +1,19 @@
+PRISMA ABYSS Phase 14 DELTA
+Base: Phase 13 applied project
+Date: 2026-08-19
+Only files updated/created in Phase 14 are included.
+
+1. story.js
+2. story_logic.js
+3. phaser-field.js
+4. main.js
+5. dungeon.js
+6. map.js
+7. news.js
+8. sw.js
+9. docs/implemented-story-flow-20260608.md
+10. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+11. docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+12. development_notes/2026-08-19/validation/validate-light-palace-phase14.js
+13. development_notes/2026-08-19/reports/LIGHT_PALACE_PHASE14_20260819.md
+14. development_notes/2026-08-19/DELTA_MANIFEST_20260819_LIGHT_PALACE_PHASE14.txt

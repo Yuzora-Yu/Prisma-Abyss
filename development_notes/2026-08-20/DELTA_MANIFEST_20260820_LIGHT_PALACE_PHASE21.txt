@@ -1,0 +1,13 @@
+PRISMA ABYSS Phase 21 delta
+Base: Phase 20 applied
+Date: 2026-08-20
+
+変更・作成したファイルは下記の8件です。
+1. assets.js
+2. phaser-field.js
+3. story_logic.js
+4. sw.js
+5. news.js
+6. development_notes/2026-08-20/validation/validate-light-palace-phase21.js
+7. development_notes/2026-08-20/reports/LIGHT_PALACE_PHASE21_20260820.md
+8. development_notes/2026-08-20/DELTA_MANIFEST_20260820_LIGHT_PALACE_PHASE21.txt

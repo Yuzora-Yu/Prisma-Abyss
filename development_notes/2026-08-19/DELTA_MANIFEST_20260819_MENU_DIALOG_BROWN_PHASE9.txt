@@ -1,0 +1,21 @@
+PRISMA ABYSS Phase 9 delta package
+Date: 2026-08-19
+Baseline: Phase 8 applied environment
+Apply: overwrite files with matching relative paths.
+
+This archive intentionally contains only files updated or created for Phase 9.
+
+Files (13):
+1. menus.js
+2. menus_items.js
+3. save_slots.js
+4. save_backup.js
+5. modern-polish-base.css
+6. modern-polish-items.css
+7. modern-polish-config-save.css
+8. modern-polish-final.css
+9. news.js
+10. sw.js
+11. development_notes/2026-08-19/validation/validate-menu-phase9.py
+12. development_notes/2026-08-19/reports/CSS_MENU_DIALOG_BROWN_PHASE9_20260819.md
+13. development_notes/2026-08-19/DELTA_MANIFEST_20260819_MENU_DIALOG_BROWN_PHASE9.txt

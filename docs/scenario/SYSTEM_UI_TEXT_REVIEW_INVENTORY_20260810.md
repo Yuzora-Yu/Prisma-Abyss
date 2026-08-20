@@ -12,11 +12,11 @@ Status: **inventory / no automatic replacement**
 
 ## 集計
 
-- total entries: **1845**
+- total entries: **1852**
 - story system narration: **179**
 - story objective text: **58**
-- other UI/map/menu candidates: **1608**
-- status breakdown: **inventory_only 1627 / reviewed-or-new 218**
+- other UI/map/menu candidates: **1615**
+- status breakdown: **inventory_only 1625 / reviewed-or-new 227**
 
 > 2026-08-17再集計。表の追記に対して集計欄が更新されていなかったため、master inventoryの実行数から再計算した。以後は表追記時にこの集計も同時更新する。
 
@@ -63,7 +63,7 @@ Status: **inventory / no automatic replacement**
 |37|story_system|`story.js:2197`|THUNDER_FORT_CLAUDE_LUNA_ARRIVAL|雷の要塞へ戻ると、救護所の前が騒然としていた。クロードが、意識を失った一人の少女を抱えて駆け込んでくる。|（未提案・レビュー待ち）|inventory_only|
 |38|story_system|`story.js:2199`|THUNDER_FORT_CLAUDE_LUNA_ARRIVAL|五年前に失ったはずの面影が、そこにあった。生きている。だが、目を覚まさない。|（未提案・レビュー待ち）|inventory_only|
 |39|story_system|`story.js:2204`|LIGHT_PALACE_FLASHBACK_BRIEFING|クロードの記憶は、光の宮殿でレイラが動き始めた場面へ遡る。|（未提案・レビュー待ち）|inventory_only|
-|40|story_system|`story.js:2211`|LIGHT_PALACE_FLASHBACK_HEXAGRAM_TRAP|六芒星の間へ踏み込んだ瞬間、床の光条が閉じ、ルーナの足元へ六つの楔が走った。|（未提案・レビュー待ち）|inventory_only|
+|40|story_system|`story.js:2765`|LIGHT_PALACE_FLASHBACK_HEXAGRAM_TRIGGER|広間を出ようとした瞬間、床に六芒星が閃きルーナの足に絡みついた。|ユーザー指定文へ変更|approved_20260819|
 |41|story_system|`story.js:2214`|LIGHT_PALACE_FLASHBACK_HEXAGRAM_TRAP|聖女の力が奪われ、さらに呪縛が重なる。ルーナはその場で意識を失った。|（未提案・レビュー待ち）|inventory_only|
 |42|story_system|`story.js:2219`|LIGHT_PALACE_FLASHBACK_VELD1_AFTER|レイラは正面から斬り結ぶが、騎士団長ヴェルドの剣はあまりにも重い。膝をついたその時、二つの足音が六芒星の間へ飛び込んだ。|（未提案・レビュー待ち）|inventory_only|
 |43|story_system|`story.js:2222`|LIGHT_PALACE_FLASHBACK_VELD1_AFTER|白。黒。白。黒。焼きつくような明滅に、ヴェルドの足が一瞬止まった。|（未提案・レビュー待ち）|inventory_only|
@@ -1331,7 +1331,7 @@ Status: **inventory / no automatic replacement**
 |1305|ui_html_text|`menus_allies.js:631`|html/template text|与ダメージ|（未提案・レビュー待ち）|inventory_only|
 |1306|ui_html_text|`menus_allies.js:634`|html/template text|被ダメージ|（未提案・レビュー待ち）|inventory_only|
 |1307|ui_html_text|`menus_allies.js:639`|html/template text|属性攻撃|（未提案・レビュー待ち）|inventory_only|
-|1308|ui_html_text|`menus_allies.js:645`|html/template text|属性耐性（環境込み）|（未提案・レビュー待ち）|inventory_only|
+|1308|ui_html_text|`menus_allies.js:637`|html/template text|属性耐性（環境補正込み）|属性耐性（環境補正有）|approved_applied_20260818|
 |1309|ui_html_text|`menus_allies.js:651`|html/template text|異常耐性|（未提案・レビュー待ち）|inventory_only|
 |1310|ui_html_text|`menus_allies.js:738`|html/template text|やめる|（未提案・レビュー待ち）|inventory_only|
 |1311|ui_html_text|`menus_allies.js:738`|html/template text|変更する|（未提案・レビュー待ち）|inventory_only|
@@ -1934,3 +1934,16 @@ Status: **inventory / no automatic replacement**
 |内部定義エラー|`この場所の定義が見つかりません` / `アイテムID:...`|プレイヤーには実行可否だけを自然文で示し、areaKey/itemId/eid等はconsole診断へ分離|approved_applied_20260817|
 
 `storyStep-subStep` の「ストーリー進行度」表示は本規約の内部値露出禁止の例外ではなく、承認済みの正式表示として `docs/development-policy.md` に明記し現行維持する。
+
+### 2026-08-19 セーブデータ管理 / Google Drive導線非表示
+
+|ID|種別|参照|用途/条件|現行/新規文言|レビュー案|状態|
+|---:|---|---|---|---|---|---|
+|1846|ui_visibility|`save_backup.js`|データ出力 / Google Drive|Googleドライブへ出力ボタンをプレイヤーUIから非表示（連携ロジックは保持）|現時点では未対応のため導線のみ隠す|approved_applied_20260819|
+|1847|ui_visibility|`save_backup.js`|データ読込 / Google Drive|Googleドライブから読込ボタンをプレイヤーUIから非表示（連携ロジックは保持）|同上|approved_applied_20260819|
+|1848|ui_description|`menus_config.js`|セーブ・設定 / データ出力|オート・全セーブ|旧「オート・全セーブ・Googleドライブ」から未提供機能の表記を除外|approved_applied_20260819|
+|1849|ui_description|`menus_config.js`|セーブ・設定 / データ読込|オート・全セーブ|同上|approved_applied_20260819|
+|1850|system_log|`story_logic.js`|ストーリー共通HEAL|不思議な力で体力が回復した！|汎用ログは既定非表示。必要なイベントだけ `message` / `log:true` で明示|approved_applied_20260820|
+|1851|map_log_rule|`dungeon.js`|固定マップ / 封印・逆走禁止階段|踏んだ時点でロック理由／会話を自動表示|踏んだ時はアクションのみ。押下時に専用会話、専用会話がなければロック理由を表示|approved_applied_20260820|
+|1852|map_log_rule|`dungeon.js`|ランダムダンジョン / 次階段|階段がある。|自動ログを出さず「次の階へ」アクションのみ表示|approved_applied_20260820|
+

@@ -673,8 +673,9 @@ Updated: 2026-06-26
 
 ## DR-20260810-light-palace-present-final
 
-Status: pending
-Created: 2026-08-10
+Status: approved_applied_20260819  
+Created: 2026-08-10  
+Resolved: 2026-08-19（ユーザー直接指示）
 
 ### Target
 - file: `story.js`
@@ -682,17 +683,16 @@ Created: 2026-08-10
 - map / area: 光の宮殿グランプリズマ・現在時間
 - storyStep-subStep: 7-x
 
-### Current issue
-旧実装は「ジャスパー＋ヴェルド3倍戦→敗北→リュシオンの加護で弱体化→再戦勝利」を前提とする。
-新版v8は、回想後の現在攻略、地下牢の国王／レイラ／レオン確認、祭壇戦後のアラン不意打ちと離脱を正本とするため進行構造が衝突する。
+### 2026-08-19 user decision
+- 祭壇のジャスパー＋ヴェルド戦へ `LIGHT_PALACE_FINAL_ENCOUNTER` を再接続する。
+- 初戦は3倍補正の強敵戦とするが、勝利可能な通常戦闘として扱う。
+- 初戦敗北でもGame Overにせず `LIGHT_PALACE_BLESSING_RETRY` → 全回復 → 再戦へ進行する。
+- 初戦勝利／再戦勝利のどちらも、現在正本の `light_palace_alan_betrayal` へ合流する。
+- `LIGHT_PALACE_OVERPOWER_CLEAR` / `LIGHT_PALACE_CLEAR` は本文を削除せず legacy source として保持し、現行導線からは参照しない。
+- 4階ではジャスパーとヴェルドを個別に横並び表示し、どちらからでも同一イベントを開始する。
 
-### Handling in Phase 6E
-旧会話本文は削除・改稿せず legacy source として残す。
-新ルートは最小骨格用の別script keyを使用し、旧強制敗北ルートを呼ばない。
-
-### User decision
-- 長台詞の最終稿: pending
-- Phase 6Eでは進行骨格のみ実装可
+### Dialogue handling
+既存 `LIGHT_PALACE_FINAL_ENCOUNTER` / `LIGHT_PALACE_BLESSING_RETRY` の本文は再接続のみとし、無断改稿しない。演出・進行の詳細は `62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md` を正本とする。
 
 ## DR-20260810-thunder-fort-luna-awakening
 

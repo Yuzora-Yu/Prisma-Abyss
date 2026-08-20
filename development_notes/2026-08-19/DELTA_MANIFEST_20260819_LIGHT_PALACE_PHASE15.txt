@@ -1,0 +1,12 @@
+Phase 15 delta from Phase 14
+
+1. main.js
+2. map.js
+3. story.js
+4. news.js
+5. sw.js
+6. docs/implemented-story-flow-20260608.md
+7. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+8. development_notes/2026-08-19/validation/validate-light-palace-phase15.js
+9. development_notes/2026-08-19/reports/LIGHT_PALACE_PHASE15_20260819.md
+10. development_notes/2026-08-19/DELTA_MANIFEST_20260819_LIGHT_PALACE_PHASE15.txt

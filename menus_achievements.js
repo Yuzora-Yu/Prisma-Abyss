@@ -91,10 +91,12 @@ const MenuAchievements = {
 
         const completedCount = data.filter(a => AchievementManager.getState(a.id).completed).length;
         const claimedCount = data.filter(a => AchievementManager.getState(a.id).claimed).length;
-        const unclaimedCount = data.filter(a => {
-            const s = AchievementManager.getState(a.id);
-            return s.completed && !s.claimed;
-        }).length;
+        const unclaimedCount = (typeof AchievementManager.getUnclaimedCount === 'function')
+            ? AchievementManager.getUnclaimedCount()
+            : data.filter(a => {
+                const s = AchievementManager.getState(a.id);
+                return s.completed && !s.claimed;
+            }).length;
         const incompleteCount = Math.max(0, data.length - completedCount);
         const completedPercent = data.length ? Math.floor((completedCount / data.length) * 100) : 0;
         const filteredCount = list.length;
@@ -117,60 +119,59 @@ const MenuAchievements = {
                 <button class="btn" onclick="Menu.closeSubScreen('achievements')">もどる</button>
             </div>
 
-            <div style="background:linear-gradient(180deg,#202020,#131313); border-bottom:1px solid #333; padding:10px;">
-                <div style="display:flex; gap:10px; align-items:stretch; margin-bottom:10px;">
-                    <div style="width:92px; flex-shrink:0; border:1px solid #3f3f3f; border-radius:10px; background:#0f0f0f; padding:9px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-                        <div style="font-size:22px; color:#ffd35a; line-height:1;">${completedPercent}%</div>
-                        <div style="font-size:10px; color:#999; margin-top:4px;">達成率</div>
+            <div class="achievement-overview">
+                <div class="achievement-summary">
+                    <div class="achievement-rate-card">
+                        <div class="achievement-rate-value">${completedPercent}%</div>
+                        <div class="achievement-summary-label">達成率</div>
                     </div>
-                    <div style="flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                        <div style="background:#181818; border:1px solid #333; border-radius:8px; padding:7px;">
-                            <div style="font-size:10px; color:#888;">達成</div>
-                            <div style="font-size:14px; color:#fff;">${completedCount}/${data.length}</div>
+                    <div class="achievement-summary-grid">
+                        <div class="achievement-summary-card">
+                            <div class="achievement-summary-label">達成</div>
+                            <div class="achievement-summary-value">${completedCount}/${data.length}</div>
                         </div>
-                        <div style="background:${unclaimedCount > 0 ? '#281018' : '#181818'}; border:1px solid ${unclaimedCount > 0 ? '#8a1930' : '#333'}; border-radius:8px; padding:7px;">
-                            <div style="font-size:10px; color:#888;">未受取</div>
-                            <div style="font-size:14px; color:${unclaimedCount > 0 ? '#ff9aa8' : '#aaa'};">${unclaimedCount}</div>
+                        <div class="achievement-summary-card ${unclaimedCount > 0 ? 'has-unclaimed' : ''}">
+                            <div class="achievement-summary-label">未受取</div>
+                            <div class="achievement-summary-value">${unclaimedCount}</div>
                         </div>
-                        <div style="background:#181818; border:1px solid #333; border-radius:8px; padding:7px;">
-                            <div style="font-size:10px; color:#888;">未達成</div>
-                            <div style="font-size:14px; color:#ccc;">${incompleteCount}</div>
+                        <div class="achievement-summary-card">
+                            <div class="achievement-summary-label">未達成</div>
+                            <div class="achievement-summary-value">${incompleteCount}</div>
                         </div>
-                        <div style="background:#181818; border:1px solid #333; border-radius:8px; padding:7px;">
-                            <div style="font-size:10px; color:#888;">表示中</div>
-                            <div style="font-size:14px; color:#ccc;">${filteredCount}</div>
+                        <div class="achievement-summary-card">
+                            <div class="achievement-summary-label">表示中</div>
+                            <div class="achievement-summary-value">${filteredCount}</div>
                         </div>
                     </div>
                 </div>
 
-                <div style="height:8px; background:#2a2a2a; border-radius:999px; overflow:hidden; margin-bottom:10px;">
-                    <div style="height:100%; width:${completedPercent}%; background:linear-gradient(90deg,#8a6b18,#ffd35a);"></div>
+                <div class="achievement-progress-track">
+                    <div class="achievement-progress-fill" style="width:${completedPercent}%;"></div>
                 </div>
 
-                <button class="btn" style="width:100%; padding:9px; background:${unclaimedCount > 0 ? '#8a1930' : '#333'}; border-color:${unclaimedCount > 0 ? '#d65a70' : '#555'};" onclick="MenuAchievements.claimAll()" ${unclaimedCount > 0 ? '' : 'disabled'}>
+                <button class="menu-state-button achievement-claim-all-button ${unclaimedCount > 0 ? 'has-claim' : 'is-empty'}" onclick="MenuAchievements.claimAll()" ${unclaimedCount > 0 ? '' : 'disabled'}>
                     ${unclaimedCount > 0 ? `🎁 未受取 ${unclaimedCount} 件を一括受取` : '受け取れる報酬はありません'}
                 </button>
             </div>
 
-            <div style="padding:8px; background:#1b1b1b; border-bottom:1px solid #303030; display:flex; flex-direction:column; gap:8px;">
-                <div style="display:flex; gap:5px; background:#111; border:1px solid #333; border-radius:9px; padding:4px;">
+            <div class="achievement-controls">
+                <div class="menu-filter-rail achievement-filter-rail">
                     ${['ALL', 'INCOMPLETE', 'COMPLETED'].map(f => `
-                        <button class="btn" style="flex:1; font-size:11px; padding:7px 4px; border-color:${MenuAchievements.filter === f ? '#27b4b4' : '#333'}; background:${MenuAchievements.filter === f ? '#006666' : 'transparent'};"
+                        <button class="menu-filter-button ${MenuAchievements.filter === f ? 'is-active' : ''}" aria-pressed="${MenuAchievements.filter === f ? 'true' : 'false'}"
                             onclick="MenuAchievements.filter='${f}'; MenuAchievements.render();">
                             ${filterLabels[f]}
                         </button>
                     `).join('')}
                 </div>
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <label style="font-size:11px; color:#999; flex-shrink:0;">カテゴリ</label>
-                    <select style="flex:1; min-width:0; background:#111; color:#fff; border:1px solid #444; border-radius:7px; padding:7px; font-family:inherit; font-size:12px;"
-                        onchange="MenuAchievements.categoryFilter=this.value; MenuAchievements.render();">
+                <div class="achievement-category-row">
+                    <label>カテゴリ</label>
+                    <select onchange="MenuAchievements.categoryFilter=this.value; MenuAchievements.render();">
                         ${categoryOptions}
                     </select>
                 </div>
             </div>
 
-            <div class="scroll-area" style="padding:10px; background:#111;">
+            <div class="scroll-area achievement-list">
                 ${list.map(a => {
                     const state = AchievementManager.getState(a.id);
                     const progress = AchievementManager.getProgress(a);
@@ -180,7 +181,7 @@ const MenuAchievements = {
                     const progressLabel = `${MenuAchievements.formatNum(Math.min(progress.value, progress.goal))}/${MenuAchievements.formatNum(progress.goal)}`;
 
                     return `
-                        <div class="list-item" style="opacity:${isClaimed ? 0.55 : 1}; padding:12px; margin-bottom:8px; border-left:4px solid ${state.completed ? '#ffd700' : '#444'}; display:flex; align-items:center; gap:10px;">
+                        <div class="achievement-entry ${state.completed ? 'is-completed' : 'is-incomplete'}" style="opacity:${isClaimed ? 0.55 : 1}; padding:12px; margin-bottom:8px; display:flex; align-items:center; gap:10px;">
                             <div style="flex:1; min-width:0;">
                                 <div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">
                                     <div style="font-size:13px; font-weight:bold; color:${state.completed ? '#fff' : '#aaa'};">
@@ -202,7 +203,7 @@ const MenuAchievements = {
                                     報酬: ${MenuAchievements.escapeHtml(rewardText)}
                                 </div>
                             </div>
-                            <button class="btn" style="width:82px; font-size:11px; background:${canClaim ? '#d00' : '#333'}; flex-shrink:0;"
+                            <button class="btn ${canClaim ? 'menu-tone-danger' : 'menu-surface-card'}" style="width:82px; font-size:11px; flex-shrink:0;"
                                 onclick="MenuAchievements.claim(${a.id})" ${canClaim ? '' : 'disabled'}>
                                 ${isClaimed ? '受取済' : (state.completed ? '受取' : '未達成')}
                             </button>

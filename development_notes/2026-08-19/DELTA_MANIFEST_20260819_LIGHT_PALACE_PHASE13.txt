@@ -1,0 +1,21 @@
+PRISMA ABYSS - Light Palace Phase 13 delta
+Baseline: Phase 12 applied project
+Date: 2026-08-19
+
+Only files changed or created after the Phase 12 baseline are included.
+`map.js` is intentionally NOT included because Phase 13 does not modify the user-supplied source-of-truth map file.
+Existing requested effect PNGs are intentionally NOT included because they already exist under assets/effect and were not modified.
+
+1. assets.js
+2. battle.js
+3. main.js
+4. phaser-field.js
+5. story.js
+6. story_logic.js
+7. sw.js
+8. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+9. development_notes/2026-08-19/validation/validate-light-palace-phase11.js
+10. development_notes/2026-08-19/validation/validate-light-palace-phase12.js
+11. development_notes/2026-08-19/validation/validate-light-palace-phase13.js
+12. development_notes/2026-08-19/reports/LIGHT_PALACE_PHASE13_20260819.md
+13. development_notes/2026-08-19/DELTA_MANIFEST_20260819_LIGHT_PALACE_PHASE13.txt

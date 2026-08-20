@@ -1,0 +1,22 @@
+PRISMA ABYSS CSS cleanup Phase 3 delta
+Baseline: Phase 2 applied project tree
+Apply: overwrite/add these files only; no deletion entries are required.
+
+achievements.js
+menus.js
+menus_achievements.js
+modern-polish.css
+modern-polish-base.css
+modern-polish-menu.css
+modern-polish-field.css
+modern-polish-items.css
+modern-polish-battle-late.css
+modern-polish-config-save.css
+modern-polish-final.css
+sw.js
+news.js
+tools/validation/validate-news-data.js
+development_notes/2026-08-18/validation/validate-achievement-notification.js
+development_notes/2026-08-18/validation/validate-css-ownership-split.js
+development_notes/2026-08-18/reports/CSS_CASCADE_CLEANUP_PHASE3_20260818.md
+development_notes/2026-08-18/DELTA_MANIFEST_20260818_CSS_CLEANUP_PHASE3.txt

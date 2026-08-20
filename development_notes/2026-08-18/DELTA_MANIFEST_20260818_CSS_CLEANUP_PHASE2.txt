@@ -1,0 +1,32 @@
+PRISMA ABYSS CSS cleanup Phase 2 - delta manifest
+Baseline: PRISMA_ABYSS_css_cleanup_phase1_20260818.zip
+Date: 2026-08-18
+Packaging rule: only files created or modified relative to the Phase 1 baseline are included.
+Deleted files: none
+
+MODIFIED	blacksmith.js
+NEW	development_notes/2026-08-18/DELTA_MANIFEST_20260818_CSS_CLEANUP_PHASE2.txt
+NEW	development_notes/2026-08-18/reports/CSS_CASCADE_CLEANUP_PHASE2_20260818.md
+NEW	development_notes/2026-08-18/validation/audit-static-style-boundaries.js
+NEW	development_notes/2026-08-18/validation/phase2-dead-override-removals.json
+NEW	development_notes/2026-08-18/validation/phase2-exact-css-duplicate-removals.json
+NEW	development_notes/2026-08-18/validation/phase2-runtime-style-source-audit.json
+NEW	development_notes/2026-08-18/validation/remove-safe-menu-title-overrides.js
+NEW	development_notes/2026-08-18/validation/static-style-boundary-audit.json
+MODIFIED	equip_acquisition_card.js
+MODIFIED	facilities.js
+MODIFIED	index.html
+MODIFIED	menus_achievements.js
+MODIFIED	menus_allies.js
+MODIFIED	menus_ally_detail.js
+MODIFIED	menus_book.js
+MODIFIED	menus_exchange.js
+MODIFIED	menus_inventory.js
+MODIFIED	menus_items.js
+MODIFIED	menus_party.js
+MODIFIED	menus_status.js
+MODIFIED	modern-polish.css
+NEW	runtime-components.css
+MODIFIED	story_logic.js
+MODIFIED	sw.js
+MODIFIED	tutorial.js

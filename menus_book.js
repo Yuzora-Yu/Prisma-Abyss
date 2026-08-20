@@ -100,7 +100,7 @@ const MenuBook = {
                 if(m.isRare) tagHtml += `<span style="font-size:8px; color:#ffd700; border:1px solid #ffd700; padding:0 2px; border-radius:2px; margin-right:4px; vertical-align:middle;">RARE</span>`;
 
                 div.innerHTML = `
-                    <div style="width:64px; height:64px; background:#1a1a1a; border:1px solid #444; margin-right:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:4px;">
+                    <div class="menu-surface-deep" style="width:64px; height:64px; background:#1a1a1a; border:1px solid #444; margin-right:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:4px;">
                         ${imgContent}
                     </div>
                     <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between; min-height:64px;">
@@ -307,7 +307,7 @@ const MenuBook = {
             const s = DB.SKILLS.find(k => k.id === actId);
             const sName = s ? s.name : (actId===1?'通常攻撃':(actId===2?'防御':'不明'));
             let condText = cond === 1 ? '(HP≧50%)' : cond === 2 ? '(HP≦50%)' : cond === 3 ? '(異常)' : '';
-            return `<div style="background:#333; padding:4px 8px; border-radius:3px; font-size:11px; margin-bottom:2px; display:flex; justify-content:space-between;"><span>${sName}</span><span style="color:#aaa;">${condText}</span></div>`;
+            return `<div class="menu-surface-card" style="background:#333; padding:4px 8px; border-radius:3px; font-size:11px; margin-bottom:2px; display:flex; justify-content:space-between;"><span>${sName}</span><span style="color:#aaa;">${condText}</span></div>`;
         }).join('');
 
         // 共通パーツ：ドロップ
@@ -319,7 +319,7 @@ const MenuBook = {
         // 共通パーツ：特性リスト（タップで詳細確認）
         MenuBook.traitDetailList = MenuBook.buildTraitDetailList(monster);
         const traitListHtml = MenuBook.traitDetailList.map((t, index) => `
-            <button type="button"
+            <button type="button" class="menu-tone-tab-inactive"
                 onclick="event.stopPropagation(); MenuBook.openTraitDetail(${index}); return false;"
                 style="background:#111; border:1px solid #00ffff; color:#00ffff; padding:3px 7px; border-radius:4px; font-size:10px; margin-right:4px; margin-bottom:4px; display:inline-block; cursor:pointer; touch-action:manipulation; font-family:inherit;">
                 ${t.name} Lv.${t.lv}
@@ -336,28 +336,28 @@ const MenuBook = {
 
                 // タブ切り替えボタン
         const tabBtns = `
-            <div style="display:flex; gap:2px; margin-bottom:10px; background:#111; padding:2px; border-radius:4px;">
-                <button onclick="MenuBook.detailTab=1; MenuBook.showDetail(MenuBook.selectedMonster)" style="flex:1; padding:8px; border:none; font-size:11px; font-weight:bold; border-radius:3px; background:${MenuBook.detailTab===1?'#ffd700':'#222'}; color:${MenuBook.detailTab===1?'#000':'#888'};">行動・耐性</button>
-                <button onclick="MenuBook.detailTab=2; MenuBook.showDetail(MenuBook.selectedMonster)" style="flex:1; padding:8px; border:none; font-size:11px; font-weight:bold; border-radius:3px; background:${MenuBook.detailTab===2?'#ffd700':'#222'}; color:${MenuBook.detailTab===2?'#000':'#888'};">情報・報酬</button>
+            <div class="menu-book-detail-tabs" role="tablist" style="display:flex; gap:2px; margin-bottom:10px; padding:2px; border-radius:4px;">
+                <button class="menu-book-detail-tab ${MenuBook.detailTab===1 ? 'is-active' : ''}" role="tab" aria-selected="${MenuBook.detailTab===1 ? 'true' : 'false'}" onclick="MenuBook.detailTab=1; MenuBook.showDetail(MenuBook.selectedMonster)" style="flex:1; padding:8px; border:none; font-size:11px; font-weight:bold; border-radius:3px;">行動・耐性</button>
+                <button class="menu-book-detail-tab ${MenuBook.detailTab===2 ? 'is-active' : ''}" role="tab" aria-selected="${MenuBook.detailTab===2 ? 'true' : 'false'}" onclick="MenuBook.detailTab=2; MenuBook.showDetail(MenuBook.selectedMonster)" style="flex:1; padding:8px; border:none; font-size:11px; font-weight:bold; border-radius:3px;">情報・報酬</button>
             </div>`;
 
         // タブ1：行動(左) + 耐性(右)
         const tab1Content = `
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div style="background:#252525; border:1px solid #444; border-radius:4px; padding:8px;">
+                <div class="menu-surface-card" style="background:#252525; border:1px solid #444; border-radius:4px; padding:8px;">
                     <div style="font-size:11px; color:#aaa; margin-bottom:5px; border-bottom:1px solid #444;">行動パターン (${monster.actCount||1}回)</div>
                     ${actListHtml}
                 </div>
                 <div style="display:flex; flex-direction:column; gap:6px;">
-                    <div style="background:#222; border:1px solid #444; border-radius:4px; padding:5px;">
+                    <div class="menu-surface-card" style="background:#222; border:1px solid #444; border-radius:4px; padding:5px;">
                         <div style="font-size:10px; color:#88f; text-align:center; border-bottom:1px solid #333; margin-bottom:3px;">属性耐性 (%)</div>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px;">
-                            ${elements.map(e => `<div style="display:flex; justify-content:space-between; font-size:10px; background:#333; padding:1px 4px; border-radius:2px;"><span style="color:#aaa;">${e}</span><span>${monster.elmRes?.[e]||0}</span></div>`).join('')}
+                            ${elements.map(e => `<div class="menu-surface-card" style="display:flex; justify-content:space-between; font-size:10px; background:#333; padding:1px 4px; border-radius:2px;"><span style="color:#aaa;">${e}</span><span>${monster.elmRes?.[e]||0}</span></div>`).join('')}
                         </div>
                     </div>
-                    <div style="background:#222; border:1px solid #444; border-radius:4px; padding:5px;">
+                    <div class="menu-surface-card" style="background:#222; border:1px solid #444; border-radius:4px; padding:5px;">
                         <div style="font-size:10px; color:#f88; text-align:center; border-bottom:1px solid #333; margin-bottom:3px;">異常耐性</div>
-                        ${Object.keys(resistLabels).map(k => `<div style="display:flex; justify-content:space-between; font-size:10px; background:#333; padding:1px 4px; border-radius:2px; margin-bottom:1px;"><span style="color:#aaa;">${resistLabels[k]}</span><span>${monster.resists?.[k]||0}</span></div>`).join('')}
+                        ${Object.keys(resistLabels).map(k => `<div class="menu-surface-card" style="display:flex; justify-content:space-between; font-size:10px; background:#333; padding:1px 4px; border-radius:2px; margin-bottom:1px;"><span style="color:#aaa;">${resistLabels[k]}</span><span>${monster.resists?.[k]||0}</span></div>`).join('')}
                     </div>
                 </div>
             </div>`;
@@ -365,11 +365,11 @@ const MenuBook = {
         // タブ2：特性(上) + アーカイブ(中) + ドロップ(下)
         const tab2Content = `
             <div style="display:flex; flex-direction:column; gap:10px;">
-                <div style="background:#222; border:1px solid #444; border-radius:4px; padding:10px;">
+                <div class="menu-surface-card" style="background:#222; border:1px solid #444; border-radius:4px; padding:10px;">
                     <div style="font-size:11px; color:#ffd700; border-bottom:1px solid #444; margin-bottom:8px;">保有特性</div>
                     <div style="display:flex; flex-wrap:wrap;">${traitListHtml}</div>
                 </div>
-                <div style="background:#252525; border:1px solid #444; border-radius:4px; padding:10px; min-height:80px;">
+                <div class="menu-surface-card" style="background:#252525; border:1px solid #444; border-radius:4px; padding:10px; min-height:80px;">
                     <div style="font-size:11px; color:#ffd700; border-bottom:1px solid #444; margin-bottom:8px;">モンスター情報</div>
                     <div style="font-size:12px; color:#ccc; line-height:1.6; white-space:pre-wrap;">${monster.archives || '（記録なし）'}</div>
                 </div>
@@ -385,8 +385,8 @@ const MenuBook = {
             </div>`;
 
         view.innerHTML = `
-            <div style="padding:10px; background:#222; border-bottom:1px solid #444;">
-                <div style="display:flex; justify-content:space-between; align-items:center; background:#333; padding:5px; border-radius:4px;">
+            <div class="menu-surface-card" style="padding:10px; background:#222; border-bottom:1px solid #444;">
+                <div class="menu-surface-card" style="display:flex; justify-content:space-between; align-items:center; background:#333; padding:5px; border-radius:4px;">
                     <button class="btn" style="padding:2px 10px; font-size:12px;" onclick="MenuBook.switchMonster(-1)">＜ 前</button>
                     <span style="font-size:12px; color:#aaa;">図鑑ナビ</span>
                     <button class="btn" style="padding:2px 10px; font-size:12px;" onclick="MenuBook.switchMonster(1)">次 ＞</button>
@@ -417,27 +417,27 @@ const MenuBook = {
 
 					<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px;">
 						<div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
-							<div style="background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
+							<div class="menu-surface-card" style="background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
 								<div style="font-size:8px; color:#aaa; line-height:1;">HP</div>
 								<div style="font-weight:bold; color:#8f8; font-size:11px; line-height:1.2; text-align:right;">${monster.hp.toLocaleString()}</div>
 							</div>
 
-							<div style="background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
+							<div class="menu-surface-card" style="background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
 								<div style="font-size:8px; color:#aaa; line-height:1;">MP</div>
 								<div style="font-weight:bold; color:#88f; font-size:11px; line-height:1.2; text-align:right;">${monster.mp.toLocaleString()}</div>
 							</div>
 
-							<div style="background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
+							<div class="menu-surface-card" style="background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
 								<div style="font-size:8px; color:#aaa; line-height:1;">EXP</div>
 								<div style="font-weight:bold; color:#ffd700; font-size:11px; line-height:1.2; text-align:right;">${monsterExp.toLocaleString()}</div>
 							</div>
 
-							<div style="background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
+							<div class="menu-surface-card" style="background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
 								<div style="font-size:8px; color:#aaa; line-height:1;">Gold</div>
 								<div style="font-weight:bold; color:#ffd700; font-size:11px; line-height:1.2; text-align:right;">${monsterGold.toLocaleString()}</div>
 							</div>
 
-							<div style="grid-column:span 2; background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
+							<div class="menu-surface-card" style="grid-column:span 2; background:#333; padding:3px 5px; border-radius:3px; border:1px solid #444;">
 								<div style="font-size:8px; color:#aaa; line-height:1;">討伐数</div>
 								<div style="font-weight:bold; color:#ffd700; font-size:11px; line-height:1.2; text-align:right;">${killCount.toLocaleString()}</div>
 							</div>

@@ -159,7 +159,7 @@ const MenuItems = {
                 valuables: '貴重品を持っていません'
             };
             const empty = document.createElement('div');
-            empty.style.cssText = 'padding:24px 20px; text-align:center; color:#555;';
+            empty.className = 'item-empty-state';
             empty.innerText = emptyLabels[MenuItems.activeTab] || emptyLabels.tools;
             list.appendChild(empty);
             return;
@@ -167,7 +167,7 @@ const MenuItems = {
 
         currentItems.forEach(it => {
             const div = document.createElement('div');
-            div.className = 'list-item menu-pick-card';
+            div.className = 'list-item menu-pick-card item-list-row';
 
             const fallbackPath = Menu.getItemIconPath ? Menu.getItemIconPath(it.def) : 'assets/ui/menu-icons/item-item.svg';
             div.innerHTML = `
@@ -683,7 +683,7 @@ const MenuItems = {
 
         const choices = entries.map((entry) => {
             if (!entry.discovered) {
-                return { label: '？？？', disabled: true, background: '#333', destination: entry.destination };
+                return { label: '？？？', disabled: true, destination: entry.destination };
             }
             const dungeonNote = entry.kind === 'dungeon' ? ' [ダンジョン]' : '';
             const label = `${entry.name}${dungeonNote}`;
@@ -727,7 +727,7 @@ const MenuItems = {
         const item = MenuItems.selectedItem;
         const count = App.data.items[item.id] || 0;
         const header = document.createElement('div');
-        header.style.cssText = 'padding:10px; background:#333; color:#ffd700; font-size:12px; text-align:center; border-bottom:1px solid #444;';
+        header.className = 'item-target-summary';
         header.innerHTML = `使用中: <b>${item.name}</b> (残り: ${count}個)`;
         list.appendChild(header);
 
@@ -735,7 +735,7 @@ const MenuItems = {
             if(!uid) return;
             const c = App.getChar(uid);
             const div = document.createElement('div');
-            div.className = 'list-item';
+            div.className = 'list-item item-target-row';
             div.innerHTML = App.createCharHTML(c);
             div.onclick = () => MenuItems.useItem(c);
             list.appendChild(div);
@@ -768,7 +768,6 @@ const MenuItems = {
         const cancel = document.createElement('button');
         cancel.className = 'btn';
         cancel.style.width = '100%';
-        cancel.style.background = '#555';
         cancel.innerText = 'キャンセル';
         cancel.onclick = () => Menu.closeDialog();
         btnEl.appendChild(cancel);

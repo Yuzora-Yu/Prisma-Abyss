@@ -1,0 +1,21 @@
+PRISMA ABYSS Phase 10 DELTA
+Baseline: Phase 9 applied tree
+Date: 2026-08-19
+Changed/new files only: 16
+
+1. story.js
+2. story_logic.js
+3. map.js
+4. map_story_editor.html
+5. save_backup.js
+6. menus_config.js
+7. news.js
+8. sw.js
+9. docs/implemented-story-flow-20260608.md
+10. docs/scenario/07_DIALOGUE_REVIEW_QUEUE.md
+11. docs/scenario/32_LIGHT_PALACE_PRESENT_ASSAULT_PHASE6E_20260810.md
+12. docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+13. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+14. development_notes/2026-08-19/validation/validate-light-palace-phase10.js
+15. development_notes/2026-08-19/reports/LIGHT_PALACE_AND_GOOGLE_UI_PHASE10_20260819.md
+16. development_notes/2026-08-19/DELTA_MANIFEST_20260819_LIGHT_PALACE_PHASE10.txt

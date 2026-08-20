@@ -1,0 +1,28 @@
+PRISMA ABYSS Light Palace Phase 26 delta
+Date: 2026-08-20
+Base: Phase 25 applied
+
+Modified:
+- phaser-field.js
+- story_logic.js
+- story.js
+- main.js
+- sw.js
+- news.js
+
+Created:
+- development_notes/2026-08-20/validation/validate-light-palace-phase26.js
+- development_notes/2026-08-20/reports/LIGHT_PALACE_PHASE26_20260820.md
+- development_notes/2026-08-20/DELTA_MANIFEST_20260820_LIGHT_PALACE_PHASE26.txt
+
+Light Palace flashback visual tuning:
+- memory filter: sepia(0.55) saturate(0.88) contrast(1.10) brightness(0.99)
+- ritual asset: assets/effect/fx_special_rupture.png
+- base alpha: 0.60 fixed
+- drift X/Y: 0px / 0px
+- additive glow: enabled
+- glow alpha: 0.10..0.32
+- glow tint: 0xffe59a
+- glow cycle: 2200ms
+- depthOffset: 46 (+0.2 glow layer)
+- seamBleed: 0.5px

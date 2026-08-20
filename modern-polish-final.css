@@ -1,0 +1,387 @@
+/* 4項目になったタイトル操作を縦画面内へ安定して収める。 */
+body.title-page .title-hero {
+  margin-bottom: clamp(24px, 5vh, 54px);
+}
+
+body.title-page .title-actions {
+  gap: 8px;
+}
+
+body.title-page .title-actions .btn {
+  min-height: 43px;
+}
+
+@media (max-height: 700px) {
+  body.title-page .title-hero {
+    margin-top: clamp(18px, 5vh, 38px);
+    margin-bottom: 18px;
+  }
+
+  body.title-page .title-actions {
+    gap: 6px;
+  }
+
+  body.title-page .title-actions .btn {
+    min-height: 39px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+}
+
+
+/* Phase2W: レベルアップ結果の待機表示は、ログ本文と分離した静かな点滅表示にする。 */
+body.game-page #battle-log-layer {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  overflow: hidden;
+}
+
+body.game-page #battle-log-layer > #battle-log {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+body.game-page #battle-log .battle-result-level-spacer {
+  display: block;
+  min-height: 1.15em;
+  line-height: 1.15;
+}
+
+body.game-page #battle-result-advance-indicator {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  z-index: 3;
+  display: block;
+  min-width: 20px;
+  padding: 0;
+  box-sizing: border-box;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  line-height: 1;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-50%);
+  text-shadow: none;
+}
+
+body.game-page #battle-result-advance-indicator.is-visible {
+  visibility: visible;
+  animation: battleResultAdvanceBlink 0.82s linear infinite alternate;
+}
+
+@keyframes battleResultAdvanceBlink {
+  0% { opacity: 0.22; }
+  100% { opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.game-page #battle-result-advance-indicator.is-visible {
+    opacity: 0.9;
+    animation: none;
+  }
+}
+
+/* スカイプリズム：移動先一覧・ミニマップ・固定フッター。 */
+body.game-page .menu-dialog-overlay.is-sky-prism {
+  align-items: center;
+  padding-top: max(6px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
+}
+
+body.game-page .menu-dialog-overlay.is-sky-prism .menu-dialog-shell {
+  width: min(calc(100% - 12px), 430px);
+  height: min(calc(100svh - 12px), 780px);
+  max-height: 780px;
+  overflow: hidden;
+}
+
+body.game-page .menu-dialog-overlay.is-sky-prism .menu-dialog-body {
+  flex: 0 0 auto;
+  min-height: 48px;
+  padding: 10px 14px;
+}
+
+body.game-page .menu-dialog-footer.is-sky-prism-list {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  padding: 8px 14px 12px;
+}
+
+body.game-page .sky-prism-choice-stage {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+body.game-page .sky-prism-destination-list {
+  display: grid;
+  grid-template-rows: repeat(var(--sky-prism-page-rows, 6), 45px);
+  gap: 8px;
+  width: 100%;
+}
+
+body.game-page .sky-prism-destination-list > .btn,
+body.game-page .sky-prism-destination-spacer {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 45px;
+  min-height: 45px;
+  margin: 0;
+}
+
+body.game-page .sky-prism-destination-list > .btn {
+  padding: 8px 10px !important;
+}
+
+body.game-page .sky-prism-destination-spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.game-page .sky-prism-map-wrap {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 128px;
+  overflow: hidden;
+  border: 1px solid rgba(238, 188, 64, 0.55);
+  background: #090502;
+}
+
+body.game-page .sky-prism-map-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  image-rendering: pixelated;
+}
+
+body.game-page .sky-prism-fixed-footer {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: auto;
+}
+
+body.game-page .sky-prism-fixed-footer > .btn {
+  flex: 0 0 auto;
+  width: 100% !important;
+  min-height: 45px;
+  margin: 0;
+}
+
+body.game-page .sky-prism-nav {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: 48px 1fr 48px;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+body.game-page .sky-prism-nav > .btn {
+  width: 48px !important;
+  min-width: 48px;
+  height: 45px;
+  min-height: 45px;
+  margin: 0;
+}
+
+body.game-page .sky-prism-page-indicator {
+  color: #ccc;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* 確認は行き先ボタン領域だけを覆い、ミニマップを隠さない。 */
+body.game-page .sky-prism-confirm-layer {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+body.game-page .sky-prism-confirm-panel {
+  width: min(100%, 380px);
+  max-height: 100%;
+  overflow: auto;
+  border: 1px solid #d7a72a;
+  border-radius: 12px;
+  background: rgba(18, 12, 10, 0.97);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.72);
+}
+
+body.game-page .sky-prism-confirm-message {
+  padding: 13px 10px;
+  border-bottom: 1px solid rgba(215, 167, 42, 0.35);
+  color: #eee;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+body.game-page .sky-prism-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+body.game-page .sky-prism-confirm-actions > .btn {
+  min-height: 42px;
+  margin: 0;
+}
+
+@media (max-height: 650px) {
+  body.game-page .menu-dialog-overlay.is-sky-prism .menu-dialog-shell {
+    height: calc(100svh - 8px);
+  }
+  body.game-page .menu-dialog-overlay.is-sky-prism .menu-dialog-body {
+    min-height: 42px;
+    padding: 7px 12px;
+  }
+  body.game-page .menu-dialog-footer.is-sky-prism-list {
+    gap: 6px;
+    padding: 6px 10px 8px;
+  }
+  body.game-page .sky-prism-destination-list {
+    grid-template-rows: repeat(var(--sky-prism-page-rows, 2), 42px);
+    gap: 6px;
+  }
+  body.game-page .sky-prism-destination-list > .btn,
+  body.game-page .sky-prism-destination-spacer {
+    height: 42px;
+    min-height: 42px;
+  }
+  body.game-page .sky-prism-map-wrap {
+    min-height: 110px;
+  }
+  body.game-page .sky-prism-fixed-footer,
+  body.game-page .sky-prism-nav {
+    gap: 6px;
+  }
+  body.game-page .sky-prism-fixed-footer > .btn,
+  body.game-page .sky-prism-nav > .btn {
+    height: 42px;
+    min-height: 42px;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   Sky Prism dialog — brown menu ownership
+   Semantic sky-prism buttons are excluded from the old blue-gray global .btn
+   skin; this block owns their full surface and state styling.
+   -------------------------------------------------------------------------- */
+body.game-page .menu-dialog-overlay.is-sky-prism .menu-dialog-shell {
+  border-color: rgba(239, 190, 105, 0.72);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 221, 153, 0.08), transparent 34%),
+    linear-gradient(180deg, #2d1a0d 0%, #170b05 48%, #0f0703 100%);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.74),
+    inset 0 1px 0 rgba(255, 239, 188, 0.06);
+}
+
+body.game-page .menu-dialog-overlay.is-sky-prism .menu-dialog-body {
+  border-bottom: 1px solid rgba(232, 178, 91, 0.28);
+  background: linear-gradient(180deg, #332014 0%, #211108 100%);
+  color: var(--menu-text, #f5dfb8);
+  font-weight: 700;
+}
+
+body.game-page .menu-dialog-overlay.is-sky-prism .menu-dialog-footer {
+  background: var(--menu-page, #130905);
+}
+
+body.game-page .sky-prism-button {
+  border: 1px solid rgba(244, 199, 112, 0.62);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 236, 185, 0.08), transparent 44%),
+    linear-gradient(180deg, #5f3a1c 0%, #281409 100%);
+  color: var(--menu-control-text, #f8e5bf);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 239, 188, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.44),
+    0 4px 10px rgba(0, 0, 0, 0.24);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.62);
+}
+
+body.game-page .sky-prism-button--destination {
+  background:
+    linear-gradient(180deg, rgba(255, 238, 194, 0.10), transparent 42%),
+    linear-gradient(180deg, #67401f 0%, #2b160a 100%);
+}
+
+body.game-page .sky-prism-button--nav,
+body.game-page .sky-prism-button--secondary {
+  border-color: rgba(224, 170, 84, 0.50);
+  background:
+    linear-gradient(180deg, rgba(255, 236, 185, 0.055), transparent 42%),
+    linear-gradient(180deg, #432813 0%, #1d0e06 100%);
+  color: #e5cfaa;
+}
+
+body.game-page .sky-prism-button--confirm {
+  border-color: rgba(247, 210, 137, 0.72);
+  background:
+    linear-gradient(180deg, rgba(255, 240, 199, 0.12), transparent 42%),
+    linear-gradient(180deg, #72502c 0%, #321b0c 100%);
+}
+
+body.game-page .sky-prism-button.is-unavailable,
+body.game-page .sky-prism-button:disabled {
+  border-color: rgba(155, 117, 70, 0.32);
+  background: linear-gradient(180deg, #2a1a10 0%, #160b06 100%);
+  color: #806f5b;
+  box-shadow: inset 0 1px 0 rgba(255, 239, 188, 0.025);
+  text-shadow: none;
+  opacity: 0.72;
+}
+
+body.game-page .sky-prism-button:not(:disabled):active,
+body.game-page .sky-prism-button.is-pressing:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+  filter: brightness(1.10);
+  border-color: rgba(255, 218, 145, 0.82);
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.30),
+    0 2px 5px rgba(0, 0, 0, 0.24);
+}
+
+body.game-page .sky-prism-page-indicator {
+  color: #d8bd91;
+}
+
+body.game-page .sky-prism-confirm-panel {
+  border-color: rgba(239, 190, 105, 0.72);
+  background: linear-gradient(180deg, rgba(55, 34, 19, 0.985), rgba(20, 9, 4, 0.99));
+}
+
+body.game-page .sky-prism-confirm-message {
+  border-bottom-color: rgba(232, 178, 91, 0.30);
+  color: var(--menu-text, #f5dfb8);
+}

@@ -38,6 +38,11 @@
         worldObjects: [],
         actorObjects: [],
         storyObjects: new Map(),
+        storyFloorEffects: new Map(),
+        // Story floor effects keep their map-space specification separately from the rendered Phaser images.
+        // This lets effects survive renderer startup/resize/texture-load timing without falling back to screen-relative DOM.
+        storyFloorEffectSpecs: new Map(),
+        storyFloorEffectLoads: new Map(),
         waterObjects: [],
         waterWaveGraphics: null,
         animatedDecorObjects: [],
@@ -115,6 +120,7 @@
     const activateLegacyFallback = (error) => {
         stopDecorAnimation();
         clearStoryCharacterSprites();
+        clearStoryFloorEffectSprites();
         state.failed = true;
         state.ready = false;
         state.lastStaticSignature = null;
@@ -184,6 +190,12 @@
                 if (key) activeKeys.add(key);
             });
         });
+        state.storyFloorEffects.forEach(entry => {
+            (entry?.images || []).forEach(object => {
+                const key = getObjectTextureKey(object);
+                if (key) activeKeys.add(key);
+            });
+        });
         [...state.textureKeys].forEach(key => {
             if (activeKeys.has(key)) return;
             if (scene.textures.exists(key)) scene.textures.remove(key);
@@ -194,7 +206,11 @@
     const resolveTextureKey = (keyOrPath) => {
         if (!keyOrPath) return null;
         if (state.textureKeys.has(keyOrPath)) return keyOrPath;
-        const graphics = window.GRAPHICS?.data || {};
+        const graphicsRuntime = window.GRAPHICS;
+        if (typeof graphicsRuntime?.resolveKey === 'function') {
+            return graphicsRuntime.resolveKey(keyOrPath) || keyOrPath;
+        }
+        const graphics = graphicsRuntime?.data || {};
         return Object.keys(graphics).find(key => graphics[key] === keyOrPath) || keyOrPath;
     };
 
@@ -231,6 +247,288 @@
         shadow.setDepth(depth);
         target.push(shadow);
         return shadow;
+    };
+
+    // 大型の床エフェクトは1枚絵のままY深度へ置くと、下側の床タイルに隠れる。
+    // 横方向の帯へ分割し、各行を「床より上・同じ行のキャラより下」の深度へ置く。
+    //
+    // Important: the effect's *specification* is stored even when Phaser/texture startup is not ready yet.
+    // The previous implementation returned false during that short window, so a story event could permanently
+    // miss the ritual circle even though the map renderer became ready a few frames later.
+    const destroyStoryFloorEffectImages = (id) => {
+        const key = String(id || '');
+        if (!key) return false;
+        const entry = state.storyFloorEffects.get(key);
+        if (!entry) return false;
+        entry.motionTween?.stop?.();
+        if (state.scene?.tweens && entry.motionTween) state.scene.tweens.remove?.(entry.motionTween);
+        (entry.images || []).forEach(image => image?.destroy?.());
+        (entry.glowImages || []).forEach(image => image?.destroy?.());
+        state.storyFloorEffects.delete(key);
+        return true;
+    };
+
+    const removeStoryFloorEffectSprite = (id) => {
+        const key = String(id || '');
+        if (!key) return false;
+        const hadSpec = state.storyFloorEffectSpecs.delete(key);
+        state.storyFloorEffectLoads.delete(key);
+        const hadImages = destroyStoryFloorEffectImages(key);
+        return hadSpec || hadImages;
+    };
+
+    const clearStoryFloorEffectSprites = () => {
+        const keys = new Set([
+            ...state.storyFloorEffectSpecs.keys(),
+            ...state.storyFloorEffects.keys()
+        ]);
+        keys.forEach(removeStoryFloorEffectSprite);
+    };
+
+    const renderStoryFloorEffectSprite = (id, options = {}) => {
+        const scene = state.scene;
+        if (!state.ready || state.failed || !scene) return false;
+        const idKey = String(id || '');
+        if (!idKey) return false;
+        const x = Number(options.x);
+        const y = Number(options.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+
+        const textureKey = resolveTextureKey(options.key || options.src);
+        if (!textureKey || !ensureTexture(scene, textureKey)) return false;
+
+        const requestedSize = Math.max(1, Number(options.size || 4));
+        const requestedSlices = Math.max(1, Math.round(Number(options.slices || requestedSize)));
+        const requestedAlpha = Math.max(0, Math.min(1, Number.isFinite(Number(options.alpha)) ? Number(options.alpha) : 1));
+        const requestedDepthOffset = Number.isFinite(Number(options.depthOffset)) ? Number(options.depthOffset) : 46;
+        const requestedSeamBleed = Math.max(0, Math.min(2, Number.isFinite(Number(options.seamBleed)) ? Number(options.seamBleed) : 0));
+        const requestedAnimate = options.animate === true;
+        const requestedPulseAlpha = Math.max(0, Math.min(0.25, Number.isFinite(Number(options.pulseAlpha)) ? Number(options.pulseAlpha) : 0.07));
+        const pulseMinValue = Number(options.pulseMin);
+        const pulseMaxValue = Number(options.pulseMax);
+        const requestedPulseMin = Number.isFinite(pulseMinValue) ? Math.max(0, Math.min(1, pulseMinValue)) : null;
+        const requestedPulseMax = Number.isFinite(pulseMaxValue) ? Math.max(0, Math.min(1, pulseMaxValue)) : null;
+        const requestedPulseFactorMode = requestedPulseMin !== null && requestedPulseMax !== null;
+        const pulseFactorMin = requestedPulseFactorMode ? Math.min(requestedPulseMin, requestedPulseMax) : null;
+        const pulseFactorMax = requestedPulseFactorMode ? Math.max(requestedPulseMin, requestedPulseMax) : null;
+        const requestedDriftX = Math.max(0, Math.min(3, Number.isFinite(Number(options.driftX)) ? Number(options.driftX) : 0.7));
+        const requestedDriftY = Math.max(0, Math.min(3, Number.isFinite(Number(options.driftY)) ? Number(options.driftY) : 0.45));
+        const requestedMotionDuration = Math.max(900, Number.isFinite(Number(options.motionDuration)) ? Number(options.motionDuration) : 2800);
+        const requestedGlow = options.glow === true;
+        const requestedGlowAlphaMin = Math.max(0, Math.min(1, Number.isFinite(Number(options.glowAlphaMin)) ? Number(options.glowAlphaMin) : 0.08));
+        const requestedGlowAlphaMax = Math.max(requestedGlowAlphaMin, Math.min(1, Number.isFinite(Number(options.glowAlphaMax)) ? Number(options.glowAlphaMax) : 0.28));
+        const requestedGlowTint = Number.isFinite(Number(options.glowTint)) ? Math.max(0, Math.min(0xffffff, Math.floor(Number(options.glowTint)))) : 0xffe8a8;
+        const existing = state.storyFloorEffects.get(idKey);
+        if (existing
+            && existing.key === textureKey
+            && Number(existing.x) === x
+            && Number(existing.y) === y
+            && Number(existing.sizeTiles) === requestedSize
+            && Number(existing.sliceCount) === requestedSlices
+            && Number(existing.depthOffset) === requestedDepthOffset
+            && Number(existing.seamBleed) === requestedSeamBleed
+            && existing.animate === requestedAnimate
+            && Number(existing.pulseAlpha) === requestedPulseAlpha
+            && (existing.pulseMin ?? null) === pulseFactorMin
+            && (existing.pulseMax ?? null) === pulseFactorMax
+            && Number(existing.driftX) === requestedDriftX
+            && Number(existing.driftY) === requestedDriftY
+            && Number(existing.motionDuration) === requestedMotionDuration
+            && existing.glow === requestedGlow
+            && Number(existing.glowAlphaMin) === requestedGlowAlphaMin
+            && Number(existing.glowAlphaMax) === requestedGlowAlphaMax
+            && Number(existing.glowTint) === requestedGlowTint
+            && Array.isArray(existing.images)
+            && existing.images.length === requestedSlices
+            && existing.images.every(image => image?.active)
+            && (!requestedGlow || (Array.isArray(existing.glowImages)
+                && existing.glowImages.length === requestedSlices
+                && existing.glowImages.every(image => image?.active)))) {
+            existing.alpha = requestedAlpha;
+            if (!requestedAnimate) {
+                existing.images.forEach(image => image.setAlpha(requestedAlpha));
+                const staticGlowAlpha = (requestedGlowAlphaMin + requestedGlowAlphaMax) * 0.5;
+                (existing.glowImages || []).forEach(image => image.setAlpha(staticGlowAlpha));
+            }
+            return true;
+        }
+        destroyStoryFloorEffectImages(idKey);
+
+        const texture = scene.textures.get(textureKey);
+        const source = texture?.getSourceImage?.() || window.GRAPHICS?.images?.[textureKey] || null;
+        const frame = texture?.get?.();
+        const sourceWidth = Math.max(1, Number(source?.naturalWidth || source?.width || frame?.width || 1));
+        const sourceHeight = Math.max(1, Number(source?.naturalHeight || source?.height || frame?.height || 1));
+        const sizeTiles = requestedSize;
+        const sliceCount = requestedSlices;
+        const sliceTiles = sizeTiles / sliceCount;
+        const topTile = y - (sizeTiles / 2);
+        const px = x * TILE_SIZE + TILE_SIZE / 2;
+        const displayWidth = TILE_SIZE * sizeTiles;
+        const displayHeight = TILE_SIZE * sizeTiles;
+        const effectScaleX = displayWidth / sourceWidth;
+        const effectScaleY = displayHeight / sourceHeight;
+        const effectTopY = (y * TILE_SIZE + TILE_SIZE / 2) - (displayHeight / 2);
+        const images = [];
+        const glowImages = [];
+        const basePositions = [];
+        const alpha = requestedAlpha;
+        // 固定床演出は床装飾(+36前後)より上、壁面(+48/+49)より下へ置く。
+        const depthOffset = requestedDepthOffset;
+        // 分割境界は各帯を個別に32pxへ縮小すると、42px/43px帯ごとに縮尺率が変わり、
+        // 連続画像でも境界線が見える。元画像全体→表示全体の共通scaleを全帯で使い、
+        // さらに境界だけ指定px分を両側から重ねてCanvasの丸め誤差を吸収する。
+        const seamBleed = requestedSeamBleed;
+        const seamBleedSource = effectScaleY > 0 ? seamBleed / effectScaleY : 0;
+
+        for (let i = 0; i < sliceCount; i++) {
+            const nominalCropY = (sourceHeight * i) / sliceCount;
+            const nominalCropEnd = (sourceHeight * (i + 1)) / sliceCount;
+            const cropY = Math.max(0, nominalCropY - (i > 0 ? seamBleedSource : 0));
+            const cropEnd = Math.min(sourceHeight, nominalCropEnd + (i < sliceCount - 1 ? seamBleedSource : 0));
+            const cropHeight = Math.max(0.001, cropEnd - cropY);
+            const cropCenterY = cropY + (cropHeight / 2);
+            const sliceCenterTileY = topTile + ((i + 0.5) * sliceTiles);
+            const py = effectTopY + (cropCenterY * effectScaleY);
+            const rowDepth = Math.floor(sliceCenterTileY) * 100 + depthOffset;
+            const image = scene.add.image(px, py, textureKey);
+            // Phaser cropはcropYをローカル座標に残すため、crop帯の中心をImage原点にする。
+            image.setOrigin(0.5, cropCenterY / sourceHeight);
+            image.setCrop(0, cropY, sourceWidth, cropHeight);
+            // 全sliceで同一scaleを使う。384px -> 288pxなら常に0.75倍。
+            image.setScale(effectScaleX, effectScaleY);
+            image.setDepth(rowDepth);
+            image.setAlpha(alpha);
+            images.push(image);
+
+            if (requestedGlow) {
+                // 本体alphaを上下させるだけではセピア下で「暗い像の点滅」に見える。
+                // 同じcropを加算合成する発光層として重ね、位置・形状は固定したまま光量だけを脈動させる。
+                const glowImage = scene.add.image(px, py, textureKey);
+                glowImage.setOrigin(0.5, cropCenterY / sourceHeight);
+                glowImage.setCrop(0, cropY, sourceWidth, cropHeight);
+                glowImage.setScale(effectScaleX, effectScaleY);
+                glowImage.setDepth(rowDepth + 0.2);
+                glowImage.setAlpha(requestedAnimate ? requestedGlowAlphaMin : ((requestedGlowAlphaMin + requestedGlowAlphaMax) * 0.5));
+                if (typeof glowImage.setTintFill === 'function') glowImage.setTintFill(requestedGlowTint);
+                else if (typeof glowImage.setTint === 'function') glowImage.setTint(requestedGlowTint);
+                if (typeof Phaser !== 'undefined' && Phaser.BlendModes) glowImage.setBlendMode(Phaser.BlendModes.ADD);
+                glowImages.push(glowImage);
+            }
+            basePositions.push({ x:px, y:py });
+        }
+
+        const entry = {
+            images, glowImages, basePositions, key:textureKey, x, y, sizeTiles, sliceCount, alpha, depthOffset, seamBleed,
+            animate:requestedAnimate, pulseAlpha:requestedPulseAlpha, pulseMin:pulseFactorMin, pulseMax:pulseFactorMax,
+            driftX:requestedDriftX, driftY:requestedDriftY, motionDuration:requestedMotionDuration, motionTween:null,
+            glow:requestedGlow, glowAlphaMin:requestedGlowAlphaMin, glowAlphaMax:requestedGlowAlphaMax, glowTint:requestedGlowTint
+        };
+        state.storyFloorEffects.set(idKey, entry);
+
+        if (requestedAnimate && scene.tweens) {
+            const motion = { phase:0 };
+            entry.motionTween = scene.tweens.add({
+                targets: motion,
+                phase: Math.PI * 2,
+                duration: requestedMotionDuration,
+                ease: 'Linear',
+                repeat: -1,
+                onUpdate: () => {
+                    if (state.storyFloorEffects.get(idKey) !== entry) return;
+                    const phase = Number(motion.phase || 0);
+                    const dx = Math.sin(phase) * requestedDriftX;
+                    const dy = Math.sin((phase * 2) + 0.65) * requestedDriftY;
+                    const pulseWave = Math.sin(phase - 0.85);
+                    // pulseMin/pulseMax指定時は、基本alphaへ掛ける発光係数として扱う。
+                    // 例: alpha=0.5, pulse=0.74..0.80 -> 実効alphaは約0.37..0.40。
+                    const animatedAlpha = requestedPulseFactorMode
+                        ? Math.max(0, Math.min(1, Number(entry.alpha || 0) * (pulseFactorMin + ((pulseWave + 1) * 0.5 * (pulseFactorMax - pulseFactorMin)))))
+                        : Math.max(0, Math.min(1, Number(entry.alpha || 0) + (pulseWave * requestedPulseAlpha)));
+                    const glowWave = (Math.sin(phase - 0.30) + 1) * 0.5;
+                    const animatedGlowAlpha = requestedGlowAlphaMin + (glowWave * (requestedGlowAlphaMax - requestedGlowAlphaMin));
+                    entry.images.forEach((image, index) => {
+                        const base = entry.basePositions[index];
+                        if (!image?.active || !base) return;
+                        image.setPosition(base.x + dx, base.y + dy);
+                        image.setAlpha(animatedAlpha);
+                        const glowImage = entry.glowImages?.[index];
+                        if (glowImage?.active) {
+                            glowImage.setPosition(base.x + dx, base.y + dy);
+                            glowImage.setAlpha(animatedGlowAlpha);
+                        }
+                    });
+                }
+            });
+        }
+
+        return true;
+    };
+
+    const requestStoryFloorEffectTexture = (idKey, options) => {
+        if (!idKey || state.storyFloorEffectLoads.has(idKey)) return;
+        const textureKey = resolveTextureKey(options.key || options.src);
+        if (!textureKey || typeof window.GRAPHICS?.request !== 'function') return;
+        const promise = Promise.resolve(window.GRAPHICS.request(textureKey, { maxAttempts: 3, redraw: false }))
+            .then(() => {
+                if (state.storyFloorEffectSpecs.get(idKey) !== options) return false;
+                if (state.pendingField) createGame();
+                const rendered = renderStoryFloorEffectSprite(idKey, options);
+                if (rendered && state.pendingField) applyFieldCamera(state.scene, state.pendingField);
+                return rendered;
+            })
+            .catch(error => {
+                console.warn('[PhaserFieldRenderer] story floor effect texture load failed:', idKey, textureKey, error);
+                return false;
+            })
+            .finally(() => {
+                if (state.storyFloorEffectLoads.get(idKey) === promise) state.storyFloorEffectLoads.delete(idKey);
+            });
+        state.storyFloorEffectLoads.set(idKey, promise);
+    };
+
+    const showStoryFloorEffectSprite = (id, options = {}) => {
+        const idKey = String(id || '');
+        const x = Number(options.x);
+        const y = Number(options.y);
+        if (!idKey || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+        const spec = { ...options, x, y };
+        state.storyFloorEffectSpecs.set(idKey, spec);
+
+        if (state.pendingField) createGame();
+        if (!renderStoryFloorEffectSprite(idKey, spec)) requestStoryFloorEffectTexture(idKey, spec);
+
+        // true means "accepted as a world-space effect". It may still be pending renderer/texture readiness,
+        // but will be materialized from this absolute tile spec as soon as Phaser is ready.
+        return true;
+    };
+
+    const syncStoryFloorEffectSprites = () => {
+        if (!state.storyFloorEffectSpecs.size) return;
+        state.storyFloorEffectSpecs.forEach((spec, idKey) => {
+            if (!renderStoryFloorEffectSprite(idKey, spec)) requestStoryFloorEffectTexture(idKey, spec);
+        });
+    };
+
+
+    const isStoryFloorEffectSpriteRendered = (id) => {
+        const entry = state.storyFloorEffects.get(String(id || ''));
+        return !!(entry && Array.isArray(entry.images) && entry.images.length && entry.images.every(image => image?.active));
+    };
+
+    const ensureStoryFloorEffectSprite = async (id, options = {}, timeoutMs = 2500) => {
+        const idKey = String(id || '');
+        if (!showStoryFloorEffectSprite(idKey, options)) return false;
+        if (isStoryFloorEffectSpriteRendered(idKey)) return true;
+        const deadline = Date.now() + Math.max(250, Number(timeoutMs) || 2500);
+        while (Date.now() < deadline) {
+            if (state.pendingField) createGame();
+            const spec = state.storyFloorEffectSpecs.get(idKey);
+            if (!spec) return false;
+            if (renderStoryFloorEffectSprite(idKey, spec) && isStoryFloorEffectSpriteRendered(idKey)) return true;
+            await new Promise(resolve => setTimeout(resolve, 34));
+        }
+        return isStoryFloorEffectSpriteRendered(idKey);
     };
 
     const removeStoryCharacterSprite = (id) => {
@@ -301,6 +599,235 @@
         return true;
     };
 
+
+    const getStoryMonsterTextureKey = (monsterId) => {
+        const field = state.pendingField;
+        const numericId = Number(monsterId);
+        if (!Number.isFinite(numericId)) return null;
+        const mapKey = field?.getMonsterMapSpriteKey?.(numericId);
+        if (mapKey) return mapKey;
+        const src = field?.getMonsterMapSpriteSrc?.(numericId)
+            || (typeof MonsterData !== 'undefined' && typeof MonsterData.getImagePath === 'function'
+                ? MonsterData.getImagePath(numericId)
+                : window.PRISMA_ASSETS?.getMonsterImagePath?.(numericId));
+        return resolveTextureKey(src);
+    };
+
+    // Story cutscene actors/effects that belong to the map must live in Phaser world
+    // coordinates. DOM overlays are screen-relative and drift when the viewport or
+    // camera changes, so persistent event visuals use these APIs instead.
+    const showStoryMonsterSprite = (id, options = {}) => {
+        const scene = state.scene;
+        if (!state.ready || state.failed || !scene) return false;
+        const key = String(id || '');
+        if (!key) return false;
+        const x = Number(options.x);
+        const y = Number(options.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+        const textureKey = getStoryMonsterTextureKey(options.monsterId);
+        if (!textureKey) return false;
+        window.GRAPHICS?.get?.(textureKey);
+        if (!ensureTexture(scene, textureKey)) return false;
+
+        const px = x * TILE_SIZE + TILE_SIZE / 2;
+        const py = y * TILE_SIZE + TILE_SIZE;
+        const sizeTiles = Math.max(0.5, Number(options.size || 2));
+        const displaySize = TILE_SIZE * sizeTiles;
+        const baseDepth = y * 100;
+        const existing = state.storyObjects.get(key);
+        if (existing?.kind === 'monster' && Number(existing.monsterId) === Number(options.monsterId) && existing.image?.active) {
+            existing.image.setPosition(px, py);
+            existing.image.setDisplaySize(displaySize, displaySize);
+            existing.image.setDepth(baseDepth + 90);
+            if (options.opacity !== undefined && Number.isFinite(Number(options.opacity))) existing.image.setAlpha(Number(options.opacity));
+            else existing.image.setAlpha(1);
+            if (existing.shadow?.active) {
+                existing.shadow.setPosition(px, py - 2);
+                existing.shadow.setDepth(baseDepth + 82);
+            }
+            existing.x = x;
+            existing.y = y;
+            existing.sizeTiles = sizeTiles;
+            return true;
+        }
+
+        removeStoryCharacterSprite(key);
+        const shadow = options.shadow === false
+            ? null
+            : scene.add.ellipse(px, py - 2, Math.max(16, 18 * sizeTiles), Math.max(5, 5 * sizeTiles), 0x000000, 0.38);
+        if (shadow) shadow.setDepth(baseDepth + 82);
+        const image = scene.add.image(px, py, textureKey);
+        image.setOrigin(0.5, 1);
+        image.setDisplaySize(displaySize, displaySize);
+        image.setDepth(baseDepth + 90);
+        if (options.opacity !== undefined && Number.isFinite(Number(options.opacity))) image.setAlpha(Number(options.opacity));
+        state.storyObjects.set(key, {
+            kind: 'monster',
+            image,
+            shadow,
+            monsterId: Number(options.monsterId),
+            sizeTiles,
+            x,
+            y,
+            frameTimer: null
+        });
+        return true;
+    };
+
+    const showStoryImageSprite = (id, options = {}) => {
+        const scene = state.scene;
+        if (!state.ready || state.failed || !scene) return false;
+        const key = String(id || '');
+        if (!key) return false;
+        const x = Number(options.x);
+        const y = Number(options.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+        const textureKey = resolveTextureKey(options.key || options.src);
+        if (!textureKey || !ensureTexture(scene, textureKey)) return false;
+
+        removeStoryCharacterSprite(key);
+        const texture = scene.textures.get(textureKey);
+        const frame = texture?.get?.();
+        const source = texture?.getSourceImage?.() || window.GRAPHICS?.images?.[textureKey] || null;
+        const sourceWidth = Math.max(1, Number(source?.naturalWidth || source?.width || frame?.width || 1));
+        const sourceHeight = Math.max(1, Number(source?.naturalHeight || source?.height || frame?.height || 1));
+        const sizeTiles = Math.max(0.5, Number(options.size || 2));
+        const width = TILE_SIZE * sizeTiles;
+        const height = width * (sourceHeight / sourceWidth);
+        const px = x * TILE_SIZE + TILE_SIZE / 2;
+        const py = y * TILE_SIZE + TILE_SIZE / 2;
+        const localDepth = Number.isFinite(Number(options.depthOffset)) ? Number(options.depthOffset) : 96;
+        const depthMode = String(options.depthMode || '').trim();
+        // 4マス以上の一枚絵を通常のY行深度へ置くと、画像下半分が次の行の床・壁に
+        // 上書きされる。cutscene-front はMAP本体より前、HUD/大気演出より後ろの専用帯。
+        const depth = depthMode === 'cutscene-front'
+            ? 899900
+            : (options.fixedDepth === true && Number.isFinite(Number(options.depth))
+                ? Number(options.depth)
+                : (y * 100 + localDepth));
+        const image = scene.add.image(px, py, textureKey);
+        image.setOrigin(0.5, 0.5);
+        image.setDisplaySize(width, height);
+        image.setDepth(depth);
+        if (options.opacity !== undefined && Number.isFinite(Number(options.opacity))) image.setAlpha(Number(options.opacity));
+        state.storyObjects.set(key, {
+            kind: 'image',
+            image,
+            shadow: null,
+            textureKey,
+            sizeTiles,
+            x,
+            y,
+            depthOffset: localDepth,
+            frameTimer: null
+        });
+        return true;
+    };
+
+    const moveStoryObjectSprite = (id, options = {}) => {
+        const scene = state.scene;
+        if (!state.ready || state.failed || !scene) return Promise.resolve(false);
+        const key = String(id || '');
+        if (!key) return Promise.resolve(false);
+        let entry = state.storyObjects.get(key);
+        if (!entry) {
+            let shown = false;
+            if (options.monsterId !== undefined) shown = showStoryMonsterSprite(key, options);
+            else if (options.src || options.key) shown = showStoryImageSprite(key, options);
+            entry = state.storyObjects.get(key);
+            if (!shown || !entry) return Promise.resolve(false);
+        }
+
+        const x = Number(options.x);
+        const y = Number(options.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return Promise.resolve(false);
+        const duration = Math.max(0, Number(options.duration || 0));
+        const isCenteredImage = entry.kind === 'image';
+        const targetPx = x * TILE_SIZE + TILE_SIZE / 2;
+        const targetPy = y * TILE_SIZE + (isCenteredImage ? TILE_SIZE / 2 : TILE_SIZE);
+        const finalDepth = options.fixedDepth === true && Number.isFinite(Number(options.depth))
+            ? Number(options.depth)
+            : (y * 100 + (entry.kind === 'image' ? Number(entry.depthOffset || 96) : 90));
+
+        const applyDepth = () => {
+            if (!entry.image?.active) return;
+            if (options.fixedDepth === true && Number.isFinite(Number(options.depth))) {
+                entry.image.setDepth(Number(options.depth));
+                return;
+            }
+            const offsetPx = isCenteredImage ? TILE_SIZE / 2 : TILE_SIZE;
+            const currentTileY = (Number(entry.image.y) - offsetPx) / TILE_SIZE;
+            const base = currentTileY * 100;
+            entry.image.setDepth(base + (entry.kind === 'image' ? Number(entry.depthOffset || 96) : 90));
+            if (entry.shadow?.active) entry.shadow.setDepth(base + 82);
+        };
+
+        if (duration <= 0) {
+            entry.image?.setPosition(targetPx, targetPy);
+            entry.shadow?.setPosition(targetPx, y * TILE_SIZE + TILE_SIZE - 2);
+            entry.image?.setDepth(finalDepth);
+            if (entry.shadow?.active) entry.shadow.setDepth(y * 100 + 82);
+            entry.x = x;
+            entry.y = y;
+            return Promise.resolve(true);
+        }
+
+        return new Promise(resolve => {
+            let remaining = entry.shadow?.active ? 2 : 1;
+            const finishOne = () => {
+                remaining -= 1;
+                if (remaining > 0) return;
+                entry.x = x;
+                entry.y = y;
+                entry.image?.setDepth(finalDepth);
+                if (entry.shadow?.active) entry.shadow.setDepth(y * 100 + 82);
+                resolve(true);
+            };
+            scene.tweens.add({
+                targets: entry.image,
+                x: targetPx,
+                y: targetPy,
+                duration,
+                ease: 'Linear',
+                onUpdate: applyDepth,
+                onComplete: finishOne
+            });
+            if (entry.shadow?.active) {
+                scene.tweens.add({
+                    targets: entry.shadow,
+                    x: targetPx,
+                    y: y * TILE_SIZE + TILE_SIZE - 2,
+                    duration,
+                    ease: 'Linear',
+                    onUpdate: applyDepth,
+                    onComplete: finishOne
+                });
+            }
+        });
+    };
+
+    const revealStoryMonsterSprite = (id, options = {}) => {
+        const scene = state.scene;
+        if (!state.ready || state.failed || !scene) return Promise.resolve(false);
+        const duration = Math.max(80, Number(options.duration || 280));
+        const shown = showStoryMonsterSprite(id, { ...options, opacity: 0.03 });
+        const entry = state.storyObjects.get(String(id || ''));
+        if (!shown || !entry?.image) return Promise.resolve(false);
+        entry.image.setTint?.(0x14001f);
+        return new Promise(resolve => {
+            scene.tweens.add({
+                targets: entry.image,
+                alpha: Number(options.finalOpacity ?? 1),
+                duration,
+                ease: 'Quad.easeOut',
+                onComplete: () => {
+                    entry.image?.clearTint?.();
+                    resolve(true);
+                }
+            });
+        });
+    };
+
     const moveStoryCharacterSprite = (id, options = {}) => {
         const scene = state.scene;
         if (!state.ready || state.failed || !scene) return Promise.resolve(false);
@@ -361,6 +888,14 @@
             setFrame(Number(options.step) === 2 ? 2 : 1);
         }
 
+        const syncMovingDepth = () => {
+            if (!entry.image?.active) return;
+            const currentTileY = (Number(entry.image.y) - TILE_SIZE) / TILE_SIZE;
+            const depth = currentTileY * 100;
+            entry.image.setDepth(depth + 90);
+            if (entry.shadow?.active) entry.shadow.setDepth(depth + 82);
+        };
+
         return new Promise(resolve => {
             let remaining = entry.shadow?.active ? 2 : 1;
             const finishOne = () => {
@@ -383,6 +918,7 @@
                 y: targetPy,
                 duration,
                 ease: 'Linear',
+                onUpdate: syncMovingDepth,
                 onComplete: finishOne
             });
             if (entry.shadow?.active) {
@@ -392,6 +928,7 @@
                     y: targetPy - 2,
                     duration,
                     ease: 'Linear',
+                    onUpdate: syncMovingDepth,
                     onComplete: finishOne
                 });
             }
@@ -1722,6 +2259,7 @@
         const staticSignature = getStaticSignature(field);
         if (state.lastStaticSignature === staticSignature) {
             drawPlayer(scene, field);
+            syncStoryFloorEffectSprites();
             return;
         }
 
@@ -1794,8 +2332,19 @@
         drawPostBattleBossObject(scene, field);
         drawPlayer(scene, field);
         drawAtmosphere(scene, field);
+        syncStoryFloorEffectSprites();
         pruneUnusedTextures(scene);
         state.lastStaticSignature = staticSignature;
+    };
+
+    const syncPersistentStoryVisuals = () => {
+        try {
+            if (typeof StoryManager !== 'undefined' && typeof StoryManager.syncLightPalaceFlashbackPersistentVisuals === 'function') {
+                StoryManager.syncLightPalaceFlashbackPersistentVisuals();
+            }
+        } catch (error) {
+            console.warn('[PhaserFieldRenderer] persistent story visual sync failed:', error);
+        }
     };
 
     const createGame = () => {
@@ -1865,6 +2414,7 @@
                         parent.classList.add('is-ready');
                         document.getElementById('canvas-wrapper')?.classList.add('phaser-field-active');
                         if (state.pendingField) sync(state.pendingField);
+                        syncPersistentStoryVisuals();
                         window.requestAnimationFrame(() => {
                             refreshVisibleField();
                             window.requestAnimationFrame(refreshVisibleField);
@@ -1880,6 +2430,7 @@
                     state.lastParentWidth = parent.clientWidth;
                     state.lastParentHeight = parent.clientHeight;
                     if (state.pendingField) sync(state.pendingField);
+                    syncPersistentStoryVisuals();
                 });
                 state.resizeObserver.observe(parent);
             }
@@ -1899,6 +2450,7 @@
             state.game.scale.resize(parent.clientWidth, parent.clientHeight);
             state.lastStaticSignature = null;
             sync(state.pendingField);
+            syncPersistentStoryVisuals();
         } catch (error) {
             activateLegacyFallback(error);
         }
@@ -1926,16 +2478,26 @@
             state.game.scale.resize(parent.clientWidth || 320, parent.clientHeight || 320);
             state.lastStaticSignature = null;
             if (state.pendingField) sync(state.pendingField);
+            syncPersistentStoryVisuals();
         },
         refresh() {
-            if (!state.ready || !state.pendingField) return;
-            state.lastStaticSignature = null;
-            sync(state.pendingField);
-            // refresh() can be called directly after a visual-state change, outside
-            // Field.render(). Keep that route responsible for one HUD refresh while
-            // the ordinary render route redraws it after Phaser returns.
-            if (typeof state.pendingField.drawHudMinimap === 'function') {
-                state.pendingField.drawHudMinimap();
+            // 呼び出し側がlegacy Canvasへフォールバックできるよう、
+            // 「Phaserで実際に再描画できたか」をbooleanで返す。
+            if (!state.ready || state.failed || !state.pendingField) return false;
+            try {
+                state.lastStaticSignature = null;
+                sync(state.pendingField);
+                syncPersistentStoryVisuals();
+                // refresh() can be called directly after a visual-state change, outside
+                // Field.render(). Keep that route responsible for one HUD refresh while
+                // the ordinary render route redraws it after Phaser returns.
+                if (typeof state.pendingField.drawHudMinimap === 'function') {
+                    state.pendingField.drawHudMinimap();
+                }
+                return true;
+            } catch (error) {
+                activateLegacyFallback(error);
+                return false;
             }
         },
         setActive(active) {
@@ -1960,14 +2522,39 @@
         showStoryCharacterSprite(id, options = {}) {
             return showStoryCharacterSprite(id, options);
         },
+        showStoryMonsterSprite(id, options = {}) {
+            return showStoryMonsterSprite(id, options);
+        },
+        showStoryImageSprite(id, options = {}) {
+            return showStoryImageSprite(id, options);
+        },
+        revealStoryMonsterSprite(id, options = {}) {
+            return revealStoryMonsterSprite(id, options);
+        },
         moveStoryCharacterSprite(id, options = {}) {
             return moveStoryCharacterSprite(id, options);
+        },
+        moveStoryObjectSprite(id, options = {}) {
+            return moveStoryObjectSprite(id, options);
         },
         removeStoryCharacterSprite(id) {
             return removeStoryCharacterSprite(id);
         },
         clearStoryCharacterSprites() {
             clearStoryCharacterSprites();
+            return true;
+        },
+        showStoryFloorEffectSprite(id, options = {}) {
+            return showStoryFloorEffectSprite(id, options);
+        },
+        ensureStoryFloorEffectSprite(id, options = {}, timeoutMs = 2500) {
+            return ensureStoryFloorEffectSprite(id, options, timeoutMs);
+        },
+        removeStoryFloorEffectSprite(id) {
+            return removeStoryFloorEffectSprite(id);
+        },
+        clearStoryFloorEffectSprites() {
+            clearStoryFloorEffectSprites();
             return true;
         },
         isReady() {

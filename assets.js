@@ -700,6 +700,7 @@ const PRISMA_ASSETS = {
     "ultimate-lost-prisma": "assets/effect/fx_ultimate_248_lost_prisma.png",
     "heal-blossom": "assets/effect/fx_support_heal_radiance.png",
     "neutral-slash": "assets/effect/fx_phys_slash_arc.png",
+    "neutral-slash-ai": "assets/effect/fx-neutral-slash-ai.png",
     "neutral-smash": "assets/effect/fx_phys_smash_impact.png",
     "neutral-pierce": "assets/effect/fx_phys_pierce_lance.png",
     "neutral-combo": "assets/effect/fx_phys_neutral_combo.png",
@@ -1008,6 +1009,28 @@ const GRAPHICS = {
   redrawQueued: false,
   data: PRISMA_ASSETS.graphics,
 
+  // Field/story rendering may reuse battle-effect images without duplicating their
+  // canonical path entries into PRISMA_ASSETS.graphics. Resolve both registries here
+  // so GRAPHICS remains the single runtime Image cache used by Phaser and legacy Canvas.
+  resolveKey(keyOrSrc) {
+    const raw = String(keyOrSrc || "").trim();
+    if (!raw) return "";
+    if (GRAPHICS.data?.[raw] || PRISMA_ASSETS.battleFx?.[raw]) return raw;
+
+    const registries = [GRAPHICS.data || {}, PRISMA_ASSETS.battleFx || {}];
+    for (const registry of registries) {
+      const found = Object.entries(registry).find(([, src]) => String(src || "") === raw);
+      if (found) return found[0];
+    }
+    return raw;
+  },
+
+  resolveSource(keyOrSrc) {
+    const key = GRAPHICS.resolveKey(keyOrSrc);
+    if (!key) return "";
+    return GRAPHICS.data?.[key] || PRISMA_ASSETS.battleFx?.[key] || "";
+  },
+
   queueFieldRedraw() {
     if (GRAPHICS.redrawQueued || typeof requestAnimationFrame === "undefined") return;
     GRAPHICS.redrawQueued = true;
@@ -1017,18 +1040,21 @@ const GRAPHICS = {
       // 遅延画像をテクスチャへ追加した直後は静的層を明示的に破棄し、
       // 「一歩歩くまで画像が出ない」状態を作らない。
       if (typeof PhaserFieldRenderer !== "undefined" && typeof PhaserFieldRenderer.refresh === "function") {
-        PhaserFieldRenderer.refresh();
+        const refreshed = PhaserFieldRenderer.refresh();
+        if (refreshed !== true && typeof Field !== "undefined" && typeof Field.render === "function") Field.render();
       } else if (typeof Field !== "undefined" && typeof Field.render === "function") {
         Field.render();
       }
     });
   },
 
-  request(key, options = {}) {
+  request(keyOrSrc, options = {}) {
+    const key = GRAPHICS.resolveKey(keyOrSrc);
+    if (!key) return Promise.resolve(null);
     if (GRAPHICS.images[key]) return Promise.resolve(GRAPHICS.images[key]);
     if (GRAPHICS.loadPromises[key]) return GRAPHICS.loadPromises[key];
 
-    const src = GRAPHICS.data[key];
+    const src = GRAPHICS.resolveSource(key);
     if (!src || typeof Image === "undefined") return Promise.resolve(null);
 
     const maxAttempts = Math.max(1, Math.min(5, Math.floor(Number(options.maxAttempts) || 3)));
@@ -1099,11 +1125,12 @@ const GRAPHICS = {
   },
 
   // 将来、特定画像だけ遅延読み込みしたい場合の入口。
-  // 画像管理を分散させず、この関数から PRISMA_ASSETS.graphics を参照する。
-  get(key) {
+  // 画像管理を分散させず、graphics / battleFx の正本を共通resolver経由で参照する。
+  get(keyOrSrc) {
+    const key = GRAPHICS.resolveKey(keyOrSrc);
+    if (!key || !GRAPHICS.resolveSource(key)) return null;
     if (GRAPHICS.images[key]) return GRAPHICS.images[key];
     if (GRAPHICS.loading[key]) return GRAPHICS.loading[key];
-    if (!GRAPHICS.data[key]) return null;
 
     GRAPHICS.request(key, { maxAttempts: 3 });
     return GRAPHICS.loading[key] || null;

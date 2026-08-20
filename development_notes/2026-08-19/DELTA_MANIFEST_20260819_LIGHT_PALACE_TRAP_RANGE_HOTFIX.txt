@@ -1,0 +1,22 @@
+PRISMA ABYSS - Light Palace flashback trap range hotfix
+Base: Phase 10 DELTA applied
+Date: 2026-08-19
+
+Changed/new files in this hotfix only:
+1. map.js
+   - Corrected LIGHT_PALACE 3F flashback trap trigger range from X17-19/Y20 to X16-18/Y20.
+2. sw.js
+   - Bumped precache version v82 -> v83 so updated map.js is not masked by an old service-worker cache.
+3. development_notes/2026-08-19/validation/validate-light-palace-phase10.js
+   - Updated expected trigger range and added corridor geometry assertions: X16-18 are floor; X15/X19 are walls.
+4. development_notes/2026-08-19/reports/LIGHT_PALACE_AND_GOOGLE_UI_PHASE10_20260819.md
+   - Corrected the documented trigger range and geometry note.
+5. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+   - Corrected the scenario specification to X16-18/Y20.
+6. development_notes/2026-08-19/DELTA_MANIFEST_20260819_LIGHT_PALACE_TRAP_RANGE_HOTFIX.txt
+
+Validation:
+- node --check map.js: OK
+- node --check sw.js: OK
+- validate-light-palace-phase10.js: OK
+- Authored 3F row Y20 verified as W,T,T,T,W at X15..19.

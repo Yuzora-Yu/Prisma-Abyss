@@ -2280,6 +2280,7 @@ const WORLD_MAPS = Object.freeze({
 });
 
 const DERIVED_PROGRESS_FLAGS = Object.freeze([
+    Object.freeze({ flag: "lightPalacePrisonRescueSecured", requires: Object.freeze(["lightPalaceCleared"]) }),
     Object.freeze({ flag: "abyssFirstBarrierCleared", requires: Object.freeze(["abyssLeonardDefeated", "abyssEliciaDefeated"]) }),
     Object.freeze({ flag: "abyssSecondBarrierCleared", requires: Object.freeze(["abyssSyrisDefeated", "abyssGradDefeated"]) })
 ]);
@@ -14256,7 +14257,16 @@ const FIXED_DUNGEON_MAPS = {
                         toFloor: 2,
                         targetX: 5,
                         targetY: 25,
-                        label: "2階へ上がる"
+                        label: "2階へ上がる",
+                        requiredFlag: "lightPalacePrisonRescueSecured",
+                        lockedEventId: "light_palace_present_prison_detour",
+                        lockedLabel: "2階へ上がる",
+                        blockConditions: {
+                            requiredFlags: ["lightPalaceFlashbackActive", "lightPalaceFlashbackRetreatOrdered"],
+                            missingFlag: "lightPalaceFlashbackCompleted"
+                        },
+                        blockedEventId: "light_palace_flashback_wrong_way_stairs",
+                        blockedLabel: "2階へ戻る"
                     },
                     {
                         x: 7,
@@ -14480,9 +14490,15 @@ const FIXED_DUNGEON_MAPS = {
                         x: 28,
                         y: 7,
                         toFloor: 3,
-                        targetX: 5,
+                        targetX: 4,
                         targetY: 25,
-                        label: "3階へ上がる"
+                        label: "3階へ上がる",
+                        blockConditions: {
+                            requiredFlags: ["lightPalaceFlashbackActive", "lightPalaceFlashbackRetreatOrdered"],
+                            missingFlag: "lightPalaceFlashbackCompleted"
+                        },
+                        blockedEventId: "light_palace_flashback_wrong_way_stairs",
+                        blockedLabel: "3階へ戻る"
                     }
                 ],
                 chests: [
@@ -14520,36 +14536,36 @@ const FIXED_DUNGEON_MAPS = {
                     "^WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW^",
                     "^WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW^",
                     "^WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW^",
-                    "^WWWWWTTTTWWWWWWTTTTWWWWWWTTTTWWWW^",
-                    "^WWWWTTTTTTWWWWTTTTTTWWWWTTTTTTWWW^",
-                    "^WWWWTTTTTTTTTTTTTTTTTTTTTTTUTTWWW^",
-                    "^WWWWTTTTTTWWWWTTTTTTWWWWTTTTTTWWW^",
-                    "^WWWWWTTTTWWWWWWTTTTWWWWWWTTTTWWWW^",
-                    "^WWWWWWWWWWWWWWWWTTWWWWWWWWWWWWWWW^",
-                    "^WWWWWWWWWWWWWWWWTTWWWWWWWWWWWWWWW^",
-                    "^WWWWWWWWWWWWWWWWTTWWWWWWWWWWWWWWW^",
-                    "^WWWWWWWWWWWWWWTTTTTTWWWWWWWWWWWWW^",
-                    "^WWWWWWWWWWWWWTTTTTTTTWWWWWWWWWWWW^",
-                    "^WWWWWWTTTWWWWTTTWWTTTWWWWTTTWWWWW^",
-                    "^WWWWWTTTTTWWWTTWWWWTTWWWTTTTTWWWW^",
-                    "^WWWWWTTTTTTTTTTWWWWTTTTTTTTTTWWWW^",
-                    "^WWWWWTTTTTWWWTTTWWTTTWWWTTTTTWWWW^",
-                    "^WWWWWWTTTWWWWTTTTTTTTWWWWTTTWWWWW^",
-                    "^WWWWWWWWWWWWWWTTTTTTWWWWWWWWWWWWW^",
-                    "^WWWWWWWWWWWWWWWWTTWWWWWWWWWWWWWWW^",
-                    "^WWWWWWWWWWWWWWWWTTWWWWWWWWWWWWWWW^",
-                    "^WWWWWWWWWWWWWWTTTTTTWWWWWWWWWWWWW^",
-                    "^WWWWTTTTWWWWWTTTTTTTTWWWWWTTTTWWW^",
-                    "^WWWTTTTTTWWWWTTTTTTTTWWWWTTTTTTWW^",
-                    "^WWWTDTTTTTTTTTTTTTTTTTTTTTTTTTTWW^",
-                    "^WWWTTTTTTWWWWTTTTTTTTWWWWTTTTTTWW^",
-                    "^WWWWTTTTWWWWWWTTTTTTWWWWWWTTTTWWW^",
+                    "^WWWWTTTTWWWWWWTTTTTWWWWWWTTTTWWWW^",
+                    "^WWWTTTTTTWWWWTTTTTTTWWWWTTTTTTWWW^",
+                    "^WWWTTTTTTTTTTTTTTTTTTTTTTTTUTTWWW^",
+                    "^WWWTTTTTTWWWWTTTTTTTWWWWTTTTTTWWW^",
+                    "^WWWWTTTTWWWWWWTTTTTWWWWWWTTTTWWWW^",
+                    "^WWWWWWWWWWWWWWWTTTWWWWWWWWWWWWWWW^",
+                    "^WWWWWWWWWWWWWWWTTTWWWWWWWWWWWWWWW^",
+                    "^WWWWWWWWWWWWWWWTTTWWWWWWWWWWWWWWW^",
+                    "^WWWWWWWWWWWWWTTTTTTTWWWWWWWWWWWWW^",
+                    "^WWWWWWWWWWWWTTTTTTTTTWWWWWWWWWWWW^",
+                    "^WWWWWTTTWWWWTTTTTTTTTWWWWTTTWWWWW^",
+                    "^WWWWTTTTTWWWTTTTTTTTTWWWTTTTTWWWW^",
+                    "^WWWWTTTTTTTTTTTTTTTTTTTTTTTTTWWWW^",
+                    "^WWWWTTTTTWWWTTTTTTTTTWWWTTTTTWWWW^",
+                    "^WWWWWTTTWWWWTTTTTTTTTWWWWTTTWWWWW^",
+                    "^WWWWWWWWWWWWWTTTTTTTWWWWWWWWWWWWW^",
+                    "^WWWWWWWWWWWWWWWTTTWWWWWWWWWWWWWWW^",
+                    "^WWWWWWWWWWWWWWWTTTWWWWWWWWWWWWWWW^",
+                    "^WWWWWWWWWWWWWTTTTTTTWWWWWWWWWWWWW^",
+                    "^WWWTTTTWWWWWTTTTTTTTTWWWWWTTTTWWW^",
+                    "^WWTTTTTTWWWWTTTTTTTTTWWWWTTTTTTWW^",
+                    "^WWTDTTTTTTTTTTTTTTTTTTTTTTTTTTTWW^",
+                    "^WWTTTTTTWWWWTTTTTTTTTWWWWTTTTTTWW^",
+                    "^WWWTTTTWWWWWWTTTTTTTWWWWWWTTTTWWW^",
                     "^WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW^",
                     "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
                 ],
                 floorLinks: [
                     {
-                        x: 5,
+                        x: 4,
                         y: 25,
                         toFloor: 2,
                         targetX: 28,
@@ -14580,17 +14596,28 @@ const FIXED_DUNGEON_MAPS = {
                     }
                 ],
                 entryPoint: {
-                    x: 5,
+                    x: 4,
                     y: 25
                 },
                 tileEffects: [
                     {
-                        x: 20,
-                        y: 6,
+                        rect: { x1: 16, y1: 19, x2: 18, y2: 19 },
                         type: "storyEvent",
                         eventId: "light_palace_flashback_hexagram_trap",
-                        eventFlag: "lightPalaceFlashbackHexagramResolved",
-                        conditions: { requiredFlag: "lightPalaceFlashbackActive" }
+                        eventFlag: "lightPalaceFlashbackHexagramTriggered",
+                        conditions: {
+                            requiredFlag: "lightPalaceFlashbackActive",
+                            missingFlags: ["lightPalaceFlashbackHexagramResolved", "lightPalaceFlashbackVeldEncounterStarted", "lightPalaceFlashbackRetreatOrdered"]
+                        }
+                    },
+                    {
+                        rect: { x1: 16, y1: 19, x2: 18, y2: 19 },
+                        type: "storyEvent",
+                        eventId: "light_palace_flashback_wrong_way",
+                        conditions: {
+                            requiredFlags: ["lightPalaceFlashbackActive", "lightPalaceFlashbackRetreatOrdered"],
+                            missingFlag: "lightPalaceFlashbackCompleted"
+                        }
                     }
                 ],
                 name: "",
@@ -14616,7 +14643,7 @@ const FIXED_DUNGEON_MAPS = {
                     "^WWWWWWWTTTWWWWWTTTWWWWWTTTWWWWWWW^",
                     "^WWWWWWWTTTWWWWTTTTTWWWWTTTWWWWWWW^",
                     "^WWWWWWTTTTWWWTTTTTTTWWWTTTTWWWWWW^",
-                    "^WWWWWTTTTTWWWTTTBTTTWWWTTTTTWWWWW^",
+                    "^WWWWWTTTTTWWWTTBTBTTWWWTTTTTWWWWW^",
                     "^WWWWWTTTTTWWWWTTTTTWWWWTTTTTWWWWW^",
                     "^WWWWWTTTTTWWWWWTTTWWWWWTTTTTWWWWW^",
                     "^WWWWWWTTTTWWWWWTTTWWWWWTTTTWWWWWW^",
@@ -14686,16 +14713,25 @@ const FIXED_DUNGEON_MAPS = {
                 },
                 bosses: [
                     {
-                        x: 17,
+                        x: 16,
                         y: 11,
-                        monsterId: [
-                            301070,
-                            301050
-                        ],
+                        monsterId: 301070,
+                        bossStatMultiplier: 3,
+                        defeatGroupId: "light_palace_final_pair",
                         requiredFlag: "lightPalacePrisonRescueSecured",
                         missingFlags: ["lightPalaceFlashbackActive", "alanBetrayedLightPalace"],
                         startEventId: "light_palace_final_encounter",
-                        storyEventId: "light_palace_alan_betrayal",
+                        actionLabel: "祭壇へ進む"
+                    },
+                    {
+                        x: 18,
+                        y: 11,
+                        monsterId: 301050,
+                        bossStatMultiplier: 3,
+                        defeatGroupId: "light_palace_final_pair",
+                        requiredFlag: "lightPalacePrisonRescueSecured",
+                        missingFlags: ["lightPalaceFlashbackActive", "alanBetrayedLightPalace"],
+                        startEventId: "light_palace_final_encounter",
                         actionLabel: "祭壇へ進む"
                     }
                 ],

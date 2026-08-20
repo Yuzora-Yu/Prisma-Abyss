@@ -1,0 +1,14 @@
+PRISMA ABYSS Phase 7 delta manifest
+Base: Phase 6 applied environment
+Only changed/created files are included in the delivery ZIP.
+
+1. menus_allies.js
+2. menus_achievements.js
+3. modern-polish-menu.css
+4. news.js
+5. sw.js
+6. docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+7. development_notes/2026-08-18/validation/validate-menu-cascade-states.py
+8. development_notes/2026-08-18/validation/runtime-style-source-audit.json
+9. development_notes/2026-08-18/reports/CSS_MENU_STRUCTURE_PHASE7_20260818.md
+10. development_notes/2026-08-18/DELTA_MANIFEST_20260818_MENU_STRUCTURE_PHASE7.txt

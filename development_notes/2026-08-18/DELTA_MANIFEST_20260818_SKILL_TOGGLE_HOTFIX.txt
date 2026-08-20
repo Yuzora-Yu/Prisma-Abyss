@@ -1,0 +1,12 @@
+PRISMA ABYSS — Skill Toggle Hotfix DELTA
+Base: Phase 4 applied environment
+Date: 2026-08-18
+
+変更・作成したファイルは下記の7件です。
+1. modern-polish-menu.css
+2. news.js
+3. sw.js
+4. development_notes/2026-08-18/validation/validate-menu-cascade-states.py
+5. development_notes/2026-08-18/validation/validate-menu-state-ownership.js
+6. development_notes/2026-08-18/reports/CSS_CASCADE_SKILL_TOGGLE_HOTFIX_20260818.md
+7. development_notes/2026-08-18/DELTA_MANIFEST_20260818_SKILL_TOGGLE_HOTFIX.txt

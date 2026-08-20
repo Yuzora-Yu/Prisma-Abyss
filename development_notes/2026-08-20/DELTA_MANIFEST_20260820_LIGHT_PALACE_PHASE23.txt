@@ -1,0 +1,12 @@
+PRISMA ABYSS - Light Palace Phase 23 delta
+Date: 2026-08-20
+Base: Phase 22 applied
+
+Updated / created files only:
+1. phaser-field.js
+2. story_logic.js
+3. sw.js
+4. news.js
+5. development_notes/2026-08-20/validation/validate-light-palace-phase23.js
+6. development_notes/2026-08-20/reports/LIGHT_PALACE_PHASE23_20260820.md
+7. development_notes/2026-08-20/DELTA_MANIFEST_20260820_LIGHT_PALACE_PHASE23.txt

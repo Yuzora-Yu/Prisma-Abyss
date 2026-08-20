@@ -198,6 +198,9 @@ const Battle = {
             active:false, bestiaryExcluded:false, noDrops:false, noExp:false, noGold:false,
             noQuestProgress:false, noRecruit:false, forcedLoss:false, hpFloor:null,
             endAfterTurns:null, endAtHpPercent:null, endAtHpConversation:null,
+            finisherAfterTurns:null, finisherAtHpFloor:false, finisherConversation:null,
+            finisherSkillId:null, finisherSkillName:null, finisherDamage:null, finisherActorMonsterId:null,
+            finisherEffectImage:null, finisherFlashCount:null,
             storyVariantOf:null, targetMonsterIds:[], skillFailureRules:[]
         };
         const toFiniteOrNull = value => {
@@ -223,12 +226,136 @@ const Battle = {
             endAtHpConversation: typeof raw.endAtHpConversation === 'string' && raw.endAtHpConversation.trim()
                 ? raw.endAtHpConversation.trim()
                 : null,
+            finisherAfterTurns: toFiniteOrNull(raw.finisherAfterTurns),
+            finisherAtHpFloor: raw.finisherAtHpFloor === true,
+            finisherConversation: typeof raw.finisherConversation === 'string' && raw.finisherConversation.trim()
+                ? raw.finisherConversation.trim()
+                : null,
+            finisherSkillId: toFiniteOrNull(raw.finisherSkillId),
+            finisherSkillName: typeof raw.finisherSkillName === 'string' && raw.finisherSkillName.trim()
+                ? raw.finisherSkillName.trim()
+                : null,
+            finisherDamage: toFiniteOrNull(raw.finisherDamage),
+            finisherActorMonsterId: toFiniteOrNull(raw.finisherActorMonsterId),
+            finisherEffectImage: typeof raw.finisherEffectImage === 'string' && raw.finisherEffectImage.trim()
+                ? raw.finisherEffectImage.trim()
+                : null,
+            finisherFlashCount: toFiniteOrNull(raw.finisherFlashCount),
             storyVariantOf: raw.storyVariantOf ?? null,
             targetMonsterIds: targetSource.map(Number).filter(Number.isFinite),
             skillFailureRules: Array.isArray(raw.skillFailureRules)
                 ? JSON.parse(JSON.stringify(raw.skillFailureRules))
                 : []
         };
+    },
+
+    playEventBattleFinisherVisual: async (rules = {}, targets = []) => {
+        const flashCount = Math.max(0, Math.floor(Number(rules.finisherFlashCount || 0)));
+        const image = String(rules.finisherEffectImage || '').trim();
+        const fx = (typeof window !== 'undefined') ? window.PolishBattleFX : null;
+        if (image && fx && typeof fx.screenEffect === 'function') {
+            try {
+                fx.screenEffect('neutral-slash', {
+                    big: true,
+                    targets: Array.isArray(targets) ? targets.filter(Boolean) : [],
+                    image,
+                    profile: { tier: 4, scope: 'all_ally', type: 'physical', hits: 1 }
+                });
+            } catch (error) {
+                console.warn('[Battle] event finisher screen effect skipped:', error);
+            }
+        }
+        if (flashCount <= 0 || typeof document === 'undefined') {
+            if (image) await Battle.resultWait(320);
+            return;
+        }
+        const wait = ms => new Promise(resolve => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+        let overlay = document.getElementById('battle-event-finisher-flash');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'battle-event-finisher-flash';
+            overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:1000002;opacity:0;';
+            document.body.appendChild(overlay);
+        }
+        try {
+            for (let i = 0; i < flashCount; i++) {
+                overlay.style.background = '#fff';
+                overlay.style.opacity = '0.92';
+                await wait(62);
+                overlay.style.background = '#000';
+                overlay.style.opacity = '0.90';
+                await wait(62);
+                overlay.style.opacity = '0';
+                await wait(48);
+            }
+            await wait(100);
+        } finally {
+            overlay.remove();
+        }
+    },
+
+    // イベント専用の必中・固定ダメージ全体技。
+    // 指定ターン経過、または「HP1まで追い込まれた」条件のどちらかを満たした時点で発動する。
+    // 通常の命中/防御/耐性計算は通さず、物語上の強制敗北演出だけに限定する。
+    tryExecuteEventBattleFinisher: async (rules = Battle.getEventBattleRules()) => {
+        if (!rules?.active) return false;
+        const battleData = App.data?.battle;
+        if (!battleData || battleData.eventFinisherTriggered === true) return false;
+
+        const targets = Battle.getEventBattleTargetEnemies(rules);
+        const completedTurns = Math.max(0, Math.floor(Number(battleData.completedTurns || 0)));
+        const turnReady = Number.isFinite(rules.finisherAfterTurns)
+            && completedTurns >= Math.max(1, Math.floor(rules.finisherAfterTurns));
+        const hpFloorReady = rules.finisherAtHpFloor === true && targets.some(enemy => {
+            if (!enemy || enemy.isDead || Number(enemy.hp || 0) <= 0) return false;
+            const floor = Battle.getEventBattleHpFloorValue(enemy, rules);
+            return floor != null && Number(enemy.hp || 0) <= floor;
+        });
+        if (!turnReady && !hpFloorReady) return false;
+
+        const requestedActorId = Number(rules.finisherActorMonsterId);
+        const actor = (Number.isFinite(requestedActorId)
+            ? targets.find(enemy => Number(enemy?.baseId ?? enemy?.id) === requestedActorId && !enemy?.isDead && Number(enemy?.hp || 0) > 0)
+            : null) || targets.find(enemy => !enemy?.isDead && Number(enemy?.hp || 0) > 0) || Battle.enemies?.find(enemy => !enemy?.isDead && Number(enemy?.hp || 0) > 0);
+        if (!actor) return false;
+
+        // 多重入力・ターン終了処理の再入を防ぐため、会話開始前にone-shotを確定する。
+        battleData.eventFinisherTriggered = true;
+        battleData.eventFinisherTriggerReason = hpFloorReady ? 'hp_floor' : 'turn_limit';
+        Battle.saveBattleState?.();
+
+        const conversationKey = String(rules.finisherConversation || '').trim();
+        if (conversationKey && globalThis.StoryManager?.showConversation && typeof Battle.queueBattleConversation === 'function') {
+            Battle.queueBattleConversation(conversationKey, {
+                persistId: `event-finisher:${conversationKey}`,
+                resumePhase: 'battle_event',
+                continueOnError: true,
+                maxErrorAttempts: 1
+            });
+            await Battle.awaitPendingBattleEvent();
+            if (!Battle.active || Battle.phase === 'result') return false;
+        }
+
+        const skillId = Number(rules.finisherSkillId);
+        const skill = Number.isFinite(skillId) ? (DB.SKILLS || []).find(entry => Number(entry?.id) === skillId) : null;
+        const skillName = String(rules.finisherSkillName || skill?.name || '必殺の一撃');
+        const damage = Math.max(1, Math.floor(Number(rules.finisherDamage || 9999)));
+        const living = (Battle.party || []).filter(member => member && !member.isDead && Number(member.hp || 0) > 0);
+        Battle.log(`<b>${actor.name || '敵'}</b>の <b>${skillName}</b>！`);
+        if (typeof AudioManager !== 'undefined') AudioManager.playSe?.('battle_attack');
+        await Battle.playEventBattleFinisherVisual(rules, living);
+
+        living.forEach(member => {
+            member.hp = 0;
+            member.hasDiedThisTurn = true;
+            Battle.log(`${member.name || '味方'}に <b>${damage}</b> ダメージ！`);
+        });
+        Battle.updateDeadState();
+        Battle.renderPartyStatus();
+        Battle.renderEnemies();
+        Battle.saveBattleState?.();
+        await Battle.resultWait(520);
+        return living.length > 0;
     },
 
     // 物語戦闘で「大技を試みるが、設定上の干渉で術式だけが失敗する」演出を共通化する。
@@ -6166,6 +6293,12 @@ findNextActor: () => {
                 await Battle.onActionEnd(actor);
                 if (!Battle.active) return false;
 
+                // HP1まで追い込まれた瞬間に発動するイベントフィニッシャーは、
+                // 次の行動者へ渡す前に会話→強制技まで完了させる。
+                const eventRulesAfterAction = Battle.getEventBattleRules();
+                await Battle.tryExecuteEventBattleFinisher(eventRulesAfterAction);
+                if (!Battle.active) return false;
+
                 Battle.updateDeadState();
                 if (Battle.hasPendingPhaseTransition()) return false;
 
@@ -6190,8 +6323,10 @@ findNextActor: () => {
             if (App.data?.battle) {
                 App.data.battle.completedTurns = Math.max(0, Number(App.data.battle.completedTurns || 0)) + 1;
             }
+            const eventRulesAfterRound = Battle.getEventBattleRules();
+            await Battle.tryExecuteEventBattleFinisher(eventRulesAfterRound);
             Battle.updateDeadState();
-            Battle.getEventBattleTargetEnemies().forEach(enemy => Battle.applyEventBattleHpFloor(enemy));
+            Battle.getEventBattleTargetEnemies(eventRulesAfterRound).forEach(enemy => Battle.applyEventBattleHpFloor(enemy, eventRulesAfterRound));
             Battle.renderEnemies();
             Battle.renderPartyStatus();
             if (Battle.checkFinish()) return false;

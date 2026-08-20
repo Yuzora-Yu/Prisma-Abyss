@@ -244,7 +244,11 @@ const AchievementManager = {
     },
 
     getHero: () => {
-        const chars = (App.data && App.data.characters) || [];
+        const sceneContext = typeof App !== 'undefined' && typeof App.getActiveSceneContext === 'function' ? App.getActiveSceneContext() : null;
+        const snapshotChars = sceneContext?.isolateCharacters && Array.isArray(sceneContext.snapshot?.data?.characters)
+            ? sceneContext.snapshot.data.characters
+            : null;
+        const chars = snapshotChars || ((App.data && App.data.characters) || []);
         return chars.find(c => c.uid === 'p1' || c.isHero || c.charId === 301) || chars[0] || {};
     },
 
@@ -373,6 +377,8 @@ const AchievementManager = {
 
     checkProgress: (options = {}) => {
         if (typeof App === 'undefined' || !App.data || typeof ACHIEVEMENTS_DATA === 'undefined') return 0;
+        // 回想・別視点シーンの一時キャラクター/所持状態を、現在時間の実績進行へ混ぜない。
+        if (typeof App.getActiveSceneContext === 'function' && App.getActiveSceneContext()?.isolateCharacters) return 0;
 
         let changed = AchievementManager.normalize();
         let newlyCompleted = 0;
@@ -407,11 +413,18 @@ const AchievementManager = {
         return newlyCompleted;
     },
 
-    hasUnclaimed: () => {
-        if (typeof App === 'undefined' || !App.data) return false;
+    getUnclaimedCount: () => {
+        if (typeof App === 'undefined' || !App.data || typeof ACHIEVEMENTS_DATA === 'undefined') return 0;
         AchievementManager.normalize();
-        return Object.values(App.data.achievements || {}).some(a => a.completed && !a.claimed);
+        // 保存データには廃止済み実績IDが残ることがある。通知・受取判定は
+        // 現在のマスタに存在する実績だけを対象にし、実績画面/claimAllと揃える。
+        return ACHIEVEMENTS_DATA.reduce((count, ach) => {
+            const state = App.data.achievements[String(ach.id)];
+            return count + (state && state.completed && !state.claimed ? 1 : 0);
+        }, 0);
     },
+
+    hasUnclaimed: () => AchievementManager.getUnclaimedCount() > 0,
 
     getState: (id) => {
         if (typeof App === 'undefined' || !App.data) return { completed: false, claimed: false, claimedRewardVersion: 0, progress: 0 };

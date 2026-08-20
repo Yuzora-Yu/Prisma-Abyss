@@ -186,7 +186,6 @@ const MenuAllies = {
             detailDiv.id = 'allies-detail-view';
             detailDiv.className = 'flex-col-container';
             detailDiv.style.display = 'none';
-            detailDiv.style.background = '#222'; 
             detailDiv.style.height = '100%';
             container.appendChild(detailDiv);
         }
@@ -263,7 +262,7 @@ const MenuAllies = {
             const imageFallbackAttr = App.getCharacterImageOnErrorAttr ? App.getCharacterImageOnErrorAttr(c) : '';
             const imgHtml = MenuAllies.getCharacterSquareImageHtml
                 ? MenuAllies.getCharacterSquareImageHtml(c, imgUrl, imageFallbackAttr, 'width:60px; height:60px;')
-                : (imgUrl ? `<img src="${imgUrl}"${imageFallbackAttr} style="width:60px; height:60px; object-fit:cover; border-radius:4px; border:1px solid #555;">` : `<div style="width:60px; height:60px; background:#333; display:flex; align-items:center; justify-content:center; color:#555; font-size:9px; border-radius:4px; border:1px solid #555;">IMG</div>`);
+                : (imgUrl ? `<img src="${imgUrl}"${imageFallbackAttr} style="width:60px; height:60px; object-fit:cover; border-radius:4px; border:1px solid #555;">` : `<div class="menu-surface-card" style="width:60px; height:60px; background:#333; display:flex; align-items:center; justify-content:center; color:#555; font-size:9px; border-radius:4px; border:1px solid #555;">IMG</div>`);
 
             div.innerHTML = `
                 <div style="display:flex; align-items:center; width:100%;">
@@ -566,10 +565,8 @@ const MenuAllies = {
         const tabBtns = tabs.map((t, i) => {
             const idx = i + 1;
             const active = MenuAllies.currentTab === idx;
-            const style = active
-                ? 'background:#ffd700; color:#000; font-weight:bold;'
-                : 'background:#111; color:#888;';
-            return `<button onclick="MenuAllies.currentTab=${idx}; MenuAllies.targetPart=null; MenuAllies.selectedEquip=null; MenuAllies.renderDetail()" style="flex:1; border:none; padding:8px; font-size:12px; ${style}">${t}</button>`;
+            const stateClass = active ? ' is-active' : '';
+            return `<button class="menu-tab-button${stateClass}" type="button" role="tab" aria-selected="${active ? 'true' : 'false'}" onclick="MenuAllies.currentTab=${idx}; MenuAllies.targetPart=null; MenuAllies.selectedEquip=null; MenuAllies.renderDetail()" style="font-size:12px;">${t}</button>`;
         }).join('');
 
         let contentHtml = '';
@@ -602,11 +599,11 @@ const MenuAllies = {
             const usedAllocPt = c.alloc ? Object.values(c.alloc).reduce((a, b) => a + b, 0) : 0;
             const freeAllocPt = Math.max(0, totalAllocPt - usedAllocPt);
 
-            const allocBtn = (c.uid === 'p1') ? `<button class="btn" style="width:100%; margin-top:5px; background:#444400; font-size:11px;" onclick="MenuAllies.openAllocModal()">ボーナスPt振分 (残:${freeAllocPt})</button>` : '';
-            const treeBtn = `<button class="btn" style="width:100%; margin-top:5px; background:#004444; font-size:11px;" onclick="MenuAllies.openTreeView()">スキル習得画面へ (SP:${c.sp||0})</button>`;
-            const archiveBtn = `<button class="btn" style="width:100%; margin-top:5px; background:#602060; font-size:11px;" onclick="MenuAllyDetail.init(MenuAllies.getSelectedChar())">キャラクター詳細を見る</button>`;
+            const allocBtn = (c.uid === 'p1') ? `<button class="btn menu-action-button menu-action-button--classic" onclick="MenuAllies.openAllocModal()">ボーナスPt振分 (残:${freeAllocPt})</button>` : '';
+            const treeBtn = `<button class="btn menu-action-button menu-action-button--classic" onclick="MenuAllies.openTreeView()">スキル習得画面へ (SP:${c.sp||0})</button>`;
+            const archiveBtn = `<button class="btn menu-action-button menu-action-button--secondary" onclick="MenuAllyDetail.init(MenuAllies.getSelectedChar())">キャラクター詳細を見る</button>`;
             const releaseBtn = App.isMonsterAlly?.(c)
-                ? `<button class="btn" style="width:100%; margin-top:10px; background:#5a2020; border-color:#b85a5a; color:#ffd6d6; font-size:11px;" onclick="MenuAllies.confirmReleaseMonster()">この仲間モンスターを逃がす</button>`
+                ? `<button class="btn menu-action-button menu-action-button--danger" onclick="MenuAllies.confirmReleaseMonster()">この仲間モンスターを逃がす</button>`
                 : '';
             
             const ailmentLabels = { Poison:'毒', ToxicPoison:'猛毒', Shock:'感電', Fear:'怯え', Debuff:'弱体', InstantDeath:'即死', SkillSeal:'技封', SpellSeal:'魔封', HealSeal:'癒封' };
@@ -629,23 +626,23 @@ const MenuAllies = {
                         <div style="color:#aaa; font-size:9px;">被ダメージ</div><div style="color:#88f; font-weight:bold;">-${s.finRed}%</div>
                     </div>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
-                    <div style="background:#222; border:1px solid #444; border-radius:4px; padding:4px;">
-                        <div style="font-size:9px; color:#f88; margin-bottom:3px; text-align:center; border-bottom:1px solid #333;">属性攻撃</div>
-                        <div style="display:flex; flex-direction:column; gap:1px;">
-                            ${CONST.ELEMENTS.map(e => `<div style="display:flex; justify-content:space-between; background:#2a2a2a; padding:1px 3px; border-radius:2px; font-size:9px;"><span style="color:#aaa;">${e}</span><span>${s.elmAtk[e]||0}%</span></div>`).join('')}
+                <div class="ally-resistance-grid">
+                    <div class="menu-surface-card ally-resistance-card">
+                        <div class="ally-resistance-card-title is-attack">属性攻撃</div>
+                        <div class="ally-resistance-rows">
+                            ${CONST.ELEMENTS.map(e => `<div class="ally-resistance-row"><span>${e}</span><span>${s.elmAtk[e]||0}%</span></div>`).join('')}
                         </div>
                     </div>
-                    <div style="background:#222; border:1px solid #444; border-radius:4px; padding:4px;">
-                        <div style="font-size:9px; color:#88f; margin-bottom:3px; text-align:center; border-bottom:1px solid #333;">属性耐性（環境補正込み）</div>
-                        <div style="display:flex; flex-direction:column; gap:1px;">
-                            ${CONST.ELEMENTS.map(e => `<div style="display:flex; justify-content:space-between; background:#2a2a2a; padding:1px 3px; border-radius:2px; font-size:9px;"><span style="color:#aaa;">${e}</span><span>${resistanceDisplay(e)}</span></div>`).join('')}
+                    <div class="menu-surface-card ally-resistance-card">
+                        <div class="ally-resistance-card-title is-resist">属性耐性（環境補正有）</div>
+                        <div class="ally-resistance-rows">
+                            ${CONST.ELEMENTS.map(e => `<div class="ally-resistance-row"><span>${e}</span><span>${resistanceDisplay(e)}</span></div>`).join('')}
                         </div>
                     </div>
-                    <div style="background:#222; border:1px solid #444; border-radius:4px; padding:4px;">
-                        <div style="font-size:9px; color:#f8f; margin-bottom:3px; text-align:center; border-bottom:1px solid #333;">異常耐性</div>
-                        <div style="display:flex; flex-direction:column; gap:1px;">
-                            ${Object.keys(ailmentLabels).map(key => `<div style="display:flex; justify-content:space-between; background:#2a2a2a; padding:1px 3px; border-radius:2px; font-size:9px;"><span style="color:#aaa;">${ailmentLabels[key]}</span><span>${(s.resists && s.resists[key])||0}%</span></div>`).join('')}
+                    <div class="menu-surface-card ally-resistance-card">
+                        <div class="ally-resistance-card-title is-status">異常耐性</div>
+                        <div class="ally-resistance-rows">
+                            ${Object.keys(ailmentLabels).map(key => `<div class="ally-resistance-row"><span>${ailmentLabels[key]}</span><span>${(s.resists && s.resists[key])||0}%</span></div>`).join('')}
                         </div>
                     </div>
                 </div>
@@ -730,11 +727,11 @@ const MenuAllies = {
 						});
 					}
 
-					const buttonsHtml = `<div style="display:flex; gap:10px; margin: 10px 0;"><button class="btn" style="flex:1; background:#555;" onclick="MenuAllies.selectedEquip=null; MenuAllies.renderDetail()">キャンセル</button><button class="btn" style="flex:1; background:#d00;" onclick="MenuAllies.doEquip()">変更する</button></div>`;
+					const buttonsHtml = `<div style="display:flex; gap:10px; margin: 10px 0;"><button class="btn" style="flex:1; background:#555;" onclick="MenuAllies.selectedEquip=null; MenuAllies.renderDetail()">キャンセル</button><button class="btn menu-tone-danger" style="flex:1;" onclick="MenuAllies.doEquip()">変更する</button></div>`;
 					contentHtml = `<div style="padding:10px; text-align:center; color:#ffd700; font-weight:bold; border-bottom:1px solid #444;">装備変更の確認 (${MenuAllies.targetPart})</div>
                             <div style="padding:5px; font-size:14px; margin-bottom:1px;">${isRemove ? '<div style="text-align:center;color:#aaa;">(装備を外す)</div>' : Menu.getEquipmentNameLineHTML(newItem)}</div>
                             <div style="text-align:center;font-size:11px;color:#aaa;margin-bottom:3px;">に変更しますか？</div>
-						${buttonsHtml}<div style="background:#222; border:1px solid #444; border-radius:4px; margin-bottom:10px; padding:10px;">${statRows}</div>${buttonsHtml}`;
+						${buttonsHtml}<div class="menu-surface-card" style="background:#222; border:1px solid #444; border-radius:4px; margin-bottom:10px; padding:10px;">${statRows}</div>${buttonsHtml}`;
 
 				} else {
 					// --- 4) 候補抽出ロジック ---
@@ -808,8 +805,8 @@ const MenuAllies = {
 
 				// 6) HTML（ここはあなたの既存のままでOK）
 					contentHtml = `<div style="margin-bottom:8px; display:flex; flex-direction:column; gap:4px;"><div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-weight:bold; color:#ffd700;">${p} の変更</span><button class="btn" style="background:#555; font-size:10px; padding:2px 8px;" onclick="MenuAllies.targetPart=null; MenuAllies.renderDetail()">もどる</button></div>
-						<div style="display:flex; gap:4px; align-items:center;"><select style="background:#333; color:#fff; font-size:10px; flex:1; height:20px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()} onchange="MenuAllies.candidateFilter=this.value; MenuAllies.renderDetail()"><option value="ALL">全ての効果</option>${rules.map(opt => `<option value="${opt.key}${opt.elm?'_'+opt.elm:''}" ${MenuAllies.candidateFilter===(opt.key+(opt.elm?'_'+opt.elm:''))?'selected':''}>${opt.name}</option>`).join('')}</select>
-						<select style="background:#333; color:#fff; font-size:10px; flex:1; height:20px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()} onchange="MenuAllies.candidateSortMode=this.value; MenuAllies.renderDetail()"><option value="RANK" ${MenuAllies.candidateSortMode==='RANK'?'selected':''}>Rank順</option><option value="NEWEST" ${MenuAllies.candidateSortMode==='NEWEST'?'selected':''}>取得順</option></select></div></div>
+						<div style="display:flex; gap:4px; align-items:center;"><select class="menu-surface-card" style="background:#333; color:#fff; font-size:10px; flex:1; height:20px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()} onchange="MenuAllies.candidateFilter=this.value; MenuAllies.renderDetail()"><option value="ALL">全ての効果</option>${rules.map(opt => `<option value="${opt.key}${opt.elm?'_'+opt.elm:''}" ${MenuAllies.candidateFilter===(opt.key+(opt.elm?'_'+opt.elm:''))?'selected':''}>${opt.name}</option>`).join('')}</select>
+						<select class="menu-surface-card" style="background:#333; color:#fff; font-size:10px; flex:1; height:20px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()} onchange="MenuAllies.candidateSortMode=this.value; MenuAllies.renderDetail()"><option value="RANK" ${MenuAllies.candidateSortMode==='RANK'?'selected':''}>Rank順</option><option value="NEWEST" ${MenuAllies.candidateSortMode==='NEWEST'?'selected':''}>取得順</option></select></div></div>
 						<div style="display:flex; flex-direction:column; gap:2px;">${candidates.map((item, idx) => `<div class="list-item" style="flex-direction:column; align-items:flex-start;" onclick="MenuAllies.selectCandidate(${idx}, ${item.isRemove?'true':'false'})">${item.isRemove ? `<div style="font-weight:bold;color:#aaa;">${item.name}</div>` : Menu.getEquipmentNameLineHTML(item, { suffixHTML: item.owner ? ` <span style="color:#f88;font-size:9px;">[${item.owner}装備中]</span>` : '' })}${!item.isRemove ? MenuAllies.getEquipFullDetailHTML(item) : ''}</div>`).join('')}</div>`;
 				}
 			} else {
@@ -837,7 +834,7 @@ const MenuAllies = {
 
                 // ★修正点3: 魔法防御、命中、回避、会心のステータスサマリーを復活
                 const summaryHtml = `
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; margin-bottom:10px; background:#1a1a1a; padding:5px; border-radius:4px; border:1px solid #333;">
+                    <div class="menu-surface-deep" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; margin-bottom:10px; background:#1a1a1a; padding:5px; border-radius:4px; border:1px solid #333;">
                         <div style="font-size:10px; color:#aaa;">　　命中率: <span style="color:#fff;">${s.hit}%</span></div>
                         <div style="font-size:10px; color:#aaa;">　　回避率: <span style="color:#fff;">${s.eva}%</span></div>
                         <div style="font-size:10px; color:#aaa;">　　会心率: <span style="color:#fff;">${s.cri}%</span></div>
@@ -858,16 +855,16 @@ const MenuAllies = {
                     const isAutoDisabled = (c.config?.autoDisabledSkills || []).includes(Number(sk.id));
                     let elmHtml = sk.elm ? `<span style="color:${{'火':'#f88','水':'#88f','雷':'#ff0','風':'#8f8','光':'#ffc','闇':'#a8f','混沌':'#d4d'}[sk.elm]||'#ccc'}; margin-right:3px;">[${sk.elm}]</span>` : '';
                     return `
-                        <div style="background:${isHidden ? 'rgba(0,0,0,0.2)' : '#252525'}; border:1px solid #444; border-radius:4px; padding:6px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                        <div class="ally-skill-card ${isHidden ? 'is-hidden' : ''}" style="display:flex; justify-content:space-between; align-items:center;">
                             <div style="flex:1; cursor:pointer;" onclick="MenuSkillDetail.open(${sk.id}, ${skillPayload})">
-                                <div style="font-size:12px; font-weight:bold; color:${isHidden ? '#666' : '#ddd'};">${sk.name} <span style="font-size:10px; color:#888;">(${sk.type})</span></div>
-                                <div style="font-size:10px; color:#aaa;">${elmHtml}${sk.desc || ''}</div>
+                                <div class="ally-skill-name" style="font-size:12px; font-weight:bold;">${sk.name} <span style="font-size:10px; color:#8f7e69;">(${sk.type})</span></div>
+                                <div class="ally-skill-desc" style="font-size:10px;">${elmHtml}${sk.desc || ''}</div>
                             </div>
                             <div style="text-align:right; min-width:116px; margin-left:6px;">
-                                <div style="font-size:11px; color:#88f; margin-bottom:4px;">MP:${sk.mp}</div>
+                                <div style="font-size:11px; color:#9b91ff; margin-bottom:4px;">MP:${sk.mp}</div>
                                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px;">
-                                    <button class="btn skill-usage-toggle ${isAutoDisabled ? 'is-disabled' : 'is-enabled'}" title="オート戦闘でこの技を使用するか" style="background:${isAutoDisabled ? '#444' : '#ffd700'} !important; color:${isAutoDisabled ? '#bbb' : '#000'} !important;" onclick="event.stopPropagation(); MenuAllies.toggleSkillAutoUsage(${sk.id})">オート<br>${isAutoDisabled ? '使用否' : '使用可'}</button>
-                                    <button class="btn skill-usage-toggle ${isHidden ? 'is-disabled' : 'is-enabled'}" title="手動の戦闘・回復メニューに表示するか" style="background:${isHidden ? '#444' : '#ffd700'} !important; color:${isHidden ? '#bbb' : '#000'} !important;" onclick="event.stopPropagation(); MenuAllies.toggleSkillVisibility(${sk.id})">メニュー<br>${isHidden ? '非表示' : '表示'}</button>
+                                    <button class="menu-state-button skill-usage-toggle ${isAutoDisabled ? 'is-disabled' : 'is-enabled'}" title="オート戦闘でこの技を使用するか" onclick="event.stopPropagation(); MenuAllies.toggleSkillAutoUsage(${sk.id})">オート<br>${isAutoDisabled ? '使用否' : '使用可'}</button>
+                                    <button class="menu-state-button skill-usage-toggle ${isHidden ? 'is-disabled' : 'is-enabled'}" title="手動の戦闘・回復メニューに表示するか" onclick="event.stopPropagation(); MenuAllies.toggleSkillVisibility(${sk.id})">メニュー<br>${isHidden ? '非表示' : '表示'}</button>
                                 </div>
                             </div>
                         </div>`;
@@ -947,21 +944,21 @@ const MenuAllies = {
 				let buttonHtml = '';
 				if (t.isEquip) {
 					// 装備由来は「装備固定」として表示し、クリック不可
-					buttonHtml = `<div style="padding:2px 10px; font-size:10px; background:#222; border:1px solid #00ffff; color:#00ffff; border-radius:3px; opacity:0.8;">装備固定</div>`;
+					buttonHtml = `<div class="ally-trait-fixed-badge is-equipment" style="padding:2px 10px; font-size:10px; opacity:0.8;">装備固定</div>`;
 				} else if (isLocked) {
 					// キャラ固有の大器晩成は無効化不可
-					buttonHtml = `<div style="padding:2px 10px; font-size:10px; background:#222; border:1px solid #ffd700; color:#ffd700; border-radius:3px; opacity:0.8;">固定ON</div>`;
+					buttonHtml = `<div class="ally-trait-fixed-badge is-locked" style="padding:2px 10px; font-size:10px; opacity:0.8;">固定ON</div>`;
 				} else {
 					// 自力習得はトグル可能
 					buttonHtml = `
-						<button class="btn" style="padding:2px 10px; font-size:10px; background:${isDisabled ? '#444' : '#060'}; color:#fff;" 
+						<button class="menu-state-button ally-trait-toggle ${isDisabled ? 'is-off' : 'is-on'}" aria-pressed="${isDisabled ? 'false' : 'true'}" style="padding:2px 10px; font-size:10px;" 
 								onclick="event.stopPropagation(); MenuAllies.toggleTrait(${t.id}); return false;">
 							${isDisabled ? 'OFF' : 'ON'}
 						</button>`;
 				}
 
 				return `
-				<div style="background:#252525; border:1px solid ${t.isEquip ? '#00ffff44' : '#444'}; border-radius:4px; padding:8px; margin-bottom:6px; cursor:pointer;" 
+				<div class="ally-trait-card ${t.isEquip ? 'is-equipment' : ''}" style="padding:8px; margin-bottom:6px; cursor:pointer;" 
 					 onclick="MenuTraitDetail.open(${index}, MenuAllies.currentTraitListData)">
 					<div style="display:flex; justify-content:space-between; align-items:flex-start;">
 						<div>
@@ -985,8 +982,8 @@ const MenuAllies = {
 
         detailContent.innerHTML = `
             <div class="scroll-container-inner" style="height:100%; overflow-y:auto; padding:10px; font-family:sans-serif; color:#ddd; box-sizing:border-box;">
-                <div class="ally-detail-nav-wrap" style="background:#222; border-bottom:1px solid #444; margin:-10px -10px 10px -10px; padding:10px;">
-                    <div class="ally-detail-nav-row" style="display:flex; justify-content:space-between; align-items:center; background:#333; padding:5px; border-radius:4px;">
+                <div class="ally-detail-nav-wrap menu-surface-card" style="background:#222; border-bottom:1px solid #444; margin:-10px -10px 10px -10px; padding:10px;">
+                    <div class="ally-detail-nav-row menu-surface-card" style="display:flex; justify-content:space-between; align-items:center; background:#333; padding:5px; border-radius:4px;">
                         <button class="btn" style="padding:2px 10px; font-size:12px;" onclick="MenuAllies.switchChar(-1)">＜ 前</button>
                         <span style="font-size:12px; color:#aaa;">仲間詳細</span>
                         <button class="btn" style="padding:2px 10px; font-size:12px;" onclick="MenuAllies.switchChar(1)">次 ＞</button>
@@ -1012,26 +1009,26 @@ const MenuAllies = {
                         </div>
 
                         <div id="char-name-edit" style="display:none; align-items:center; margin-bottom:2px;">
-                            <input type="text" id="char-name-input" value="${App.escapeHtml(c.name)}" maxlength="10" autocomplete="off" style="width:100px; background:#333; color:#fff; border:1px solid #888; padding:2px; font-size:12px;">
+                            <input class="menu-surface-card" type="text" id="char-name-input" value="${App.escapeHtml(c.name)}" maxlength="10" autocomplete="off" style="width:100px; background:#333; color:#fff; border:1px solid #888; padding:2px; font-size:12px;">
                             <button class="btn" style="margin-left:5px; padding:2px 6px; font-size:10px;" onclick="window.saveName()">OK</button>
                         </div>
 
                         <div style="font-size:11px; color:#aaa; margin-bottom:4px;">${c.job} Lv.${c.level} / ${c.rarity} Rank ${App.isMonsterAlly?.(c) ? ((c.monsterFusionCount || 0) > 0 ? `  ◆合成${c.monsterFusionCount}` : '') : (c.reincarnationCount > 0 ? `  ★${c.reincarnationCount}` : '')}</div>
 
                         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px;">
-                            <div style="background:#333; padding:2px 4px; border-radius:3px; line-height:1.1;">
+                            <div class="menu-surface-card" style="background:#333; padding:2px 4px; border-radius:3px; line-height:1.1;">
                                 <div style="font-size:8px; color:#aaa;">HP</div>
                                 <div style="color:#8f8; text-align:center; line-height:1"><span style="font-weight:bold; font-size:12px;">${hp}</span></div>
                                 <div style="text-align:right; margin-top:-4px;"><span style="font-size:9px; color:#aaa; opacity:0.8;">/ ${s.maxHp}</span></div>
                             </div>
 
-                            <div style="background:#333; padding:2px 4px; border-radius:3px; line-height:1.1;">
+                            <div class="menu-surface-card" style="background:#333; padding:2px 4px; border-radius:3px; line-height:1.1;">
                                 <div style="font-size:8px; color:#aaa;">MP</div>
                                 <div style="color:#88f; text-align:center; line-height:1;"><span style="font-weight:bold; font-size:12px;">${mp}</span></div>
                                 <div style="text-align:right; margin-top:-4px;"><span style="font-size:9px; color:#aaa; opacity:0.8;">/ ${s.maxMp}</span></div>
                             </div>
 
-                            <div style="background:#333; padding:2px 4px; border-radius:3px; line-height:1.1;">
+                            <div class="menu-surface-card" style="background:#333; padding:2px 4px; border-radius:3px; line-height:1.1;">
                                 <div style="font-size:8px; color:#aaa;">NextExp</div>
                                 <div style="text-align:center; padding-top:2px;"><span style="font-weight:bold; font-size:12px;">${displayExp}</span></div>
                             </div>
@@ -1040,14 +1037,14 @@ const MenuAllies = {
                 </div>
 
                 <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:3px; margin-top:5px; margin-bottom:12px;">
-                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">攻撃力</span><span style="font-weight:bold; font-size:11px; display:block;">${s.atk}</span></div>
-                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">防御力</span><span style="font-weight:bold; font-size:11px; display:block;">${s.def}</span></div>
-                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">魔力</span><span style="font-weight:bold; font-size:11px; display:block;">${s.mag}</span></div>
-                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">魔防</span><span style="font-weight:bold; font-size:11px; display:block;">${s.mdef}</span></div>
-                    <div style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">素早さ</span><span style="font-weight:bold; font-size:11px; display:block;">${s.spd}</span></div>
+                    <div class="menu-surface-card" style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">攻撃力</span><span style="font-weight:bold; font-size:11px; display:block;">${s.atk}</span></div>
+                    <div class="menu-surface-card" style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">防御力</span><span style="font-weight:bold; font-size:11px; display:block;">${s.def}</span></div>
+                    <div class="menu-surface-card" style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">魔力</span><span style="font-weight:bold; font-size:11px; display:block;">${s.mag}</span></div>
+                    <div class="menu-surface-card" style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">魔防</span><span style="font-weight:bold; font-size:11px; display:block;">${s.mdef}</span></div>
+                    <div class="menu-surface-card" style="background:#333; padding:5px 0; text-align:center; line-height:1;"><span style="font-size:9px; color:#aaa; display:block; margin-bottom:2px;">素早さ</span><span style="font-weight:bold; font-size:11px; display:block;">${s.spd}</span></div>
                 </div>
 
-                <div style="display:flex; margin-bottom:10px;">${tabBtns}</div>
+                <div class="menu-tab-rail menu-tab-rail--embedded" role="tablist" style="margin-bottom:10px;">${tabBtns}</div>
                 <div>${contentHtml}</div>
             </div>
         `;
@@ -1252,11 +1249,11 @@ const MenuAllies = {
 
         content.innerHTML = `
             <div style="display:flex; gap:5px; align-items:center; margin-bottom:8px;">
-                <select style="background:#333; color:#fff; font-size:11px; flex:1; height:28px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()} onchange="MenuAllies.candidateFilter=this.value; MenuAllies.renderEquipModalList()">
+                <select class="menu-surface-card" style="background:#333; color:#fff; font-size:11px; flex:1; height:28px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()} onchange="MenuAllies.candidateFilter=this.value; MenuAllies.renderEquipModalList()">
                     <option value="ALL">全ての効果</option>
                     ${rules.map(opt => `<option value="${opt.key}${opt.elm?'_'+opt.elm:''}" ${MenuAllies.candidateFilter===(opt.key+(opt.elm?'_'+opt.elm:''))?'selected':''}>${MenuAllies.escapeHtml(opt.name)}</option>`).join('')}
                 </select>
-                <select style="background:#333; color:#fff; font-size:11px; flex:0 0 112px; height:28px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()} onchange="MenuAllies.candidateSortMode=this.value; MenuAllies.renderEquipModalList()">
+                <select class="menu-surface-card" style="background:#333; color:#fff; font-size:11px; flex:0 0 112px; height:28px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()} onchange="MenuAllies.candidateSortMode=this.value; MenuAllies.renderEquipModalList()">
                     <option value="RANK" ${MenuAllies.candidateSortMode==='RANK'?'selected':''}>Rank順</option>
                     <option value="NEWEST" ${MenuAllies.candidateSortMode==='NEWEST'?'selected':''}>取得順</option>
                 </select>
@@ -1357,7 +1354,7 @@ const MenuAllies = {
             footer.innerHTML = `
                 <div style="display:flex; gap:8px;">
                     <button class="btn" style="flex:1; background:#555;" onclick="MenuAllies.selectedEquip=null; MenuAllies.renderEquipModalList()">キャンセル</button>
-                    <button class="btn" style="flex:1; background:#d00;" onclick="MenuAllies.doEquip()">変更する</button>
+                    <button class="btn menu-tone-danger" style="flex:1;" onclick="MenuAllies.doEquip()">変更する</button>
                 </div>
             `;
         }
@@ -1490,7 +1487,7 @@ const MenuAllies = {
 
     getCharacterSquareImageHtml: (char, imgUrl, imageFallbackAttr, sizeCss = 'width:60px; height:60px;', extraImgCss = '') => {
         if (!imgUrl) {
-            return `<div style="${sizeCss} background:#333; display:flex; align-items:center; justify-content:center; color:#555; font-size:9px; border-radius:4px; border:1px solid #555;">IMG</div>`;
+            return `<div class="menu-surface-card" style="${sizeCss} background:#333; display:flex; align-items:center; justify-content:center; color:#555; font-size:9px; border-radius:4px; border:1px solid #555;">IMG</div>`;
         }
         const safeSrc = MenuAllies.escapeAttr ? MenuAllies.escapeAttr(imgUrl) : String(imgUrl).replace(/"/g, '&quot;');
         const editCss = MenuAllies.getImageEditCss(char);
@@ -1516,7 +1513,7 @@ const MenuAllies = {
                 <div style="font-size:12px; color:#d8c49a; line-height:1.5; margin-bottom:12px;">
                     ${MenuAllies.escapeHtml(char.name || '仲間')}の画像を変更・加工できます。
                 </div>
-                <button class="btn" style="width:100%; height:42px; margin-bottom:10px; background:#004444;" onclick="MenuAllies.startImageChange('${uid}')">画像変更</button>
+                <button class="btn menu-tone-action" style="width:100%; height:42px; margin-bottom:10px;" onclick="MenuAllies.startImageChange('${uid}')">画像変更</button>
                 <button class="btn" style="width:100%; height:42px; background:#4a2d05;" onclick="MenuAllies.openImageEditor('${uid}')">画像加工</button>
             </div>
         `;
@@ -1904,7 +1901,8 @@ const MenuAllies = {
             const currentLevel = c.tree[key] || 0;
             const maxLevel = treeDef.steps.length;
             const div = document.createElement('div');
-            div.style.cssText = "background:#222; border:1px solid #444; border-radius:4px; margin-bottom:10px; padding:5px;";
+            div.className = 'menu-surface-card';
+            div.style.cssText = "border:1px solid #444; border-radius:4px; margin-bottom:10px; padding:5px;";
             let html = `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span style="font-weight:bold; color:#ffd700;">${treeDef.name} Lv.${currentLevel}</span><span style="font-size:11px; color:#aaa;">(${currentLevel}/${maxLevel})</span></div><div style="display:flex; gap:2px; margin-bottom:5px;">`;
             for(let i=0; i<maxLevel; i++) {
                 const achieved = (i < currentLevel);
@@ -1918,7 +1916,7 @@ const MenuAllies = {
                 const cost = reqTotal - ((currentLevel > 0) ? treeDef.costs[currentLevel-1] : 0);
                 const canAfford = (sp >= cost);
                 const nextStepDescription = MenuAllies.escapeHtml(MenuAllies.getSkillTreeStepDescription(nextStep));
-                html += `<div style="display:flex; justify-content:space-between; align-items:center;"><div style="font-size:12px;">次: <span style="color:#fff;">${nextStepDescription}</span></div><button class="btn" style="font-size:11px; padding:4px 8px; background:${canAfford?'#d00':'#333'};" onclick="MenuAllies.unlockTree('${key}', ${cost})" ${canAfford?'':'disabled'}>習得 SP:${cost}</button></div>`;
+                html += `<div style="display:flex; justify-content:space-between; align-items:center;"><div style="font-size:12px;">次: <span style="color:#fff;">${nextStepDescription}</span></div><button class="btn ${canAfford ? 'menu-tone-danger' : 'menu-surface-card'}" style="font-size:11px; padding:4px 8px;" onclick="MenuAllies.unlockTree('${key}', ${cost})" ${canAfford?'':'disabled'}>習得 SP:${cost}</button></div>`;
             } else { html += `<div style="font-size:12px; text-align:center; color:#4f4;">MASTER!</div>`; }
             div.innerHTML = html; list.appendChild(div);
         }
@@ -1946,7 +1944,7 @@ const MenuAllies = {
         const div = document.createElement('div');
         div.id = 'alloc-modal';
         div.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; display:none; flex-direction:column; justify-content:center; align-items:center;';
-        div.innerHTML = `<div style="width:90%; max-width:320px; max-height:80%; background:#222; border:2px solid #fff; display:flex; flex-direction:column;"><div class="header-bar"><span>能力値振分</span></div><div style="padding:10px; text-align:center; border-bottom:1px solid #444;">残りポイント: <span id="alloc-free-pts" style="color:#ffd700; font-weight:bold; font-size:18px;">0</span></div><div id="alloc-list" class="scroll-area" style="flex:1; padding:10px;"></div><div style="padding:10px; display:flex; gap:10px; justify-content:center; border-top:1px solid #444;"><button class="menu-btn" style="width:100px; background:#400040;" onclick="MenuAllies.saveAlloc()">決定</button><button class="menu-btn" style="width:100px;" onclick="MenuAllies.closeAllocModal()">キャンセル</button></div></div>`;
+        div.innerHTML = `<div class="menu-surface-card" style="width:90%; max-width:320px; max-height:80%; background:#222; border:2px solid #fff; display:flex; flex-direction:column;"><div class="header-bar"><span>能力値振分</span></div><div style="padding:10px; text-align:center; border-bottom:1px solid #444;">残りポイント: <span id="alloc-free-pts" style="color:#ffd700; font-weight:bold; font-size:18px;">0</span></div><div id="alloc-list" class="scroll-area" style="flex:1; padding:10px;"></div><div style="padding:10px; display:flex; gap:10px; justify-content:center; border-top:1px solid #444;"><button class="menu-btn" style="width:100px; background:#400040;" onclick="MenuAllies.saveAlloc()">決定</button><button class="menu-btn" style="width:100px;" onclick="MenuAllies.closeAllocModal()">キャンセル</button></div></div>`;
         document.body.appendChild(div);
     },
 
@@ -1976,7 +1974,8 @@ const MenuAllies = {
             const val = alloc[item.key] || 0;
             const unit = item.key.includes('fin') || item.key.includes('elm') ? '%' : '';
             const div = document.createElement('div');
-            div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; background:#333; padding:4px; border-radius:4px;';
+            div.className = 'menu-surface-card';
+            div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding:4px; border-radius:4px;';
             div.innerHTML = `<div style="font-size:11px;">${item.label}</div><div style="display:flex; align-items:center; gap:2px;"><button class="btn" style="padding:2px 6px; font-size:10px;" onclick="MenuAllies.adjustAlloc('${item.key}', -10)">-10</button><button class="btn" style="padding:2px 8px; font-size:12px;" onclick="MenuAllies.adjustAlloc('${item.key}', -1)">－</button><span style="width:30px; text-align:center; font-weight:bold; font-size:12px;">${val}${unit}</span><button class="btn" style="padding:2px 8px; font-size:12px;" onclick="MenuAllies.adjustAlloc('${item.key}', 1)">＋</button><button class="btn" style="padding:2px 6px; font-size:10px;" onclick="MenuAllies.adjustAlloc('${item.key}', 10)">+10</button></div>`;
             list.appendChild(div);
         });

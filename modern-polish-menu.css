@@ -1,0 +1,1784 @@
+/* =========================================================
+   Menu UI polish
+   Centralized palette for the menu stack. Keep later tweaks here instead of
+   adding new scattered overrides.
+========================================================= */
+body.game-page {
+  --menu-frame-w: min(94%, 450px);
+  --menu-frame-h: 94%;
+  --menu-backdrop: #180f09;
+  --menu-backdrop-glow: rgba(154, 98, 44, 0.30);
+  --menu-window-top: #51321a;
+  --menu-window-mid: #2c1a0d;
+  --menu-window-bottom: #120805;
+  --menu-panel: #1b0f08;
+  --menu-page: #130905;
+  --menu-panel-raised: #3f2514;
+  --menu-panel-raised-2: #28160b;
+  --menu-header-top: #704720;
+  --menu-header-bottom: #351d0c;
+  --menu-line: rgba(232, 178, 91, 0.46);
+  --menu-line-soft: rgba(232, 178, 91, 0.24);
+  --menu-text: #f5dfb8;
+  --menu-text-muted: #bfa17b;
+  --menu-gold: #f0c15d;
+  --menu-blue: #42627f;
+  --menu-control-top: #68411f;
+  --menu-control-bottom: #2a1609;
+  --menu-control-border: rgba(244, 199, 112, 0.58);
+  --menu-control-text: #f8e5bf;
+  --menu-control-muted-top: #4d2f18;
+  --menu-control-muted-bottom: #211006;
+}
+
+body.game-page #menu-overlay,
+body.game-page #sub-screen-party {
+  background:
+    radial-gradient(circle at 50% 14%, var(--menu-backdrop-glow), transparent 42%),
+    linear-gradient(180deg, #2a1a10 0%, var(--menu-backdrop) 52%, #0d0704 100%) !important;
+  backdrop-filter: none !important;
+}
+
+body.game-page #menu-overlay {
+  --menu-window-w: var(--menu-frame-w);
+  --menu-window-h: var(--menu-frame-h);
+}
+
+body.game-page #sub-screen-party {
+  --menu-window-w: var(--menu-frame-w);
+  --menu-window-h: var(--menu-frame-h);
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+body.game-page #menu-overlay .menu-window,
+body.game-page #party-screen-window {
+  width: var(--menu-window-w) !important;
+  height: var(--menu-window-h) !important;
+  border: 1px solid rgba(239, 190, 105, 0.62) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow:
+    0 18px 56px rgba(0, 0, 0, 0.66),
+    0 0 0 1px rgba(255, 240, 190, 0.08) inset !important;
+}
+
+body.game-page #menu-overlay .menu-window {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 220, 150, 0.10), transparent 34%),
+    linear-gradient(180deg, var(--menu-window-top) 0%, var(--menu-window-mid) 56%, var(--menu-window-bottom) 100%) !important;
+}
+
+body.game-page #party-screen-window {
+  background: var(--menu-page) !important;
+}
+
+body.game-page #party-screen-window {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+body.game-page #menu-overlay .header-bar,
+body.game-page #party-screen-window > .header-bar {
+  background:
+    linear-gradient(180deg, rgba(255, 229, 168, 0.08), transparent 46%),
+    linear-gradient(180deg, var(--menu-header-top) 0%, var(--menu-header-bottom) 100%) !important;
+  border-bottom-color: rgba(239, 190, 105, 0.56) !important;
+  color: var(--menu-text) !important;
+}
+
+body.game-page #menu-overlay .header-bar .btn,
+body.game-page #party-screen-window > .header-bar .btn,
+body.game-page #sub-screen-party .sub-screen-back-btn {
+  background: linear-gradient(180deg, #72502c 0%, #2d190b 100%) !important;
+  border-color: rgba(247, 210, 137, 0.66) !important;
+  color: var(--menu-text) !important;
+}
+
+body.game-page #menu-overlay .menu-grid {
+  gap: 8px !important;
+  padding: 10px !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(240, 193, 93, 0.08), transparent 40%),
+    linear-gradient(180deg, #26160b 0%, var(--menu-panel) 100%) !important;
+}
+
+body.game-page #sub-screen-party .scroll-area {
+  gap: 8px;
+  padding: 10px;
+  background: var(--menu-page);
+}
+
+body.game-page #menu-party-bar.menu-party-compact,
+body.game-page #sub-screen-party .sub-screen-bottom-panel {
+  background: linear-gradient(180deg, #392313 0%, #180c05 100%) !important;
+  border-color: var(--menu-line-soft) !important;
+}
+
+body.game-page #menu-overlay .menu-btn {
+  min-height: 48px;
+  padding: 12px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 235, 174, 0.08), transparent 42%),
+    linear-gradient(180deg, #59371d 0%, #261307 100%) !important;
+  border-color: rgba(232, 178, 91, 0.48) !important;
+  color: var(--menu-text) !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 239, 188, 0.14) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.46) inset,
+    0 7px 14px rgba(0, 0, 0, 0.22) !important;
+}
+
+body.game-page #menu-overlay .menu-btn:active,
+body.game-page #menu-overlay .menu-btn.is-pressing {
+  background:
+    linear-gradient(180deg, rgba(255, 235, 174, 0.10), transparent 42%),
+    linear-gradient(180deg, #6a4324 0%, #341c0c 100%) !important;
+}
+
+body.game-page #menu-overlay .menu-btn.is-feature-locked,
+body.game-page #menu-overlay .menu-btn.is-feature-locked:active,
+body.game-page #menu-overlay .menu-btn.is-feature-locked.is-pressing {
+  background: linear-gradient(180deg, #111 0%, #020202 100%) !important;
+  border-color: #292929 !important;
+  color: #555 !important;
+  filter: grayscale(1) brightness(0.72) !important;
+  text-shadow: none !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.025) inset,
+    0 5px 12px rgba(0, 0, 0, 0.32) !important;
+}
+
+body.game-page #menu-overlay #ad-ui-container {
+  background: #140905 !important;
+  border-top-color: var(--menu-line-soft) !important;
+}
+
+body.game-page #menu-party-bar .menu-party-member {
+  background: linear-gradient(180deg, rgba(66, 39, 20, 0.92), rgba(28, 15, 7, 0.98)) !important;
+  border-color: rgba(232, 178, 91, 0.28) !important;
+}
+
+body.game-page #menu-party-bar .menu-party-head {
+  background:
+    linear-gradient(180deg, rgba(255, 232, 175, 0.12), rgba(0, 0, 0, 0.08)),
+    linear-gradient(180deg, #60401f 0%, #37200e 100%) !important;
+  border: 1px solid rgba(232, 178, 91, 0.24) !important;
+  color: var(--menu-text) !important;
+  box-shadow: 0 1px 0 rgba(255, 239, 188, 0.08) inset !important;
+}
+
+body.game-page #menu-party-bar .menu-party-face,
+body.game-page #menu-party-bar .menu-party-img {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+body.game-page #menu-party-bar .menu-party-img {
+  object-fit: contain !important;
+  image-rendering: auto !important;
+}
+
+body.game-page #menu-party-bar .menu-party-name {
+  color: #fff0cc !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.62);
+}
+
+body.game-page #menu-party-bar .menu-party-level {
+  color: #d9b77b !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.62);
+}
+
+body.game-page #menu-party-bar .menu-party-lb {
+  color: #ffd55f !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.62);
+}
+
+body.game-page #menu-party-bar .menu-party-stat {
+  color: var(--menu-text) !important;
+}
+
+body.game-page #menu-party-bar .menu-party-position {
+  width: 12px;
+  height: 12px;
+  border: 0 !important;
+  font-size: 0 !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 1px 4px rgba(0, 0, 0, 0.42) !important;
+}
+
+body.game-page #menu-party-bar .menu-party-position::before {
+  color: #fff;
+  font-size: 9px;
+  line-height: 1;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.7);
+}
+
+body.game-page #menu-party-bar .menu-party-position.front {
+  background: linear-gradient(180deg, #2f8cff 0%, #0a4fb8 100%) !important;
+}
+
+body.game-page #menu-party-bar .menu-party-position.front::before {
+  content: "\25B2";
+}
+
+body.game-page #menu-party-bar .menu-party-position.back {
+  background: linear-gradient(180deg, #ff5959 0%, #bb1f27 100%) !important;
+}
+
+body.game-page #menu-party-bar .menu-party-position.back::before {
+  content: "\25BC";
+}
+
+body.game-page #sub-screen-party #party-tab-members,
+body.game-page #sub-screen-party #party-tab-strategy {
+  border-right: 1px solid rgba(232, 178, 91, 0.18) !important;
+}
+
+body.game-page #sub-screen-party .flex-col-container {
+  background: transparent !important;
+}
+
+body.game-page #sub-screen-party #party-screen-slots > div:first-child,
+body.game-page #sub-screen-party #party-screen-chars > div:first-child,
+body.game-page #sub-screen-party #party-screen-strategy > div:first-child {
+  background: rgba(28, 16, 8, 0.96) !important;
+  color: #e9c78d !important;
+  border-bottom-color: var(--menu-line-soft) !important;
+}
+
+body.game-page #sub-screen-party .list-item {
+  margin-bottom: 7px !important;
+  border-radius: 7px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 230, 174, 0.025), transparent 42%),
+    linear-gradient(180deg, rgba(43, 24, 13, 0.96), rgba(24, 12, 6, 0.98)) !important;
+  border-color: rgba(232, 178, 91, 0.28) !important;
+  color: var(--menu-text) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 239, 188, 0.055) inset,
+    0 4px 10px rgba(0, 0, 0, 0.14) !important;
+}
+
+body.game-page #sub-screen-party .list-item:hover,
+body.game-page #sub-screen-party .list-item:active,
+body.game-page #sub-screen-party .list-item.selected {
+  background:
+    linear-gradient(180deg, rgba(255, 230, 174, 0.045), transparent 42%),
+    linear-gradient(180deg, rgba(58, 33, 17, 0.97), rgba(30, 15, 7, 0.99)) !important;
+}
+
+body.game-page .sub-screen:not(#sub-screen-party) {
+  --menu-window-w: var(--menu-frame-w);
+  --menu-window-h: var(--menu-frame-h);
+  top: 50% !important;
+  left: 50% !important;
+  width: var(--menu-window-w) !important;
+  height: var(--menu-window-h) !important;
+  transform: translate(-50%, -50%) !important;
+  background: var(--menu-page) !important;
+  border: 1px solid rgba(232, 178, 91, 0.44) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow:
+    0 0 0 9999px var(--menu-backdrop),
+    0 18px 56px rgba(0, 0, 0, 0.60),
+    0 0 0 1px rgba(255, 240, 190, 0.06) inset !important;
+}
+
+body.game-page .sub-screen:not(#sub-screen-party) > .header-bar {
+  background:
+    linear-gradient(180deg, rgba(255, 229, 168, 0.06), transparent 46%),
+    linear-gradient(180deg, #56351a 0%, #201007 100%) !important;
+  border-bottom-color: rgba(232, 178, 91, 0.38) !important;
+  color: var(--menu-text) !important;
+}
+
+body.game-page .sub-screen:not(#sub-screen-party) > .scroll-area:not(.achievement-list),
+body.game-page .sub-screen:not(#sub-screen-party) > .flex-col-container,
+body.game-page .sub-screen:not(#sub-screen-party) .flex-col-container > .scroll-area {
+  background: #130905 !important;
+}
+
+body.game-page .sub-screen:not(#sub-screen-party) > .sub-screen-bottom-panel,
+body.game-page .sub-screen:not(#sub-screen-party) .flex-col-container > .sub-screen-bottom-panel {
+  background: linear-gradient(180deg, #24160b 0%, #0f0703 100%) !important;
+  border-top-color: rgba(232, 178, 91, 0.30) !important;
+}
+
+body.game-page .sub-screen:not(#sub-screen-party):not(#sub-screen-items) .list-item {
+  border-color: rgba(232, 178, 91, 0.22) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 230, 174, 0.035), transparent 45%),
+    linear-gradient(180deg, rgba(48, 28, 14, 0.88), rgba(22, 11, 5, 0.94)) !important;
+  color: var(--menu-text, #f5dfb8) !important;
+}
+
+body.game-page .sub-screen:not(#sub-screen-party):not(#sub-screen-items) .list-item:hover,
+body.game-page .sub-screen:not(#sub-screen-party):not(#sub-screen-items) .list-item:active,
+body.game-page .sub-screen:not(#sub-screen-party):not(#sub-screen-items) .list-item.selected {
+  background:
+    linear-gradient(180deg, rgba(255, 230, 174, 0.055), transparent 45%),
+    linear-gradient(180deg, rgba(72, 43, 22, 0.94), rgba(32, 17, 8, 0.96)) !important;
+}
+
+/* =========================================================
+   Shared menu cards and field HUD refinements
+========================================================= */
+body.game-page .menu-select-card {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 18px;
+  align-items: center;
+  width: 100%;
+}
+
+body.game-page .menu-select-card-face {
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.game-page .menu-select-card-img {
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid rgba(232, 178, 91, 0.32);
+  background: #21130a;
+}
+
+body.game-page .menu-select-card-img-empty {
+  color: #8d7456;
+  font-size: 9px;
+}
+
+body.game-page .menu-select-card-main {
+  min-width: 0;
+}
+
+body.game-page .menu-select-card-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+body.game-page .menu-select-card-name {
+  color: #fff4d2;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.66);
+}
+
+body.game-page .menu-select-card-lb {
+  color: #ff62ff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+body.game-page .menu-select-card-badge {
+  margin-left: auto;
+  color: #f0c15d;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+body.game-page .menu-select-card-level,
+body.game-page .menu-select-card-vitals {
+  display: flex;
+  flex-wrap: wrap;
+  color: #f5dfb8;
+  font-size: 11px;
+}
+
+body.game-page .menu-select-card-level {
+  color: #ffd75f;
+  font-weight: 800;
+}
+
+body.game-page .menu-select-card-job {
+  color: #bfa17b;
+  font-weight: 400;
+}
+
+body.game-page .menu-select-card-vitals .hp {
+  color: #7dff8c;
+}
+
+body.game-page .menu-select-card-vitals .mp {
+  color: #9da7ff;
+}
+
+body.game-page .menu-select-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  color: #bfa17b;
+  font-size: 10px;
+}
+
+body.game-page .menu-select-card-arrow {
+  color: #c9a56b;
+  font-size: 20px;
+}
+
+body.game-page .menu-pick-card {
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center !important;
+  justify-content: stretch !important;
+  min-height: 68px;
+}
+
+body.game-page .menu-pick-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 6px;
+  border: 1px solid rgba(232, 178, 91, 0.30);
+  background: #21130a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+body.game-page .menu-pick-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+body.game-page .menu-pick-main {
+  min-width: 0;
+}
+
+body.game-page .menu-pick-title {
+  color: #fff4d2;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.game-page .menu-pick-meta {
+  margin-top: 1px;
+  color: #f0c15d;
+  font-size: 10px;
+}
+
+body.game-page .menu-pick-desc {
+  margin-top: 3px;
+  color: #bfa17b;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+body.game-page .menu-pick-cost,
+body.game-page .menu-pick-count {
+  color: #f0c15d;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+body.game-page #sub-screen-party #party-screen-slots > div:first-child,
+body.game-page #sub-screen-party #party-screen-strategy > div:first-child {
+  display: none !important;
+}
+
+body.game-page .ally-archive-card-stage {
+  display: grid;
+  grid-template-columns: 38px minmax(0, auto) 38px;
+  gap: 8px;
+  margin-bottom: 18px;
+  user-select: none;
+}
+
+body.game-page .ally-archive-nav {
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid rgba(240, 193, 93, 0.50);
+  background: linear-gradient(180deg, #56351a 0%, #201007 100%);
+  color: #f0c15d;
+  font-family: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+}
+
+body.game-page #field-info-box {
+  border: 2px solid #f0c15d !important;
+  background: rgba(10, 8, 5, 0.86) !important;
+  color: #f5dfb8;
+  cursor: pointer;
+}
+
+body.game-page #field-info-box .field-info-main {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.game-page #field-info-box.is-collapsed {
+  width: fit-content;
+  max-width: 82%;
+  min-width: 150px;
+  padding: 7px 9px;
+}
+
+body.game-page #field-info-box.is-collapsed .field-info-sub,
+body.game-page #field-info-box.is-collapsed #objective-box {
+  display: none !important;
+}
+
+body.game-page #field-minimap-hotspot {
+  position: absolute;
+  z-index: 7;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+body.game-page #field-minimap-restore {
+  display: none;
+  position: absolute;
+  z-index: 8;
+  min-width: 58px;
+  height: 32px;
+  border: 2px solid #f0c15d;
+  border-radius: 0;
+  background: rgba(10, 8, 5, 0.90);
+  color: #f5dfb8;
+  font-family: inherit;
+  font-weight: 800;
+}
+
+body.game-page #canvas-wrapper.is-minimap-minimized #field-minimap-hotspot {
+  display: none;
+}
+
+body.game-page #canvas-wrapper.is-minimap-minimized #field-minimap-restore {
+  display: block;
+}
+
+body.game-page .field-map-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 2600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+body.game-page .field-map-modal-window {
+  width: min(94%, 420px);
+  max-height: 92%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #2a190d 0%, #130905 100%);
+  border: 1px solid rgba(232, 178, 91, 0.56);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+body.game-page .field-map-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  color: #f5dfb8;
+  background: linear-gradient(180deg, #56351a 0%, #201007 100%);
+  border-bottom: 1px solid rgba(232, 178, 91, 0.38);
+}
+
+body.game-page #field-map-modal-canvas {
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
+  image-rendering: pixelated;
+  background: #090502;
+}
+
+body.game-page #story-ui-overlay {
+  position: absolute !important;
+  box-sizing: border-box !important;
+  overflow: hidden;
+}
+
+body.game-page #story-ui-overlay .story-ui-stage {
+  position: relative;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+body.game-page #story-ui-overlay .story-text-window {
+  left: 16px !important;
+  right: 16px !important;
+  max-width: calc(100% - 32px) !important;
+}
+
+body.game-page #story-ui-overlay .story-portrait-frame {
+  left: 24px !important;
+  max-width: 38% !important;
+}
+
+/* Final menu/HUD pass: keep shared parts compact and avoid one-off visual drift. */
+body.game-page .menu-select-card {
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  min-height: 72px;
+  gap: 8px;
+  padding: 6px 8px !important;
+  margin-bottom: 6px !important;
+}
+
+body.game-page .menu-select-card-face {
+  width: 56px;
+  min-height: 64px;
+  gap: 4px;
+}
+
+body.game-page .menu-select-card-img {
+  width: 54px;
+  height: 54px;
+}
+
+body.game-page .menu-select-card-level,
+body.game-page .menu-select-card-vitals {
+  gap: 6px;
+  line-height: 1.18;
+}
+
+body.game-page .menu-select-card-stats {
+  gap: 1px 9px;
+  line-height: 1.12;
+}
+
+body.game-page #sub-screen-party #party-slot-list .list-item {
+  padding: 6px 8px !important;
+  margin-bottom: 6px !important;
+}
+
+body.game-page #sub-screen-party #party-slot-list .list-item > div {
+  min-height: 72px !important;
+  gap: 8px !important;
+}
+
+body.game-page #sub-screen-party #party-slot-list .list-item img {
+  width: 54px !important;
+  height: 54px !important;
+}
+
+body.game-page .sub-screen .btn:not(.menu-action-button),
+body.game-page .sub-screen .menu-btn,
+body.game-page #alloc-modal .btn:not(.menu-action-button),
+body.game-page #alloc-modal .menu-btn {
+  border: 1px solid var(--menu-control-border) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 236, 185, 0.08), transparent 44%),
+    linear-gradient(180deg, var(--menu-control-muted-top) 0%, var(--menu-control-muted-bottom) 100%) !important;
+  color: var(--menu-control-text) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 241, 204, 0.10), 0 2px 7px rgba(0, 0, 0, 0.28) !important;
+}
+
+body.game-page .sub-screen .btn:disabled,
+body.game-page .sub-screen .menu-btn:disabled {
+  opacity: 0.46;
+  filter: grayscale(0.35);
+}
+
+body.game-page .allies-tree-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 3100;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: rgba(5, 3, 2, 0.74);
+}
+
+body.game-page .allies-tree-modal-window {
+  width: min(94%, 420px);
+  height: min(84%, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(204, 152, 71, 0.72);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #2b170b 0%, #0f0704 100%);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.54);
+}
+
+body.game-page #tree-header {
+  flex: 0 0 auto;
+  min-height: 48px;
+  background: linear-gradient(180deg, #5a3519 0%, #251006 100%) !important;
+  border-bottom: 1px solid rgba(214, 159, 76, 0.48);
+  color: #f5dfb8;
+}
+
+body.game-page .allies-tree-header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+body.game-page .allies-tree-header-main span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.game-page .allies-tree-header-main .btn {
+  flex: 0 0 auto;
+  padding: 4px 10px !important;
+  font-size: 10px !important;
+}
+
+body.game-page #tree-content {
+  flex: 1 1 auto;
+  padding: 10px !important;
+  overflow-x: hidden;
+}
+
+body.game-page #tree-content > div {
+  background: linear-gradient(180deg, #2d1a10 0%, #1a0b05 100%) !important;
+  border: 1px solid rgba(165, 109, 45, 0.72) !important;
+  border-radius: 7px !important;
+  padding: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+body.game-page .allies-tree-modal-window .sub-screen-bottom-panel {
+  position: static !important;
+  padding: 9px 10px !important;
+  background: rgba(36, 18, 8, 0.96) !important;
+  border-top: 1px solid rgba(214, 159, 76, 0.36) !important;
+}
+
+body.game-page #alloc-modal {
+  z-index: 3300 !important;
+  padding: 14px;
+  box-sizing: border-box;
+  background: rgba(5, 3, 2, 0.74) !important;
+}
+
+body.game-page #alloc-modal > div {
+  width: min(92%, 390px) !important;
+  max-height: min(78%, 620px) !important;
+  border: 1px solid rgba(204, 152, 71, 0.72) !important;
+  border-radius: 10px !important;
+  background: linear-gradient(180deg, #2b170b 0%, #0f0704 100%) !important;
+  overflow: hidden;
+}
+
+body.game-page #alloc-modal .header-bar {
+  min-height: 46px !important;
+  background: linear-gradient(180deg, #5a3519 0%, #251006 100%) !important;
+}
+
+body.game-page #alloc-list {
+  padding: 8px !important;
+  overflow-x: hidden;
+}
+
+body.game-page #alloc-list > div {
+  min-height: 32px;
+  margin-bottom: 4px !important;
+  padding: 5px 7px !important;
+  background: rgba(70, 43, 24, 0.84) !important;
+  border: 1px solid rgba(165, 109, 45, 0.38);
+}
+
+body.game-page #alloc-modal .menu-btn {
+  width: auto !important;
+  min-width: 96px;
+  height: 44px !important;
+  padding: 6px 12px !important;
+}
+
+body.game-page #allies-detail-content,
+body.game-page #ally-detail-body {
+  overflow-x: hidden !important;
+}
+
+body.game-page .ally-archive-card-stage {
+  position: relative;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  padding: 0 42px;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+body.game-page .ally-detail-premium-card {
+  width: clamp(205px, min(66vw, 36svh), 265px) !important;
+  max-width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 2 / 3 !important;
+  flex-shrink: 0;
+  margin: 0 auto !important;
+  animation: none !important;
+}
+
+body.game-page .ally-detail-premium-card.is-portrait-interactive {
+  cursor: pointer;
+}
+
+body.game-page .ally-archive-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 48px;
+  z-index: 2;
+}
+
+body.game-page .ally-archive-nav.prev {
+  left: 4px;
+}
+
+body.game-page .ally-archive-nav.next {
+  right: 4px;
+}
+
+/* Ally archive card: horizontal flick navigation + tap-only arrow controls. */
+body.game-page .ally-detail-premium-card {
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body.game-page .ally-archive-nav {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.game-page #field-info-box {
+  top: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.46) !important;
+  background: rgba(8, 7, 5, 0.60) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.92);
+}
+
+body.game-page #field-info-box *,
+body.game-page #field-info-box .field-info-main,
+body.game-page #field-info-box .field-info-sub,
+body.game-page #field-info-box #objective-box {
+  color: #fff !important;
+}
+
+body.game-page #field-info-box #objective-box {
+  background: rgba(0, 0, 0, 0.28) !important;
+  border-color: rgba(255, 255, 255, 0.30) !important;
+}
+
+body.game-page #field-minimap-hotspot {
+  top: 10px;
+  right: 10px;
+  width: 80px;
+  height: 80px;
+}
+
+body.game-page #field-minimap-restore {
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  box-shadow: none;
+}
+
+/* Party tabs use the same page-side rail as other in-page navigation.
+   The header keeps the raised brown surface; the tab rail belongs to the dark page. */
+body.game-page #sub-screen-party #party-screen-tabs {
+  margin: 8px 10px 0 !important;
+  background: var(--menu-page) !important;
+  border: 1px solid rgba(197, 140, 61, 0.34) !important;
+  border-radius: 7px !important;
+  overflow: hidden;
+  box-shadow: none !important;
+}
+
+body.game-page #sub-screen-party #party-screen-tabs button {
+  min-height: 36px;
+  border: 0 !important;
+  border-right: 1px solid rgba(232, 178, 91, 0.12);
+  background: linear-gradient(180deg, #1a120c 0%, #090503 100%) !important;
+  color: #9e8f7d !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+body.game-page #sub-screen-party #party-screen-tabs button:last-child {
+  border-right: 0 !important;
+}
+
+/* Semantic menu navigation/state classes.
+   JavaScript owns state classes/ARIA only; CSS owns presentation. */
+
+body.game-page .menu-tab-rail {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(197, 140, 61, 0.34);
+  border-radius: 7px;
+  background: var(--menu-page);
+  box-shadow: none;
+}
+
+body.game-page .menu-tab-rail--embedded {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+body.game-page .menu-tab-button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 36px;
+  padding: 8px 4px;
+  border: 0;
+  border-right: 1px solid rgba(232, 178, 91, 0.12);
+  border-radius: 0;
+  background: linear-gradient(180deg, #1a120c 0%, #090503 100%);
+  color: #9e8f7d;
+  font-family: inherit;
+  font-weight: 700;
+  text-align: center;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+body.game-page .menu-tab-button:last-child {
+  border-right: 0;
+}
+
+body.game-page .menu-filter-rail {
+  display: flex;
+  min-width: 0;
+  background: #130905;
+  border-color: rgba(197, 140, 61, 0.32);
+}
+
+body.game-page .menu-filter-button {
+  min-width: 0;
+  border: 1px solid rgba(232, 178, 91, 0.28);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #1a120c 0%, #090503 100%);
+  color: #cbb99d;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+body.game-page .menu-book-detail-tabs {
+  background: #130905;
+}
+
+body.game-page .menu-book-detail-tab {
+  background: linear-gradient(180deg, #2b1a0f 0%, #150904 100%);
+  border-color: rgba(169, 112, 45, 0.46);
+  color: #f5dfb8;
+  font-family: inherit;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+body.game-page .menu-book-detail-tab.is-active,
+body.game-page .menu-book-detail-tab[aria-selected="true"] {
+  background: linear-gradient(180deg, #ffe56a 0%, #ffd217 55%, #c78e18 100%);
+  color: #160c04;
+  font-weight: 800;
+}
+
+body.game-page .sub-screen:not(#sub-screen-gacha) button.menu-tone-tab-inactive {
+  background: linear-gradient(180deg, #1a120c 0%, #090503 100%);
+  border-color: rgba(232, 178, 91, 0.22);
+  color: #9e8f7d;
+  box-shadow: none;
+}
+
+body.game-page .menu-tab-button.is-active,
+body.game-page .menu-tab-button[aria-selected="true"] {
+  background: linear-gradient(180deg, #ffe56a 0%, #ffd217 55%, #c78e18 100%);
+  color: #160c04;
+  font-weight: 800;
+}
+
+body.game-page .menu-tab-button:not(.is-active),
+body.game-page .menu-tab-button[aria-selected="false"] {
+  background: linear-gradient(180deg, #1a120c 0%, #090503 100%);
+  color: #9e8f7d;
+}
+
+body.game-page .menu-tab-button {
+  border-color: rgba(232, 178, 91, 0.22);
+  box-shadow: none;
+}
+
+body.game-page .sub-screen:not(#sub-screen-gacha) select,
+body.game-page .sub-screen:not(#sub-screen-gacha) input,
+body.game-page .sub-screen:not(#sub-screen-gacha) textarea {
+  border: 1px solid rgba(197, 140, 61, 0.44) !important;
+  border-radius: 6px !important;
+  background: linear-gradient(180deg, #2b1a0f 0%, #150904 100%) !important;
+  color: var(--menu-text) !important;
+  font-family: inherit;
+}
+
+body.game-page .sub-screen:not(#sub-screen-gacha) button.menu-tone-danger {
+  background: linear-gradient(180deg, #7a3131 0%, #2c0d0d 100%) !important;
+  border-color: rgba(255, 174, 130, 0.52) !important;
+  color: #ffe4ce !important;
+}
+
+body.game-page .sub-screen:not(#sub-screen-gacha) button.menu-tone-action {
+  background: linear-gradient(180deg, #24545e 0%, #0d2228 100%) !important;
+  border-color: rgba(108, 219, 206, 0.42) !important;
+  color: #dcfff8 !important;
+}
+
+body.game-page .sub-screen:not(#sub-screen-gacha) .menu-surface-card {
+  background: linear-gradient(180deg, #2b1a0f 0%, #150904 100%) !important;
+  border-color: rgba(169, 112, 45, 0.46) !important;
+  color: #f5dfb8 !important;
+}
+
+body.game-page .sub-screen:not(#sub-screen-gacha) .menu-surface-deep {
+  background: var(--menu-page) !important;
+}
+
+/* Ally basic-stat resistance cards: remove the old inline gray palette and let
+   the shared brown menu surface own the visual layer. */
+body.game-page #sub-screen-allies .ally-resistance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+}
+
+body.game-page #sub-screen-allies .ally-resistance-card {
+  padding: 4px;
+  border-radius: 4px;
+}
+
+body.game-page #sub-screen-allies .ally-resistance-card-title {
+  margin-bottom: 3px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(232, 178, 91, 0.18);
+  font-size: 9px;
+  text-align: center;
+}
+
+body.game-page #sub-screen-allies .ally-resistance-card-title.is-attack {
+  color: #ff9999;
+}
+
+body.game-page #sub-screen-allies .ally-resistance-card-title.is-resist {
+  color: #9da7ff;
+}
+
+body.game-page #sub-screen-allies .ally-resistance-card-title.is-status {
+  color: #f39cff;
+}
+
+body.game-page #sub-screen-allies .ally-resistance-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+body.game-page #sub-screen-allies .ally-resistance-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 1px 3px;
+  border-radius: 2px;
+  background: rgba(255, 232, 190, 0.055);
+  font-size: 9px;
+}
+
+body.game-page #sub-screen-allies .ally-resistance-row > span:first-child {
+  color: #b9a58a;
+}
+
+body.game-page #sub-screen-allies .ally-archive-milestone.is-active {
+  background: #ffd700;
+  color: #000;
+  font-weight: bold;
+}
+
+body.game-page #allies-detail-content > div:first-child:has(.ally-detail-nav-wrap) {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+body.game-page .ally-detail-nav-wrap {
+  margin: -10px -10px 8px -10px !important;
+  padding: 6px 10px !important;
+  border-width: 0 0 1px 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, #241308 0%, #120804 100%) !important;
+}
+
+body.game-page .ally-detail-nav-row {
+  min-height: 36px !important;
+  padding: 3px 6px !important;
+  border-radius: 6px !important;
+  background: rgba(9, 4, 2, 0.54) !important;
+}
+
+body.game-page .ally-detail-nav-row .btn {
+  min-height: 30px !important;
+  padding: 2px 10px !important;
+  background: rgba(9, 4, 2, 0.70) !important;
+  border-color: rgba(232, 178, 91, 0.18) !important;
+  color: #ead8bd !important;
+  box-shadow: none !important;
+}
+
+body.game-page .ally-detail-nav-row span {
+  color: #d8c6ad !important;
+}
+
+body.game-page .ally-archive-nav {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: #f0c15d !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.74);
+}
+
+/* Clear selected-state colors for filters/tabs, plus later menu polish. */
+body.game-page #inventory-controls,
+body.game-page #smith-ctrls,
+body.game-page #sub-screen-exchange .scroll-area {
+  background: #130905 !important;
+  border-color: rgba(197, 140, 61, 0.32) !important;
+}
+
+body.game-page #inventory-controls > div,
+body.game-page #smith-ctrls > div,
+body.game-page #sub-screen-exchange .scroll-area > div {
+  background:
+    linear-gradient(180deg, rgba(255, 230, 174, 0.035), transparent 45%),
+    linear-gradient(180deg, rgba(42, 24, 13, 0.92), rgba(18, 8, 4, 0.96)) !important;
+  border-color: rgba(197, 140, 61, 0.28) !important;
+}
+
+body.game-page #inventory-controls .menu-filter-button.is-active,
+body.game-page #smith-ctrls .menu-filter-button.is-active,
+body.game-page #sub-screen-achievements .menu-filter-button.is-active {
+  background: linear-gradient(180deg, #ffe56a 0%, #ffd217 55%, #c78e18 100%);
+  border-color: rgba(255, 232, 112, 0.72);
+  color: #160c04;
+  font-weight: 800;
+  text-shadow: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    0 0 0 1px rgba(90, 48, 8, 0.32);
+}
+
+body.game-page #inventory-controls .menu-filter-button:not(.is-active),
+body.game-page #smith-ctrls .menu-filter-button:not(.is-active),
+body.game-page #sub-screen-achievements .menu-filter-button:not(.is-active) {
+  background: linear-gradient(180deg, #1a120c 0%, #090503 100%);
+  border-color: rgba(232, 178, 91, 0.28);
+  color: #cbb99d;
+}
+
+/* Ally detail action controls. The primary actions intentionally keep the older
+   classic raised-brown RPG button language. Secondary actions stay dark, but retain
+   a visible bronze edge and depth so they still read as controls rather than labels. */
+body.game-page .sub-screen .menu-action-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 9px 12px;
+  border: 1px solid rgba(223, 170, 82, 0.56);
+  border-radius: 7px;
+  background: linear-gradient(180deg, #2a190e 0%, #120906 100%);
+  color: #d9c5a7;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.68);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 185, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.36),
+    0 2px 6px rgba(0, 0, 0, 0.28);
+}
+
+body.game-page .sub-screen .menu-action-button--classic {
+  border-color: rgba(236, 184, 91, 0.72);
+  background:
+    linear-gradient(180deg, rgba(255, 239, 198, 0.13), transparent 42%),
+    linear-gradient(180deg, #6c431f 0%, #49290f 48%, #261206 100%);
+  color: #f8e6c2;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 211, 0.24),
+    inset 0 -1px 0 rgba(65, 28, 5, 0.76),
+    0 3px 7px rgba(0, 0, 0, 0.30);
+}
+
+body.game-page .sub-screen .menu-action-button--secondary {
+  border-color: rgba(190, 137, 66, 0.42);
+  background:
+    linear-gradient(180deg, rgba(255, 235, 185, 0.045), transparent 44%),
+    linear-gradient(180deg, #24150c 0%, #100704 100%);
+  color: #bca98e;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 238, 197, 0.055),
+    inset 0 0 0 1px rgba(85, 50, 20, 0.18),
+    0 2px 5px rgba(0, 0, 0, 0.26);
+}
+
+body.game-page .sub-screen .menu-action-button:hover {
+  border-color: rgba(255, 213, 126, 0.76);
+  filter: brightness(1.06);
+}
+
+body.game-page .sub-screen .menu-action-button:active,
+body.game-page .sub-screen .menu-action-button.is-pressing {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.34),
+    0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+body.game-page .sub-screen .menu-action-button:disabled {
+  opacity: 0.58;
+  filter: saturate(0.5);
+  border-color: rgba(154, 111, 58, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 238, 197, 0.035),
+    0 1px 4px rgba(0, 0, 0, 0.22);
+}
+
+body.game-page .sub-screen .menu-action-button--danger {
+  margin-top: 10px;
+  background: linear-gradient(180deg, #6d2b24 0%, #2b0f0b 100%);
+  border-color: rgba(226, 123, 97, 0.64);
+  color: #ffe2d6;
+}
+
+/* Ally skill list: the old gray cards were a legacy inline skin.
+   Keep the neutral card surface brown and let the two state buttons carry ON/OFF color. */
+body.game-page #skill-list-container .ally-skill-card {
+  margin-bottom: 5px;
+  padding: 7px;
+  border: 1px solid rgba(190, 132, 59, 0.42);
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(255, 225, 169, 0.035), transparent 46%),
+    linear-gradient(180deg, #321d10 0%, #1b0d07 100%);
+  color: var(--menu-text);
+  box-shadow: inset 0 1px 0 rgba(255, 232, 180, 0.035);
+}
+
+body.game-page #skill-list-container .ally-skill-card.is-hidden {
+  background: linear-gradient(180deg, #24150c 0%, #130905 100%);
+  border-color: rgba(132, 91, 46, 0.32);
+}
+
+body.game-page #skill-list-container .ally-skill-name {
+  color: #ead8bd;
+}
+
+body.game-page #skill-list-container .ally-skill-card.is-hidden .ally-skill-name {
+  color: #8f7e69;
+}
+
+body.game-page #skill-list-container .ally-skill-desc {
+  color: #bca98e;
+}
+
+body.game-page #skill-list-container .ally-skill-card.is-hidden .ally-skill-desc {
+  color: #776956;
+}
+
+/* State-owned menu controls. These do not inherit .btn/.menu-btn presentation,
+   so JS state is never hidden by the legacy global !important button skin. */
+body.game-page .menu-state-button {
+  border: 1px solid rgba(230, 203, 149, 0.58);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #273445 0%, #111820 100%);
+  color: #fff4d2;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.13), 0 2px 7px rgba(0, 0, 0, 0.28);
+}
+
+body.game-page .menu-state-button:disabled {
+  opacity: 0.46;
+  filter: grayscale(0.35);
+  cursor: default;
+}
+
+body.game-page .menu-choice-button.is-active {
+  background: linear-gradient(180deg, #16735b 0%, #083b2e 100%);
+  border-color: rgba(126, 235, 197, 0.72);
+  color: #effff8;
+}
+
+body.game-page .ally-trait-toggle.is-on {
+  background: linear-gradient(180deg, #ffe56a 0%, #ffd217 55%, #c78e18 100%);
+  border-color: rgba(255, 232, 112, 0.72);
+  color: #160c04;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+body.game-page .ally-trait-toggle.is-off {
+  background: linear-gradient(180deg, #3b3b3b 0%, #1d1d1d 100%);
+  border-color: rgba(180, 180, 180, 0.34);
+  color: #c5c5c5;
+}
+
+body.game-page .inventory-sell-selected-button.has-selection {
+  background: linear-gradient(180deg, #8a2938 0%, #48131d 100%);
+  border-color: rgba(230, 105, 124, 0.76);
+  color: #ffe8ec;
+}
+
+body.game-page .inventory-sell-selected-button.is-empty {
+  background: linear-gradient(180deg, #3c3c3c 0%, #1d1d1d 100%);
+  border-color: rgba(170, 170, 170, 0.34);
+  color: #c7c7c7;
+}
+
+body.game-page .achievement-claim-all-button.has-claim {
+  background: linear-gradient(180deg, #ffe56a 0%, #ffd217 55%, #c78e18 100%);
+  border-color: rgba(255, 232, 112, 0.72);
+  color: #160c04;
+  font-weight: 800;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+body.game-page .achievement-claim-all-button.is-empty {
+  background: linear-gradient(180deg, #2b1a0f 0%, #150904 100%);
+  border-color: rgba(169, 112, 45, 0.40);
+  color: #8f7b63;
+  box-shadow: none;
+}
+
+body.game-page .achievement-claim-all-button.is-empty:disabled {
+  opacity: 1;
+  filter: none;
+}
+
+body.game-page .guild-travel-button.is-available {
+  background: linear-gradient(180deg, #25516a 0%, #102d3d 100%);
+  border-color: rgba(139, 188, 255, 0.72);
+  color: #dcecff;
+}
+
+body.game-page .guild-travel-button.is-unavailable {
+  background: linear-gradient(180deg, #303030 0%, #171717 100%);
+  border-color: rgba(120, 120, 120, 0.36);
+  color: #777;
+}
+
+body.game-page .smith-material-confirm.is-ready {
+  background: linear-gradient(180deg, #875318 0%, #4c2c0d 100%);
+  border-color: #ffb347;
+  color: #fff2d4;
+}
+
+body.game-page .smith-material-confirm.is-unavailable {
+  background: linear-gradient(180deg, #3a3a3a 0%, #1d1d1d 100%);
+  border-color: #555;
+  color: #aaa;
+}
+
+body.game-page .daily-reward-button.is-available {
+  background: linear-gradient(180deg, #26384a 0%, #101821 100%);
+  border-color: rgba(230, 203, 149, 0.58);
+  color: #fff4d2;
+}
+
+body.game-page .daily-reward-button.is-claimed {
+  background: linear-gradient(180deg, rgba(48, 28, 14, 0.66), rgba(18, 8, 4, 0.92));
+  border-color: rgba(108, 78, 48, 0.48);
+  color: #8d7b66;
+}
+
+/* State-owned ally detail controls. */
+body.game-page #skill-list-container .menu-state-button.skill-usage-toggle {
+  padding: 3px 2px;
+  min-height: 34px;
+  font-size: 9px;
+  line-height: 1.25;
+}
+
+body.game-page #skill-list-container .skill-usage-toggle.is-enabled {
+  background: linear-gradient(180deg, #ffe56a 0%, #ffd217 55%, #c78e18 100%);
+  border-color: rgba(255, 232, 112, 0.72);
+  color: #160c04;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+body.game-page #skill-list-container .skill-usage-toggle.is-disabled {
+  background: linear-gradient(180deg, #3b3b3b 0%, #1d1d1d 100%);
+  border-color: rgba(180, 180, 180, 0.34);
+  color: #c5c5c5;
+  box-shadow: none;
+}
+
+body.game-page .ally-trait-card {
+  border: 1px solid rgba(169, 112, 45, 0.46);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #2b1a0f 0%, #150904 100%);
+  color: #f5dfb8;
+}
+
+body.game-page .ally-trait-card.is-equipment {
+  border-color: rgba(0, 255, 255, 0.40);
+}
+
+body.game-page .ally-trait-fixed-badge {
+  border: 1px solid rgba(232, 178, 91, 0.46);
+  border-radius: 3px;
+  background: #130905;
+  color: #f5dfb8;
+}
+
+body.game-page .ally-trait-fixed-badge.is-equipment {
+  border-color: #00ffff;
+  color: #00ffff;
+}
+
+body.game-page .ally-trait-fixed-badge.is-locked {
+  border-color: #ffd700;
+  color: #ffd700;
+}
+
+/* Achievement layout: summary and filters sit directly on the dark page.
+   Filters are a compact segmented control, not a second page-level tab bar. */
+body.game-page #sub-screen-achievements > .achievement-overview {
+  padding: 10px;
+  background: var(--menu-page);
+  border-bottom: 1px solid rgba(197, 140, 61, 0.24);
+}
+
+body.game-page #sub-screen-achievements .achievement-summary {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  margin-bottom: 10px;
+}
+
+body.game-page #sub-screen-achievements .achievement-rate-card {
+  width: 92px;
+  flex: 0 0 92px;
+  padding: 9px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  border: 1px solid rgba(197, 140, 61, 0.38);
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(48, 28, 14, 0.94), rgba(21, 10, 5, 0.98));
+}
+
+body.game-page #sub-screen-achievements .achievement-rate-value {
+  color: #ffd35a;
+  font-size: 22px;
+  line-height: 1;
+}
+
+body.game-page #sub-screen-achievements .achievement-summary-grid {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+body.game-page #sub-screen-achievements .achievement-summary-card {
+  padding: 7px;
+  border: 1px solid rgba(197, 140, 61, 0.28);
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(43, 24, 13, 0.94), rgba(20, 10, 5, 0.98));
+}
+
+body.game-page #sub-screen-achievements .achievement-summary-card.has-unclaimed {
+  border-color: rgba(214, 87, 102, 0.62);
+  background: linear-gradient(180deg, rgba(73, 27, 31, 0.92), rgba(31, 11, 14, 0.98));
+}
+
+body.game-page #sub-screen-achievements .achievement-summary-label {
+  color: #9f8a70;
+  font-size: 10px;
+}
+
+body.game-page #sub-screen-achievements .achievement-summary-value {
+  color: #f5dfb8;
+  font-size: 14px;
+}
+
+body.game-page #sub-screen-achievements .achievement-summary-card.has-unclaimed .achievement-summary-value {
+  color: #ff9aa8;
+}
+
+body.game-page #sub-screen-achievements .achievement-progress-track {
+  height: 7px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(197, 140, 61, 0.18);
+  border-radius: 999px;
+  background: #0d0603;
+}
+
+body.game-page #sub-screen-achievements .achievement-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8a6b18, #ffd35a);
+}
+
+body.game-page #sub-screen-achievements .achievement-claim-all-button {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px;
+  border-radius: 7px;
+}
+
+body.game-page #sub-screen-achievements > .achievement-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  background: var(--menu-page);
+  border-bottom: 1px solid rgba(197, 140, 61, 0.24);
+}
+
+body.game-page #sub-screen-achievements .achievement-filter-rail {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(197, 140, 61, 0.34);
+  border-radius: 7px;
+  background: var(--menu-page);
+}
+
+body.game-page #sub-screen-achievements .achievement-filter-rail .menu-filter-button {
+  flex: 1 1 0;
+  min-height: 36px;
+  padding: 7px 4px;
+  border: 0;
+  border-right: 1px solid rgba(232, 178, 91, 0.12);
+  border-radius: 0;
+  font-size: 11px;
+}
+
+body.game-page #sub-screen-achievements .achievement-filter-rail .menu-filter-button:last-child {
+  border-right: 0;
+}
+
+body.game-page #sub-screen-achievements .achievement-category-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+body.game-page #sub-screen-achievements .achievement-category-row label {
+  flex: 0 0 auto;
+  color: var(--menu-text-muted);
+  font-size: 11px;
+}
+
+body.game-page #sub-screen-achievements .achievement-category-row select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 9px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+body.game-page #sub-screen-achievements > .achievement-list {
+  padding: 10px;
+  background: var(--menu-page);
+}
+
+/* Achievement state must not depend on the legacy .list-item !important skin. */
+body.game-page #sub-screen-achievements .achievement-entry {
+  border: 1px solid rgba(232, 178, 91, 0.24);
+  border-left-width: 4px;
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(255, 230, 174, 0.035), transparent 45%),
+    linear-gradient(180deg, rgba(48, 28, 14, 0.90), rgba(22, 11, 5, 0.96));
+  color: #f5dfb8;
+}
+
+body.game-page #sub-screen-achievements .achievement-entry.is-completed {
+  border-left-color: #ffd700;
+}
+
+body.game-page #sub-screen-achievements .achievement-entry.is-incomplete {
+  border-left-color: #5a4630;
+}
+
+/* Blacksmith material selection is a real state, not an inline color hint. */
+body.game-page #sub-screen-blacksmith .smith-material-item {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(169, 112, 45, 0.46);
+  border-radius: 5px;
+  background: linear-gradient(180deg, #2b1a0f 0%, #150904 100%);
+  color: #f5dfb8;
+  cursor: pointer;
+}
+
+body.game-page #sub-screen-blacksmith .smith-material-item.is-selected {
+  border-color: #00ffff;
+  background: rgba(0, 150, 150, 0.20);
+}
+
+body.game-page .smith-enhance-confirm.is-ready {
+  background: linear-gradient(180deg, #13726f 0%, #06403d 100%);
+  border-color: #72f1e9;
+  color: #ecfffd;
+}
+
+body.game-page #sub-screen-blacksmith #smith-screen-main .smith-mode-button {
+  border: 1px solid rgba(230, 203, 149, 0.58);
+  border-left: 4px solid #f0c15d;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #26384a 0%, #101821 100%);
+  color: #fff4d2;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    0 6px 12px rgba(0, 0, 0, 0.22);
+}
+
+body.game-page #sub-screen-blacksmith #smith-screen-main .smith-mode-button--synthesis {
+  border-left-color: #83b6ff;
+}
+
+body.game-page #sub-screen-blacksmith #smith-screen-main .smith-mode-button--refine {
+  border-left-color: #7dff8c;
+}
+
+body.game-page #sub-screen-blacksmith button[onclick*="showLevelInfo"] {
+  background: linear-gradient(180deg, #26384a 0%, #101821 100%) !important;
+  border-color: rgba(230, 203, 149, 0.58) !important;
+  color: #fff4d2 !important;
+}
+
+body.game-page #sub-screen-exchange .list-item,
+body.game-page #sub-screen-achievements .list-item {
+  background:
+    linear-gradient(180deg, rgba(255, 230, 174, 0.035), transparent 45%),
+    linear-gradient(180deg, rgba(48, 28, 14, 0.90), rgba(22, 11, 5, 0.96)) !important;
+  border-color: rgba(232, 178, 91, 0.24) !important;
+}
+
+body.game-page #sub-screen-party #party-screen-tabs button.active,
+body.game-page #sub-screen-party #party-screen-tabs button.is-active {
+  background: linear-gradient(180deg, #ffe56a 0%, #ffd217 55%, #c78e18 100%) !important;
+  border-color: rgba(255, 232, 112, 0.72) !important;
+  color: #160c04 !important;
+  font-weight: 800 !important;
+  text-shadow: none !important;
+}
+
+body.game-page #sub-screen-party #party-screen-tabs button:not(.active):not(.is-active) {
+  background: linear-gradient(180deg, #1a120c 0%, #090503 100%) !important;
+  color: #cbb99d !important;
+}
+
+body.game-page #action-indicator {
+  transform: none !important;
+}
+
+/* Shared menu navigation controls */
+body.game-page .sub-screen > .header-bar .btn,
+body.game-page .sub-screen .sub-screen-back-btn,
+body.game-page .sub-screen .btn[onclick*="closeSubScreen"],
+body.game-page .sub-screen .btn[onclick*="changeScreen"],
+body.game-page .sub-screen .btn[onclick*="renderList"],
+body.game-page .sub-screen .btn[onclick*="returnFrom"],
+body.game-page .sub-screen .btn[onclick*="closeEquipModal"],
+body.game-page .sub-screen .btn[onclick*="closeEquipmentModal"],
+body.game-page .sub-screen .btn[onclick*="closeStrategyModal"] {
+  background:
+    linear-gradient(180deg, rgba(255, 235, 174, 0.12), transparent 42%),
+    linear-gradient(180deg, var(--menu-control-top) 0%, var(--menu-control-bottom) 100%) !important;
+  border-color: var(--menu-control-border) !important;
+  color: var(--menu-control-text) !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.62) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 239, 188, 0.16),
+    0 6px 14px rgba(0, 0, 0, 0.24) !important;
+}
+
+body.game-page .sub-screen > .header-bar .btn:active,
+body.game-page .sub-screen .sub-screen-back-btn:active,
+body.game-page .sub-screen .btn[onclick*="closeSubScreen"]:active,
+body.game-page .sub-screen .btn[onclick*="changeScreen"]:active,
+body.game-page .sub-screen .btn[onclick*="renderList"]:active,
+body.game-page .sub-screen .btn[onclick*="returnFrom"]:active {
+  background:
+    linear-gradient(180deg, rgba(255, 235, 174, 0.16), transparent 42%),
+    linear-gradient(180deg, #815a32 0%, #3a210f 100%) !important;
+}
+
+body.game-page .list-item:focus-visible,
+body.game-page .menu-pick-card:focus-visible {
+  outline: 2px solid #ffd217 !important;
+  outline-offset: -3px !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 232, 112, 0.55),
+    0 0 18px rgba(255, 210, 23, 0.22) !important;
+}
+
+
+/* Main-menu notification marker: presentation only; JS owns visibility/state. */
+body.game-page #menu-overlay .menu-notification-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 5px;
+  vertical-align: middle;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: #ff4444;
+  box-shadow: 0 0 5px #f00;
+}

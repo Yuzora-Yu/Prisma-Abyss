@@ -1,0 +1,23 @@
+PRISMA ABYSS Light Palace Phase 25 delta
+Date: 2026-08-20
+Base: Phase 24 applied
+
+Modified:
+- story_logic.js
+- sw.js
+- news.js
+
+Created:
+- development_notes/2026-08-20/validation/validate-light-palace-phase25.js
+- development_notes/2026-08-20/reports/LIGHT_PALACE_PHASE25_20260820.md
+- development_notes/2026-08-20/DELTA_MANIFEST_20260820_LIGHT_PALACE_PHASE25.txt
+
+Ritual settings:
+- asset: assets/effect/fx_special_rupture.png
+- base alpha: 0.77
+- pulse alpha: +/-0.03 (effective alpha 0.74..0.80)
+- drift X: 0px
+- drift Y: 0px
+- cycle: 3000ms
+- depthOffset: 46
+- seamBleed: 0.5px

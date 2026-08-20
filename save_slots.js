@@ -375,6 +375,7 @@
 
             const app = getApp();
             if (app?.commitPlayTime) app.commitPlayTime({ keepRunning: true });
+            app?.syncSceneContextResumeMetadata?.();
             const payload = app?.serializeSaveData ? app.serializeSaveData(data) : JSON.stringify(data);
             SaveSlots.parsePayload(payload);
             await SaveSlots.assertEstimatedCapacity(SaveSlots.bytesOf(payload));
@@ -551,7 +552,36 @@
         loadManualIntoAuto: async (slotId) => {
             const record = await SaveSlots.getSlotData(slotId);
             if (!record || record.empty || record.corrupt) throw new Error(`セーブNo.${slotId}に有効なデータがありません。`);
-            return SaveSlots.writeDataToAutoSlot(record.data);
+
+            const app = getApp();
+            const data = JSON.parse(JSON.stringify(record.data));
+            if (app?.isLegacyLightPalaceFlashbackData?.(data) && !data.system?.sceneContextResume) {
+                const candidates = [];
+                const auto = SaveSlots.getAutoSlot();
+                if (auto?.data && app.isCompatibleLightPalaceFlashbackOrigin?.(auto.data, data)) {
+                    candidates.push({ data:auto.data, updatedAt:Date.parse(auto.updatedAt || auto.data?.system?.lastSavedAt || '') || 0 });
+                }
+                try {
+                    const manual = await SaveSlots.listManualSlotRecords();
+                    for (const candidateRecord of manual || []) {
+                        if (Number(candidateRecord?.slotId) === Number(slotId)) continue;
+                        try {
+                            const candidateData = SaveSlots.parsePayload(candidateRecord.payload);
+                            if (app.isCompatibleLightPalaceFlashbackOrigin?.(candidateData, data)) {
+                                candidates.push({
+                                    data:candidateData,
+                                    updatedAt:Date.parse(candidateRecord.updatedAt || candidateData?.system?.lastSavedAt || '') || 0
+                                });
+                            }
+                        } catch (_) {}
+                    }
+                } catch (error) {
+                    console.warn('[SAVE SLOTS] 旧回想セーブの復元元検索に失敗しました。', error);
+                }
+                candidates.sort((left, right) => right.updatedAt - left.updatedAt);
+                if (candidates[0]?.data) app.attachLegacyLightPalaceFlashbackOrigin?.(data, candidates[0].data);
+            }
+            return SaveSlots.writeDataToAutoSlot(data);
         },
 
         hasAnyManualSlot: async () => {
@@ -600,8 +630,8 @@
                 <div class="save-slot-prompt" role="${isConfirm ? 'alertdialog' : 'dialog'}" aria-modal="true">
                     <div class="save-slot-prompt-message"></div>
                     <div class="save-slot-prompt-actions">
-                        ${isConfirm ? '<button type="button" class="btn save-slot-prompt-cancel">いいえ</button>' : ''}
-                        <button type="button" class="btn save-slot-prompt-accept">${isConfirm ? 'はい' : 'OK'}</button>
+                        ${isConfirm ? '<button type="button" class="btn save-ui-button save-slot-prompt-cancel">いいえ</button>' : ''}
+                        <button type="button" class="btn save-ui-button save-slot-prompt-accept">${isConfirm ? 'はい' : 'OK'}</button>
                     </div>
                 </div>`;
             layer.querySelector('.save-slot-prompt-message').textContent = String(message || '');
@@ -661,12 +691,12 @@
                         <div>
                             <div id="save-slot-title" class="save-slot-title">${SaveSlotUI.mode === 'save' ? 'セーブ' : 'ロード'}</div>
                         </div>
-                        <button type="button" class="btn save-slot-close" onclick="SaveSlotUI.close()">もどる</button>
+                        <button type="button" class="btn save-ui-button save-slot-close" onclick="SaveSlotUI.close()">もどる</button>
                     </div>
                     <div id="save-slot-notice" class="save-slot-notice"></div>
                     <div id="save-slot-list" class="save-slot-list" aria-live="polite"></div>
                     <div class="save-slot-footer">
-                        <button type="button" class="btn sub-screen-back-btn" onclick="SaveSlotUI.close()">もどる</button>
+                        <button type="button" class="btn save-ui-button sub-screen-back-btn" onclick="SaveSlotUI.close()">もどる</button>
                     </div>
                 </div>`;
             host.appendChild(overlay);
@@ -732,7 +762,7 @@
 
             const button = document.createElement('button');
             button.type = 'button';
-            button.className = `save-slot-card${empty ? ' is-empty' : ''}${isAuto ? ' is-auto' : ''}${corrupt ? ' is-corrupt' : ''}`;
+            button.className = `save-slot-card save-ui-card${empty ? ' is-empty' : ''}${isAuto ? ' is-auto' : ''}${corrupt ? ' is-corrupt' : ''}`;
             button.disabled = disabled;
             button.setAttribute('aria-label', `${SaveSlotUI.getSlotLabel(slotId)} ${dateLabel} ${heroLabel} ${locationLabel} ${playTimeLabel}`);
             button.onclick = () => SaveSlotUI.selectSlot(slotId, slot);

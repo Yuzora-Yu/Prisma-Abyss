@@ -1,0 +1,14 @@
+Phase 16 delta — apply after Phase 15
+
+変更・作成したファイルは下記の11件です。
+1. story_logic.js
+2. story.js
+3. map.js
+4. news.js
+5. sw.js
+6. docs/implemented-story-flow-20260608.md
+7. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+8. development_notes/2026-08-19/validation/validate-light-palace-phase14.js
+9. development_notes/2026-08-19/validation/validate-light-palace-phase16.js
+10. development_notes/2026-08-19/reports/LIGHT_PALACE_PHASE16_20260819.md
+11. development_notes/2026-08-19/DELTA_MANIFEST_20260819_LIGHT_PALACE_PHASE16.txt

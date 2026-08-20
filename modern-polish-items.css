@@ -1,0 +1,176 @@
+/* --------------------------------------------------------------------------
+   Items menu: one tabbed page
+   The category tabs and item list share one outer frame. Rows stay contiguous;
+   the frame—not per-row spacing—communicates that the list belongs to the tab.
+   -------------------------------------------------------------------------- */
+body.game-page #sub-screen-items #item-screen-list {
+  background: var(--menu-page, #130905);
+}
+
+body.game-page #sub-screen-items .item-tab-page {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  margin: 8px 12px 0;
+  overflow: hidden;
+  background: #1a0e07;
+  border: 1px solid rgba(197, 140, 61, 0.38);
+  border-radius: 7px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 185, 0.035),
+    0 2px 7px rgba(0, 0, 0, 0.18);
+}
+
+body.game-page #sub-screen-items #item-tabs.item-tab-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  background: var(--menu-page, #130905);
+  border: 0;
+  border-bottom: 1px solid rgba(197, 140, 61, 0.34);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.game-page #sub-screen-items #item-tabs .item-tab-btn {
+  position: relative;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 4px;
+  border: 0;
+  border-right: 1px solid rgba(232, 178, 91, 0.22);
+  border-radius: 0;
+  background: linear-gradient(180deg, #1a120c 0%, #090503 100%);
+  color: #b9aa95;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-align: center;
+  text-shadow: none;
+  box-shadow: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.game-page #sub-screen-items #item-tabs .item-tab-btn:last-child {
+  border-right: 0;
+}
+
+body.game-page #sub-screen-items #item-tabs .item-tab-btn.active,
+body.game-page #sub-screen-items #item-tabs .item-tab-btn[aria-selected="true"] {
+  background: linear-gradient(180deg, #ffe86f 0%, #ffd400 58%, #d99a13 100%);
+  color: #170c03;
+  font-weight: 900;
+  text-shadow: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.44),
+    inset 0 -1px 0 rgba(100, 52, 4, 0.30);
+}
+
+body.game-page #sub-screen-items #item-tabs .item-tab-btn:not(.active):active {
+  background: linear-gradient(180deg, #2b1b0f 0%, #120906 100%);
+  color: #fff0cf;
+}
+
+body.game-page #sub-screen-items #item-tabs .item-tab-btn:focus-visible {
+  z-index: 2;
+  outline: 2px solid #fff1a0;
+  outline-offset: -3px;
+}
+
+body.game-page #sub-screen-items #list-items {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #1a0e07;
+  border: 0;
+}
+
+body.game-page #sub-screen-items #list-items .item-list-row {
+  width: 100%;
+  min-height: 72px;
+  margin: 0;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1px solid rgba(197, 140, 61, 0.26);
+  border-radius: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 230, 174, 0.025), transparent 42%),
+    linear-gradient(180deg, #301a0e 0%, #211008 100%);
+  color: var(--menu-text, #f5dfb8);
+  box-shadow: none;
+}
+
+body.game-page #sub-screen-items #list-items .item-list-row:last-child {
+  border-bottom: 0;
+}
+
+body.game-page #sub-screen-items #list-items .item-list-row:hover,
+body.game-page #sub-screen-items #list-items .item-list-row:active,
+body.game-page #sub-screen-items #list-items .item-list-row.selected {
+  background:
+    linear-gradient(180deg, rgba(255, 230, 174, 0.05), transparent 42%),
+    linear-gradient(180deg, #3a2111 0%, #281309 100%);
+}
+
+body.game-page #sub-screen-items .item-empty-state {
+  padding: 26px 20px;
+  text-align: center;
+  color: #9e896d;
+}
+
+/* --------------------------------------------------------------------------
+   Item-use target list
+   Keep the legacy compact character row, but remove the isolated gray portrait
+   plate so the target picker belongs to the same brown menu surface.
+   -------------------------------------------------------------------------- */
+body.game-page #sub-screen-items #item-screen-target,
+body.game-page #sub-screen-items #list-item-targets {
+  background: var(--menu-page, #130905);
+}
+
+body.game-page #sub-screen-items .item-target-summary {
+  padding: 10px;
+  border: 0;
+  border-bottom: 1px solid rgba(197, 140, 61, 0.34);
+  border-radius: 0;
+  background: linear-gradient(180deg, #29170c 0%, #170b05 100%);
+  color: #f0c15d;
+  font-size: 12px;
+  text-align: center;
+  box-shadow: none;
+}
+
+body.game-page #sub-screen-items .item-target-row {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(197, 140, 61, 0.20);
+  border-radius: 0;
+  background: var(--menu-page, #130905);
+  color: var(--menu-text, #f5dfb8);
+  box-shadow: none;
+}
+
+body.game-page #sub-screen-items .item-target-row:last-child {
+  border-bottom: 0;
+}
+
+body.game-page #sub-screen-items .item-target-row .char-thumb {
+  background: #21130a;
+  border-color: rgba(232, 178, 91, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 239, 188, 0.05);
+}

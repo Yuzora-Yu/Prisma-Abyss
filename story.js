@@ -2762,33 +2762,71 @@ const STORY_MANAGER_DATA = {
                 { "name": "システム", "text": "二人の意識が沈みかけた、その時。ルーナの祈りが淡い光となって広がり、傷も魔力も一息に満たしていく。" },
                 { "name": "ルーナ", "charId": 401, "text": "まだ、ここで終わるわけにはいかないよ。……レイラ、一緒に帰ろう。" }
         ],
+        "LIGHT_PALACE_FLASHBACK_HEXAGRAM_TRIGGER": [
+                { "name": "システム", "text": "広間を出ようとした瞬間、床に六芒星が閃きルーナの足に絡みついた。" }
+        ],
         "LIGHT_PALACE_FLASHBACK_HEXAGRAM_TRAP": [
-                { "name": "システム", "text": "六芒星の間へ踏み込んだ瞬間、床の光条が閉じ、ルーナの足元へ六つの楔が走った。" },
                 { "name": "ジャスパー", "text": "ようやく器が来た。聖女の力は、王国のために正しく使わせてもらう。" },
                 { "name": "ルーナ", "charId": 401, "text": "……っ、力が……抜けて……！" },
                 { "name": "システム", "text": "聖女の力が奪われ、さらに呪縛が重なる。ルーナはその場で意識を失った。" },
-                { "name": "レイラ", "charId": 204, "text": "ルーナ様から離れろ！" },
+                { "name": "レイラ", "charId": 204, "text": "ルーナ様から離れろ！" }
+        ],
+        "LIGHT_PALACE_FLASHBACK_VELD_ARRIVAL": [
                 { "name": "ヴェルド", "text": "剣を下ろせ、レイラ。お前一人で私を止められると思うな。" }
+        ],
+        "LIGHT_PALACE_FLASHBACK_VELD_FINISHER": [
+                { "name": "ヴェルド", "text": "……そこまでだ。これ以上、時間をかけるつもりはない。" },
+                { "name": "システム", "text": "ヴェルドが剣を正眼に構える。黒と白の残光が刃へ収束し、逃げ場のない斬撃となって放たれる。" }
         ],
         "LIGHT_PALACE_FLASHBACK_VELD1_AFTER": [
                 { "name": "システム", "text": "レイラは正面から斬り結ぶが、騎士団長ヴェルドの剣はあまりにも重い。膝をついたその時、二つの足音が六芒星の間へ飛び込んだ。" },
                 { "name": "レオン", "charId": 305, "text": "レイラ、まだ立てるな。なら十分だ。聖女は俺たちが運ぶ。" },
                 { "name": "クロード", "charId": 304, "text": "真正面は無理だ。……目だけ借りるぜ。フラッシュボム！" },
+                { "type": "FIELD_CUTSCENE", "commands": [
+                        { "op": "SCREEN_FLASH", "colors": ["#fff", "#000", "#fff", "#000", "#fff"], "intervalMs": 70, "opacity": 0.96 }
+                ] },
                 { "name": "システム", "text": "白。黒。白。黒。焼きつくような明滅に、ヴェルドの足が一瞬止まった。" },
                 { "name": "クロード", "charId": 304, "text": "今だ！　俺がルーナを抱える。入口まで走れ！" }
+        ],
+        "LIGHT_PALACE_FLASHBACK_WRONG_WAY": [
+                { "name": "クロード", "charId": 304, "text": "そっちに戻ってどうする！入口へ急ぐぞ！！" }
         ],
         "LIGHT_PALACE_FLASHBACK_EXIT_VELD": [
                 { "name": "システム", "text": "一階正面入口。扉の外は見えている。だが透明な結界が出口を塞いでいた。" },
                 { "name": "レオン", "charId": 305, "text": "……追いつかれた。" },
+                { "type": "FIELD_CUTSCENE", "commands": [
+                        { "op": "SHOW_SPRITE", "id": "flashback-exit-veld", "monsterId": 301064, "x": 17, "y": 20, "size": 2.1 },
+                        { "op": "MENACING_STEP", "id": "flashback-exit-veld", "monsterId": 301064, "x": 17, "y": 21, "size": 2.1, "duration": 260, "flashOpacity": 0.72, "shakeAmplitude": 4 },
+                        { "op": "MENACING_STEP", "id": "flashback-exit-veld", "monsterId": 301064, "x": 17, "y": 22, "size": 2.1, "duration": 260, "flashOpacity": 0.76, "shakeAmplitude": 4 },
+                        { "op": "MENACING_STEP", "id": "flashback-exit-veld", "monsterId": 301064, "x": 17, "y": 23, "size": 2.1, "duration": 280, "flashOpacity": 0.82, "shakeAmplitude": 5 }
+                ] },
                 { "name": "ヴェルド", "text": "聖女を渡せ。これ以上、若い騎士を斬りたくはない。" },
-                { "name": "レイラ", "charId": 204, "text": "お断りします。" }
+                { "name": "レイラ", "charId": 204, "text": "お断りします。" },
+                { "type": "FIELD_CUTSCENE", "commands": [
+                        { "op": "MOVE_SPRITE", "id": "flashback-exit-leon", "characterId": 305, "x": 16, "y": 25, "direction": "up", "walk": true, "duration": 220, "size": 1 },
+                        { "op": "MOVE_SPRITE", "id": "flashback-exit-claude", "characterId": 304, "x": 18, "y": 25, "direction": "up", "walk": true, "duration": 220, "size": 1 },
+                        { "op": "MOVE_PLAYER", "x": 17, "y": 25, "direction": "up", "duration": 180 }
+                ] }
         ],
         "LIGHT_PALACE_FLASHBACK_ESCAPE_END": [
                 { "name": "システム", "text": "三人が再び地へ伏す。ヴェルドは説得を諦め、剣を下げたまま一歩ずつ距離を詰める。" },
                 { "name": "システム", "text": "その瞬間、大地が大きく揺れた。宮殿を覆っていた結界が、一瞬だけ消える。" },
+                { "type": "FIELD_CUTSCENE", "commands": [
+                        { "op": "SCREEN_SHAKE", "axis": "y", "amplitude": 20, "duration": 820, "cycles": 8 }
+                ] },
                 { "name": "レオン", "charId": 305, "text": "クロード！　ルーナを絶対に離すな！" },
-                { "name": "システム", "text": "レオンは、ルーナを抱えたクロードごと結界の外へ投げ飛ばした。" },
+                { "type": "FIELD_CUTSCENE", "commands": [
+                        { "op": "MOVE_SPRITE", "id": "flashback-exit-leon", "characterId": 305, "x": 16, "y": 24, "direction": "up", "walk": true, "duration": 180, "size": 1 },
+                        { "op": "MOVE_SPRITE", "id": "flashback-exit-leon", "characterId": 305, "x": 18, "y": 24, "direction": "right", "walk": true, "duration": 280, "size": 1 },
+                        { "op": "MOVE_SPRITE", "id": "flashback-exit-leon", "characterId": 305, "x": 18, "y": 24, "direction": "down", "duration": 0, "size": 1 },
+                        { "op": "MOVE_SPRITE", "id": "flashback-exit-leon", "characterId": 305, "x": 18, "y": 24.14, "direction": "down", "walk": true, "duration": 60, "size": 1 },
+                        { "op": "MOVE_SPRITE", "id": "flashback-exit-leon", "characterId": 305, "x": 18, "y": 23.94, "direction": "down", "walk": true, "duration": 60, "size": 1 },
+                        { "op": "MOVE_SPRITE", "id": "flashback-exit-leon", "characterId": 305, "x": 18, "y": 24.16, "direction": "down", "walk": true, "duration": 60, "size": 1 },
+                        { "op": "MOVE_SPRITE", "id": "flashback-exit-leon", "characterId": 305, "x": 18, "y": 24, "direction": "down", "walk": true, "duration": 60, "size": 1 },
+                        { "op": "START_MOVE_SPRITE", "id": "flashback-exit-claude", "characterId": 304, "x": 18, "y": 31, "direction": "down", "walk": true, "duration": 1750, "size": 1, "removeAfter": true }
+                ] },
                 { "name": "クロード", "charId": 304, "text": "レオン――！" },
+                { "name": "システム", "text": "レオンが背後から強く押し出す。ルーナを抱えたクロードの身体は勢いよく結界の外へ滑り込み、そのまま宮殿の外へ消えた。" },
                 { "name": "システム", "text": "クロードの記憶はそこで途切れる。彼が確かに覚えているのは、ルーナを抱えたまま宮殿の外へ転がり出たことだけだった。" }
         ],
         "LIGHT_PALACE_FLASHBACK_RETURN_AFTERMATH": [
@@ -3132,6 +3170,10 @@ const STORY_MANAGER_DATA = {
                 { "name": "システム", "text": "クロードの回想を聞き終えた後。ルーナは雷の要塞の救護所に残し、アルスたちは改めて光の宮殿へ踏み込んだ。" },
                 { "name": "アルス", "charId": 301, "text": "ルーナは生きてる。今は、それで十分だ。……あいつをあんな目に遭わせた理由を、ここで確かめる。" },
                 { "name": "ジョセフ", "charId": 101, "text": "宮殿の中は回想と同じとは限らん。焦るな。生きて戻って、全部聞き出すぞ。" }
+        ],
+        "LIGHT_PALACE_PRESENT_PRISON_DETOUR": [
+                { "name": "ジョセフ", "charId": 101, "text": "まってくれ、レオンやレイラの安否がどうしても気になっちまう。" },
+                { "name": "ジョセフ", "charId": 101, "text": "宮殿の西に地下牢がある。先に見に行かせてくれないか。" }
         ],
         "LIGHT_PALACE_LEON_CURSED_PRESENT": [
                 {
@@ -5892,11 +5934,24 @@ const STORY_MANAGER_DATA = {
         },
         "light_palace_final_encounter": {
                 "actions": [
-                        { "type": "CONV", "value": "LIGHT_PALACE_PRESENT_FINAL_SKELETON" },
+                        { "type": "CONV", "value": "LIGHT_PALACE_FINAL_ENCOUNTER" },
                         {
                                 "type": "BOSS",
                                 "value": [301070, 301050],
+                                "bossStatMultiplier": 3,
+                                "lossEventId": "light_palace_blessing_retry",
                                 "winEventId": "light_palace_alan_betrayal"
+                        }
+                ],
+                "winActions": []
+        },
+        "light_palace_present_prison_detour": {
+                "actions": [
+                        {
+                                "type": "IF_FLAG",
+                                "key": "lightPalaceFlashbackActive",
+                                "then": [ { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_WRONG_WAY" } ],
+                                "else": [ { "type": "CONV", "value": "LIGHT_PALACE_PRESENT_PRISON_DETOUR" } ]
                         }
                 ],
                 "winActions": []
@@ -6325,7 +6380,7 @@ const STORY_MANAGER_DATA = {
                                         301070,
                                         301050
                                 ],
-                                "winEventId": "light_palace_clear"
+                                "winEventId": "light_palace_alan_betrayal"
                         }
                 ],
                 "winActions": []
@@ -7791,9 +7846,11 @@ const STORY_MANAGER_DATA = {
         },
         "light_palace_flashback_start": {
                 "actions": [
-                        { "type": "SCENE_BEGIN", "visualPreset": "sepia", "restartOnWipeout": true, "wipeoutEventId": "light_palace_flashback_retry_start", "isolateInventory": true, "mergeLoot": true, "carryoverCharacterIds": [204,305,304,401], "options": { "isolateCharacters": true, "lockPartyComposition": true, "sceneItems": { "13": 6, "14": 4, "5": 2 } }, "temporaryParty": [ {"charId":204,"initialLevel":50,"expMultiplierPct":100,"equipmentPreset":"rank60Physical"}, {"charId":401,"initialLevel":80,"expMultiplierPct":100,"equipmentPreset":"rank60Magic"} ], "exitTrigger": {"areaKey":"LIGHT_PALACE","floor":1,"eventId":"light_palace_flashback_exit_veld"} },
+                        { "type": "FIELD_CUTSCENE", "commands": [ { "op": "IRIS_TRANSITION", "mode": "close", "duration": 720, "holdMs": 90 } ] },
+                        { "type": "SCENE_BEGIN", "visualPreset": "light-palace-memory", "restartOnWipeout": true, "wipeoutEventId": "light_palace_flashback_retry_start", "isolateInventory": true, "mergeLoot": true, "carryoverCharacterIds": [204,305,304,401], "options": { "isolateCharacters": true, "lockPartyComposition": false, "sceneItems": { "13": 6, "14": 4, "5": 2 }, "returnConstraint": { "areaKey": "THUNDER_FORT", "floor": 1, "fallbackX": 18, "fallbackY": 22 } }, "temporaryParty": [ {"charId":204,"initialLevel":49,"expMultiplierPct":100,"equipmentPreset":"rank60Physical"}, {"charId":401,"initialLevel":80,"expMultiplierPct":100,"equipmentPreset":"rank60Magic"} ], "exitTrigger": {"areaKey":"LIGHT_PALACE","floor":1,"eventId":"light_palace_flashback_exit_veld"} },
                         { "type": "FLAG", "key": "lightPalaceFlashbackActive" },
                         { "type": "START_FIXED_DUNGEON", "value": "LIGHT_PALACE", "floor": 6, "sceneContextEntry": true },
+                        { "type": "FIELD_CUTSCENE", "commands": [ { "op": "IRIS_TRANSITION", "mode": "open", "duration": 680 } ] },
                         { "type": "SCENE_CHECKPOINT", "id": "saint_room", "wipeoutEventId": "light_palace_flashback_retry_start" },
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_SAINT_ROOM" }
                 ],
@@ -7805,19 +7862,81 @@ const STORY_MANAGER_DATA = {
         },
         "light_palace_flashback_hexagram_trap": {
                 "actions": [
+                        { "type": "FLAG", "key": "lightPalaceFlashbackRitualVisible", "refreshField": true },
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "FLASH_SHAKE", "colors": ["#ffffff"], "intervalMs": 85, "opacity": 0.9, "amplitude": 8, "duration": 320, "cycles": 5 }
+                        ] },
+                        { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_HEXAGRAM_TRIGGER" },
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "SCREEN_FLASH", "colors": ["#ffffff"], "intervalMs": 85, "finalHoldMs": 35, "opacity": 0.88 },
+                                { "op": "PLAY_EFFECT", "id": "flashback-jasper-vortex", "src": "assets/effect/fx-abyss-vortex-ai.png", "x": 20, "y": 15, "size": 4.2, "worldSpace": true, "depthMode": "cutscene-front", "ms": 430 },
+                                { "op": "DARK_TELEPORT", "id": "flashback-jasper", "monsterId": 301070, "x": 20, "y": 15, "size": 2.1, "duration": 300, "persistKey": "lightPalaceFlashbackJasper" }
+                        ] },
+                        { "type": "FLAG", "key": "lightPalaceFlashbackJasperAppeared", "refreshField": true },
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_HEXAGRAM_TRAP" },
-                        { "type": "FLAG", "key": "lightPalaceFlashbackHexagramResolved" },
+                        { "type": "SCENE_REMOVE_ALLY", "value": 401 },
                         { "type": "SCENE_PARTY", "party": [ {"charId":204} ] },
-                        { "type": "BOSS", "value": 301064, "forcedLoss": true, "endAfterTurns": 5, "bestiaryExcluded": true, "noDrops": true, "noExp": true, "noGold": true, "noQuestProgress": true, "noRecruit": true, "lossEventId": "light_palace_flashback_veld1_after" }
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "ADVANCE_PLAYER_CENTER_NORTH", "centerX": 17, "stepDuration": 150 }
+                        ] },
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "SCREEN_FLASH", "colors": ["#ffffff"], "intervalMs": 85, "finalHoldMs": 35, "opacity": 0.88 },
+                                { "op": "PLAY_EFFECT", "id": "flashback-veld-vortex", "src": "assets/effect/fx-abyss-vortex-ai.png", "x": 17, "y": 16, "size": 4.2, "worldSpace": true, "depthMode": "cutscene-front", "ms": 430 },
+                                { "op": "DARK_TELEPORT", "id": "flashback-veld", "monsterId": 301064, "x": 17, "y": 16, "size": 2.1, "duration": 300, "persistKey": "lightPalaceFlashbackVeld" }
+                        ] },
+                        { "type": "FLAG", "key": "lightPalaceFlashbackVeldAppeared", "refreshField": true },
+                        { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_VELD_ARRIVAL" },
+                        { "type": "FLAG", "key": "lightPalaceFlashbackHexagramResolved" },
+                        { "type": "FLAG", "key": "lightPalaceFlashbackVeldEncounterStarted" },
+                        { "type": "BOSS", "value": 301064, "forcedLoss": true, "hpFloor": 1, "finisherAfterTurns": 5, "finisherAtHpFloor": true, "finisherConversation": "LIGHT_PALACE_FLASHBACK_VELD_FINISHER", "finisherSkillId": 140, "finisherSkillName": "黒白の葬閃", "finisherDamage": 9999, "finisherActorMonsterId": 301064, "finisherEffectImage": "assets/effect/fx-neutral-slash-ai.png", "finisherFlashCount": 2, "bestiaryExcluded": true, "noDrops": true, "noExp": true, "noGold": true, "noQuestProgress": true, "noRecruit": true, "lossEventId": "light_palace_flashback_veld1_after" }
                 ],
                 "winActions": []
         },
         "light_palace_flashback_veld1_after": {
                 "actions": [
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "SYNC_PERSISTENT_VISUALS" },
+                                { "op": "MOVE_PLAYER", "x": 17, "y": 19, "direction": "up" },
+                                { "op": "SHOW_SPRITE", "id": "flashback-postveld-leon", "characterId": 305, "x": 4, "y": 24, "direction": "right", "size": 1 },
+                                { "op": "SHOW_SPRITE", "id": "flashback-postveld-claude", "characterId": 304, "x": 5, "y": 24, "direction": "right", "size": 1 },
+                                { "op": "MOVE_SPRITE", "id": "flashback-postveld-leon", "characterId": 305, "x": 16, "y": 24, "direction": "right", "walk": true, "duration": 620, "size": 1 },
+                                { "op": "MOVE_SPRITE", "id": "flashback-postveld-claude", "characterId": 304, "x": 18, "y": 24, "direction": "right", "walk": true, "duration": 680, "size": 1 },
+                                { "op": "MOVE_SPRITE", "id": "flashback-postveld-leon", "characterId": 305, "x": 16, "y": 18, "direction": "up", "walk": true, "duration": 620, "size": 1 },
+                                { "op": "MOVE_SPRITE", "id": "flashback-postveld-claude", "characterId": 304, "x": 18, "y": 18, "direction": "up", "walk": true, "duration": 620, "size": 1 }
+                        ] },
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_VELD1_AFTER" },
-                        { "type": "SCENE_PARTY", "party": [ {"charId":204,"initialLevel":50,"equipmentPreset":"rank60Physical"}, {"charId":305,"initialLevel":60,"equipmentPreset":"rank60Physical"}, {"charId":304,"initialLevel":60,"equipmentPreset":"rank60Physical","skills":[249]} ] },
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "START_MOVE_SPRITE", "id": "flashback-postveld-leon", "characterId": 305, "x": 16, "y": 21, "direction": "down", "walk": true, "duration": 420, "size": 1 },
+                                { "op": "START_MOVE_SPRITE", "id": "flashback-postveld-claude", "characterId": 304, "x": 18, "y": 21, "direction": "down", "walk": true, "duration": 420, "size": 1 },
+                                { "op": "MOVE_PLAYER", "x": 17, "y": 20, "direction": "down", "duration": 115 },
+                                { "op": "MOVE_PLAYER", "x": 17, "y": 21, "direction": "down", "duration": 115 },
+                                { "op": "MOVE_PLAYER", "x": 17, "y": 22, "direction": "down", "duration": 115 },
+                                { "op": "WAIT", "ms": 100 }
+                        ] },
+                        { "type": "FLAG", "key": "lightPalaceFlashbackRetreatOrdered" },
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "REMOVE_SPRITE", "id": "flashback-postveld-leon" },
+                                { "op": "REMOVE_SPRITE", "id": "flashback-postveld-claude" }
+                        ] },
+                        { "type": "SCENE_PARTY", "party": [ {"charId":204,"initialLevel":49,"equipmentPreset":"rank60Physical"}, {"charId":305,"initialLevel":62,"equipmentPreset":"rank60Physical"}, {"charId":304,"initialLevel":58,"equipmentPreset":"rank60Physical","skills":[249]} ] },
                         { "type": "HEAL" },
                         { "type": "SCENE_CHECKPOINT", "id": "post_veld", "wipeoutEventId": "light_palace_flashback_retry_post_veld" }
+                ],
+                "winActions": []
+        },
+        "light_palace_flashback_wrong_way": {
+                "actions": [
+                        { "type": "FIELD_CUTSCENE", "commands": [ { "op": "SYNC_PERSISTENT_VISUALS" } ] },
+                        { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_WRONG_WAY" },
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "MOVE_PLAYER", "dy": 1, "direction": "down", "duration": 160 }
+                        ] }
+                ],
+                "winActions": []
+        },
+        "light_palace_flashback_wrong_way_stairs": {
+                "actions": [
+                        { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_WRONG_WAY" }
                 ],
                 "winActions": []
         },
@@ -7835,15 +7954,34 @@ const STORY_MANAGER_DATA = {
         },
         "light_palace_flashback_exit_veld": {
                 "actions": [
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "BARRIER_REPEL", "x": 17, "y": 26, "amplitude": 11, "duration": 320, "cycles": 5, "repelDelayMs": 65 },
+                                { "op": "SHOW_SPRITE", "id": "flashback-exit-leon", "characterId": 305, "x": 16, "y": 26, "direction": "down", "size": 1 },
+                                { "op": "SHOW_SPRITE", "id": "flashback-exit-claude", "characterId": 304, "x": 18, "y": 26, "direction": "down", "size": 1 }
+                        ] },
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_EXIT_VELD" },
-                        { "type": "BOSS", "value": 301064, "forcedLoss": true, "endAfterTurns": 5, "bestiaryExcluded": true, "noDrops": true, "noExp": true, "noGold": true, "noQuestProgress": true, "noRecruit": true, "lossEventId": "light_palace_flashback_escape_end" }
+                        { "type": "BOSS", "value": 301064, "forcedLoss": true, "hpFloor": 1, "finisherAfterTurns": 5, "finisherAtHpFloor": true, "finisherConversation": "LIGHT_PALACE_FLASHBACK_VELD_FINISHER", "finisherSkillId": 140, "finisherSkillName": "黒白の葬閃", "finisherDamage": 9999, "finisherActorMonsterId": 301064, "finisherEffectImage": "assets/effect/fx-neutral-slash-ai.png", "finisherFlashCount": 2, "bestiaryExcluded": true, "noDrops": true, "noExp": true, "noGold": true, "noQuestProgress": true, "noRecruit": true, "lossEventId": "light_palace_flashback_escape_end" }
                 ],
                 "winActions": []
         },
         "light_palace_flashback_escape_end": {
                 "actions": [
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "SHOW_SPRITE", "id": "flashback-exit-veld", "monsterId": 301064, "x": 17, "y": 23, "size": 2.1 },
+                                { "op": "MOVE_PLAYER", "x": 17, "y": 25, "direction": "up" },
+                                { "op": "SHOW_SPRITE", "id": "flashback-exit-leon", "characterId": 305, "x": 16, "y": 25, "direction": "up", "size": 1 },
+                                { "op": "SHOW_SPRITE", "id": "flashback-exit-claude", "characterId": 304, "x": 18, "y": 25, "direction": "up", "size": 1 }
+                        ] },
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_ESCAPE_END" },
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "VERTICAL_CURTAIN", "mode": "close", "duration": 720, "holdMs": 120 }
+                        ] },
+                        { "type": "FIELD_CUTSCENE", "commands": [ { "op": "CLEANUP" } ] },
                         { "type": "SCENE_END", "carryoverCharacterIds": [204,305,304,401] },
+                        { "type": "FIELD_CUTSCENE", "commands": [
+                                { "op": "WAIT", "ms": 90 },
+                                { "op": "VERTICAL_CURTAIN", "mode": "open", "duration": 680 }
+                        ] },
                         { "type": "CONV", "value": "LIGHT_PALACE_FLASHBACK_RETURN_AFTERMATH" },
                         { "type": "FLAG", "key": "lightPalaceFlashbackCompleted" },
                         { "type": "STEP", "value": 7 },

@@ -1,0 +1,27 @@
+PRISMA ABYSS CSS Cleanup Phase 4 DELTA
+Date: 2026-08-18
+Base: Phase 3 hotfix (PRISMA_ABYSS_css_cleanup_phase3_hotfix_tabs_DELTA_20260818.zip applied)
+
+This ZIP contains ONLY files changed or created after the Phase 3 hotfix baseline.
+
+Changed / created files (20):
+1. blacksmith.js
+2. menus_achievements.js
+3. menus_allies.js
+4. menus_config.js
+5. menus_exchange.js
+6. menus_inventory.js
+7. menus_items.js
+8. menus_party.js
+9. menus_status.js
+10. modern-polish-config-save.css
+11. modern-polish-field.css
+12. modern-polish-menu.css
+13. news.js
+14. sw.js
+15. development_notes/2026-08-18/reports/CSS_CASCADE_CLEANUP_PHASE4_20260818.md
+16. development_notes/2026-08-18/validation/audit-runtime-style-sources.js
+17. development_notes/2026-08-18/validation/runtime-style-source-audit.json
+18. development_notes/2026-08-18/validation/validate-menu-cascade-states.py
+19. development_notes/2026-08-18/validation/validate-menu-state-ownership.js
+20. development_notes/2026-08-18/DELTA_MANIFEST_20260818_CSS_CLEANUP_PHASE4.txt

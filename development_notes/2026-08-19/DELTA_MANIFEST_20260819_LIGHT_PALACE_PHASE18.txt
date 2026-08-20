@@ -1,0 +1,14 @@
+Phase 18 delta from Phase 17
+
+1. assets.js
+2. main.js
+3. phaser-field.js
+4. story.js
+5. story_logic.js
+6. news.js
+7. sw.js
+8. docs/implemented-story-flow-20260608.md
+9. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+10. development_notes/2026-08-19/validation/validate-light-palace-phase18.js
+11. development_notes/2026-08-19/reports/LIGHT_PALACE_PHASE18_20260819.md
+12. development_notes/2026-08-19/DELTA_MANIFEST_20260819_LIGHT_PALACE_PHASE18.txt

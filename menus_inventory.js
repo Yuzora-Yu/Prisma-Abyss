@@ -24,7 +24,8 @@ const MenuInventory = {
             if (!ctrlDiv) {
                 ctrlDiv = document.createElement('div');
                 ctrlDiv.id = 'inventory-controls';
-                ctrlDiv.style.cssText = 'flex-shrink:0; background:#1a1a1a; border-bottom:1px solid #444;';
+                ctrlDiv.className = 'menu-control-stack menu-surface-deep';
+                ctrlDiv.style.cssText = 'flex-shrink:0; border-bottom:1px solid #444;';
                 const header = subScreen.querySelector('.header-bar');
                 if (header) {
                     subScreen.insertBefore(ctrlDiv, header.nextSibling);
@@ -74,40 +75,10 @@ const MenuInventory = {
     }[ch])),
 
     ensureCardStyle: () => {
+        // Inventory card CSS is loaded statically from runtime-components.css.
         if (typeof EquipAcquisitionCard !== 'undefined' && typeof EquipAcquisitionCard.injectStyle === 'function') {
             EquipAcquisitionCard.injectStyle();
         }
-        if (document.getElementById('inventory-equip-card-style')) return;
-        const style = document.createElement('style');
-        style.id = 'inventory-equip-card-style';
-        style.textContent = `
-            #inventory-list.inventory-equip-card-list{padding:8px 7px 26px;box-sizing:border-box}
-            .inventory-equip-card-shell{position:relative;isolation:isolate;margin:0 0 8px;background:rgba(7,7,9,.9);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.46);font-family:'DotGothic16',sans-serif;overflow:visible}
-            .inventory-equip-card-shell.is-selected{background:rgba(55,18,18,.94)}
-            .inventory-equip-card-shell.is-synergy::before{content:"";position:absolute;inset:-6px;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 18% 45%,rgba(102,246,255,.32),transparent 50%),radial-gradient(ellipse at 78% 38%,rgba(180,92,255,.3),transparent 52%),radial-gradient(ellipse at 52% 82%,rgba(72,255,176,.24),transparent 58%);filter:blur(8px);animation:inventoryEquipAuraDrift 3.2s ease-in-out infinite alternate}
-            .inventory-equip-card{position:relative;z-index:1;padding:8px 9px 0;background:inherit}
-            .inventory-equip-card .equip-acquisition-main{grid-template-columns:56px minmax(0,1fr);gap:8px}
-            .inventory-equip-card .equip-acquisition-image{width:56px;height:56px;border:0;border-radius:0}
-            .inventory-equip-card .equip-acquisition-name{font-size:15px}
-            .inventory-equip-card .equip-acquisition-rank{font-size:9px}
-            .inventory-equip-card .equip-acquisition-base-stats{margin-top:4px;font-size:10px;line-height:1.35}
-            .inventory-equip-option-list{display:flex;flex-wrap:wrap;gap:2px 8px;margin-top:4px;font-size:10px;line-height:1.35}
-            .inventory-equip-trait-list{margin-top:4px;color:#ffd27a;font-size:10px;line-height:1.35;overflow-wrap:anywhere}
-            .inventory-equip-synergy-list{margin-top:5px;font-size:10px;line-height:1.35}
-            .inventory-equip-synergy{padding:3px 5px;background:rgba(255,255,255,.06)}
-            .inventory-equip-synergy strong{margin-right:5px}
-            .inventory-equip-footer{margin:7px -9px 0;padding:5px 8px;min-height:29px;box-sizing:border-box;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.045);font-size:10px;color:#aaa}
-            .inventory-equip-select{display:flex;align-items:center;gap:5px;color:#ddd;cursor:pointer;white-space:nowrap}
-            .inventory-equip-select input{margin:0;width:14px;height:14px;accent-color:#d6aa25}
-            .inventory-equip-owner{min-width:0;flex:1;text-align:center;color:#f2a0a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-            .inventory-equip-lock{border:0;border-radius:0;background:#303843;color:#fff;font-family:inherit;font-size:10px;line-height:1;padding:6px 10px;min-width:58px;cursor:pointer}
-            .inventory-equip-lock.is-locked{background:#694141;color:#ffe0a3}
-            .inventory-equip-lock:active{filter:brightness(1.25)}
-            @keyframes inventoryEquipAuraDrift{0%{opacity:.58;transform:scale(.985);filter:blur(8px) hue-rotate(0deg)}100%{opacity:.86;transform:scale(1.012);filter:blur(10px) hue-rotate(38deg)}}
-            @media(max-width:340px){#inventory-list.inventory-equip-card-list{padding-left:5px;padding-right:5px}.inventory-equip-card{padding-left:7px;padding-right:7px}.inventory-equip-footer{margin-left:-7px;margin-right:-7px}.inventory-equip-card .equip-acquisition-main{grid-template-columns:50px minmax(0,1fr);gap:7px}.inventory-equip-card .equip-acquisition-image{width:50px;height:50px}.inventory-equip-card .equip-acquisition-name{font-size:14px}}
-            @media(prefers-reduced-motion:reduce){.inventory-equip-card-shell.is-synergy::before{animation:none}}
-        `;
-        document.head.appendChild(style);
     },
 
     getCardManager: () => (typeof EquipAcquisitionCard !== 'undefined' ? EquipAcquisitionCard : null),
@@ -232,17 +203,17 @@ const MenuInventory = {
         const end = Math.min(items.length, (MenuInventory.page + 1) * MenuInventory.pageSize);
 
         ctrlDiv.innerHTML = `
-            <div style="padding:5px; display:flex; gap:4px; overflow-x:auto; background:#222; border-bottom:1px solid #333;">
+            <div class="menu-filter-rail inventory-category-filter" style="padding:5px; gap:4px; overflow-x:auto; border-bottom:1px solid #333;">
                 ${['ALL', '武器', '盾', '頭', '体', '足'].map(c => `
-                    <button class="btn" style="padding:2px 10px; font-size:10px; flex-shrink:0; background:${MenuInventory.filter.category === c ? '#008888' : '#444'};"
+                    <button class="menu-filter-button ${MenuInventory.filter.category === c ? 'is-active' : ''}" aria-pressed="${MenuInventory.filter.category === c ? 'true' : 'false'}" style="padding:2px 10px; font-size:10px; flex-shrink:0;"
                         onclick="MenuInventory.updateState('category', '${c}')">${c === 'ALL' ? '全て' : c}</button>
                 `).join('')}
             </div>
 
-            <div style="padding:5px; background:#1a1a1a; display:flex; align-items:center; gap:8px; border-bottom:1px solid #333;">
+            <div class="menu-surface-deep" style="padding:5px; background:#1a1a1a; display:flex; align-items:center; gap:8px; border-bottom:1px solid #333;">
                 <div style="flex:1; display:flex; align-items:center; gap:4px;">
                     <span style="font-size:9px; color:#aaa;">効果:</span>
-                    <select style="background:#333; color:#fff; font-size:10px; border:1px solid #555; flex:1; height:22px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()}
+                    <select class="menu-surface-card" style="background:#333; color:#fff; font-size:10px; border:1px solid #555; flex:1; height:22px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()}
                         onchange="MenuInventory.updateState('option', this.value)">
                         <option value="ALL">全て</option>
                         ${rules.map(opt => {
@@ -253,7 +224,7 @@ const MenuInventory = {
                 </div>
                 <div style="flex:1; display:flex; align-items:center; gap:4px;">
                     <span style="font-size:9px; color:#aaa;">並替:</span>
-                    <select style="background:#333; color:#fff; font-size:10px; border:1px solid #555; flex:1; height:22px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()}
+                    <select class="menu-surface-card" style="background:#333; color:#fff; font-size:10px; border:1px solid #555; flex:1; height:22px; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()}
                         onchange="MenuInventory.updateState('sortMode', this.value)">
                         <option value="NEWEST" ${MenuInventory.sortMode === 'NEWEST' ? 'selected' : ''}>取得順</option>
                         <option value="RANK" ${MenuInventory.sortMode === 'RANK' ? 'selected' : ''}>Rank順</option>
@@ -274,7 +245,7 @@ const MenuInventory = {
                 <span style="font-size:11px; color:#aaa;">選択: <span style="color:#fff;">${MenuInventory.selectedIds.length}</span> 個</span>
                 <div style="display:flex; gap:6px;">
                     <button class="btn" style="background:#553300; font-size:11px; padding:4px 10px;" onclick="MenuInventory.openBulkSellModal()">一括売却</button>
-                    <button class="btn" style="background:${MenuInventory.selectedIds.length > 0 ? '#800' : '#444'}; font-size:11px; padding:4px 10px;"
+                    <button class="menu-state-button inventory-sell-selected-button ${MenuInventory.selectedIds.length > 0 ? 'has-selection' : 'is-empty'}" style="font-size:11px; padding:4px 10px;"
                         onclick="MenuInventory.sellSelected()">選択売却</button>
                 </div>
             </div>
@@ -465,14 +436,12 @@ const MenuInventory = {
         const executeBtn = document.createElement('button');
         executeBtn.className = 'btn';
         executeBtn.style.minWidth = '100px';
-        executeBtn.style.background = '#800';
         executeBtn.innerText = '売却実行';
         executeBtn.onclick = () => MenuInventory.executeBulkSellFromModal();
 
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'btn';
         cancelBtn.style.minWidth = '100px';
-        cancelBtn.style.background = '#444';
         cancelBtn.innerText = 'キャンセル';
         cancelBtn.onclick = () => Menu.closeDialog();
 
@@ -491,7 +460,7 @@ const MenuInventory = {
         return `
             <label style="display:flex; flex-direction:column; gap:4px; font-size:12px; color:#ddd;">
                 <span>${label}</span>
-                <select id="${id}" style="background:#333; color:#fff; border:1px solid #555; padding:6px; font-family:inherit; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()}
+                <select class="menu-surface-card" id="${id}" style="background:#333; color:#fff; border:1px solid #555; padding:6px; font-family:inherit; touch-action:auto; user-select:auto; -webkit-user-select:auto;" ${Menu.selectTouchAttrs()}
                     onchange="MenuInventory.updateBulkSellPreview()">
                     ${options.map(([value, text]) => `<option value="${value}">${text}</option>`).join('')}
                 </select>

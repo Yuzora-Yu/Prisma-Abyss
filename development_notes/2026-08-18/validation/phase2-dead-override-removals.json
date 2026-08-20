@@ -1,0 +1,255 @@
+{
+  "count": 25,
+  "removals": [
+    {
+      "line": 2276,
+      "keptLine": 4216,
+      "selector": "body.title-page",
+      "property": "justify-content",
+      "removedValue": "flex-start",
+      "keptValue": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2287,
+      "keptLine": 4470,
+      "selector": "body.title-page input[type=\"text\"]",
+      "property": "background",
+      "removedValue": "#222",
+      "keptValue": "#07090c",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2287,
+      "keptLine": 4468,
+      "selector": "body.title-page input[type=\"text\"]",
+      "property": "border",
+      "removedValue": "1px solid #666",
+      "keptValue": "1px solid rgba(235, 224, 190, 0.34)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2287,
+      "keptLine": 4467,
+      "selector": "body.title-page input[type=\"text\"]",
+      "property": "padding",
+      "removedValue": "10px",
+      "keptValue": "8px 10px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2287,
+      "keptLine": 4469,
+      "selector": "body.title-page input[type=\"text\"]",
+      "property": "border-radius",
+      "removedValue": "4px",
+      "keptValue": "6px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2295,
+      "keptLine": 4366,
+      "selector": "body.title-page .btn",
+      "property": "padding",
+      "removedValue": "12px",
+      "keptValue": "10px 14px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2295,
+      "keptLine": 4372,
+      "selector": "body.title-page .btn",
+      "property": "font-size",
+      "removedValue": "18px",
+      "keptValue": "16px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2295,
+      "keptLine": 4374,
+      "selector": "body.title-page .btn",
+      "property": "transition",
+      "removedValue": "all 0.2s",
+      "keptValue": "transform 0.12s ease, border-color 0.12s ease, background 0.12s ease",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2295,
+      "keptLine": 4368,
+      "selector": "body.title-page .btn",
+      "property": "border-radius",
+      "removedValue": "4px",
+      "keptValue": "6px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2297,
+      "keptLine": 4378,
+      "selector": "body.title-page .btn:active",
+      "property": "transform",
+      "removedValue": "scale(0.98)",
+      "keptValue": "translateY(1px) scale(0.99)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2298,
+      "keptLine": 4382,
+      "selector": "body.title-page .btn:disabled",
+      "property": "opacity",
+      "removedValue": "0.5",
+      "keptValue": "0.42",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2313,
+      "keptLine": 4554,
+      "selector": "body.title-page hr",
+      "property": "border-top",
+      "removedValue": "1px solid #444",
+      "keptValue": "1px solid rgba(235, 224, 190, 0.18)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2313,
+      "keptLine": 4555,
+      "selector": "body.title-page hr",
+      "property": "margin",
+      "removedValue": "5px 0",
+      "keptValue": "0",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 4361,
+      "keptLine": 7566,
+      "selector": "body.title-page .title-actions",
+      "property": "gap",
+      "removedValue": "11px",
+      "keptValue": "8px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 4947,
+      "keptLine": 5266,
+      "selector": "body.game-page .menu-select-card",
+      "property": "gap",
+      "removedValue": "10px",
+      "keptValue": "8px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 4950,
+      "keptLine": 5265,
+      "selector": "body.game-page .menu-select-card",
+      "property": "min-height",
+      "removedValue": "86px",
+      "keptValue": "72px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 4954,
+      "keptLine": 5272,
+      "selector": "body.game-page .menu-select-card-face",
+      "property": "width",
+      "removedValue": "62px",
+      "keptValue": "56px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 4962,
+      "keptLine": 5278,
+      "selector": "body.game-page .menu-select-card-img",
+      "property": "width",
+      "removedValue": "60px",
+      "keptValue": "54px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 4963,
+      "keptLine": 5279,
+      "selector": "body.game-page .menu-select-card-img",
+      "property": "height",
+      "removedValue": "60px",
+      "keptValue": "54px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5013,
+      "keptLine": 5284,
+      "selector": "body.game-page .menu-select-card-level, body.game-page .menu-select-card-vitals",
+      "property": "gap",
+      "removedValue": "7px",
+      "keptValue": "6px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5016,
+      "keptLine": 5285,
+      "selector": "body.game-page .menu-select-card-level, body.game-page .menu-select-card-vitals",
+      "property": "line-height",
+      "removedValue": "1.25",
+      "keptValue": "1.18",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5040,
+      "keptLine": 5289,
+      "selector": "body.game-page .menu-select-card-stats",
+      "property": "gap",
+      "removedValue": "2px 10px",
+      "keptValue": "1px 9px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5043,
+      "keptLine": 5290,
+      "selector": "body.game-page .menu-select-card-stats",
+      "property": "line-height",
+      "removedValue": "1.2",
+      "keptValue": "1.12",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5126,
+      "keptLine": 5472,
+      "selector": "body.game-page .ally-archive-nav",
+      "property": "width",
+      "removedValue": "34px",
+      "keptValue": "32px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5127,
+      "keptLine": 5473,
+      "selector": "body.game-page .ally-archive-nav",
+      "property": "height",
+      "removedValue": "54px",
+      "keptValue": "48px",
+      "important": false,
+      "context": ""
+    }
+  ]
+}

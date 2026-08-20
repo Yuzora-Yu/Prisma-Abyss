@@ -1,0 +1,17 @@
+PRISMA ABYSS Phase 20 delta
+Base: Phase 19 applied
+Date: 2026-08-20
+
+変更・作成したファイルは下記の12件です。
+1. phaser-field.js
+2. story_logic.js
+3. story.js
+4. dungeon.js
+5. news.js
+6. sw.js
+7. docs/implemented-story-flow-20260608.md
+8. docs/scenario/62_LIGHT_PALACE_FLASHBACK_AND_FINAL_STAGING_PHASE10_20260819.md
+9. docs/scenario/SYSTEM_UI_TEXT_REVIEW_INVENTORY_20260810.md
+10. development_notes/2026-08-20/validation/validate-light-palace-phase20.js
+11. development_notes/2026-08-20/reports/LIGHT_PALACE_PHASE20_20260820.md
+12. development_notes/2026-08-20/DELTA_MANIFEST_20260820_LIGHT_PALACE_PHASE20.txt

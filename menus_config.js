@@ -152,7 +152,7 @@ const MenuConfig = {
     },
 
     radioRow: (group, value, label, desc, checked, onChange) => `
-        <label class="list-item" style="display:flex; align-items:center; gap:10px; padding:10px; margin-bottom:8px; cursor:pointer; background:${checked ? '#203040' : '#181818'}; border:1px solid ${checked ? '#ffd700' : '#333'}; border-radius:6px;">
+        <label class="config-radio-row ${checked ? 'is-selected' : ''}" style="display:flex; align-items:center; gap:10px; padding:10px; margin-bottom:8px; cursor:pointer;">
             <input type="radio" name="${group}" value="${value}" ${checked ? 'checked' : ''} onchange="${onChange}" style="width:18px; height:18px; flex:0 0 auto;">
             <span style="flex:1; min-width:0;">
                 <span style="display:block; color:#fff; font-size:14px; font-weight:bold;">${label}</span>
@@ -185,11 +185,11 @@ const MenuConfig = {
                     </button>
                     <button class="btn config-save-action" type="button" onclick="MenuConfig.openDataModal('export')">
                         <span class="config-save-action-title">データ出力</span>
-                        <span class="config-save-action-desc">オート・全セーブ・Googleドライブ</span>
+                        <span class="config-save-action-desc">オート・全セーブ</span>
                     </button>
                     <button class="btn config-save-action" type="button" onclick="MenuConfig.openDataModal('import')">
                         <span class="config-save-action-title">データ読込</span>
-                        <span class="config-save-action-desc">オート・全セーブ・Googleドライブ</span>
+                        <span class="config-save-action-desc">オート・全セーブ</span>
                     </button>
                     <button class="btn config-save-action" type="button" onclick="MenuConfig.downloadAllData()">
                         <span class="config-save-action-title">素材一括ダウンロード</span>

@@ -1,0 +1,2040 @@
+{
+  "count": 226,
+  "importantCount": 110,
+  "removals": [
+    {
+      "line": 15,
+      "keptLine": 21,
+      "selector": "body.game-page",
+      "property": "margin",
+      "value": "0",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 333,
+      "keptLine": 333,
+      "selector": "body.game-page #battle-target-window",
+      "property": "bottom",
+      "value": "140px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 374,
+      "keptLine": 445,
+      "selector": "body.game-page #gacha-performance",
+      "property": "display",
+      "value": "none",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 374,
+      "keptLine": 446,
+      "selector": "body.game-page #gacha-performance",
+      "property": "flex-direction",
+      "value": "column",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 395,
+      "keptLine": 518,
+      "selector": "body.game-page .style-aurora",
+      "property": "animation",
+      "value": "aurora-shift 6s ease infinite alternate",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 396,
+      "keptLine": 519,
+      "selector": "body.game-page .style-aurora",
+      "property": "color",
+      "value": "#fff",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 425,
+      "keptLine": 527,
+      "selector": "body.game-page .style-majestic",
+      "property": "color",
+      "value": "#FFD700",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 404,
+      "keptLine": 548,
+      "selector": "0%",
+      "property": "background-position",
+      "value": "0% 50%",
+      "important": false,
+      "context": "@keyframes aurora-shift"
+    },
+    {
+      "line": 405,
+      "keptLine": 548,
+      "selector": "100%",
+      "property": "background-position",
+      "value": "100% 50%",
+      "important": false,
+      "context": "@keyframes aurora-shift"
+    },
+    {
+      "line": 469,
+      "keptLine": 564,
+      "selector": "body.game-page .pre-glow-ex.card-back",
+      "property": "background",
+      "value": "linear-gradient(to bottom, #8B0000, #000000)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 470,
+      "keptLine": 565,
+      "selector": "body.game-page .pre-glow-ex.card-back",
+      "property": "border",
+      "value": "2px solid #FFD700",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 463,
+      "keptLine": 570,
+      "selector": "body.game-page .card-back.rare-gold, body.game-page .card-back.rare-rainbow",
+      "property": "overflow",
+      "value": "hidden",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 464,
+      "keptLine": 571,
+      "selector": "body.game-page .card-back.rare-gold, body.game-page .card-back.rare-rainbow",
+      "property": "position",
+      "value": "relative",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 489,
+      "keptLine": 574,
+      "selector": "body.game-page .card-back.rare-gold::after, body.game-page .card-back.rare-rainbow::after",
+      "property": "content",
+      "value": "\"\"",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 490,
+      "keptLine": 574,
+      "selector": "body.game-page .card-back.rare-gold::after, body.game-page .card-back.rare-rainbow::after",
+      "property": "position",
+      "value": "absolute",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 491,
+      "keptLine": 574,
+      "selector": "body.game-page .card-back.rare-gold::after, body.game-page .card-back.rare-rainbow::after",
+      "property": "top",
+      "value": "-150%",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 491,
+      "keptLine": 574,
+      "selector": "body.game-page .card-back.rare-gold::after, body.game-page .card-back.rare-rainbow::after",
+      "property": "left",
+      "value": "-150%",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 492,
+      "keptLine": 574,
+      "selector": "body.game-page .card-back.rare-gold::after, body.game-page .card-back.rare-rainbow::after",
+      "property": "width",
+      "value": "400%",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 492,
+      "keptLine": 574,
+      "selector": "body.game-page .card-back.rare-gold::after, body.game-page .card-back.rare-rainbow::after",
+      "property": "height",
+      "value": "400%",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 493,
+      "keptLine": 575,
+      "selector": "body.game-page .card-back.rare-gold::after, body.game-page .card-back.rare-rainbow::after",
+      "property": "background",
+      "value": "linear-gradient(135deg, rgba(255,255,255,0) 42%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 58%)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 494,
+      "keptLine": 576,
+      "selector": "body.game-page .card-back.rare-gold::after, body.game-page .card-back.rare-rainbow::after",
+      "property": "animation",
+      "value": "metallic-sweep 3s infinite linear",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 495,
+      "keptLine": 577,
+      "selector": "body.game-page .card-back.rare-gold::after, body.game-page .card-back.rare-rainbow::after",
+      "property": "pointer-events",
+      "value": "none",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 496,
+      "keptLine": 577,
+      "selector": "body.game-page .card-back.rare-gold::after, body.game-page .card-back.rare-rainbow::after",
+      "property": "z-index",
+      "value": "5",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 500,
+      "keptLine": 579,
+      "selector": "from",
+      "property": "transform",
+      "value": "translate(0, 0)",
+      "important": false,
+      "context": "@keyframes metallic-sweep"
+    },
+    {
+      "line": 501,
+      "keptLine": 579,
+      "selector": "to",
+      "property": "transform",
+      "value": "translate(30%, 30%)",
+      "important": false,
+      "context": "@keyframes metallic-sweep"
+    },
+    {
+      "line": 514,
+      "keptLine": 583,
+      "selector": "body.game-page .style-aurora",
+      "property": "background",
+      "value": "linear-gradient(135deg, #003366, #660066, #006633, #003366)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 515,
+      "keptLine": 584,
+      "selector": "body.game-page .style-aurora",
+      "property": "background-size",
+      "value": "300% 300%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 518,
+      "keptLine": 585,
+      "selector": "body.game-page .style-aurora",
+      "property": "animation",
+      "value": "aurora-shift 6s ease infinite alternate",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 517,
+      "keptLine": 587,
+      "selector": "body.game-page .style-aurora",
+      "property": "box-shadow",
+      "value": "0 0 10px rgba(0, 255, 255, 0.7), 0 0 20px rgba(138, 43, 226, 0.5), inset 0 0 15px rgba(0, 255, 255, 0.3)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 519,
+      "keptLine": 591,
+      "selector": "body.game-page .style-aurora",
+      "property": "color",
+      "value": "#fff",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 506,
+      "keptLine": 595,
+      "selector": "body.game-page .pre-glow-ssr",
+      "property": "box-shadow",
+      "value": "0 0 30px 5px rgba(255, 215, 0, 0.5)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 507,
+      "keptLine": 596,
+      "selector": "body.game-page .pre-glow-ur",
+      "property": "box-shadow",
+      "value": "0 0 40px 10px rgba(0, 255, 255, 0.6), 0 0 60px 15px rgba(138, 43, 226, 0.4)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 508,
+      "keptLine": 597,
+      "selector": "body.game-page .pre-glow-ex",
+      "property": "box-shadow",
+      "value": "0 0 40px 10px rgba(255, 0, 0, 0.7), 0 0 70px 20px rgba(255, 215, 0, 0.5)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 447,
+      "keptLine": 600,
+      "selector": "body.game-page #gacha-performance",
+      "property": "justify-content",
+      "value": "center",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 448,
+      "keptLine": 600,
+      "selector": "body.game-page #gacha-performance",
+      "property": "align-items",
+      "value": "center",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 454,
+      "keptLine": 601,
+      "selector": "body.game-page .gacha-card-scene",
+      "property": "margin",
+      "value": "0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 455,
+      "keptLine": 601,
+      "selector": "body.game-page .gacha-card-scene",
+      "property": "transform-origin",
+      "value": "center center",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 548,
+      "keptLine": 603,
+      "selector": "0%",
+      "property": "background-position",
+      "value": "0% 50%",
+      "important": false,
+      "context": "@keyframes aurora-shift"
+    },
+    {
+      "line": 548,
+      "keptLine": 603,
+      "selector": "100%",
+      "property": "background-position",
+      "value": "100% 50%",
+      "important": false,
+      "context": "@keyframes aurora-shift"
+    },
+    {
+      "line": 533,
+      "keptLine": 634,
+      "selector": "body.game-page .style-gold",
+      "property": "border",
+      "value": "2px solid #c0c0c0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 595,
+      "keptLine": 638,
+      "selector": "body.game-page .pre-glow-ssr",
+      "property": "border",
+      "value": "2px solid #c0c0c0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 546,
+      "keptLine": 692,
+      "selector": "body.game-page #gacha-results-list .style-gold",
+      "property": "border",
+      "value": "1px solid #fff",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 374,
+      "keptLine": 1181,
+      "selector": "body.game-page #gacha-performance",
+      "property": "position",
+      "value": "absolute",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 600,
+      "keptLine": 1189,
+      "selector": "body.game-page #gacha-performance",
+      "property": "justify-content",
+      "value": "center",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 449,
+      "keptLine": 1191,
+      "selector": "body.game-page #gacha-performance",
+      "property": "overflow",
+      "value": "hidden",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 768,
+      "keptLine": 1217,
+      "selector": "body.game-page #gacha-stage",
+      "property": "position",
+      "value": "relative",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 796,
+      "keptLine": 1240,
+      "selector": "body.game-page .gacha-stage-vortex, body.game-page .gacha-stage-particles",
+      "property": "position",
+      "value": "absolute",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 798,
+      "keptLine": 1242,
+      "selector": "body.game-page .gacha-stage-vortex, body.game-page .gacha-stage-particles",
+      "property": "pointer-events",
+      "value": "none",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 799,
+      "keptLine": 1243,
+      "selector": "body.game-page .gacha-stage-vortex, body.game-page .gacha-stage-particles",
+      "property": "z-index",
+      "value": "0",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 843,
+      "keptLine": 1260,
+      "selector": "body.game-page .gacha-card-scene.premium-card",
+      "property": "height",
+      "value": "auto",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 845,
+      "keptLine": 1262,
+      "selector": "body.game-page .gacha-card-scene.premium-card",
+      "property": "margin",
+      "value": "0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 857,
+      "keptLine": 1273,
+      "selector": "body.game-page .premium-card .card-face",
+      "property": "display",
+      "value": "block",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 862,
+      "keptLine": 1278,
+      "selector": "body.game-page .premium-card .card-face",
+      "property": "padding",
+      "value": "0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 863,
+      "keptLine": 1279,
+      "selector": "body.game-page .premium-card .card-face",
+      "property": "border",
+      "value": "none",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 866,
+      "keptLine": 1282,
+      "selector": "body.game-page .premium-card .card-face",
+      "property": "background",
+      "value": "transparent",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 867,
+      "keptLine": 1283,
+      "selector": "body.game-page .premium-card .card-face",
+      "property": "box-shadow",
+      "value": "none",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 878,
+      "keptLine": 1290,
+      "selector": "body.game-page .premium-card-static .premium-card-front",
+      "property": "transform",
+      "value": "none",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1267,
+      "keptLine": 1597,
+      "selector": "body.game-page .gacha-card-scene.premium-card",
+      "property": "filter",
+      "value": "drop-shadow(0 16px 26px rgba(0,0,0,0.78))",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1568,
+      "keptLine": 1644,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "line-height",
+      "value": "1",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1270,
+      "keptLine": 1673,
+      "selector": "body.game-page .gacha-card-scene.premium-card.flipped",
+      "property": "transform",
+      "value": "rotateY(180deg) scale(1.01)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1608,
+      "keptLine": 1688,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-stars",
+      "property": "width",
+      "value": "36%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1615,
+      "keptLine": 1690,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-stars",
+      "property": "letter-spacing",
+      "value": "-0.08em",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1619,
+      "keptLine": 1694,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-name",
+      "property": "bottom",
+      "value": "auto",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1627,
+      "keptLine": 1699,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-name",
+      "property": "line-height",
+      "value": "1",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1265,
+      "keptLine": 1715,
+      "selector": "body.game-page .gacha-card-scene.premium-card",
+      "property": "transform-style",
+      "value": "preserve-3d",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1609,
+      "keptLine": 1753,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-stars",
+      "property": "height",
+      "value": "5%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1694,
+      "keptLine": 1759,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-name",
+      "property": "bottom",
+      "value": "auto",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1695,
+      "keptLine": 1760,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-name",
+      "property": "left",
+      "value": "21.5%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1696,
+      "keptLine": 1761,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-name",
+      "property": "right",
+      "value": "21.5%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1699,
+      "keptLine": 1764,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-name",
+      "property": "line-height",
+      "value": "1",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1631,
+      "keptLine": 1767,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-lb-plus",
+      "property": "font-size",
+      "value": "0.74em",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1632,
+      "keptLine": 1768,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-lb-plus",
+      "property": "margin-left",
+      "value": "0.05em",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1635,
+      "keptLine": 1771,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "top",
+      "value": "83.0%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1636,
+      "keptLine": 1772,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "bottom",
+      "value": "auto",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1637,
+      "keptLine": 1773,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "left",
+      "value": "26%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1638,
+      "keptLine": 1774,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "right",
+      "value": "26%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1639,
+      "keptLine": 1775,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "height",
+      "value": "3.2%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1643,
+      "keptLine": 1776,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "font-size",
+      "value": "clamp(6px, 2.25cqw, 9px)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1644,
+      "keptLine": 1777,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "line-height",
+      "value": "1",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1750,
+      "keptLine": 1824,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-stars",
+      "property": "top",
+      "value": "5.62%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1755,
+      "keptLine": 1829,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-stars",
+      "property": "letter-spacing",
+      "value": "-0.085em",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1759,
+      "keptLine": 1835,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-name",
+      "property": "bottom",
+      "value": "auto",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1764,
+      "keptLine": 1840,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-name",
+      "property": "line-height",
+      "value": "1",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1767,
+      "keptLine": 1843,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-lb-plus",
+      "property": "font-size",
+      "value": "0.74em",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1768,
+      "keptLine": 1844,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-lb-plus",
+      "property": "margin-left",
+      "value": "0.05em",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1771,
+      "keptLine": 1849,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "top",
+      "value": "83.0%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1772,
+      "keptLine": 1850,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "bottom",
+      "value": "auto",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1773,
+      "keptLine": 1851,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "left",
+      "value": "26%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1774,
+      "keptLine": 1852,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "right",
+      "value": "26%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1775,
+      "keptLine": 1853,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "height",
+      "value": "3.2%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1776,
+      "keptLine": 1854,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "font-size",
+      "value": "clamp(6px, 2.25cqw, 9px)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1777,
+      "keptLine": 1855,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "line-height",
+      "value": "1",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1550,
+      "keptLine": 1970,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-template",
+      "property": "border",
+      "value": "0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1551,
+      "keptLine": 1971,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-template",
+      "property": "outline",
+      "value": "0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1552,
+      "keptLine": 1972,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-template",
+      "property": "box-shadow",
+      "value": "none",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1957,
+      "keptLine": 2051,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-backdrop",
+      "property": "z-index",
+      "value": "0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1969,
+      "keptLine": 2063,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-template",
+      "property": "z-index",
+      "value": "3",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1970,
+      "keptLine": 2064,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-template",
+      "property": "border",
+      "value": "0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1971,
+      "keptLine": 2065,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-template",
+      "property": "outline",
+      "value": "0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1972,
+      "keptLine": 2066,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-template",
+      "property": "box-shadow",
+      "value": "none",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1973,
+      "keptLine": 2067,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-template",
+      "property": "filter",
+      "value": "none",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1835,
+      "keptLine": 2081,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-name",
+      "property": "bottom",
+      "value": "auto",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1840,
+      "keptLine": 2086,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-name",
+      "property": "line-height",
+      "value": "1",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1849,
+      "keptLine": 2093,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "top",
+      "value": "83.0%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1850,
+      "keptLine": 2094,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "bottom",
+      "value": "auto",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1851,
+      "keptLine": 2095,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "left",
+      "value": "26%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1852,
+      "keptLine": 2096,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "right",
+      "value": "26%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1853,
+      "keptLine": 2097,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "height",
+      "value": "3.2%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1854,
+      "keptLine": 2098,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "font-size",
+      "value": "clamp(6px, 2.25cqw, 9px)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1855,
+      "keptLine": 2099,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "line-height",
+      "value": "1",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1827,
+      "keptLine": 2297,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-stars",
+      "property": "height",
+      "value": "5.1%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1828,
+      "keptLine": 2298,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-stars",
+      "property": "font-size",
+      "value": "clamp(9.5px, 3.78cqw, 15.2px)",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 1829,
+      "keptLine": 2299,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-stars",
+      "property": "letter-spacing",
+      "value": "-0.085em",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2094,
+      "keptLine": 2305,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "bottom",
+      "value": "auto",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2099,
+      "keptLine": 2310,
+      "selector": "body.game-page .gacha-card-scene.premium-card .gacha-card-job",
+      "property": "line-height",
+      "value": "1",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2236,
+      "keptLine": 2324,
+      "selector": "body.game-page .gacha-card-scene.premium-card.rarity-ur .gacha-card-stars, body.game-page .gacha-card-scene.premium-card.rarity-ex .gacha-card-stars, body.game-page .gacha-card-scene.premium-card .premium-card-front.rarity-ur .gacha-card-stars, body.game-page .gacha-card-scene.premium-card .premium-card-front.rarity-ex .gacha-card-stars",
+      "property": "color",
+      "value": "#ffd978",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2237,
+      "keptLine": 2325,
+      "selector": "body.game-page .gacha-card-scene.premium-card.rarity-ur .gacha-card-stars, body.game-page .gacha-card-scene.premium-card.rarity-ex .gacha-card-stars, body.game-page .gacha-card-scene.premium-card .premium-card-front.rarity-ur .gacha-card-stars, body.game-page .gacha-card-scene.premium-card .premium-card-front.rarity-ex .gacha-card-stars",
+      "property": "-webkit-text-fill-color",
+      "value": "#ffd978",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2279,
+      "keptLine": 2336,
+      "selector": "body.game-page .gacha-card-scene.premium-card.rarity-ur .gacha-card-job, body.game-page .gacha-card-scene.premium-card.rarity-ex .gacha-card-job, body.game-page .gacha-card-scene.premium-card .premium-card-front.rarity-ur .gacha-card-job, body.game-page .gacha-card-scene.premium-card .premium-card-front.rarity-ex .gacha-card-job",
+      "property": "color",
+      "value": "#d5d2e8",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2280,
+      "keptLine": 2337,
+      "selector": "body.game-page .gacha-card-scene.premium-card.rarity-ur .gacha-card-job, body.game-page .gacha-card-scene.premium-card.rarity-ex .gacha-card-job, body.game-page .gacha-card-scene.premium-card .premium-card-front.rarity-ur .gacha-card-job, body.game-page .gacha-card-scene.premium-card .premium-card-front.rarity-ex .gacha-card-job",
+      "property": "-webkit-text-fill-color",
+      "value": "#d5d2e8",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 7,
+      "keptLine": 2423,
+      "selector": ":root",
+      "property": "--bg-color",
+      "value": "#101010",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 8,
+      "keptLine": 2424,
+      "selector": ":root",
+      "property": "--text-color",
+      "value": "#fff",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 8,
+      "keptLine": 2425,
+      "selector": ":root",
+      "property": "--accent",
+      "value": "#ffd700",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 8,
+      "keptLine": 2428,
+      "selector": ":root",
+      "property": "--danger",
+      "value": "#ff4444",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 15,
+      "keptLine": 2512,
+      "selector": "body.game-page",
+      "property": "color",
+      "value": "var(--text-color)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 64,
+      "keptLine": 2592,
+      "selector": "body.game-page canvas",
+      "property": "image-rendering",
+      "value": "pixelated",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 321,
+      "keptLine": 2962,
+      "selector": "body.game-page #btn-battle-speed",
+      "property": "min-width",
+      "value": "68px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 332,
+      "keptLine": 3714,
+      "selector": "body.game-page #battle-target-window, body.game-page #battle-list-window",
+      "property": "display",
+      "value": "none",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2391,
+      "keptLine": 3756,
+      "selector": "body.game-page .sub-screen-bottom-panel",
+      "property": "flex",
+      "value": "0 0 auto",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2392,
+      "keptLine": 3757,
+      "selector": "body.game-page .sub-screen-bottom-panel",
+      "property": "padding",
+      "value": "10px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2393,
+      "keptLine": 3758,
+      "selector": "body.game-page .sub-screen-bottom-panel",
+      "property": "background",
+      "value": "linear-gradient(180deg, #111722, #07090d)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2394,
+      "keptLine": 3759,
+      "selector": "body.game-page .sub-screen-bottom-panel",
+      "property": "border-top",
+      "value": "1px solid rgba(244, 201, 93, 0.38)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2395,
+      "keptLine": 3760,
+      "selector": "body.game-page .sub-screen-bottom-panel",
+      "property": "display",
+      "value": "flex",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2396,
+      "keptLine": 3761,
+      "selector": "body.game-page .sub-screen-bottom-panel",
+      "property": "justify-content",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2397,
+      "keptLine": 3762,
+      "selector": "body.game-page .sub-screen-bottom-panel",
+      "property": "align-items",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2398,
+      "keptLine": 3763,
+      "selector": "body.game-page .sub-screen-bottom-panel",
+      "property": "z-index",
+      "value": "5",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2399,
+      "keptLine": 3764,
+      "selector": "body.game-page .sub-screen-bottom-panel",
+      "property": "pointer-events",
+      "value": "auto",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2400,
+      "keptLine": 3765,
+      "selector": "body.game-page .sub-screen-bottom-panel",
+      "property": "box-shadow",
+      "value": "0 -10px 24px rgba(0, 0, 0, 0.28)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2404,
+      "keptLine": 3769,
+      "selector": "body.game-page .sub-screen-back-btn",
+      "property": "width",
+      "value": "100%",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2405,
+      "keptLine": 3770,
+      "selector": "body.game-page .sub-screen-back-btn",
+      "property": "height",
+      "value": "42px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2406,
+      "keptLine": 3771,
+      "selector": "body.game-page .sub-screen-back-btn",
+      "property": "font-size",
+      "value": "14px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2407,
+      "keptLine": 3772,
+      "selector": "body.game-page .sub-screen-back-btn",
+      "property": "font-weight",
+      "value": "bold",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2412,
+      "keptLine": 3776,
+      "selector": "body.game-page .sub-screen .flex-col-container",
+      "property": "min-height",
+      "value": "0",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2416,
+      "keptLine": 3780,
+      "selector": "body.game-page .sub-screen .scroll-area",
+      "property": "min-height",
+      "value": "0",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3873,
+      "keptLine": 3936,
+      "selector": "body.game-page #initial-loading-overlay",
+      "property": "position",
+      "value": "absolute",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3874,
+      "keptLine": 3937,
+      "selector": "body.game-page #initial-loading-overlay",
+      "property": "inset",
+      "value": "0",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3875,
+      "keptLine": 3938,
+      "selector": "body.game-page #initial-loading-overlay",
+      "property": "z-index",
+      "value": "999999",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3876,
+      "keptLine": 3939,
+      "selector": "body.game-page #initial-loading-overlay",
+      "property": "background",
+      "value": "radial-gradient(circle at 50% 38%, rgba(244, 201, 93, 0.12), transparent 34%), rgba(0, 0, 0, 0.96)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3879,
+      "keptLine": 3942,
+      "selector": "body.game-page #initial-loading-overlay",
+      "property": "display",
+      "value": "flex",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3880,
+      "keptLine": 3943,
+      "selector": "body.game-page #initial-loading-overlay",
+      "property": "justify-content",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3881,
+      "keptLine": 3944,
+      "selector": "body.game-page #initial-loading-overlay",
+      "property": "align-items",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3882,
+      "keptLine": 3945,
+      "selector": "body.game-page #initial-loading-overlay",
+      "property": "pointer-events",
+      "value": "auto",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3886,
+      "keptLine": 3949,
+      "selector": "body.game-page #initial-loading-overlay.is-hidden",
+      "property": "opacity",
+      "value": "0",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3887,
+      "keptLine": 3950,
+      "selector": "body.game-page #initial-loading-overlay.is-hidden",
+      "property": "pointer-events",
+      "value": "none",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3888,
+      "keptLine": 3951,
+      "selector": "body.game-page #initial-loading-overlay.is-hidden",
+      "property": "transition",
+      "value": "opacity 0.35s ease",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3892,
+      "keptLine": 3955,
+      "selector": "body.game-page .initial-loading-box",
+      "property": "width",
+      "value": "min(82%, 300px)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3893,
+      "keptLine": 3956,
+      "selector": "body.game-page .initial-loading-box",
+      "property": "padding",
+      "value": "24px 18px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3894,
+      "keptLine": 3957,
+      "selector": "body.game-page .initial-loading-box",
+      "property": "border",
+      "value": "2px solid rgba(244, 201, 93, 0.75)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3895,
+      "keptLine": 3958,
+      "selector": "body.game-page .initial-loading-box",
+      "property": "border-radius",
+      "value": "12px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3896,
+      "keptLine": 3959,
+      "selector": "body.game-page .initial-loading-box",
+      "property": "background",
+      "value": "linear-gradient(180deg, #111722, #07090d)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3897,
+      "keptLine": 3960,
+      "selector": "body.game-page .initial-loading-box",
+      "property": "box-shadow",
+      "value": "0 18px 48px rgba(0, 0, 0, 0.7), 0 0 28px rgba(244, 201, 93, 0.18)",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3900,
+      "keptLine": 3963,
+      "selector": "body.game-page .initial-loading-box",
+      "property": "text-align",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3904,
+      "keptLine": 3967,
+      "selector": "body.game-page .initial-loading-monster",
+      "property": "width",
+      "value": "120px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3905,
+      "keptLine": 3968,
+      "selector": "body.game-page .initial-loading-monster",
+      "property": "height",
+      "value": "120px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3906,
+      "keptLine": 3969,
+      "selector": "body.game-page .initial-loading-monster",
+      "property": "object-fit",
+      "value": "contain",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3907,
+      "keptLine": 3970,
+      "selector": "body.game-page .initial-loading-monster",
+      "property": "image-rendering",
+      "value": "auto",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3908,
+      "keptLine": 3971,
+      "selector": "body.game-page .initial-loading-monster",
+      "property": "margin-bottom",
+      "value": "14px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3909,
+      "keptLine": 3972,
+      "selector": "body.game-page .initial-loading-monster",
+      "property": "filter",
+      "value": "drop-shadow(0 8px 12px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 10px rgba(244, 201, 93, 0.25))",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3915,
+      "keptLine": 3978,
+      "selector": "body.game-page .initial-loading-text",
+      "property": "color",
+      "value": "#ffd700",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3916,
+      "keptLine": 3979,
+      "selector": "body.game-page .initial-loading-text",
+      "property": "font-size",
+      "value": "18px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3917,
+      "keptLine": 3980,
+      "selector": "body.game-page .initial-loading-text",
+      "property": "font-weight",
+      "value": "bold",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3918,
+      "keptLine": 3981,
+      "selector": "body.game-page .initial-loading-text",
+      "property": "letter-spacing",
+      "value": "1px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3919,
+      "keptLine": 3982,
+      "selector": "body.game-page .initial-loading-text",
+      "property": "animation",
+      "value": "loading-pulse 1.2s ease-in-out infinite",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 3924,
+      "keptLine": 3987,
+      "selector": "0%, 100%",
+      "property": "opacity",
+      "value": "0.55",
+      "important": false,
+      "context": "@keyframes loading-pulse"
+    },
+    {
+      "line": 3927,
+      "keptLine": 3990,
+      "selector": "50%",
+      "property": "opacity",
+      "value": "1",
+      "important": false,
+      "context": "@keyframes loading-pulse"
+    },
+    {
+      "line": 2435,
+      "keptLine": 4439,
+      "selector": "body.title-page",
+      "property": "margin",
+      "value": "0",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2436,
+      "keptLine": 4443,
+      "selector": "body.title-page",
+      "property": "height",
+      "value": "100dvh",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2437,
+      "keptLine": 4445,
+      "selector": "body.title-page",
+      "property": "display",
+      "value": "flex",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2439,
+      "keptLine": 4446,
+      "selector": "body.title-page",
+      "property": "align-items",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2434,
+      "keptLine": 4449,
+      "selector": "body.title-page",
+      "property": "font-family",
+      "value": "'DotGothic16', sans-serif",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2443,
+      "keptLine": 4452,
+      "selector": "body.title-page",
+      "property": "user-select",
+      "value": "none",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2448,
+      "keptLine": 4573,
+      "selector": "body.title-page .title-logo img",
+      "property": "height",
+      "value": "auto",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2461,
+      "keptLine": 4602,
+      "selector": "body.title-page .btn",
+      "property": "font-family",
+      "value": "'DotGothic16', sans-serif",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2462,
+      "keptLine": 4604,
+      "selector": "body.title-page .btn",
+      "property": "cursor",
+      "value": "pointer",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2465,
+      "keptLine": 4614,
+      "selector": "body.title-page .btn:disabled",
+      "property": "cursor",
+      "value": "default",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2476,
+      "keptLine": 4678,
+      "selector": "body.title-page .modal-title",
+      "property": "text-align",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2476,
+      "keptLine": 4679,
+      "selector": "body.title-page .modal-title",
+      "property": "font-size",
+      "value": "18px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2452,
+      "keptLine": 4702,
+      "selector": "body.title-page input[type=\"text\"]",
+      "property": "color",
+      "value": "#fff",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2453,
+      "keptLine": 4703,
+      "selector": "body.title-page input[type=\"text\"]",
+      "property": "font-family",
+      "value": "inherit",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2453,
+      "keptLine": 4705,
+      "selector": "body.title-page input[type=\"text\"]",
+      "property": "text-align",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2477,
+      "keptLine": 4779,
+      "selector": "body.title-page .btn-modal",
+      "property": "font-size",
+      "value": "14px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2480,
+      "keptLine": 4783,
+      "selector": "body.title-page hr",
+      "property": "width",
+      "value": "100%",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 2480,
+      "keptLine": 4784,
+      "selector": "body.title-page hr",
+      "property": "border",
+      "value": "0",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5352,
+      "keptLine": 5692,
+      "selector": "body.game-page .ally-archive-card-stage",
+      "property": "justify-content",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5351,
+      "keptLine": 5693,
+      "selector": "body.game-page .ally-archive-card-stage",
+      "property": "align-items",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5356,
+      "keptLine": 5694,
+      "selector": "body.game-page .ally-archive-card-stage",
+      "property": "width",
+      "value": "100%",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5357,
+      "keptLine": 5698,
+      "selector": "body.game-page .ally-archive-card-stage",
+      "property": "overflow",
+      "value": "visible",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5402,
+      "keptLine": 5761,
+      "selector": "body.game-page #field-minimap-hotspot",
+      "property": "top",
+      "value": "10px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5403,
+      "keptLine": 5762,
+      "selector": "body.game-page #field-minimap-hotspot",
+      "property": "right",
+      "value": "10px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5404,
+      "keptLine": 5763,
+      "selector": "body.game-page #field-minimap-hotspot",
+      "property": "width",
+      "value": "80px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5405,
+      "keptLine": 5764,
+      "selector": "body.game-page #field-minimap-hotspot",
+      "property": "height",
+      "value": "80px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5416,
+      "keptLine": 5768,
+      "selector": "body.game-page #field-minimap-restore",
+      "property": "top",
+      "value": "10px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5417,
+      "keptLine": 5769,
+      "selector": "body.game-page #field-minimap-restore",
+      "property": "right",
+      "value": "10px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 6083,
+      "keptLine": 6111,
+      "selector": "body.game-page #canvas-wrapper",
+      "property": "--field-minimap-width",
+      "value": "80px",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 5479,
+      "keptLine": 6119,
+      "selector": "body.game-page #story-ui-overlay",
+      "property": "inset",
+      "value": "0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 5480,
+      "keptLine": 6120,
+      "selector": "body.game-page #story-ui-overlay",
+      "property": "width",
+      "value": "100%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 5481,
+      "keptLine": 6121,
+      "selector": "body.game-page #story-ui-overlay",
+      "property": "height",
+      "value": "100%",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 5482,
+      "keptLine": 6123,
+      "selector": "body.game-page #story-ui-overlay",
+      "property": "max-width",
+      "value": "none",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 5483,
+      "keptLine": 6124,
+      "selector": "body.game-page #story-ui-overlay",
+      "property": "max-height",
+      "value": "none",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 5376,
+      "keptLine": 6131,
+      "selector": "body.game-page #field-info-box",
+      "property": "border-radius",
+      "value": "0",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 5744,
+      "keptLine": 6133,
+      "selector": "body.game-page #field-info-box",
+      "property": "box-shadow",
+      "value": "none",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 169,
+      "keptLine": 6209,
+      "selector": "body.game-page .msg-box",
+      "property": "text-align",
+      "value": "center",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 170,
+      "keptLine": 6224,
+      "selector": "body.game-page #action-indicator",
+      "property": "display",
+      "value": "none",
+      "important": false,
+      "context": ""
+    },
+    {
+      "line": 6033,
+      "keptLine": 6237,
+      "selector": "body.game-page #action-indicator",
+      "property": "animation",
+      "value": "none",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2631,
+      "keptLine": 6255,
+      "selector": "body.game-page #controls",
+      "property": "height",
+      "value": "198px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2639,
+      "keptLine": 6261,
+      "selector": "body.game-page .dpad",
+      "property": "grid-template-columns",
+      "value": "58px 58px 58px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2640,
+      "keptLine": 6262,
+      "selector": "body.game-page .dpad",
+      "property": "grid-template-rows",
+      "value": "58px 58px 58px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 6257,
+      "keptLine": 6295,
+      "selector": "body.game-page #controls",
+      "property": "align-items",
+      "value": "center",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 6261,
+      "keptLine": 6317,
+      "selector": "body.game-page .dpad",
+      "property": "grid-template-columns",
+      "value": "58px 58px 58px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 6262,
+      "keptLine": 6318,
+      "selector": "body.game-page .dpad",
+      "property": "grid-template-rows",
+      "value": "58px 58px 58px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2641,
+      "keptLine": 6319,
+      "selector": "body.game-page .dpad",
+      "property": "gap",
+      "value": "6px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 6267,
+      "keptLine": 6329,
+      "selector": "body.game-page .btn-d",
+      "property": "font-size",
+      "value": "22px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 2662,
+      "keptLine": 6335,
+      "selector": "body.game-page .action-pad",
+      "property": "gap",
+      "value": "14px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 6277,
+      "keptLine": 6346,
+      "selector": "body.game-page .btn-act",
+      "property": "min-height",
+      "value": "54px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 6278,
+      "keptLine": 6347,
+      "selector": "body.game-page .btn-act",
+      "property": "height",
+      "value": "54px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 6279,
+      "keptLine": 6348,
+      "selector": "body.game-page .btn-act",
+      "property": "font-size",
+      "value": "14px",
+      "important": true,
+      "context": ""
+    },
+    {
+      "line": 6280,
+      "keptLine": 6349,
+      "selector": "body.game-page .btn-act",
+      "property": "line-height",
+      "value": "1.2",
+      "important": true,
+      "context": ""
+    }
+  ]
+}

@@ -1118,7 +1118,7 @@ const App = {
     },
 
     // --- 回想 / 別視点シーン用の一時Scene Context ---
-    // 永続saveへ一時状態を混ぜず、終了時に現在世界のフィールド・所持状態・partyを復元する。
+    // 一時状態と現在世界の復元snapshotを対で保存し、終了時に現在世界のフィールド・所持状態・partyを復元する。
     sceneContextStack: [],
 
     cloneSceneContextValue: (value) => {
@@ -1144,11 +1144,231 @@ const App = {
         return stack.some(context => context?.suppressSave !== false);
     },
 
+    // 回想中の一時状態と、回想開始前の復元用snapshotを同じセーブpayloadへ保存する。
+    // これにより更新/手動ロード後も「現在の回想位置」から継続し、SCENE_ENDでは現在時間へ正しく戻せる。
+    syncSceneContextResumeMetadata: () => {
+        if (!App.data || typeof App.data !== 'object') return false;
+        if (!App.data.system || typeof App.data.system !== 'object' || Array.isArray(App.data.system)) App.data.system = {};
+        const stack = Array.isArray(App.sceneContextStack) ? App.sceneContextStack : [];
+        if (!stack.length) {
+            if (Object.prototype.hasOwnProperty.call(App.data.system, 'sceneContextResume')) delete App.data.system.sceneContextResume;
+            return false;
+        }
+        App.data.system.sceneContextResume = {
+            version: 1,
+            savedAt: Date.now(),
+            visibleSceneId: App.getVisibleSceneId(),
+            stack: App.cloneSceneContextValue(stack)
+        };
+        return true;
+    },
+
+    restoreSceneContextResumeMetadata: () => {
+        if (!App.data || typeof App.data !== 'object') return false;
+        const resume = App.data.system?.sceneContextResume;
+        const stack = Array.isArray(resume?.stack) ? App.cloneSceneContextValue(resume.stack) : null;
+        App.sceneContextStack = [];
+        if (!stack?.length) return false;
+        const valid = stack.every(context => context && typeof context === 'object' && context.snapshot && typeof context.snapshot === 'object');
+        if (!valid) {
+            delete App.data.system.sceneContextResume;
+            return false;
+        }
+        App.sceneContextStack = stack;
+        const active = App.getActiveSceneContext();
+        if (active?.visualPreset) App.applySceneContextVisualFilter(active.visualPreset);
+        return true;
+    },
+
+    isLegacyLightPalaceFlashbackData: (data = App.data) => {
+        if (!data || typeof data !== 'object') return false;
+        if (Array.isArray(data.system?.sceneContextResume?.stack) && data.system.sceneContextResume.stack.length) return false;
+        const flags = data.progress?.flags || {};
+        return flags.lightPalaceFlashbackActive === true && flags.lightPalaceFlashbackCompleted !== true;
+    },
+
+    isCompatibleLightPalaceFlashbackOrigin: (originData, flashbackData = App.data) => {
+        if (!originData || typeof originData !== 'object' || !flashbackData || typeof flashbackData !== 'object') return false;
+        if (App.isLegacyLightPalaceFlashbackData(originData)) return false;
+        if (!Array.isArray(originData.characters) || !originData.characters.length) return false;
+        const originProgress = originData.progress || {};
+        const flashProgress = flashbackData.progress || {};
+        const originStep = Number(originProgress.storyStep || 0);
+        const flashStep = Number(flashProgress.storyStep || 0);
+        if (Number.isFinite(originStep) && Number.isFinite(flashStep) && originStep !== flashStep) return false;
+        const originFlags = originProgress.flags || {};
+        // 回想直前のクロード説明を通過したセーブだけを復元元にする。
+        // 古すぎる通常セーブを自動採用して所持品や仲間状態を巻き戻さないための安全条件。
+        if (originFlags.lightPalaceFlashbackReady !== true) return false;
+        if (originFlags.lightPalaceFlashbackCompleted === true || originFlags.lightPalaceCleared === true) return false;
+        return true;
+    },
+
+    captureSceneContextSnapshotFromData: (data, options = {}) => {
+        if (!data || typeof data !== 'object') return null;
+        const clone = App.cloneSceneContextValue;
+        const progress = data.progress || {};
+        const location = data.location || {};
+        return {
+            sourceSceneId: options.sourceSceneId || 'field',
+            data: {
+                location: clone(data.location),
+                characters: clone(data.characters),
+                party: clone(data.party),
+                items: clone(data.items),
+                inventory: clone(data.inventory),
+                gold: data.gold,
+                gems: data.gems,
+                book: clone(data.book),
+                stats: clone(data.stats),
+                dungeon: clone(data.dungeon),
+                battle: clone(data.battle),
+                mapReturnPoint: clone(data.mapReturnPoint)
+            },
+            progress: {
+                floor: progress.floor,
+                flags: clone(progress.flags),
+                worldState: clone(progress.worldState),
+                storyCharacters: clone(progress.storyCharacters),
+                storyRewards: clone(progress.storyRewards),
+                quests: clone(progress.quests),
+                openedChests: clone(progress.openedChests),
+                defeatedBosses: clone(progress.defeatedBosses),
+                visitedFixedMaps: clone(progress.visitedFixedMaps),
+                fixedDungeonVisitedMaps: clone(progress.fixedDungeonVisitedMaps),
+                mapChanges: clone(progress.mapChanges),
+                clearedDungeons: clone(progress.clearedDungeons),
+                unlocked: clone(progress.unlocked)
+            },
+            field: {
+                x: Number(location.x || 0),
+                y: Number(location.y || 0),
+                dir: Number.isFinite(Number(options.dir)) ? Number(options.dir) : 3
+            },
+            visual: { fieldFilter: options.fieldFilter || '' }
+        };
+    },
+
+    attachLegacyLightPalaceFlashbackOrigin: (flashbackData, originData) => {
+        if (!App.isLegacyLightPalaceFlashbackData(flashbackData)) return false;
+        if (!App.isCompatibleLightPalaceFlashbackOrigin(originData, flashbackData)) return false;
+        const originSnapshot = App.captureSceneContextSnapshotFromData(originData, { sourceSceneId:'field' });
+        const currentSnapshot = App.captureSceneContextSnapshotFromData(flashbackData, { sourceSceneId:'field' });
+        if (!originSnapshot || !currentSnapshot) return false;
+        const clone = App.cloneSceneContextValue;
+        const flags = flashbackData.progress?.flags || {};
+        const postVeld = flags.lightPalaceFlashbackRetreatOrdered === true;
+        const checkpointId = postVeld ? 'post_veld' : 'saint_room';
+        const context = {
+            token: `scene-context-legacy-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+            type: 'story',
+            suppressSave: true,
+            snapshot: originSnapshot,
+            visualPreset: 'light-palace-memory',
+            startedAt: Date.now(),
+            checkpoints: { [checkpointId]: clone(currentSnapshot) },
+            activeCheckpointId: checkpointId,
+            restartOnWipeout: true,
+            wipeoutEventId: postVeld ? 'light_palace_flashback_retry_post_veld' : 'light_palace_flashback_retry_start',
+            carryoverCharacterIds: [204, 305, 304, 401],
+            mergeLoot: true,
+            exitTrigger: { areaKey:'LIGHT_PALACE', floor:1, eventId:'light_palace_flashback_exit_veld' },
+            returnConstraint: { areaKey:'THUNDER_FORT', floor:1, fallbackX:18, fallbackY:22 },
+            isolatedInventory: true,
+            isolateCharacters: true,
+            lockPartyComposition: false,
+            isolatedBaseline: {
+                items: clone(flashbackData.items || {}),
+                inventory: clone(flashbackData.inventory || []),
+                gold: Number(flashbackData.gold || 0),
+                gems: Number(flashbackData.gems || 0),
+                globalOpenedChests: clone(originData.progress?.openedChests || {})
+            },
+            recoveredFromLegacySave: true
+        };
+        if (!flashbackData.system || typeof flashbackData.system !== 'object' || Array.isArray(flashbackData.system)) flashbackData.system = {};
+        flashbackData.system.sceneContextResume = {
+            version: 1,
+            savedAt: Date.now(),
+            visibleSceneId: 'field',
+            stack: [context]
+        };
+        return true;
+    },
+
+    recoverLegacyLightPalaceFlashbackContext: async () => {
+        if (App.getActiveSceneContext()) return true;
+        // Phase 11以降のセーブには復元用Scene Context stackがpayload内に存在する。
+        // 起動順やイベント再開順の都合でメモリ上のstackだけ空の場合は、
+        // 「legacyではない」と判定して諦める前に必ずresume metadataから戻す。
+        if (Array.isArray(App.data?.system?.sceneContextResume?.stack)
+            && App.data.system.sceneContextResume.stack.length
+            && App.restoreSceneContextResumeMetadata?.()) {
+            App.syncSceneContextResumeMetadata?.();
+            return !!App.getActiveSceneContext();
+        }
+        if (!App.isLegacyLightPalaceFlashbackData(App.data)) return false;
+        const candidates = [];
+        if (typeof SaveSlots !== 'undefined' && typeof SaveSlots.listManualSlotRecords === 'function' && typeof SaveSlots.parsePayload === 'function') {
+            try {
+                const records = await SaveSlots.listManualSlotRecords();
+                for (const record of records || []) {
+                    try {
+                        const data = SaveSlots.parsePayload(record?.payload);
+                        if (App.isCompatibleLightPalaceFlashbackOrigin(data, App.data)) {
+                            candidates.push({ data, updatedAt: Date.parse(record?.updatedAt || data?.system?.lastSavedAt || '') || 0 });
+                        }
+                    } catch (_) {}
+                }
+            } catch (error) {
+                console.warn('[SCENE CONTEXT] 旧回想セーブの復元元検索に失敗しました。', error);
+            }
+        }
+        candidates.sort((left, right) => right.updatedAt - left.updatedAt);
+        const origin = candidates[0]?.data || null;
+        if (!origin || !App.attachLegacyLightPalaceFlashbackOrigin(App.data, origin)) return false;
+        const restored = App.restoreSceneContextResumeMetadata();
+        if (restored) {
+            App.syncSceneContextResumeMetadata?.();
+            console.info('[SCENE CONTEXT] Phase10以前の光の宮殿回想セーブを通常セーブから復元しました。');
+        }
+        return restored;
+    },
+
+    // イベント途中の再読込では、セーブpayloadにScene Contextが残っていても
+    // App.sceneContextStackだけがまだ復元されていない瞬間がある。
+    // SCENE_PARTY / CHECKPOINT / ENDなどの直前で必ず再同期して進行不能を防ぐ。
+    ensureActiveSceneContext: async () => {
+        if (App.getActiveSceneContext()) return true;
+        if (Array.isArray(App.data?.system?.sceneContextResume?.stack)
+            && App.data.system.sceneContextResume.stack.length
+            && App.restoreSceneContextResumeMetadata?.()) {
+            if (App.getActiveSceneContext()) return true;
+        }
+        if (typeof App.recoverLegacyLightPalaceFlashbackContext === 'function') {
+            const recovered = await App.recoverLegacyLightPalaceFlashbackContext();
+            if (recovered && App.getActiveSceneContext()) return true;
+        }
+        return !!App.getActiveSceneContext();
+    },
+
     getSceneVisualFilterCss: (preset) => {
         if (!preset) return '';
         if (typeof preset === 'string' && preset.includes('(')) return preset;
         const key = String(preset).toLowerCase();
+        const lightPalaceMemoryFilter = 'sepia(0.55) saturate(0.88) contrast(1.10) brightness(0.99)';
+        if (key === 'light-palace-memory') {
+            // 光の宮殿回想は人物・ボス・床術式が同系色へ潰れすぎないよう、
+            // 記憶色は残しつつ通常sepiaより元の色差を少し戻す。
+            return lightPalaceMemoryFilter;
+        }
         if (key === 'sepia' || key === 'memory' || key === 'flashback') {
+            // Phase 26以前の途中セーブはvisualPreset='sepia'を保持しているため、
+            // 回想フラグが生きている間だけ新presetへ読み替えて更新直後の再開にも反映する。
+            const flags = App.data?.progress?.flags || {};
+            if (flags.lightPalaceFlashbackActive === true && flags.lightPalaceFlashbackCompleted !== true) {
+                return lightPalaceMemoryFilter;
+            }
             return 'sepia(0.72) saturate(0.72) contrast(1.08) brightness(0.96)';
         }
         if (key === 'desaturated') return 'saturate(0.45) contrast(1.04)';
@@ -1263,6 +1483,7 @@ const App = {
             carryoverCharacterIds: Array.isArray(options.carryoverCharacterIds) ? options.carryoverCharacterIds.map(Number).filter(Number.isFinite) : [],
             mergeLoot: options.mergeLoot === true,
             exitTrigger: options.exitTrigger && typeof options.exitTrigger === 'object' ? App.cloneSceneContextValue(options.exitTrigger) : null,
+            returnConstraint: options.returnConstraint && typeof options.returnConstraint === 'object' ? App.cloneSceneContextValue(options.returnConstraint) : null,
             isolatedInventory: options.isolateInventory === true,
             isolateCharacters: options.isolateCharacters === true,
             lockPartyComposition: options.lockPartyComposition === true,
@@ -1367,6 +1588,39 @@ const App = {
             ally.currentMp = stats.maxMp;
         }
         return changed;
+    },
+
+    // isolateCharactersの回想内だけで使う離脱処理。
+    // 編成から外すためのuidを先に確保し、party -> characters -> story stateの順で
+    // 一つの処理として更新する。通常時間側のsnapshotやLB carryoverには触れない。
+    removeSceneContextAlly: (charId, options = {}) => {
+        const context = App.getActiveSceneContext();
+        const id = Number(charId);
+        if (!context || context.isolateCharacters !== true || !Number.isFinite(id) || !App.data) return false;
+        const character = App.getStoryAllyCharacter(id);
+        const uid = character?.uid != null ? String(character.uid) : null;
+
+        if (Array.isArray(App.data.party)) {
+            App.data.party = App.data.party.map(slot => {
+                if (slot == null) return null;
+                if (uid && String(slot) === uid) return null;
+                const slotChar = Array.isArray(App.data.characters)
+                    ? App.data.characters.find(char => String(char?.uid ?? '') === String(slot))
+                    : null;
+                return Number(slotChar?.charId) === id ? null : slot;
+            });
+        }
+        if (Array.isArray(App.data.characters)) {
+            App.data.characters = App.data.characters.filter(char => Number(char?.charId) !== id);
+        }
+        const states = App.ensureStoryCharacterStates(App.data);
+        states[String(id)] = { ...App.getDefaultStoryCharacterState() };
+
+        // Scene Context内の離脱なので、通常時間側へは保存せず回想payloadだけ同期する。
+        App.syncSceneContextResumeMetadata?.();
+        if (typeof Menu !== 'undefined') Menu.renderPartyBar?.();
+        if (options.save === true && typeof App.save === 'function') App.save();
+        return true;
     },
 
     setSceneContextParty: (partySpecs = [], options = {}) => {
@@ -1494,6 +1748,56 @@ const App = {
         });
     },
 
+    getSceneContextReturnConstraint: (context = App.getActiveSceneContext()) => {
+        if (context?.returnConstraint && typeof context.returnConstraint === 'object') {
+            return App.cloneSceneContextValue(context.returnConstraint);
+        }
+        // Phase 11-16 saves may already contain a valid Scene Context but predate returnConstraint.
+        // The Light Palace flashback has one unambiguous present-time destination, so provide a
+        // compatibility constraint instead of trusting a stale/recovered snapshot location forever.
+        if (String(context?.exitTrigger?.eventId || '') === 'light_palace_flashback_exit_veld') {
+            return { areaKey:'THUNDER_FORT', floor:1, fallbackX:18, fallbackY:22 };
+        }
+        return null;
+    },
+
+    applySceneContextReturnConstraint: (context) => {
+        if (!App.data || !context) return false;
+        const constraint = App.getSceneContextReturnConstraint(context);
+        if (!constraint?.areaKey) return false;
+        if (!App.data.location || typeof App.data.location !== 'object') App.data.location = {};
+        if (!App.data.progress || typeof App.data.progress !== 'object') App.data.progress = {};
+
+        const expectedArea = String(constraint.areaKey);
+        const expectedFloor = Number(constraint.floor);
+        const areaMismatch = String(App.data.location.area || '') !== expectedArea;
+        const floorMismatch = Number.isFinite(expectedFloor) && Number(App.data.progress.floor || 0) !== expectedFloor;
+        const needsFallbackPosition = areaMismatch || floorMismatch
+            || !Number.isFinite(Number(App.data.location.x))
+            || !Number.isFinite(Number(App.data.location.y));
+
+        App.data.location.area = expectedArea;
+        const worldKey = constraint.worldKey || STORY_DATA?.areas?.[expectedArea]?.worldKey;
+        if (worldKey) App.data.location.worldKey = worldKey;
+        if (Number.isFinite(expectedFloor)) App.data.progress.floor = expectedFloor;
+        if (areaMismatch || floorMismatch) {
+            // A recovered pre-Phase17 flashback context can carry a LIGHT_PALACE dungeon payload as its
+            // stale origin. Do not combine that payload with the forced THUNDER_FORT location.
+            App.data.dungeon = {};
+            App.data.mapReturnPoint = null;
+        }
+        if (needsFallbackPosition) {
+            if (Number.isFinite(Number(constraint.fallbackX))) App.data.location.x = Number(constraint.fallbackX);
+            if (Number.isFinite(Number(constraint.fallbackY))) App.data.location.y = Number(constraint.fallbackY);
+        }
+        if (typeof Field !== 'undefined') {
+            Field.x = Number(App.data.location.x || 0);
+            Field.y = Number(App.data.location.y || 0);
+            if (Number.isFinite(expectedFloor) && typeof Dungeon !== 'undefined') Dungeon.floor = expectedFloor;
+        }
+        return true;
+    },
+
     endSceneContext: (token = null, options = {}) => {
         const context = App.getActiveSceneContext();
         if (!context) return false;
@@ -1504,10 +1808,12 @@ const App = {
         const sceneProgress = context.isolatedInventory ? { openedChests: App.cloneSceneContextValue(App.data.progress?.openedChests || {}) } : null;
         App.sceneContextStack.pop();
         if (!App.restoreSceneContextSnapshot(context.snapshot)) return false;
+        App.applySceneContextReturnConstraint?.(context);
         if (!App.data.progress || typeof App.data.progress !== 'object') App.data.progress = {};
         if (!App.data.progress.storyCharacterCarryover || typeof App.data.progress.storyCharacterCarryover !== 'object') App.data.progress.storyCharacterCarryover = {};
         Object.entries(carryover).forEach(([id, value]) => { App.data.progress.storyCharacterCarryover[id] = value; });
         App.mergeSceneContextLoot(sceneItems, sceneInventory, context, sceneProgress);
+        App.syncSceneContextResumeMetadata?.();
         if (options.changeScene !== false && typeof App.changeScene === 'function') {
             App.changeScene(options.sceneId || context.snapshot?.sourceSceneId || 'field');
         }
@@ -7292,6 +7598,7 @@ load: () => {
         const j = localStorage.getItem(CONST.SAVE_KEY); 
         if(j){ 
             App.data = JSON.parse(j); 
+            if (typeof App.restoreSceneContextResumeMetadata === 'function') App.restoreSceneContextResumeMetadata();
             
             // --- ここから mdef 補完ロジック ---
             if (App.data.characters) {
@@ -7513,11 +7820,8 @@ load: () => {
 
     save: () => {
         if (!App.data) return false;
-        if (typeof App.isSceneContextSaveSuppressed === 'function' && App.isSceneContextSaveSuppressed()) {
-            App.sceneContextSaveAttempted = true;
-            if (typeof App.updateHUD === 'function') App.updateHUD();
-            return true;
-        }
+        const sceneContextActive = typeof App.isSceneContextSaveSuppressed === 'function' && App.isSceneContextSaveSuppressed();
+        if (sceneContextActive) App.sceneContextSaveAttempted = true;
         if (Number(App.saveTransactionDepth || 0) > 0) {
             App.saveTransactionPending = true;
             return true;
@@ -7535,6 +7839,7 @@ load: () => {
             if (App.data.gems > (App.data.stats.maxGems || 0)) App.data.stats.maxGems = App.data.gems;
 
             App.updateSaveMetadata();
+            App.syncSceneContextResumeMetadata?.();
 
             localStorage.setItem(CONST.SAVE_KEY, App.serializeSaveData(App.data));
             App.saveFailureNotified = false;
@@ -10157,6 +10462,14 @@ load: () => {
         return upper && upper !== 'W' && upper !== 'M';
     },
 
+    normalizeOptionalEncounterRankBound: (value) => {
+        // encounterRankMin / Max の未指定値は null のまま保持する。
+        // Number(null) === 0 のため、先に数値化すると「未指定」が Rank1 固定へ化ける。
+        if (value === null || value === undefined || value === '') return null;
+        const numeric = Number(value);
+        return Number.isFinite(numeric) ? numeric : null;
+    },
+
     isWorldEncounterConnected: (fromX, fromY, toX, toY, maxSteps = 80) => {
         const worldMap = (typeof MapRegistry !== 'undefined' && MapRegistry.getActiveWorldMap)
             ? MapRegistry.getActiveWorldMap()
@@ -10240,8 +10553,8 @@ load: () => {
             mapId: best.mapId || null,
             name: best.name || 'フィールド',
             rank: Math.max(1, Number(best.rank || best.encounterRank || 1) || 1),
-            encounterRankMin: Number.isFinite(Number(best.encounterRankMin)) ? Number(best.encounterRankMin) : null,
-            encounterRankMax: Number.isFinite(Number(best.encounterRankMax)) ? Number(best.encounterRankMax) : null,
+            encounterRankMin: App.normalizeOptionalEncounterRankBound(best.encounterRankMin),
+            encounterRankMax: App.normalizeOptionalEncounterRankBound(best.encounterRankMax),
             encounterRaces: Array.isArray(best.encounterRaces) ? [...best.encounterRaces] : [],
             rareEncounterMonsterIds: Array.isArray(best.rareEncounterMonsterIds) ? [...best.rareEncounterMonsterIds] : [],
             monsters: null
@@ -10344,8 +10657,10 @@ load: () => {
             abyssBalanceFloor: mapEncounter?.balanceFloor || null,
             useHabitatEncounters: !!(mapEncounter?.useHabitatEncounters || isSeaEncounter || worldEncounter?.mapId),
             encounterRank: mapEncounter?.encounterRank || (worldEncounter ? worldEncounter.rank : null),
-            encounterRankMin: Number.isFinite(Number(mapEncounter?.encounterRankMin)) ? Number(mapEncounter.encounterRankMin) : (Number.isFinite(Number(worldEncounter?.encounterRankMin)) ? Number(worldEncounter.encounterRankMin) : null),
-            encounterRankMax: Number.isFinite(Number(mapEncounter?.encounterRankMax)) ? Number(mapEncounter.encounterRankMax) : (Number.isFinite(Number(worldEncounter?.encounterRankMax)) ? Number(worldEncounter.encounterRankMax) : null),
+            encounterRankMin: App.normalizeOptionalEncounterRankBound(mapEncounter?.encounterRankMin)
+                ?? App.normalizeOptionalEncounterRankBound(worldEncounter?.encounterRankMin),
+            encounterRankMax: App.normalizeOptionalEncounterRankBound(mapEncounter?.encounterRankMax)
+                ?? App.normalizeOptionalEncounterRankBound(worldEncounter?.encounterRankMax),
             encounterRaces: Array.isArray(mapEncounter?.encounterRaces) ? [...mapEncounter.encounterRaces] : (Array.isArray(worldEncounter?.encounterRaces) ? [...worldEncounter.encounterRaces] : []),
             rareEncounterAll: mapEncounter?.rareEncounterAll === true,
             rareEncounterMonsterIds: Array.isArray(mapEncounter?.rareEncounterMonsterIds) ? [...mapEncounter.rareEncounterMonsterIds] : (Array.isArray(worldEncounter?.rareEncounterMonsterIds) ? [...worldEncounter.rareEncounterMonsterIds] : []),
@@ -10680,12 +10995,19 @@ const Field = {
     // 通常の render() だけではPhaserが同一署名と判断し、主人公しか更新しない場合がある。
     refreshVisualState: () => {
         if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.refresh === 'function') {
-            PhaserFieldRenderer.refresh();
-            return;
+            const refreshed = PhaserFieldRenderer.refresh();
+            if (refreshed === true) return true;
+            // PhaserFieldRendererオブジェクトが存在していても、scene未起動・fallback中なら
+            // refresh()は描画していない。ここでreturnするとイベント画像だけ消えるため、
+            // 通常のField.render()へ流してlegacy Canvasを必ず使えるようにする。
         } else if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.setActive === 'function') {
             PhaserFieldRenderer.setActive(false);
         }
-        if (typeof Field.render === 'function') Field.render();
+        if (typeof Field.render === 'function') {
+            Field.render();
+            return true;
+        }
+        return false;
     },
 
     getDirectImage: (src) => {
@@ -10737,6 +11059,7 @@ const Field = {
                 if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.resize === 'function') {
                     PhaserFieldRenderer.resize();
                 }
+                Field.refreshFieldVisualLayerPositions?.();
                 if (resized && Field.ready && typeof Field.render === 'function') {
                     Field.render();
                 }
@@ -11532,11 +11855,29 @@ const Field = {
         return base;
     },
 
+    isRuntimeTileEffectEnabled: (effect) => {
+        if (!effect) return false;
+        if (effect.conditions && typeof App.evaluateGameConditions === 'function' && !App.evaluateGameConditions(effect.conditions)) return false;
+        if (effect.type === 'storyEvent') {
+            const flagKey = String(effect.eventFlag || effect.flag || '').trim();
+            if (flagKey && App.data?.progress?.flags?.[flagKey]) return false;
+        }
+        return true;
+    },
+
     getRuntimeTileEffectAt: (tileX = null, tileY = null) => {
         if (!Field.currentMapData?.isFixed || tileX === null || tileY === null) return null;
-        const authored = (typeof MapRegistry !== 'undefined' && MapRegistry.findTileEffect)
-            ? MapRegistry.findTileEffect(Field.currentMapData, tileX, tileY)
-            : null;
+        let authored = null;
+        if (typeof MapRegistry !== 'undefined' && typeof MapRegistry.isTileEffectApplicableAt === 'function' && Array.isArray(Field.currentMapData.tileEffects)) {
+            const candidates = Field.currentMapData.tileEffects.filter(effect =>
+                MapRegistry.isTileEffectApplicableAt(Field.currentMapData, effect, tileX, tileY)
+            );
+            const active = candidates.find(effect => Field.isRuntimeTileEffectEnabled(effect));
+            authored = active ? { ...active, x:Number(tileX), y:Number(tileY) } : null;
+        } else if (typeof MapRegistry !== 'undefined' && MapRegistry.findTileEffect) {
+            const candidate = MapRegistry.findTileEffect(Field.currentMapData, tileX, tileY);
+            authored = Field.isRuntimeTileEffectEnabled(candidate) ? candidate : null;
+        }
         if (authored) return authored;
 
         // A switch gate may replace a wall with a floor effect. The tile mutation
@@ -13054,7 +13395,7 @@ const Field = {
         return layer;
     },
 
-    getFieldVisualTileStyle: (tile, sizeTiles = 2) => {
+    getFieldVisualTileMetrics: (tile, sizeTiles = 2) => {
         const wrapper = document.getElementById('canvas-wrapper') || document.getElementById('field-scene') || document.body;
         const canvas = document.getElementById('field-canvas');
         const wrapperRect = wrapper.getBoundingClientRect ? wrapper.getBoundingClientRect() : { left: 0, top: 0, width: 320, height: 320 };
@@ -13063,11 +13404,37 @@ const Field = {
         const scaleY = canvas ? (canvasRect.height / Math.max(1, canvas.height || 320)) : 1;
         const dx = (Number(tile.x) - Number(Field.x)) * 32 * scaleX;
         const dy = (Number(tile.y) - Number(Field.y)) * 32 * scaleY;
-        const left = (canvasRect.left - wrapperRect.left) + (canvasRect.width / 2) + dx;
-        const top = (canvasRect.top - wrapperRect.top) + (canvasRect.height / 2) + dy;
-        const w = Math.max(32, 32 * Number(sizeTiles || 2) * scaleX);
-        const h = Math.max(32, 32 * Number(sizeTiles || 2) * scaleY);
-        return `position:absolute; left:${left}px; top:${top}px; width:${w}px; height:${h}px; transform:translate(-50%, -50%); image-rendering:pixelated; object-fit:contain;`;
+        return {
+            left: (canvasRect.left - wrapperRect.left) + (canvasRect.width / 2) + dx,
+            top: (canvasRect.top - wrapperRect.top) + (canvasRect.height / 2) + dy,
+            width: Math.max(32, 32 * Number(sizeTiles || 2) * scaleX),
+            height: Math.max(32, 32 * Number(sizeTiles || 2) * scaleY)
+        };
+    },
+
+    getFieldVisualTileStyle: (tile, sizeTiles = 2) => {
+        const metrics = Field.getFieldVisualTileMetrics(tile, sizeTiles);
+        return `position:absolute; left:${metrics.left}px; top:${metrics.top}px; width:${metrics.width}px; height:${metrics.height}px; transform:translate(-50%, -50%); image-rendering:pixelated; object-fit:contain;`;
+    },
+
+    // Phaserが使えない場合のDOM演出もMAP座標を正本にする。画面サイズ変更や
+    // カメラ移動のたびに、保存済みtileX/tileYから画面位置を再計算する。
+    refreshFieldVisualLayerPositions: () => {
+        const layer = document.getElementById('field-visual-cutscene-layer');
+        if (!layer) return false;
+        const nodes = layer.querySelectorAll('[data-tile-x][data-tile-y]');
+        nodes.forEach(node => {
+            const x = Number(node.dataset.tileX);
+            const y = Number(node.dataset.tileY);
+            if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+            const size = Number(node.dataset.sizeTiles || 2);
+            const metrics = Field.getFieldVisualTileMetrics({ x, y }, size);
+            node.style.left = `${metrics.left}px`;
+            node.style.top = `${metrics.top}px`;
+            node.style.width = `${metrics.width}px`;
+            node.style.height = `${metrics.height}px`;
+        });
+        return nodes.length > 0;
     },
 
     putFieldVisualSprite: (id, src, tile, sizeTiles = 2, extraCss = '') => {
@@ -14130,6 +14497,7 @@ const Field = {
         if (typeof AudioManager !== 'undefined' && typeof AudioManager.syncFieldBgm === 'function') AudioManager.syncFieldBgm();
         const canvas = document.getElementById('field-canvas'); if(!canvas) return;
         if (typeof Field.syncCanvasToWrapperSize === 'function') Field.syncCanvasToWrapperSize();
+        Field.refreshFieldVisualLayerPositions?.();
         if (typeof PhaserFieldRenderer !== 'undefined' && PhaserFieldRenderer.render(Field)) {
             let locName = Field.currentMapData ? Field.currentMapData.name : `世界地図 (${Field.x}, ${Field.y})`;
             if (!Field.currentMapData && App.data?.transportMode === 'flying') locName += ' - 飛行中';
@@ -14150,6 +14518,9 @@ const Field = {
             if (typeof Field.drawHudMinimap === 'function') Field.drawHudMinimap();
             const fullMapCanvas = document.getElementById('field-map-modal-canvas');
             if (fullMapCanvas && typeof Field.drawFullMap === 'function') Field.drawFullMap(fullMapCanvas);
+            if (typeof StoryManager !== 'undefined' && typeof StoryManager.syncLightPalaceFlashbackPersistentVisuals === 'function') {
+                StoryManager.syncLightPalaceFlashbackPersistentVisuals();
+            }
             return;
         }
         const ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
@@ -14355,6 +14726,85 @@ const Field = {
             }
         };
 
+        const persistentStoryVisualState = (typeof StoryManager !== 'undefined' && typeof StoryManager.getLightPalaceFlashbackPersistentVisualState === 'function')
+            ? StoryManager.getLightPalaceFlashbackPersistentVisualState()
+            : { active:false, floorEffects:[], actors:[] };
+        const persistentStoryFloorEffects = Array.isArray(persistentStoryVisualState?.floorEffects) ? persistentStoryVisualState.floorEffects : [];
+        const persistentStoryActors = Array.isArray(persistentStoryVisualState?.actors) ? persistentStoryVisualState.actors : [];
+
+        // Phaser障害時のlegacy Canvasでも、常駐床演出はMAP絶対座標を正本にする。
+        // タイルごとに床描画の直後、壁・オブジェクト描画の直前に元画像を分割して描くことで、
+        // 「床より上／壁・人物・ボスより下」のレイヤー関係を崩さない。
+        const drawPersistentStoryFloorEffectCell = (tileX, tileY, drawX, drawY) => {
+            persistentStoryFloorEffects.forEach(effect => {
+                const size = Math.max(1, Math.round(Number(effect?.size || 1)));
+                const centerX = Number(effect?.x);
+                const centerY = Number(effect?.y);
+                if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) return;
+                const leftTile = Math.round(centerX - ((size - 1) / 2));
+                const topTile = Math.round(centerY - ((size - 1) / 2));
+                const col = Number(tileX) - leftTile;
+                const row = Number(tileY) - topTile;
+                if (col < 0 || row < 0 || col >= size || row >= size) return;
+                const key = String(effect.key || '');
+                const image = key ? g[key] : null;
+                if (!image || !image.complete || !image.naturalWidth || !image.naturalHeight) {
+                    if (key && typeof GRAPHICS?.get === 'function') GRAPHICS.get(key);
+                    return;
+                }
+                const sourceWidth = Number(image.naturalWidth || image.width);
+                const sourceHeight = Number(image.naturalHeight || image.height);
+                const sx0 = Math.floor((sourceWidth * col) / size);
+                const sx1 = Math.floor((sourceWidth * (col + 1)) / size);
+                const sy0 = Math.floor((sourceHeight * row) / size);
+                const sy1 = Math.floor((sourceHeight * (row + 1)) / size);
+                ctx.save();
+                ctx.globalAlpha = Number.isFinite(Number(effect.alpha)) ? Number(effect.alpha) : 1;
+                ctx.drawImage(image, sx0, sy0, Math.max(1, sx1 - sx0), Math.max(1, sy1 - sy0), drawX, drawY, ts, ts);
+                if (effect.glow === true) {
+                    // Phaser停止時も、完全な暗色化を避けるため同一像を加算で薄く重ねる。
+                    // legacy Canvasは常時再描画ではないため、発光は中間光量の静止フォールバックとする。
+                    const glowMin = Math.max(0, Math.min(1, Number(effect.glowAlphaMin ?? 0.08) || 0));
+                    const glowMax = Math.max(glowMin, Math.min(1, Number(effect.glowAlphaMax ?? 0.28) || 0));
+                    ctx.globalCompositeOperation = 'lighter';
+                    ctx.globalAlpha = (glowMin + glowMax) * 0.5;
+                    ctx.drawImage(image, sx0, sy0, Math.max(1, sx1 - sx0), Math.max(1, sy1 - sy0), drawX, drawY, ts, ts);
+                }
+                ctx.restore();
+            });
+        };
+
+        const drawPersistentStoryActors = () => {
+            persistentStoryActors
+                .slice()
+                .sort((a, b) => Number(a.y || 0) - Number(b.y || 0))
+                .forEach(actor => {
+                    if (String(actor?.type || '') !== 'monster' || !Number.isFinite(Number(actor.monsterId))) return;
+                    const ox = Number(actor.x) - Number(Field.x);
+                    const oy = Number(actor.y) - Number(Field.y);
+                    if (Math.abs(ox) > rangeX + 3 || Math.abs(oy) > rangeY + 3) return;
+                    const sizeTiles = Math.max(0.5, Number(actor.size || 2));
+                    const size = ts * sizeTiles;
+                    const anchorX = cx + (ox * ts);
+                    const anchorY = cy + (oy * ts) + ts / 2;
+                    const src = Field.getMonsterMapSpriteSrc?.(Number(actor.monsterId));
+                    const img = src ? Field.getDirectImage(src) : null;
+                    drawFootShadow(anchorX - ts / 2, anchorY - ts, 0, 0.28, ts * 0.62, ts * 0.16);
+                    if (img && img.complete && img.naturalWidth > 0) {
+                        ctx.save();
+                        ctx.drawImage(img, anchorX - size / 2, anchorY - size, size, size);
+                        ctx.restore();
+                    } else {
+                        ctx.save();
+                        ctx.fillStyle = '#c78cff';
+                        ctx.beginPath();
+                        ctx.arc(anchorX, anchorY - size / 2, ts * 0.52, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                });
+        };
+
         const elevatedEdgePlans = [];
         const elevatedEdgeDefinition = Field.currentMapData?.elevatedEdges;
         for (let dy = -rangeY; dy <= rangeY; dy++) {
@@ -14394,6 +14844,8 @@ const Field = {
                     ctx.fillRect(drawX, drawY, ts, ts);
                     ctx.restore();
                 }
+
+                drawPersistentStoryFloorEffectCell(tx, ty, drawX, drawY);
 
                 // 2. 通常オブジェクトの描画。overlayConfig があるタイルはここでは描かない。
                 if (!isBaseTerrainTile && !overlayConfig) {
@@ -14686,6 +15138,7 @@ const Field = {
         // 4. 壁際の影は、溶岩・宝箱・階段・常設泉などの上から最後に重ねる。
         // プレイヤーまで暗くしないよう、プレイヤー描画の直前で止める。
         drawVisibleDungeonWallContactShadows();
+        drawPersistentStoryActors();
 
         // 5. プレイヤーの描画 (hero_... の画像もスプライトシート化していれば対応可能)
         const isFloodedBoat = Field.isPlayerOnFloodedWater();
@@ -14894,6 +15347,7 @@ if (typeof window !== 'undefined') {
             if (typeof PhaserFieldRenderer !== 'undefined' && typeof PhaserFieldRenderer.resize === 'function') {
                 PhaserFieldRenderer.resize();
             }
+            Field.refreshFieldVisualLayerPositions?.();
             if (typeof Field.updateMinimapHotspotBounds === 'function') {
                 Field.updateMinimapHotspotBounds();
             }
