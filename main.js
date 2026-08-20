@@ -451,9 +451,9 @@ const App = {
             ? (charOrId.charId || charOrId.id || charOrId.originData?.charId || charOrId.originData?.id)
             : charOrId);
         if (id !== 301 || !App.isFiveYearsAgoPrologueActive(data)) return null;
-        return kind === 'portrait'
-            ? 'assets/characters/char_face_301_past5y.png'
-            : 'assets/characters/face/301_past5y.png';
+        // 5年前アルスは会話用の専用portraitファイルを別名で持たないため、
+        // portrait/faceとも実在する年代差分の基本顔画像へ統一する。
+        return 'assets/characters/face/301_past5y.png';
     },
 
     getFieldPartyWalkCharacters: (data = App.data) => {
@@ -559,9 +559,15 @@ const App = {
     getCharacterPortraitPath: (charOrId, expression = 'normal') => {
         const id = App.getCharacterAssetId(charOrId);
         if (!id) return null;
-        // 5年前のアルスだけは専用年代差分を優先する。
+        // 5年前のアルスだけは年代差分の基本顔画像を優先する。
         const prologueOverride = App.getPrologueCharacterImageOverride(charOrId, 'portrait');
         if (prologueOverride) return prologueOverride;
+
+        // prologueOnlyキャラ（現在は13歳ルーナ）は表情差分portraitを持たず、
+        // 常設のface画像が正本。存在しない char_face_<id>_<expression>.png を要求しない。
+        const master = (typeof App.getCharacterMaster === 'function') ? App.getCharacterMaster(charOrId) : null;
+        if (master?.prologueOnly === true) return App.getDefaultFaceIconPath(charOrId);
+
         const safeExpression = App.normalizeCharacterExpression(expression);
         return `assets/characters/portraits-all-expressions/char_face_${id}_${safeExpression}.png`;
     },

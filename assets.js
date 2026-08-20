@@ -841,7 +841,6 @@ const PRISMA_ASSETS = {
       "assets/map/overlays/overlay_npc_bronze_knight.png",
       ...PRISMA_CHARACTER_WALK_FRAMES.map((frame) => `assets/characters/walk/301_${frame}.png`),
       "assets/characters/face/301_past5y.png",
-      "assets/characters/char_face_301_past5y.png",
     ],
     openingImages: [
       "assets/generated/opening-prism-collapse.png",

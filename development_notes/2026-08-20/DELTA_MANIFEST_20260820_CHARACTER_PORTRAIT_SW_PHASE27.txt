@@ -1,0 +1,21 @@
+PRISMA ABYSS Character Portrait / Service Worker Phase 27 delta
+Date: 2026-08-20
+Base: Phase 26 + user replacements of main.html and assets.js
+
+Modified:
+- assets.js
+- main.js
+- story_logic.js
+- sw.js
+
+Created:
+- development_notes/2026-08-20/validation/validate-character-portrait-sw-phase27.js
+- development_notes/2026-08-20/reports/CHARACTER_PORTRAIT_SW_PHASE27_20260820.md
+- development_notes/2026-08-20/DELTA_MANIFEST_20260820_CHARACTER_PORTRAIT_SW_PHASE27.txt
+
+Fixes:
+- remove nonexistent assets/characters/char_face_301_past5y.png from required image precache
+- use assets/characters/face/301_past5y.png for five-years-ago Ars portrait/face
+- use default face directly for prologueOnly character portraits (currently Luna 403)
+- conversation portrait fallback: expression -> normal -> default face
+- bump Service Worker App Shell cache to prisma-abyss-v100.20260820

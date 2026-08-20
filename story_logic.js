@@ -3944,18 +3944,25 @@ const StoryManager = {
         portraitImg.style.display = 'none';
 
         if (charId === undefined || charId === null || typeof App.getCharacterPortraitPath !== 'function') return;
-        const primary = App.getCharacterPortraitPath(charId, expression);
-        const normal = App.getCharacterPortraitPath(charId, 'normal');
-        if (!primary) return;
 
-        let triedNormal = primary === normal;
+        // 表情差分は全キャラ・全表情が揃っているとは限らない。
+        // 指定表情 -> normal表情 -> 常設の基本顔画像、の順に退避し、
+        // 会話画像の不足だけでportrait全体が消えないようにする。
+        const candidates = [
+            App.getCharacterPortraitPath(charId, expression),
+            App.getCharacterPortraitPath(charId, 'normal'),
+            (typeof App.getDefaultFaceIconPath === 'function') ? App.getDefaultFaceIconPath(charId) : null,
+        ].filter((src, index, list) => src && list.indexOf(src) === index);
+        if (!candidates.length) return;
+
+        let candidateIndex = 0;
         portraitImg.onload = () => {
             portraitImg.style.display = 'block';
         };
         portraitImg.onerror = () => {
-            if (!triedNormal && normal) {
-                triedNormal = true;
-                portraitImg.src = normal;
+            candidateIndex += 1;
+            if (candidateIndex < candidates.length) {
+                portraitImg.src = candidates[candidateIndex];
                 return;
             }
             portraitImg.onload = null;
@@ -3963,7 +3970,7 @@ const StoryManager = {
             portraitImg.removeAttribute('src');
             portraitImg.style.display = 'none';
         };
-        portraitImg.src = primary;
+        portraitImg.src = candidates[candidateIndex];
     },
 
     showConversation: async function(scriptKey, startFromIndex = 0) {
