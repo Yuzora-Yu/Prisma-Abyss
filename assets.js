@@ -108,7 +108,6 @@ const PRISMA_CHARACTER_IMAGE_FILES = [
   ...PRISMA_CHARACTER_IMAGE_IDS.map((id) => `assets/characters/face/${id}.png`),
   "assets/characters/face/301_past5y.png",
   // 5年前アルスの会話用年代差分。通常portraitは使用時にruntime cacheへ入る。
-  "assets/characters/char_face_301_past5y.png",
 ];
 const PRISMA_CHARACTER_WALK_IDS = [
   ...PRISMA_CHARACTER_IMAGE_IDS.map(String),
